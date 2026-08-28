@@ -1,0 +1,425 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+   url      = env("DATABASE_URL")
+}
+
+
+// ============================================================
+// INSTITUCION
+// ============================================================
+
+model Institucion {
+  id                  Int      @id @default(autoincrement())
+  nombre              String
+  pais                String
+  correoInstitucional String   @map("correo_institucional")
+  activa              Boolean
+
+  agentes             AgenteInternacionalizacion[]
+  docentesInstitucion DocenteInstitucion[]
+  materias            Materia[]
+  solicitudesDestino  SolicitudClaseEspejo[]
+
+  @@map("INSTITUCION")
+}
+
+
+// ============================================================
+// USUARIO
+// ============================================================
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombres      String
+  apellidos    String
+  correo       String
+  passwordHash String   @map("password_hash")
+  activo       Boolean
+
+  agente       AgenteInternacionalizacion?
+  docente      Docente?
+
+  @@map("USUARIO")
+}
+
+
+// ============================================================
+// AGENTE_INTERNACIONALIZACION
+// ============================================================
+
+model AgenteInternacionalizacion {
+  id            Int        @id @default(autoincrement())
+  usuarioId     Int        @unique @map("usuario_id")
+  institucionId Int        @map("institucion_id")
+  cargo         String
+
+  usuario       Usuario    @relation(fields: [usuarioId], references: [id])
+
+  institucion   Institucion @relation(fields: [institucionId], references: [id])
+
+  revisiones    RevisionSolicitud[]
+
+  @@map("AGENTE_INTERNACIONALIZACION")
+}
+
+
+// ============================================================
+// DOCENTE
+// ============================================================
+
+model Docente {
+  id             Int                   @id @default(autoincrement())
+  usuarioId      Int                   @unique @map("usuario_id")
+  gradoAcademico String                @map("grado_academico")
+  especialidad   String
+
+  usuario        Usuario               @relation(fields: [usuarioId], references: [id])
+
+  instituciones  DocenteInstitucion[]
+
+  @@map("DOCENTE")
+}
+
+
+// ============================================================
+// DOCENTE_INSTITUCION
+// ============================================================
+
+model DocenteInstitucion {
+  id             Int                   @id @default(autoincrement())
+  docenteId      Int                   @map("docente_id")
+  institucionId  Int                   @map("institucion_id")
+  numeroEmpleado String                @map("numero_empleado")
+  activo         Boolean
+
+  docente        Docente               @relation(fields: [docenteId], references: [id])
+
+  institucion    Institucion           @relation(fields: [institucionId], references: [id])
+
+  asignaciones   AsignacionDocente[]
+ // proyectosDocente ProyectoDocente[]
+
+  @@map("DOCENTE_INSTITUCION")
+}
+
+
+// ============================================================
+// MATERIA
+// ============================================================
+
+model Materia {
+  id                Int                   @id @default(autoincrement())
+  institucionId     Int                   @map("institucion_id")
+  clave             String
+  nombre            String
+  programaEducativo String                @map("programa_educativo")
+  descripcion       String
+  activa            Boolean
+
+  institucion       Institucion           @relation(fields: [institucionId], references: [id])
+
+  asignaciones      AsignacionDocente[]
+
+  solicitudesDestino SolicitudClaseEspejo[]
+
+  @@map("MATERIA")
+}
+
+
+// ============================================================
+// ASIGNACION_DOCENTE
+// ============================================================
+
+model AsignacionDocente {
+  id                    Int                   @id @default(autoincrement())
+  docenteInstitucionId  Int                   @map("docente_institucion_id")
+  materiaId             Int                   @map("materia_id")
+  periodoEscolar       String                @map("periodo_escolar")
+
+  docenteInstitucion   DocenteInstitucion    @relation(fields: [docenteInstitucionId], references: [id])
+
+  materia              Materia               @relation(fields: [materiaId], references: [id])
+
+  solicitudesOrigen    SolicitudClaseEspejo[]
+
+  proyectosDocente     ProyectoDocente[]
+
+  @@map("ASIGNACION_DOCENTE")
+}
+
+
+// ============================================================
+// SOLICITUD_CLASE_ESPEJO
+// ============================================================
+
+model SolicitudClaseEspejo {
+  id                    Int                    @id @default(autoincrement())
+  asignacionOrigenId    Int                    @map("asignacion_origen_id")
+  institucionDestinoId  Int                    @map("institucion_destino_id")
+  materiaDestinoId      Int?                   @map("materia_destino_id")
+  titulo                String
+  objetivo              String
+  fechaPropuesta        DateTime               @db.Date @map("fecha_propuesta")
+  estado                String
+  creadaEn              DateTime               @map("creada_en")
+
+  asignacionOrigen      AsignacionDocente      @relation(fields: [asignacionOrigenId], references: [id])
+
+  institucionDestino    Institucion            @relation(fields: [institucionDestinoId], references: [id])
+
+  materiaDestino        Materia?               @relation(fields: [materiaDestinoId], references: [id])
+
+  revisiones            RevisionSolicitud[]
+
+  proyecto              ProyectoClaseEspejo?
+
+  @@map("SOLICITUD_CLASE_ESPEJO")
+}
+
+
+// ============================================================
+// REVISION_SOLICITUD
+// ============================================================
+
+model RevisionSolicitud {
+  id           Int                       @id @default(autoincrement())
+  solicitudId  Int                       @map("solicitud_id")
+  agenteId     Int                       @map("agente_id")
+  etapa        String
+  decision     String
+  comentario   String
+  revisadaEn   DateTime                  @map("revisada_en")
+
+  solicitud    SolicitudClaseEspejo      @relation(fields: [solicitudId], references: [id])
+
+  agente       AgenteInternacionalizacion @relation(fields: [agenteId], references: [id])
+
+  @@map("REVISION_SOLICITUD")
+}
+
+
+// ============================================================
+// PROYECTO_CLASE_ESPEJO
+// ============================================================
+
+model ProyectoClaseEspejo {
+  id             Int                    @id @default(autoincrement())
+  solicitudId    Int                    @unique @map("solicitud_id")
+  estado         String
+  fechaInicio    DateTime               @db.Date @map("fecha_inicio")
+  fechaFin       DateTime               @db.Date @map("fecha_fin")
+  plataforma     String
+
+  solicitud      SolicitudClaseEspejo   @relation(fields: [solicitudId], references: [id])
+
+  docentes       ProyectoDocente[]
+  planificacion  PlanificacionConjunta?
+  sesiones       Sesion[]
+  actividades    Actividad[]
+  evidencias     Evidencia[]
+  evaluaciones   Evaluacion[]
+
+  @@map("PROYECTO_CLASE_ESPEJO")
+}
+
+
+// ============================================================
+// PROYECTO_DOCENTE
+// ============================================================
+
+model ProyectoDocente {
+  id                   Int                   @id @default(autoincrement())
+  proyectoId           Int                   @map("proyecto_id")
+  asignacionDocenteId  Int                   @map("asignacion_docente_id")
+  rol                  String
+
+  proyecto             ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  asignacionDocente    AsignacionDocente    @relation(fields: [asignacionDocenteId], references: [id])
+
+  participacionesPlan  ParticipacionPlanificacion[]
+  participacionesRep   ParticipacionReporte[]
+
+  @@map("PROYECTO_DOCENTE")
+}
+
+
+// ============================================================
+// PLANIFICACION_CONJUNTA
+// ============================================================
+
+model PlanificacionConjunta {
+  id                 Int                   @id @default(autoincrement())
+  proyectoId         Int                   @unique @map("proyecto_id")
+  objetivosAcordados String                @map("objetivos_acordados")
+  temasAcordados     String                @map("temas_acordados")
+  metodologia        String
+  plataforma         String
+  estado             String
+  creadaEn           DateTime              @map("creada_en")
+
+  proyecto           ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  participaciones    ParticipacionPlanificacion[]
+  reportes           ReportePlanificacion[]
+
+  @@map("PLANIFICACION_CONJUNTA")
+}
+
+
+// ============================================================
+// PARTICIPACION_PLANIFICACION
+// ============================================================
+
+model ParticipacionPlanificacion {
+  id                   Int                   @id @default(autoincrement())
+  planificacionId      Int                   @map("planificacion_id")
+  proyectoDocenteId    Int                   @map("proyecto_docente_id")
+  estatusConfirmacion  String                @map("estatus_confirmacion")
+  confirmadaEn         DateTime?             @map("confirmada_en")
+
+  planificacion        PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
+
+  proyectoDocente      ProyectoDocente      @relation(fields: [proyectoDocenteId], references: [id])
+
+  @@map("PARTICIPACION_PLANIFICACION")
+}
+
+
+// ============================================================
+// REPORTE_PLANIFICACION
+// ============================================================
+
+model ReportePlanificacion {
+  id                    Int                   @id @default(autoincrement())
+  planificacionId       Int                   @map("planificacion_id")
+  acuerdos              String
+  calendario            String
+  actividadesAcordadas  String               @map("actividades_acordadas")
+  generadoEn            DateTime              @map("generado_en")
+
+  planificacion         PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
+
+  @@map("REPORTE_PLANIFICACION")
+}
+
+
+// ============================================================
+// SESION
+// ============================================================
+
+model Sesion {
+  id             Int                   @id @default(autoincrement())
+  proyectoId     Int                   @map("proyecto_id")
+  titulo         String
+  fechaHora      DateTime              @map("fecha_hora")
+  enlaceVirtual  String                @map("enlace_virtual")
+  estado         String
+
+  proyecto       ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  reporte        ReporteClaseConjunta?
+  evidencias     Evidencia[]
+
+  @@map("SESION")
+}
+
+
+// ============================================================
+// ACTIVIDAD
+// ============================================================
+
+model Actividad {
+  id            Int                   @id @default(autoincrement())
+  proyectoId    Int                   @map("proyecto_id")
+  titulo        String
+  instrucciones String
+  fechaLimite   DateTime              @db.Date @map("fecha_limite")
+
+  proyecto      ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  @@map("ACTIVIDAD")
+}
+
+
+// ============================================================
+// REPORTE_CLASE_CONJUNTA
+// ============================================================
+
+model ReporteClaseConjunta {
+  id                    Int                   @id @default(autoincrement())
+  sesionId              Int                   @unique @map("sesion_id")
+  desarrolloClase       String                @map("desarrollo_clase")
+  totalAsistentes       Int                   @map("total_asistentes")
+  incidencias           String
+  acuerdosSiguienteSesion String              @map("acuerdos_siguiente_sesion")
+  estado                String
+  creadoEn              DateTime              @map("creado_en")
+
+  sesion                Sesion                @relation(fields: [sesionId], references: [id])
+
+  participaciones      ParticipacionReporte[]
+
+  @@map("REPORTE_CLASE_CONJUNTA")
+}
+
+
+// ============================================================
+// PARTICIPACION_REPORTE
+// ============================================================
+
+model ParticipacionReporte {
+  id                Int                   @id @default(autoincrement())
+  reporteClaseId    Int                   @map("reporte_clase_id")
+  proyectoDocenteId Int                   @map("proyecto_docente_id")
+  observaciones     String
+  confirmadoEn      DateTime?             @map("confirmado_en")
+
+  reporteClase      ReporteClaseConjunta  @relation(fields: [reporteClaseId], references: [id])
+
+  proyectoDocente   ProyectoDocente      @relation(fields: [proyectoDocenteId], references: [id])
+
+  @@map("PARTICIPACION_REPORTE")
+}
+
+
+// ============================================================
+// EVIDENCIA
+// ============================================================
+
+model Evidencia {
+  id             Int                   @id @default(autoincrement())
+  proyectoId     Int                   @map("proyecto_id")
+  sesionId       Int?                  @map("sesion_id")
+  tipo           String
+  archivoUrl     String                @map("archivo_url")
+  registradaEn   DateTime              @map("registrada_en")
+
+  proyecto       ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  sesion         Sesion?               @relation(fields: [sesionId], references: [id])
+
+  @@map("EVIDENCIA")
+}
+
+
+// ============================================================
+// EVALUACION
+// ============================================================
+
+model Evaluacion {
+  id             Int                   @id @default(autoincrement())
+  proyectoId     Int                   @map("proyecto_id")
+  instrumento    String
+  resultado      String
+  observaciones  String
+
+  proyecto       ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+
+  @@map("EVALUACION")
+}
