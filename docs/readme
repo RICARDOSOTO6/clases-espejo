@@ -1,0 +1,533 @@
+# 🏫 Clases Conjuntas
+
+**Clases Conjuntas** es una plataforma web B2B (institución a institución) diseñada para facilitar la colaboración académica entre instituciones educativas mediante la creación y gestión de **clases espejo**.
+
+Una clase espejo permite que docentes de distintas instituciones coordinen una experiencia académica conjunta utilizando herramientas de comunicación y colaboración virtual.
+
+---
+
+## 🎯 Objetivo del proyecto
+
+La plataforma busca permitir que dos instituciones educativas puedan:
+
+* Registrar y administrar sus usuarios.
+* Registrar docentes y materias.
+* Publicar propuestas de clases espejo.
+* Enviar solicitudes de colaboración a otras instituciones.
+* Revisar y aprobar solicitudes.
+* Coordinar la planificación de una clase conjunta.
+* Registrar sesiones y actividades.
+* Generar reportes de las sesiones.
+* Registrar evidencias y evaluaciones.
+* Mantener un historial de las colaboraciones realizadas.
+
+---
+
+# 🛠️ Tecnologías
+
+## Backend
+
+* **Node.js**
+* **NestJS 11**
+* **TypeScript**
+* **Prisma ORM 6.19.3**
+* **PostgreSQL**
+* **JWT** para autenticación
+* **bcrypt** para manejo seguro de contraseñas
+* **class-validator / class-transformer**
+
+## Frontend
+
+* Angular
+* Bootstrap
+
+> El frontend se encuentra en desarrollo y puede tener una estructura diferente a la versión actualmente estable del backend.
+
+---
+
+# 📁 Estructura general
+
+```text
+ClasesEspejo/
+│
+├── backend/
+│   ├── src/
+│   │   ├── auth/
+│   │   ├── prisma/
+│   │   ├── app.module.ts
+│   │   └── main.ts
+│   │
+│   ├── prisma/
+│   │   └── schema.prisma
+│   │
+│   ├── generated/
+│   │   └── prisma/
+│   │
+│   ├── .env
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── tsconfig.build.json
+│
+└── frontend/
+    └── ...
+```
+
+---
+
+# 📋 Requisitos
+
+Para trabajar con el proyecto se necesita instalar:
+
+* Node.js
+* npm
+* PostgreSQL
+* Git
+
+Se recomienda utilizar una versión reciente de Node.js compatible con NestJS.
+
+La versión utilizada actualmente durante el desarrollo es:
+
+```text
+Node.js 22.16.0
+```
+
+---
+
+# 🚀 Instalación
+
+## 1. Clonar el repositorio
+
+```bash
+git clone <URL_DEL_REPOSITORIO>
+```
+
+Entrar al proyecto:
+
+```bash
+cd ClasesEspejo
+```
+
+---
+
+# 🔧 Configuración del Backend
+
+Entrar a la carpeta:
+
+```bash
+cd backend
+```
+
+Instalar las dependencias:
+
+```bash
+npm install
+```
+
+---
+
+# 🗄️ Configuración de PostgreSQL
+
+Crear una base de datos PostgreSQL para el proyecto.
+
+Por ejemplo:
+
+```text
+ClasesconjuntasBD
+```
+
+El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
+
+---
+
+# 🔐 Variables de entorno
+
+Crear un archivo:
+
+```text
+backend/.env
+```
+
+El archivo `.env` **NO debe subirse al repositorio**.
+
+Debe contener al menos:
+
+```env
+DATABASE_URL="postgresql://USUARIO:CONTRASEÑA@localhost:5432/ClasesconjuntasBD?schema=public"
+```
+
+Ejemplo:
+
+```env
+DATABASE_URL="postgresql://postgres:TU_CONTRASEÑA@localhost:5432/ClasesconjuntasBD?schema=public"
+```
+
+> Nunca subir contraseñas, claves JWT u otros secretos al repositorio.
+
+---
+
+# 🧬 Prisma
+
+El proyecto utiliza Prisma como ORM.
+
+El esquema de la base de datos se encuentra en:
+
+```text
+backend/prisma/schema.prisma
+```
+
+El cliente de Prisma se genera en:
+
+```text
+backend/generated/prisma
+```
+
+## Generar el cliente de Prisma
+
+Después de instalar las dependencias o modificar el esquema:
+
+```bash
+npx prisma generate
+```
+
+## Validar el esquema
+
+```bash
+npx prisma validate
+```
+
+## Consultar la base de datos
+
+Para abrir Prisma Studio:
+
+```bash
+npx prisma studio
+```
+
+---
+
+# ▶️ Ejecutar el Backend
+
+Modo desarrollo:
+
+```bash
+npm run start:dev
+```
+
+El servidor debería iniciar correctamente y mostrar:
+
+```text
+Nest application successfully started
+```
+
+Por defecto, la aplicación utiliza:
+
+```text
+http://localhost:3000
+```
+
+---
+
+# 🧪 Compilar el Backend
+
+Para comprobar que el proyecto puede compilarse:
+
+```bash
+npm run build
+```
+
+Una compilación correcta debe terminar sin errores de TypeScript.
+
+---
+
+# 📜 Comandos principales
+
+Desde `backend/`:
+
+| Comando               | Función                           |
+| --------------------- | --------------------------------- |
+| `npm install`         | Instala dependencias              |
+| `npm run start:dev`   | Ejecuta el servidor en desarrollo |
+| `npm run build`       | Compila el backend                |
+| `npm run start`       | Ejecuta NestJS                    |
+| `npm run start:prod`  | Ejecuta la versión compilada      |
+| `npx prisma generate` | Genera el cliente Prisma          |
+| `npx prisma validate` | Valida el esquema Prisma          |
+| `npx prisma studio`   | Abre la interfaz de Prisma        |
+| `npm run lint`        | Ejecuta ESLint                    |
+| `npm test`            | Ejecuta pruebas                   |
+
+---
+
+# 🗃️ Modelo de datos
+
+El sistema actualmente contempla las siguientes entidades principales:
+
+```text
+INSTITUCION
+    │
+    ├── DOCENTE_INSTITUCION
+    │       │
+    │       └── DOCENTE
+    │
+    ├── MATERIA
+    │
+    └── AGENTE_INTERNACIONALIZACION
+
+USUARIO
+    │
+    ├── DOCENTE
+    └── AGENTE_INTERNACIONALIZACION
+
+DOCENTE_INSTITUCION
+    │
+    └── ASIGNACION_DOCENTE
+            │
+            └── MATERIA
+
+ASIGNACION_DOCENTE
+    │
+    └── SOLICITUD_CLASE_ESPEJO
+            │
+            ├── REVISION_SOLICITUD
+            └── PROYECTO_CLASE_ESPEJO
+                    │
+                    ├── PROYECTO_DOCENTE
+                    ├── PLANIFICACION_CONJUNTA
+                    ├── SESION
+                    ├── ACTIVIDAD
+                    ├── EVALUACION
+                    └── EVIDENCIA
+```
+
+El modelo completo y sus relaciones se encuentran en:
+
+```text
+backend/prisma/schema.prisma
+```
+
+---
+
+# 🔐 Autenticación
+
+El backend utiliza autenticación mediante **JWT**.
+
+Actualmente existe un módulo de autenticación:
+
+```text
+backend/src/auth/
+```
+
+El módulo contempla las operaciones principales de:
+
+* Registro de usuarios.
+* Inicio de sesión.
+* Generación de tokens JWT.
+* Protección de rutas.
+* Hash de contraseñas mediante bcrypt.
+
+Las contraseñas **no deben almacenarse directamente**. Se utiliza `bcrypt` para generar hashes.
+
+---
+
+# 🧪 Pruebas de API
+
+Durante el desarrollo se utiliza una herramienta de pruebas HTTP como **Thunder Client** para probar los endpoints del backend.
+
+Ejemplo de registro:
+
+```http
+POST /auth/register
+Content-Type: application/json
+```
+
+```json
+{
+  "nombre": "Institucion Prueba",
+  "email": "prueba@correo.com",
+  "password": "123456"
+}
+```
+
+Los endpoints disponibles pueden cambiar conforme avance el desarrollo.
+
+---
+
+# ⚠️ Consideraciones importantes para desarrolladores
+
+### 1. No modificar `generated/prisma` manualmente
+
+La carpeta:
+
+```text
+backend/generated/prisma/
+```
+
+contiene archivos generados automáticamente por Prisma.
+
+Si se modifica `schema.prisma`, utilizar:
+
+```bash
+npx prisma generate
+```
+
+en lugar de editar manualmente los archivos generados.
+
+---
+
+### 2. No subir `.env`
+
+El archivo:
+
+```text
+backend/.env
+```
+
+contiene información sensible.
+
+Debe estar incluido en `.gitignore`.
+
+Ejemplo:
+
+```gitignore
+.env
+```
+
+---
+
+### 3. Prisma y TypeScript
+
+La configuración actual del proyecto utiliza:
+
+```json
+"module": "commonjs",
+"moduleResolution": "node10"
+```
+
+Esta configuración está relacionada con la compatibilidad actual entre NestJS, Node.js y el cliente generado por Prisma.
+
+**No modificar estas opciones sin comprobar primero la compatibilidad del proyecto.**
+
+---
+
+# 📌 Estado actual del proyecto
+
+## Backend
+
+* [x] Configuración inicial de NestJS
+* [x] PostgreSQL
+* [x] Prisma
+* [x] Modelo de datos
+* [x] Configuración de variables de entorno
+* [x] Módulo de autenticación
+* [x] Registro de usuarios
+* [x] Login
+* [x] JWT
+* [x] Hash de contraseñas
+* [ ] Gestión completa de instituciones
+* [ ] Gestión completa de docentes
+* [ ] Gestión de materias
+* [ ] Solicitudes de clases espejo
+* [ ] Flujo de revisión
+* [ ] Gestión de proyectos
+* [ ] Planificación conjunta
+* [ ] Sesiones
+* [ ] Actividades
+* [ ] Evidencias
+* [ ] Evaluaciones
+* [ ] Reportes
+
+## Frontend
+
+* [ ] Interfaz completa
+* [ ] Autenticación
+* [ ] Gestión de usuarios
+* [ ] Gestión de instituciones
+* [ ] Gestión de docentes
+* [ ] Gestión de materias
+* [ ] Solicitudes
+* [ ] Clases espejo
+* [ ] Reportes
+
+---
+
+# 🌱 Flujo general del sistema
+
+El flujo esperado de una clase espejo es:
+
+```text
+Institución A
+      │
+      ▼
+Docente publica propuesta
+      │
+      ▼
+Selecciona institución destino
+      │
+      ▼
+Se genera solicitud
+      │
+      ▼
+Institución B recibe solicitud
+      │
+      ▼
+Agente de internacionalización revisa
+      │
+      ▼
+Aceptación / rechazo
+      │
+      ▼
+Creación del proyecto
+      │
+      ▼
+Planificación conjunta
+      │
+      ▼
+Sesiones de clase
+      │
+      ▼
+Actividades y evidencias
+      │
+      ▼
+Reportes y evaluación
+```
+
+---
+
+# 👨‍💻 Recomendaciones para futuros desarrolladores
+
+Antes de realizar cambios importantes:
+
+1. Revisar el `schema.prisma`.
+2. Comprobar las relaciones entre modelos.
+3. Revisar los módulos existentes antes de crear uno nuevo.
+4. Mantener separada la lógica de controladores y servicios.
+5. No almacenar contraseñas directamente.
+6. No subir archivos `.env`.
+7. Ejecutar `npm run build` después de cambios importantes.
+8. Ejecutar `npx prisma validate` después de modificar el esquema.
+9. Generar nuevamente Prisma después de modificar `schema.prisma`.
+10. Crear commits pequeños y descriptivos.
+
+---
+
+# 📚 Filosofía del proyecto
+
+El proyecto se encuentra en desarrollo y puede sufrir cambios en su arquitectura.
+
+Se recomienda priorizar:
+
+* Código mantenible.
+* Separación de responsabilidades.
+* Seguridad.
+* Validación de datos.
+* Claridad en las relaciones de la base de datos.
+* Documentación de cambios importantes.
+* Evitar modificaciones innecesarias de la arquitectura existente.
+
+---
+
+# 📄 Licencia
+
+Proyecto académico en desarrollo.
+
+La licencia y condiciones de distribución serán definidas posteriormente.
