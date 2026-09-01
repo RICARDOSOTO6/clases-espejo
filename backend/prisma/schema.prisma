@@ -14,6 +14,8 @@ model Institucion {
   pais                String
   correoInstitucional String                       @map("correo_institucional")
   activa              Boolean
+  creadoEn            DateTime                     @default(now()) @map("creado_en")
+  actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   agentes             AgenteInternacionalizacion[]
   docentesInstitucion DocenteInstitucion[]
   materias            Materia[]
@@ -23,14 +25,18 @@ model Institucion {
 }
 
 model Usuario {
-  id           Int                         @id @default(autoincrement())
-  nombres      String
-  apellidos    String
-  correo       String
-  passwordHash String?                     @map("password_hash")
-  activo       Boolean
-  agente       AgenteInternacionalizacion?
-  docente      Docente?
+  id              Int                         @id @default(autoincrement())
+  nombres         String
+  apellidos       String
+  correo          String                      @unique
+  passwordHash    String?                     @map("password_hash")
+  activo          Boolean                     @default(true)
+  tokenInvitacion String?                     @unique @map("token_invitacion")
+  tokenExpiracion DateTime?                   @map("token_expiracion")
+  creadoEn        DateTime                    @default(now()) @map("creado_en")
+  actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
+  agente          AgenteInternacionalizacion?
+  docente         Docente?
 
   @@map("USUARIO")
 }
@@ -42,6 +48,8 @@ model AgenteInternacionalizacion {
   cargo         String
   institucion   Institucion         @relation(fields: [institucionId], references: [id])
   usuario       Usuario             @relation(fields: [usuarioId], references: [id])
+  creadoEn      DateTime            @default(now()) @map("creado_en")
+  actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   revisiones    RevisionSolicitud[]
 
   @@map("AGENTE_INTERNACIONALIZACION")
@@ -53,6 +61,8 @@ model Docente {
   gradoAcademico String               @map("grado_academico")
   especialidad   String
   usuario        Usuario              @relation(fields: [usuarioId], references: [id])
+  creadoEn       DateTime             @default(now()) @map("creado_en")
+  actualizadoEn  DateTime             @default(now()) @updatedAt @map("actualizado_en")
   instituciones  DocenteInstitucion[]
 
   @@map("DOCENTE")
@@ -64,6 +74,8 @@ model DocenteInstitucion {
   institucionId  Int                 @map("institucion_id")
   numeroEmpleado String              @map("numero_empleado")
   activo         Boolean
+  creadoEn       DateTime            @default(now()) @map("creado_en")
+  actualizadoEn  DateTime            @default(now()) @updatedAt @map("actualizado_en")
   asignaciones   AsignacionDocente[]
   docente        Docente             @relation(fields: [docenteId], references: [id])
   institucion    Institucion         @relation(fields: [institucionId], references: [id])
@@ -79,6 +91,8 @@ model Materia {
   programaEducativo  String                 @map("programa_educativo")
   descripcion        String
   activa             Boolean
+  creadoEn           DateTime               @default(now()) @map("creado_en")
+  actualizadoEn      DateTime               @default(now()) @updatedAt @map("actualizado_en")
   asignaciones       AsignacionDocente[]
   institucion        Institucion            @relation(fields: [institucionId], references: [id])
   solicitudesDestino SolicitudClaseEspejo[]
@@ -93,6 +107,8 @@ model AsignacionDocente {
   periodoEscolar       String                 @map("periodo_escolar")
   docenteInstitucion   DocenteInstitucion     @relation(fields: [docenteInstitucionId], references: [id])
   materia              Materia                @relation(fields: [materiaId], references: [id])
+  creadoEn             DateTime               @default(now()) @map("creado_en")
+  actualizadoEn        DateTime               @default(now()) @updatedAt @map("actualizado_en")
   proyectosDocente     ProyectoDocente[]
   solicitudesOrigen    SolicitudClaseEspejo[]
 
@@ -108,8 +124,9 @@ model SolicitudClaseEspejo {
   objetivo             String
   fechaPropuesta       DateTime             @map("fecha_propuesta") @db.Date
   estado               String
-  creadaEn             DateTime             @map("creada_en")
   proyecto             ProyectoClaseEspejo?
+  creadoEn             DateTime             @default(now()) @map("creado_en")
+  actualizadoEn        DateTime             @default(now()) @updatedAt @map("actualizado_en")
   revisiones           RevisionSolicitud[]
   asignacionOrigen     AsignacionDocente    @relation(fields: [asignacionOrigenId], references: [id])
   institucionDestino   Institucion          @relation(fields: [institucionDestinoId], references: [id])
@@ -119,15 +136,17 @@ model SolicitudClaseEspejo {
 }
 
 model RevisionSolicitud {
-  id          Int                        @id @default(autoincrement())
-  solicitudId Int                        @map("solicitud_id")
-  agenteId    Int                        @map("agente_id")
-  etapa       String
-  decision    String
-  comentario  String
-  revisadaEn  DateTime                   @map("revisada_en")
-  agente      AgenteInternacionalizacion @relation(fields: [agenteId], references: [id])
-  solicitud   SolicitudClaseEspejo       @relation(fields: [solicitudId], references: [id])
+  id            Int                        @id @default(autoincrement())
+  solicitudId   Int                        @map("solicitud_id")
+  agenteId      Int                        @map("agente_id")
+  etapa         String
+  decision      String
+  comentario    String
+  creadoEn      DateTime                   @default(now()) @map("creado_en")
+  actualizadoEn DateTime                   @default(now()) @updatedAt @map("actualizado_en")
+  revisadaEn    DateTime                   @map("revisada_en")
+  agente        AgenteInternacionalizacion @relation(fields: [agenteId], references: [id])
+  solicitud     SolicitudClaseEspejo       @relation(fields: [solicitudId], references: [id])
 
   @@map("REVISION_SOLICITUD")
 }
@@ -142,6 +161,8 @@ model ProyectoClaseEspejo {
   actividades   Actividad[]
   evaluaciones  Evaluacion[]
   evidencias    Evidencia[]
+  creadoEn      DateTime               @default(now()) @map("creado_en")
+  actualizadoEn DateTime               @default(now()) @updatedAt @map("actualizado_en")
   planificacion PlanificacionConjunta?
   solicitud     SolicitudClaseEspejo   @relation(fields: [solicitudId], references: [id])
   docentes      ProyectoDocente[]
@@ -155,6 +176,8 @@ model ProyectoDocente {
   proyectoId          Int                          @map("proyecto_id")
   asignacionDocenteId Int                          @map("asignacion_docente_id")
   rol                 String
+  creadoEn            DateTime                     @default(now()) @map("creado_en")
+  actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   participacionesPlan ParticipacionPlanificacion[]
   participacionesRep  ParticipacionReporte[]
   asignacionDocente   AsignacionDocente            @relation(fields: [asignacionDocenteId], references: [id])
@@ -171,7 +194,8 @@ model PlanificacionConjunta {
   metodologia        String
   plataforma         String
   estado             String
-  creadaEn           DateTime                     @map("creada_en")
+  creadoEn           DateTime                     @default(now()) @map("creado_en")
+  actualizadoEn      DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   participaciones    ParticipacionPlanificacion[]
   proyecto           ProyectoClaseEspejo          @relation(fields: [proyectoId], references: [id])
   reportes           ReportePlanificacion[]
@@ -185,6 +209,8 @@ model ParticipacionPlanificacion {
   proyectoDocenteId   Int                   @map("proyecto_docente_id")
   estatusConfirmacion String                @map("estatus_confirmacion")
   confirmadaEn        DateTime?             @map("confirmada_en")
+  creadoEn            DateTime              @default(now()) @map("creado_en")
+  actualizadoEn       DateTime              @default(now()) @updatedAt @map("actualizado_en")
   planificacion       PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
   proyectoDocente     ProyectoDocente       @relation(fields: [proyectoDocenteId], references: [id])
 
@@ -198,6 +224,8 @@ model ReportePlanificacion {
   calendario           String
   actividadesAcordadas String                @map("actividades_acordadas")
   generadoEn           DateTime              @map("generado_en")
+  creadoEn             DateTime              @default(now()) @map("creado_en")
+  actualizadoEn        DateTime              @default(now()) @updatedAt @map("actualizado_en")
   planificacion        PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
 
   @@map("REPORTE_PLANIFICACION")
@@ -212,6 +240,8 @@ model Sesion {
   estado        String
   evidencias    Evidencia[]
   reporte       ReporteClaseConjunta?
+  creadoEn      DateTime              @default(now()) @map("creado_en")
+  actualizadoEn DateTime              @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo   @relation(fields: [proyectoId], references: [id])
 
   @@map("SESION")
@@ -223,6 +253,8 @@ model Actividad {
   titulo        String
   instrucciones String
   fechaLimite   DateTime            @map("fecha_limite") @db.Date
+  creadoEn      DateTime            @default(now()) @map("creado_en")
+  actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
 
   @@map("ACTIVIDAD")
@@ -236,7 +268,8 @@ model ReporteClaseConjunta {
   incidencias             String
   acuerdosSiguienteSesion String                 @map("acuerdos_siguiente_sesion")
   estado                  String
-  creadoEn                DateTime               @map("creado_en")
+  creadoEn                DateTime               @default(now()) @map("creado_en")
+  actualizadoEn           DateTime               @default(now()) @updatedAt @map("actualizado_en")
   participaciones         ParticipacionReporte[]
   sesion                  Sesion                 @relation(fields: [sesionId], references: [id])
 
@@ -249,6 +282,8 @@ model ParticipacionReporte {
   proyectoDocenteId Int                  @map("proyecto_docente_id")
   observaciones     String
   confirmadoEn      DateTime?            @map("confirmado_en")
+  creadoEn          DateTime             @default(now()) @map("creado_en")
+  actualizadoEn     DateTime             @default(now()) @updatedAt @map("actualizado_en")
   proyectoDocente   ProyectoDocente      @relation(fields: [proyectoDocenteId], references: [id])
   reporteClase      ReporteClaseConjunta @relation(fields: [reporteClaseId], references: [id])
 
@@ -256,14 +291,16 @@ model ParticipacionReporte {
 }
 
 model Evidencia {
-  id           Int                 @id @default(autoincrement())
-  proyectoId   Int                 @map("proyecto_id")
-  sesionId     Int?                @map("sesion_id")
-  tipo         String
-  archivoUrl   String              @map("archivo_url")
-  registradaEn DateTime            @map("registrada_en")
-  proyecto     ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
-  sesion       Sesion?             @relation(fields: [sesionId], references: [id])
+  id            Int                 @id @default(autoincrement())
+  proyectoId    Int                 @map("proyecto_id")
+  sesionId      Int?                @map("sesion_id")
+  tipo          String
+  archivoUrl    String              @map("archivo_url")
+  registradaEn  DateTime            @map("registrada_en")
+  creadoEn      DateTime            @default(now()) @map("creado_en")
+  actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
+  proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  sesion        Sesion?             @relation(fields: [sesionId], references: [id])
 
   @@map("EVIDENCIA")
 }
@@ -274,6 +311,8 @@ model Evaluacion {
   instrumento   String
   resultado     String
   observaciones String
+  creadoEn      DateTime            @default(now()) @map("creado_en")
+  actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
 
   @@map("EVALUACION")
