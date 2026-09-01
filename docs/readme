@@ -35,6 +35,7 @@ La plataforma busca permitir que dos instituciones educativas puedan:
 * **JWT** para autenticación
 * **bcrypt** para manejo seguro de contraseñas
 * **class-validator / class-transformer**
+* **Nodemailer** para el envío de correos de invitación
 
 ## Frontend
 
@@ -53,6 +54,7 @@ ClasesEspejo/
 ├── backend/
 │   ├── src/
 │   │   ├── auth/
+│   │   ├── mail/
 │   │   ├── prisma/
 │   │   ├── app.module.ts
 │   │   └── main.ts
@@ -162,6 +164,21 @@ DATABASE_URL="postgresql://postgres:TU_CONTRASEÑA@localhost:5432/Clasesconjunta
 ```
 
 > Nunca subir contraseñas, claves JWT u otros secretos al repositorio.
+
+Además, para autenticación y envío de correos se utilizan:
+
+```env
+JWT_SECRET="clave-secreta"
+JWT_EXPIRES_IN="1d"
+INVITATION_EXPIRES_IN="7d"
+APP_URL="http://localhost:3000"
+SMTP_HOST="localhost"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER=""
+SMTP_PASS=""
+MAIL_FROM="no-reply@clasesespejo.local"
+```
 
 ---
 
@@ -311,21 +328,25 @@ backend/prisma/schema.prisma
 
 El backend utiliza autenticación mediante **JWT**.
 
-Actualmente existe un módulo de autenticación:
+El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el flujo de:
 
-```text
-backend/src/auth/
-```
+* Registro de un agente con su institución (FASE 1).
+* Inicio de sesión y generación de token JWT.
+* Invitación de docentes con envío de correo (FASE 2).
+* Activación de la cuenta del docente (FASE 3).
 
-El módulo contempla las operaciones principales de:
+### Endpoints
 
-* Registro de usuarios.
-* Inicio de sesión.
-* Generación de tokens JWT.
-* Protección de rutas.
-* Hash de contraseñas mediante bcrypt.
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
+| `POST` | `/auth/register` | Registra usuario + institución + agente | No |
+| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` | No |
+| `POST` | `/auth/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
+| `POST` | `/auth/activate` | Activa la cuenta estableciendo contraseña | No |
+| `GET` | `/health` | Health check del servicio | No |
 
-Las contraseñas **no deben almacenarse directamente**. Se utiliza `bcrypt` para generar hashes.
+Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
 
 ---
 
@@ -342,8 +363,27 @@ Content-Type: application/json
 
 ```json
 {
-  "nombre": "Institucion Prueba",
-  "email": "prueba@correo.com",
+  "nombres": "Juan",
+  "apellidos": "Pérez",
+  "correo": "agente@universidad.edu",
+  "password": "123456",
+  "nombreInstitucion": "Universidad de Prueba",
+  "pais": "México",
+  "correoInstitucional": "contacto@universidad.edu",
+  "cargo": "Coordinador de Internacionalización"
+}
+```
+
+Ejemplo de inicio de sesión:
+
+```http
+POST /auth/login
+Content-Type: application/json
+```
+
+```json
+{
+  "correo": "agente@universidad.edu",
   "password": "123456"
 }
 ```
@@ -423,6 +463,8 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Login
 * [x] JWT
 * [x] Hash de contraseñas
+* [x] Invitación de docentes por correo (Nodemailer)
+* [x] Activación de cuenta con token de invitación
 * [ ] Gestión completa de instituciones
 * [ ] Gestión completa de docentes
 * [ ] Gestión de materias
