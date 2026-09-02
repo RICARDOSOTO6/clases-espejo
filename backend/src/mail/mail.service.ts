@@ -19,8 +19,8 @@ export class MailService {
   }
 
   async sendInvitation(to: string, token: string): Promise<void> {
-    const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
-    const link = `${appUrl}/auth/activate?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:4200';
+    const link = `${frontendUrl}/activate?token=${token}`;
 
     await this.transporter.sendMail({
       from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',

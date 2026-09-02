@@ -1,0 +1,23 @@
+<div class="shell">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="auth-brand-mark" aria-hidden="true">CE</span>
+      <span class="auth-brand-name">Clases Espejo</span>
+    </div>
+    <div class="topbar-user">
+      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidos }}</span>
+      <button class="btn btn-secondary" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="card">
+      <h1>Panel del Docente</h1>
+      <p>
+        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidos }}</strong>.
+      </p>
+      <div class="role-badge">Docente</div>
+      <p class="muted">Los módulos de gestión se habilitarán en la siguiente fase.</p>
+    </section>
+  </main>
+</div>

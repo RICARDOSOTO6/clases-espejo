@@ -340,10 +340,11 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | Registra usuario + institución + agente | No |
-| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` | No |
-| `POST` | `/auth/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` + rol | No |
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
 | `POST` | `/auth/activate` | Activa la cuenta estableciendo contraseña | No |
+| `POST` | `/agentes/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `GET` | `/usuarios/me` | Perfil del usuario autenticado (rol, institución) | JWT |
 | `GET` | `/health` | Health check del servicio | No |
 
 Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
@@ -480,8 +481,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 
 ## Frontend
 
-* [ ] Interfaz completa
-* [ ] Autenticación
+* [x] Autenticación (login, registro, activación)
+* [x] Redirección por rol (guards)
+* [x] Panel del agente (invitar docente)
+* [x] Panel del docente (placeholder)
 * [ ] Gestión de usuarios
 * [ ] Gestión de instituciones
 * [ ] Gestión de docentes
@@ -489,6 +492,67 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [ ] Solicitudes
 * [ ] Clases espejo
 * [ ] Reportes
+
+---
+
+# 📅 Plan de desarrollo (metas semanales)
+
+> **Meta:** producto terminado en 8 semanas.
+> El **modelo de datos ya está completo** (20 tablas). Cada semana termina con un entregable **probable y visible**.
+> Al completar una semana, marca sus casillas con `[x]`.
+
+## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia
+- [ ] **Backend:** módulo `materias` (CRUD) + `asignaciones` (asignar docente a materia por periodo).
+- [ ] **Frontend:** panel del agente → listar/crear materias + pantalla de asignación.
+- [ ] **Entregable:** el agente da de alta materias y las asigna a docentes.
+
+## 🟢 Semana 2 — Catálogo: Docentes, Instituciones y panel real del agente
+- [ ] **Backend:** módulo `docentes` (CRUD) + `instituciones` (ver/editar la propia).
+- [ ] **Frontend:** panel del agente → lista de docentes invitados (estado pendiente/activo) + datos de institución.
+- [ ] **Entregable:** panel del agente funcional.
+
+## 🟡 Semana 3 — Solicitudes de clase espejo (lado docente)
+- [ ] **Backend:** módulo `solicitudes` (crear, listar las del docente, editar/cancelar si está pendiente).
+- [ ] **Frontend:** panel del docente → crear solicitud + listar "mis solicitudes".
+- [ ] **Entregable:** el docente crea y consulta solicitudes (estado *Pendiente*).
+
+## 🟡 Semana 4 — Revisión de solicitudes (lado agente)
+- [ ] **Backend:** módulo `revisiones` (aprobar/rechazar + motivo) + notificación de estado.
+- [ ] **Frontend:** panel del agente → revisar solicitudes (aprobar/rechazar) + el docente ve el estado.
+- [ ] **Entregable:** flujo de aprobación origen → destino completo.
+
+## 🟠 Semana 5 — Proyecto + Planificación conjunta
+- [ ] **Backend:** módulo `proyectos` (se crea al aprobar) + `planificaciones`.
+- [ ] **Frontend:** pantalla de planificación conjunta + reporte de planificación.
+- [ ] **Entregable:** solicitud aprobada → proyecto → planificación.
+
+## 🟠 Semana 6 — Sesiones, Actividades y Evidencias
+- [ ] **Backend:** módulos `sesiones`, `actividades`, `evidencias`.
+- [ ] **Frontend:** agenda de sesiones + actividades + subida de evidencias.
+- [ ] **Entregable:** el proyecto registra sesiones, actividades y evidencias.
+
+## 🔴 Semana 7 — Reportes y Evaluación
+- [ ] **Backend:** módulos `reportes` + `evaluaciones`.
+- [ ] **Frontend:** reporte de clase conjunta + evaluación final + cierre.
+- [ ] **Entregable:** ciclo completo hasta *Finalizado*.
+
+## 🔵 Semana 8 — Pulido, pruebas y despliegue
+- [ ] Recuperación de contraseña (reemplaza el placeholder actual).
+- [ ] Prueba integral del flujo completo (de registro a evaluación).
+- [ ] Corrección de bugs y validaciones.
+- [ ] Documentación final + build de producción.
+- [ ] **Entregable:** producto listo para presentar/entregar.
+
+---
+
+## 🧭 Guía para agentes / futuros desarrolladores
+
+- **Backend:** NestJS 11 + Prisma + PostgreSQL. Módulos en `backend/src/`.
+- **Frontend:** Angular 21 standalone + **signals** (modo zoneless) + guards. En `frontend/src/app/`.
+- El **schema** (`backend/prisma/schema.prisma`) ya contiene todas las tablas; solo falta la lógica de negocio.
+- Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
+- Endpoints ya existentes: ver la sección **"Autenticación"**.
+- Al final de cada semana, hacer un **commit** descriptivo.
 
 ---
 
