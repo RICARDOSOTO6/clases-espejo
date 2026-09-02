@@ -19,12 +19,68 @@
       <div class="role-badge agente">Agente de Internacionalización</div>
 
       <div class="card-actions">
-        <button class="btn btn-primary" (click)="openInvite()">
-          Invitar docente
-        </button>
+        <button class="btn btn-primary" (click)="openInvite()">Invitar docente</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Docentes de la institución</h2>
+      @if (docentes().length === 0) {
+        <p class="muted">Aún no hay docentes invitados.</p>
+      } @else {
+        <ul class="lista">
+          @for (d of docentes(); track d.id) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ nombreDocente(d) }}</strong>
+                <span class="muted"> · {{ d.docente.especialidad }}</span>
+              </div>
+              <span class="estado" [class.pendiente]="!d.activo">
+                {{ d.activo ? 'Activo' : 'Pendiente de activar' }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Materias</h2>
+        <button class="btn btn-primary" (click)="openNuevaMateria()">Nueva materia</button>
       </div>
 
-      <p class="muted">Los módulos de gestión se habilitarán en la siguiente fase.</p>
+      @if (materias().length === 0) {
+        <p class="muted">No hay materias registradas.</p>
+      } @else {
+        @for (m of materias(); track m.id) {
+          <div class="materia">
+            <div class="materia-head">
+              <div>
+                <strong>{{ m.nombre }}</strong>
+                <span class="muted"> ({{ m.clave }})</span>
+              </div>
+              <div class="materia-acciones">
+                <button class="btn btn-secondary" (click)="openAsignar(m)">Asignar</button>
+                <button class="btn btn-secondary" (click)="openEditarMateria(m)">Editar</button>
+                <button class="btn btn-secondary" (click)="eliminarMateria(m)">Eliminar</button>
+              </div>
+            </div>
+            <p class="muted">{{ m.programaEducativo }} · {{ m.descripcion }}</p>
+
+            @if (asignacionesDeMateria(m.id).length > 0) {
+              <ul class="lista">
+                @for (a of asignacionesDeMateria(m.id); track a.id) {
+                  <li class="lista-item">
+                    <span>{{ nombreDocente(a.docenteInstitucion) }} · {{ a.periodoEscolar }}</span>
+                    <button class="link-button" (click)="quitarAsignacion(a)">Quitar</button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      }
     </section>
   </main>
 </div>
@@ -77,6 +133,85 @@
         [disabled]="inviteForm.invalid || inviteLoading()"
       >
         {{ inviteLoading() ? 'Enviando...' : 'Enviar invitación' }}
+      </button>
+    </form>
+  </app-modal>
+}
+
+@if (showMateriaModal) {
+  <app-modal
+    [title]="editandoMateria ? 'Editar materia' : 'Nueva materia'"
+    (close)="closeMateriaModal()"
+  >
+    <form [formGroup]="materiaForm" (ngSubmit)="submitMateria()">
+      <div class="form-field">
+        <label for="m-clave">Clave</label>
+        <input id="m-clave" type="text" formControlName="clave" />
+      </div>
+      <div class="form-field">
+        <label for="m-nombre">Nombre</label>
+        <input id="m-nombre" type="text" formControlName="nombre" />
+      </div>
+      <div class="form-field">
+        <label for="m-programa">Programa educativo</label>
+        <input id="m-programa" type="text" formControlName="programaEducativo" />
+      </div>
+      <div class="form-field">
+        <label for="m-descripcion">Descripción</label>
+        <input id="m-descripcion" type="text" formControlName="descripcion" />
+      </div>
+
+      @if (materiaError()) {
+        <div class="alert alert-error">{{ materiaError() }}</div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="materiaForm.invalid || materiaLoading()"
+      >
+        {{ materiaLoading() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </form>
+  </app-modal>
+}
+
+@if (showAsignarModal) {
+  <app-modal
+    [title]="'Asignar docente · ' + (materiaAsignar?.nombre ?? '')"
+    (close)="closeAsignarModal()"
+  >
+    <form [formGroup]="asignarForm" (ngSubmit)="submitAsignar()">
+      <div class="form-field">
+        <label for="a-docente">Docente</label>
+        <select id="a-docente" formControlName="docenteInstitucionId">
+          <option [ngValue]="null" disabled>Selecciona un docente</option>
+          @for (d of docentes(); track d.id) {
+            <option [ngValue]="d.id">{{ nombreDocente(d) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="a-periodo">Periodo escolar</label>
+        <input
+          id="a-periodo"
+          type="text"
+          formControlName="periodoEscolar"
+          placeholder="Ej. 2026-1"
+        />
+      </div>
+
+      @if (asignarError()) {
+        <div class="alert alert-error">{{ asignarError() }}</div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="asignarForm.invalid || asignarLoading()"
+      >
+        {{ asignarLoading() ? 'Asignando...' : 'Asignar docente' }}
       </button>
     </form>
   </app-modal>

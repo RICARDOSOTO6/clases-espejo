@@ -501,10 +501,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 > El **modelo de datos ya está completo** (20 tablas). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
-## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia
-- [ ] **Backend:** módulo `materias` (CRUD) + `asignaciones` (asignar docente a materia por periodo).
-- [ ] **Frontend:** panel del agente → listar/crear materias + pantalla de asignación.
-- [ ] **Entregable:** el agente da de alta materias y las asigna a docentes.
+## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅
+- [x] **Backend:** módulo `materias` (CRUD) + `asignaciones` (asignar docente a materia por periodo).
+- [x] **Frontend:** panel del agente → listar/crear materias + pantalla de asignación.
+- [x] **Entregable:** el agente da de alta materias y las asigna a docentes.
 
 ## 🟢 Semana 2 — Catálogo: Docentes, Instituciones y panel real del agente
 - [ ] **Backend:** módulo `docentes` (CRUD) + `instituciones` (ver/editar la propia).

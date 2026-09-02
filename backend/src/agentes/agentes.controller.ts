@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AgentesService } from './agentes.service';
 import { InviteDocenteDto } from './dto/invite-docente.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -15,5 +15,11 @@ export class AgentesController {
     @Body() dto: InviteDocenteDto,
   ) {
     return this.agentesService.invitarDocente(agenteId, dto);
+  }
+
+  @Get('docentes')
+  @UseGuards(JwtAuthGuard)
+  listarDocentes(@CurrentUser('sub') agenteId: number) {
+    return this.agentesService.listarDocentes(agenteId);
   }
 }
