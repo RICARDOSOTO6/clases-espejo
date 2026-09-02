@@ -8,18 +8,23 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { InviteDocenteDto } from './dto/invite-docente.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+
+type UsuarioSeguro = {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  activo: boolean;
+};
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -67,16 +72,20 @@ export class AuthService {
       return { usuario };
     });
 
-    return this.sanitizeUsuario(usuario);
+    return {
+      mensaje: 'Registro exitoso',
+      usuario: this.toUsuarioSeguro(usuario, 'AGENTE'),
+    };
   }
 
   async login(dto: LoginDto) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { correo: dto.correo },
+      include: { agente: true, docente: true },
     });
 
     if (!usuario || !usuario.passwordHash) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
     if (!usuario.activo) {
@@ -87,7 +96,7 @@ export class AuthService {
 
     const coincide = await bcrypt.compare(dto.password, usuario.passwordHash);
     if (!coincide) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
     const access_token = await this.jwtService.signAsync({
@@ -95,84 +104,11 @@ export class AuthService {
       correo: usuario.correo,
     });
 
-    return { access_token, usuario: this.sanitizeUsuario(usuario) };
-  }
-
-  /**
-   * FASE 2: El agente (autenticado) invita a un docente.
-   * `agenteId` es el id de Usuario del agente, obtenido del JWT.
-   */
-  async invitarDocente(agenteId: number, dto: InviteDocenteDto) {
-    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
-      where: { usuarioId: agenteId },
-    });
-    if (!agente) {
-      throw new UnauthorizedException(
-        'Solo un agente de internacionalización puede invitar docentes',
-      );
-    }
-
-    const { usuario, token } = await this.prisma.$transaction(async (tx) => {
-      let usuario = await tx.usuario.findUnique({
-        where: { correo: dto.email },
-      });
-
-      if (!usuario) {
-        usuario = await tx.usuario.create({
-          data: {
-            nombres: dto.nombres,
-            apellidos: dto.apellidos,
-            correo: dto.email,
-            activo: false,
-          },
-        });
-      }
-
-      let docente = await tx.docente.findUnique({
-        where: { usuarioId: usuario.id },
-      });
-
-      if (!docente) {
-        docente = await tx.docente.create({
-          data: {
-            usuarioId: usuario.id,
-            gradoAcademico: dto.gradoAcademico,
-            especialidad: dto.especialidad,
-          },
-        });
-      }
-
-      await tx.docenteInstitucion.create({
-        data: {
-          docenteId: docente.id,
-          institucionId: agente.institucionId,
-          numeroEmpleado: dto.numeroEmpleado,
-          activo: true,
-        },
-      });
-
-      const token = await this.jwtService.signAsync(
-        { sub: usuario.id, type: 'invitacion' },
-        { expiresIn: (process.env.INVITATION_EXPIRES_IN ?? '7d') as any },
-      );
-
-      const tokenExpiracion = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      );
-
-      await tx.usuario.update({
-        where: { id: usuario.id },
-        data: { tokenInvitacion: token, tokenExpiracion },
-      });
-
-      return { usuario, token };
-    });
-
-    await this.mailService.sendInvitation(dto.email, token);
+    const rol = usuario.agente ? 'AGENTE' : usuario.docente ? 'DOCENTE' : null;
 
     return {
-      mensaje: 'Invitación enviada al docente',
-      correo: usuario.correo,
+      access_token,
+      usuario: this.toUsuarioSeguro(usuario, rol),
     };
   }
 
@@ -227,21 +163,14 @@ export class AuthService {
     };
   }
 
-  private sanitizeUsuario(usuario: {
-    id: number;
-    nombres: string;
-    apellidos: string;
-    correo: string;
-    activo: boolean;
-    creadoEn: Date;
-  }) {
+  private toUsuarioSeguro(usuario: UsuarioSeguro, rol: string | null) {
     return {
       id: usuario.id,
       nombres: usuario.nombres,
       apellidos: usuario.apellidos,
       correo: usuario.correo,
       activo: usuario.activo,
-      creadoEn: usuario.creadoEn,
+      rol,
     };
   }
 }

@@ -1,0 +1,97 @@
+<div class="auth-shell">
+  <main class="auth-card">
+    <header class="auth-brand">
+      <span class="auth-brand-mark" aria-hidden="true">CE</span>
+      <span class="auth-brand-name">Clases Espejo</span>
+    </header>
+
+    <h1 class="auth-title">Iniciar sesión</h1>
+    <p class="auth-subtitle">Plataforma de Clases Espejo</p>
+
+    @if (success) {
+      <div class="alert alert-success" role="status">
+        Cuenta creada correctamente. Ya puedes iniciar sesión.
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-field">
+        <label for="correo">Correo</label>
+        <input
+          id="correo"
+          type="email"
+          formControlName="correo"
+          placeholder="tucorreo@institucion.edu"
+          autocomplete="email"
+        />
+        @if (mensajeDe('correo'); as msg) {
+          <p class="field-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Contraseña</label>
+        <div class="password-field">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="••••••"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showPassword = !showPassword"
+            [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+            [attr.aria-pressed]="showPassword"
+          >
+            @if (showPassword) {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.5 13.5 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+            } @else {
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+          </button>
+        </div>
+        @if (mensajeDe('password'); as msg) {
+          <p class="field-error">{{ msg }}</p>
+        }
+      </div>
+
+      @if (error()) {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading()">
+        @if (loading()) {
+          <span class="spinner" aria-hidden="true"></span>
+        }
+        {{ loading() ? 'Entrando...' : 'Entrar' }}
+      </button>
+    </form>
+
+    <p class="auth-alt">
+      ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
+    </p>
+
+    <p class="auth-alt">
+      <button type="button" class="link-button" (click)="toggleRecoveryHint()">
+        ¿Olvidaste tu contraseña?
+      </button>
+    </p>
+
+    @if (showRecoveryHint) {
+      <div class="alert alert-warning" role="status">
+        Contacta a tu agente de internacionalización para restablecer tu contraseña.
+      </div>
+    }
+  </main>
+</div>
