@@ -452,6 +452,83 @@ select.ng-invalid.ng-touched:focus {
   padding: 0.7rem 1.5rem;
 }
 
+.card + .card {
+  margin-top: var(--space-5);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.card-head .btn-primary {
+  width: auto;
+  padding: 0.55rem 1.25rem;
+}
+
+.lista {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.lista-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.lista-item:last-child {
+  border-bottom: none;
+}
+
+.estado {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.estado.pendiente {
+  color: var(--warning);
+}
+
+.materia {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.materia:last-child {
+  border-bottom: none;
+}
+
+.materia-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.materia-acciones {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.materia-acciones .btn-secondary {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8125rem;
+}
+
 .role-badge {
   display: inline-flex;
   align-items: center;

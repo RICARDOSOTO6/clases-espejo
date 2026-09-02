@@ -89,4 +89,24 @@ export class AgentesService {
       correo: usuario.correo,
     };
   }
+
+  /** Lista los docentes vinculados a la institución del agente. */
+  async listarDocentes(agenteId: number) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId: agenteId },
+    });
+    if (!agente) {
+      throw new UnauthorizedException(
+        'Solo un agente de internacionalización puede consultar docentes',
+      );
+    }
+
+    return this.prisma.docenteInstitucion.findMany({
+      where: { institucionId: agente.institucionId },
+      include: {
+        docente: { include: { usuario: true } },
+      },
+      orderBy: { id: 'desc' },
+    });
+  }
 }
