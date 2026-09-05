@@ -15,7 +15,9 @@ import { ActivateAccountDto } from './dto/activate-account.dto';
 type UsuarioSeguro = {
   id: number;
   nombres: string;
-  apellidos: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  dni: string;
   correo: string;
   activo: boolean;
 };
@@ -32,11 +34,11 @@ export class AuthService {
    * como Agente de Internacionalización de esa institución.
    */
   async register(dto: RegisterDto) {
-    const existente = await this.prisma.usuario.findUnique({
-      where: { correo: dto.correo },
+    const existente = await this.prisma.usuario.findFirst({
+      where: { OR: [{ correo: dto.correo }, { dni: dto.dni }] },
     });
     if (existente) {
-      throw new ConflictException('Ya existe un usuario con ese correo');
+      throw new ConflictException('Ya existe un usuario con ese correo o DNI');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -45,7 +47,9 @@ export class AuthService {
       const usuario = await tx.usuario.create({
         data: {
           nombres: dto.nombres,
-          apellidos: dto.apellidos,
+          apellidoPaterno: dto.apellidoPaterno,
+          apellidoMaterno: dto.apellidoMaterno,
+          dni: dto.dni,
           correo: dto.correo,
           passwordHash,
           activo: true,
@@ -112,49 +116,92 @@ export class AuthService {
     };
   }
 
-  /** Valida el token de invitación (para mostrar el formulario de contraseña). */
+  /** Valida el token de invitación (para mostrar el formulario de registro). */
   async validarTokenInvitacion(token: string) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { tokenInvitacion: token },
+    const invitacion = await this.prisma.invitacion.findUnique({
+      where: { token },
     });
 
-    if (!usuario) {
+    if (!invitacion) {
       throw new NotFoundException('Token de invitación no válido');
     }
-
-    if (usuario.tokenExpiracion && usuario.tokenExpiracion < new Date()) {
-      throw new BadRequestException('El token de invitación ha expirado');
+    if (invitacion.usadaEn) {
+      throw new BadRequestException('La invitación ya fue usada');
+    }
+    if (invitacion.expiracion < new Date()) {
+      throw new BadRequestException('La invitación ha expirado');
     }
 
-    return { valido: true, correo: usuario.correo };
+    return {
+      valido: true,
+      correo: invitacion.correo,
+      numeroEmpleado: invitacion.numeroEmpleado,
+    };
   }
 
   /**
-   * FASE 3: El docente activa su cuenta estableciendo su contraseña.
+   * FASE 3: El docente se registra con el token de invitación y crea su cuenta.
    */
   async activarCuenta(dto: ActivateAccountDto) {
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { tokenInvitacion: dto.token },
+    const invitacion = await this.prisma.invitacion.findUnique({
+      where: { token: dto.token },
     });
 
-    if (!usuario) {
+    if (!invitacion) {
       throw new NotFoundException('Token de invitación no válido');
     }
+    if (invitacion.usadaEn) {
+      throw new BadRequestException('La invitación ya fue usada');
+    }
+    if (invitacion.expiracion < new Date()) {
+      throw new BadRequestException('La invitación ha expirado');
+    }
 
-    if (usuario.tokenExpiracion && usuario.tokenExpiracion < new Date()) {
-      throw new BadRequestException('El token de invitación ha expirado');
+    const existente = await this.prisma.usuario.findFirst({
+      where: { OR: [{ correo: invitacion.correo }, { dni: dto.dni }] },
+    });
+    if (existente) {
+      throw new ConflictException('Ya existe un usuario con ese correo o DNI');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    await this.prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        passwordHash,
-        activo: true,
-        tokenInvitacion: null,
-        tokenExpiracion: null,
-      },
+    const { usuario } = await this.prisma.$transaction(async (tx) => {
+      const usuario = await tx.usuario.create({
+        data: {
+          nombres: dto.nombres,
+          apellidoPaterno: dto.apellidoPaterno,
+          apellidoMaterno: dto.apellidoMaterno,
+          dni: dto.dni,
+          correo: invitacion.correo,
+          passwordHash,
+          activo: true,
+        },
+      });
+
+      const docente = await tx.docente.create({
+        data: {
+          usuarioId: usuario.id,
+          gradoAcademico: dto.gradoAcademico,
+          especialidad: dto.especialidad,
+        },
+      });
+
+      await tx.docenteInstitucion.create({
+        data: {
+          docenteId: docente.id,
+          institucionId: invitacion.institucionId,
+          numeroEmpleado: invitacion.numeroEmpleado,
+          activo: true,
+        },
+      });
+
+      await tx.invitacion.update({
+        where: { id: invitacion.id },
+        data: { usadaEn: new Date() },
+      });
+
+      return { usuario };
     });
 
     return {
@@ -167,7 +214,9 @@ export class AuthService {
     return {
       id: usuario.id,
       nombres: usuario.nombres,
-      apellidos: usuario.apellidos,
+      apellidoPaterno: usuario.apellidoPaterno,
+      apellidoMaterno: usuario.apellidoMaterno,
+      dni: usuario.dni,
       correo: usuario.correo,
       activo: usuario.activo,
       rol,

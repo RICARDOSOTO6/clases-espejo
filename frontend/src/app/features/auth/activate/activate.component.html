@@ -1,12 +1,12 @@
 <div class="auth-shell">
-  <main class="auth-card">
+  <main class="auth-card wide">
     <header class="auth-brand">
       <span class="auth-brand-mark" aria-hidden="true">CE</span>
       <span class="auth-brand-name">Clases Espejo</span>
     </header>
 
     @if (success()) {
-      <h1 class="auth-title">¡Cuenta activada!</h1>
+      <h1 class="auth-title">¡Cuenta creada!</h1>
       <p class="auth-subtitle">
         Tu cuenta se activó correctamente. Ya puedes iniciar sesión.
       </p>
@@ -20,18 +20,70 @@
         Si necesitas ayuda, contacta a tu agente de internacionalización.
       </p>
     } @else {
-      <h1 class="auth-title">Activa tu cuenta</h1>
+      <h1 class="auth-title">Completa tu registro</h1>
       <p class="auth-subtitle">
         @if (correo()) {
-          Establece una contraseña para <strong>{{ correo() }}</strong>.
+          Has sido invitado como docente. Completa tus datos para
+          <strong>{{ correo() }}</strong>.
         } @else {
-          Establece una contraseña para completar tu registro.
+          Completa tus datos para terminar tu registro.
         }
       </p>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="row">
+          <div class="col form-field">
+            <label for="nombres">Nombres</label>
+            <input id="nombres" type="text" formControlName="nombres" />
+            @if (mensajeDe('nombres'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+          <div class="col form-field">
+            <label for="apellidoPaterno">Apellido paterno</label>
+            <input id="apellidoPaterno" type="text" formControlName="apellidoPaterno" />
+            @if (mensajeDe('apellidoPaterno'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col form-field">
+            <label for="apellidoMaterno">Apellido materno</label>
+            <input id="apellidoMaterno" type="text" formControlName="apellidoMaterno" />
+            @if (mensajeDe('apellidoMaterno'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+          <div class="col form-field">
+            <label for="dni">DNI</label>
+            <input id="dni" type="text" formControlName="dni" />
+            @if (mensajeDe('dni'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col form-field">
+            <label for="gradoAcademico">Grado académico</label>
+            <input id="gradoAcademico" type="text" formControlName="gradoAcademico" />
+            @if (mensajeDe('gradoAcademico'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+          <div class="col form-field">
+            <label for="especialidad">Especialidad</label>
+            <input id="especialidad" type="text" formControlName="especialidad" />
+            @if (mensajeDe('especialidad'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+
         <div class="form-field">
-          <label for="password">Nueva contraseña</label>
+          <label for="password">Contraseña</label>
           <div class="password-field">
             <input
               id="password"
@@ -92,7 +144,7 @@
           @if (loading()) {
             <span class="spinner" aria-hidden="true"></span>
           }
-          {{ loading() ? 'Activando...' : 'Activar cuenta' }}
+          {{ loading() ? 'Creando cuenta...' : 'Crear mi cuenta' }}
         </button>
       </form>
     }

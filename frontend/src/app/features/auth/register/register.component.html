@@ -26,14 +26,40 @@
         </div>
         <div class="col">
           <div class="form-field">
-            <label for="apellidos">Apellidos</label>
+            <label for="apellidoPaterno">Apellido paterno</label>
             <input
-              id="apellidos"
+              id="apellidoPaterno"
               type="text"
-              formControlName="apellidos"
+              formControlName="apellidoPaterno"
               autocomplete="family-name"
             />
-            @if (mensajeDe('apellidos'); as msg) {
+            @if (mensajeDe('apellidoPaterno'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="form-field">
+            <label for="apellidoMaterno">Apellido materno</label>
+            <input
+              id="apellidoMaterno"
+              type="text"
+              formControlName="apellidoMaterno"
+              autocomplete="family-name"
+            />
+            @if (mensajeDe('apellidoMaterno'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-field">
+            <label for="dni">DNI</label>
+            <input id="dni" type="text" formControlName="dni" autocomplete="off" />
+            @if (mensajeDe('dni'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
           </div>
@@ -41,7 +67,7 @@
       </div>
 
       <div class="form-field">
-        <label for="correo">Correo personal</label>
+        <label for="correo">Correo</label>
         <input
           id="correo"
           type="email"

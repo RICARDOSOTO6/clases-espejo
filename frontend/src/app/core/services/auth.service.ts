@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import {
+  ActivateAccountDto,
   LoginResponse,
   Perfil,
   RegisterDto,
@@ -49,20 +50,20 @@ export class AuthService {
 
   validarTokenInvitacion(
     token: string,
-  ): Observable<{ valido: boolean; correo: string }> {
-    return this.http.get<{ valido: boolean; correo: string }>(
-      `${API_URL}/auth/activate`,
-      { params: { token } },
-    );
+  ): Observable<{ valido: boolean; correo: string; numeroEmpleado: string }> {
+    return this.http.get<{
+      valido: boolean;
+      correo: string;
+      numeroEmpleado: string;
+    }>(`${API_URL}/auth/activate`, { params: { token } });
   }
 
   activarCuenta(
-    token: string,
-    password: string,
+    dto: ActivateAccountDto,
   ): Observable<{ mensaje: string; correo: string }> {
     return this.http.post<{ mensaje: string; correo: string }>(
       `${API_URL}/auth/activate`,
-      { token, password },
+      dto,
     );
   }
 

@@ -10,7 +10,8 @@ export interface Materia {
 export interface UsuarioDocente {
   id: number;
   nombres: string;
-  apellidos: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
   correo: string;
 }
 

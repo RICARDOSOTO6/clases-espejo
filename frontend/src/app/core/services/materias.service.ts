@@ -38,6 +38,22 @@ export class MateriasService {
     return this.http.get<DocenteInstitucion[]>(`${API_URL}/agentes/docentes`);
   }
 
+  cambiarEstadoDocente(
+    id: number,
+    activo: boolean,
+  ): Observable<DocenteInstitucion> {
+    return this.http.patch<DocenteInstitucion>(
+      `${API_URL}/agentes/docentes/${id}/estado`,
+      { activo },
+    );
+  }
+
+  eliminarDocente(id: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(
+      `${API_URL}/agentes/docentes/${id}`,
+    );
+  }
+
   listarAsignaciones(): Observable<Asignacion[]> {
     return this.http.get<Asignacion[]>(`${API_URL}/asignaciones`);
   }

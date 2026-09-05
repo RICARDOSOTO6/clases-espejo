@@ -10,7 +10,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { AgentesService } from '../../core/services/agentes.service';
 import { MateriasService } from '../../core/services/materias.service';
-import { InviteDocenteDto } from '../../core/models/auth.models';
+import { InstitucionesService } from '../../core/services/instituciones.service';
+import { Institucion, InviteDocenteDto } from '../../core/models/auth.models';
 import {
   Asignacion,
   DocenteInstitucion,
@@ -27,6 +28,7 @@ export class AgenteComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly agentes = inject(AgentesService);
   private readonly materiasService = inject(MateriasService);
+  private readonly institucionesService = inject(InstitucionesService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -39,11 +41,7 @@ export class AgenteComponent implements OnInit {
   inviteSuccess = signal<string | null>(null);
 
   inviteForm = this.fb.group({
-    nombres: ['', Validators.required],
-    apellidos: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    gradoAcademico: ['', Validators.required],
-    especialidad: ['', Validators.required],
+    correo: ['', [Validators.required, Validators.email]],
     numeroEmpleado: ['', Validators.required],
   });
 
@@ -51,6 +49,18 @@ export class AgenteComponent implements OnInit {
   docentes = signal<DocenteInstitucion[]>([]);
   materias = signal<Materia[]>([]);
   asignaciones = signal<Asignacion[]>([]);
+  institucion = signal<Institucion | null>(null);
+
+  // --- Modal institución ---
+  showInstitucionModal = false;
+  institucionLoading = signal(false);
+  institucionError = signal<string | null>(null);
+
+  institucionForm = this.fb.group({
+    nombre: ['', Validators.required],
+    pais: ['', Validators.required],
+    correoInstitucional: ['', [Validators.required, Validators.email]],
+  });
 
   // --- Modal materia ---
   showMateriaModal = false;
@@ -96,12 +106,62 @@ export class AgenteComponent implements OnInit {
       next: (r) => this.asignaciones.set(r),
       error: () => this.asignaciones.set([]),
     });
+    this.institucionesService.obtenerMia().subscribe({
+      next: (r) => this.institucion.set(r),
+      error: () => this.institucion.set(null),
+    });
   }
 
   // --- Invitar docente ---
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  // --- Institución ---
+  openEditarInstitucion(): void {
+    const inst = this.institucion();
+    this.institucionForm.patchValue({
+      nombre: inst?.nombre ?? '',
+      pais: inst?.pais ?? '',
+      correoInstitucional: inst?.correoInstitucional ?? '',
+    });
+    this.institucionError.set(null);
+    this.showInstitucionModal = true;
+  }
+
+  closeInstitucionModal(): void {
+    this.showInstitucionModal = false;
+  }
+
+  submitInstitucion(): void {
+    if (this.institucionLoading()) return;
+    if (this.institucionForm.invalid) return;
+
+    this.institucionLoading.set(true);
+    this.institucionError.set(null);
+
+    this.institucionesService
+      .actualizarMia(
+        this.institucionForm.value as {
+          nombre: string;
+          pais: string;
+          correoInstitucional: string;
+        },
+      )
+      .subscribe({
+        next: (r) => {
+          this.institucionLoading.set(false);
+          this.showInstitucionModal = false;
+          this.institucion.set(r);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.institucionLoading.set(false);
+          this.institucionError.set(
+            extraerMensajeError(err, 'Error al guardar la institución'),
+          );
+        },
+      });
   }
 
   openInvite(): void {
@@ -128,9 +188,10 @@ export class AgenteComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.inviteLoading.set(false);
-          this.inviteSuccess.set(`Invitación enviada a ${res.correo}`);
           this.inviteForm.reset();
+          this.showInviteModal = false;
           this.cargarDatos();
+          window.alert(`Invitación enviada a ${res.correo}`);
         },
         error: (err: HttpErrorResponse) => {
           this.inviteLoading.set(false);
@@ -139,6 +200,28 @@ export class AgenteComponent implements OnInit {
           );
         },
       });
+  }
+
+  // --- Estado y eliminación de docentes ---
+  cambiarEstadoDocente(d: DocenteInstitucion): void {
+    this.materiasService.cambiarEstadoDocente(d.id, !d.activo).subscribe({
+      next: () => this.cargarDatos(),
+      error: (err: HttpErrorResponse) =>
+        window.alert(
+          extraerMensajeError(err, 'Error al cambiar el estado del docente'),
+        ),
+    });
+  }
+
+  eliminarDocente(d: DocenteInstitucion): void {
+    if (!window.confirm(`¿Eliminar al docente "${this.nombreDocente(d)}"?`)) {
+      return;
+    }
+    this.materiasService.eliminarDocente(d.id).subscribe({
+      next: () => this.cargarDatos(),
+      error: (err: HttpErrorResponse) =>
+        window.alert(extraerMensajeError(err, 'Error al eliminar el docente')),
+    });
   }
 
   // --- Materias ---
@@ -263,7 +346,7 @@ export class AgenteComponent implements OnInit {
   // --- Helpers ---
   nombreDocente(di: DocenteInstitucion): string {
     const u = di.docente?.usuario;
-    return u ? `${u.nombres} ${u.apellidos}` : 'Docente';
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}` : 'Docente';
   }
 
   asignacionesDeMateria(materiaId: number): Asignacion[] {
