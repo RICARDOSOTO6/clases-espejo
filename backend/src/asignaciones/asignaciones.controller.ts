@@ -23,6 +23,11 @@ export class AsignacionesController {
     return this.asignacionesService.listar(agenteId);
   }
 
+  @Get('mias')
+  listarMias(@CurrentUser('sub') usuarioId: number) {
+    return this.asignacionesService.listarMias(usuarioId);
+  }
+
   @Post()
   crear(@CurrentUser('sub') agenteId: number, @Body() dto: CreateAsignacionDto) {
     return this.asignacionesService.crear(agenteId, dto);

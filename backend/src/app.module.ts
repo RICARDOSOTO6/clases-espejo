@@ -8,6 +8,8 @@ import { AgentesModule } from './agentes/agentes.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { MateriasModule } from './materias/materias.module';
 import { AsignacionesModule } from './asignaciones/asignaciones.module';
+import { InstitucionesModule } from './instituciones/instituciones.module';
+import { SolicitudesModule } from './solicitudes/solicitudes.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { AsignacionesModule } from './asignaciones/asignaciones.module';
     UsuariosModule,
     MateriasModule,
     AsignacionesModule,
+    InstitucionesModule,
+    SolicitudesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

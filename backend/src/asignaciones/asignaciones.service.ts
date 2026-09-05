@@ -62,6 +62,25 @@ export class AsignacionesService {
     return { mensaje: 'Asignación eliminada' };
   }
 
+  async listarMias(usuarioId: number) {
+    const docente = await this.prisma.docente.findUnique({
+      where: { usuarioId },
+    });
+    if (!docente) {
+      throw new UnauthorizedException(
+        'Solo un docente puede consultar sus asignaciones',
+      );
+    }
+    return this.prisma.asignacionDocente.findMany({
+      where: { docenteInstitucion: { docenteId: docente.id } },
+      include: {
+        materia: true,
+        docenteInstitucion: { include: { institucion: true } },
+      },
+      orderBy: { id: 'desc' },
+    });
+  }
+
   private async getAgente(agenteId: number) {
     const agente = await this.prisma.agenteInternacionalizacion.findUnique({
       where: { usuarioId: agenteId },

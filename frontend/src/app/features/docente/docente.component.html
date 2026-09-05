@@ -5,7 +5,7 @@
       <span class="auth-brand-name">Clases Espejo</span>
     </div>
     <div class="topbar-user">
-      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidos }}</span>
+      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
       <button class="btn btn-secondary" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
@@ -14,10 +14,113 @@
     <section class="card">
       <h1>Panel del Docente</h1>
       <p>
-        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidos }}</strong>.
+        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</strong>.
       </p>
       <div class="role-badge">Docente</div>
-      <p class="muted">Los módulos de gestión se habilitarán en la siguiente fase.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Mis solicitudes de clase espejo</h2>
+        <button class="btn btn-primary" (click)="openNueva()">Nueva solicitud</button>
+      </div>
+
+      @if (solicitudes().length === 0) {
+        <p class="muted">Aún no has creado solicitudes de clase espejo.</p>
+      } @else {
+        <ul class="lista">
+          @for (s of solicitudes(); track s.id) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ s.titulo }}</strong>
+                <span class="muted"> → {{ s.institucionDestino.nombre }}</span>
+                <div class="muted">
+                  {{ s.asignacionOrigen.materia.nombre }} · {{ formatearFecha(s.fechaPropuesta) }}
+                </div>
+              </div>
+              <div class="lista-acciones">
+                <span class="estado" [class.pendiente]="s.estado === 'PENDIENTE'">
+                  {{ estadoLabel(s) }}
+                </span>
+                @if (s.estado === 'PENDIENTE') {
+                  <button class="btn btn-secondary" (click)="openEditar(s)">Editar</button>
+                  <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Cancelar</button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
     </section>
   </main>
 </div>
+
+@if (showSolicitudModal) {
+  <app-modal
+    [title]="editandoSolicitud ? 'Editar solicitud' : 'Nueva solicitud'"
+    (close)="closeSolicitudModal()"
+  >
+    <form [formGroup]="solicitudForm" (ngSubmit)="submitSolicitud()">
+      <div class="form-field">
+        <label for="s-origen">Materia de origen (tu asignación)</label>
+        <select id="s-origen" formControlName="asignacionOrigenId">
+          <option [ngValue]="null" disabled>Selecciona una asignación</option>
+          @for (a of asignaciones(); track a.id) {
+            <option [ngValue]="a.id">{{ nombreAsignacion(a) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="s-destino">Institución destino</label>
+        <select
+          id="s-destino"
+          formControlName="institucionDestinoId"
+          (change)="onDestinoChange()"
+        >
+          <option [ngValue]="null" disabled>Selecciona una institución</option>
+          @for (i of instituciones(); track i.id) {
+            <option [ngValue]="i.id">{{ i.nombre }} ({{ i.pais }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="s-materia-destino">Materia destino (opcional)</label>
+        <select id="s-materia-destino" formControlName="materiaDestinoId">
+          <option [ngValue]="null">— Sin materia destino —</option>
+          @for (m of materiasDestino(); track m.id) {
+            <option [ngValue]="m.id">{{ m.nombre }} ({{ m.clave }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="s-titulo">Título</label>
+        <input id="s-titulo" type="text" formControlName="titulo" />
+      </div>
+
+      <div class="form-field">
+        <label for="s-objetivo">Objetivo</label>
+        <input id="s-objetivo" type="text" formControlName="objetivo" />
+      </div>
+
+      <div class="form-field">
+        <label for="s-fecha">Fecha propuesta</label>
+        <input id="s-fecha" type="date" formControlName="fechaPropuesta" />
+      </div>
+
+      @if (solicitudError()) {
+        <div class="alert alert-error">{{ solicitudError() }}</div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="solicitudForm.invalid || solicitudLoading()"
+      >
+        {{ solicitudLoading() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </form>
+  </app-modal>
+}
