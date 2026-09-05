@@ -1,1 +1,15 @@
 <router-outlet />
+
+<button
+  class="theme-toggle"
+  type="button"
+  (click)="theme.toggle()"
+  [attr.aria-label]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+  [attr.title]="theme.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+>
+  @if (theme.isDark()) {
+    <span aria-hidden="true">☀️</span>
+  } @else {
+    <span aria-hidden="true">🌙</span>
+  }
+</button>
