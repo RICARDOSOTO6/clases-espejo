@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -13,8 +13,8 @@ export class AgentesService {
   ) {}
 
   /**
-   * FASE 2: El agente (autenticado) invita a un docente.
-   * `agenteId` es el id de Usuario del agente, obtenido del JWT.
+   * FASE 2: El agente envía una invitación al docente (solo correo + número de empleado).
+   * El docente se registrará después usando el token de la invitación.
    */
   async invitarDocente(agenteId: number, dto: InviteDocenteDto) {
     const agente = await this.prisma.agenteInternacionalizacion.findUnique({
@@ -26,67 +26,28 @@ export class AgentesService {
       );
     }
 
-    const { usuario, token } = await this.prisma.$transaction(async (tx) => {
-      let usuario = await tx.usuario.findUnique({
-        where: { correo: dto.email },
-      });
+    const token = await this.jwtService.signAsync(
+      { correo: dto.correo, type: 'invitacion' },
+      { expiresIn: (process.env.INVITATION_EXPIRES_IN ?? '7d') as any },
+    );
 
-      if (!usuario) {
-        usuario = await tx.usuario.create({
-          data: {
-            nombres: dto.nombres,
-            apellidos: dto.apellidos,
-            correo: dto.email,
-            activo: false,
-          },
-        });
-      }
+    const expiracion = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-      let docente = await tx.docente.findUnique({
-        where: { usuarioId: usuario.id },
-      });
-
-      if (!docente) {
-        docente = await tx.docente.create({
-          data: {
-            usuarioId: usuario.id,
-            gradoAcademico: dto.gradoAcademico,
-            especialidad: dto.especialidad,
-          },
-        });
-      }
-
-      await tx.docenteInstitucion.create({
-        data: {
-          docenteId: docente.id,
-          institucionId: agente.institucionId,
-          numeroEmpleado: dto.numeroEmpleado,
-          activo: true,
-        },
-      });
-
-      const token = await this.jwtService.signAsync(
-        { sub: usuario.id, type: 'invitacion' },
-        { expiresIn: (process.env.INVITATION_EXPIRES_IN ?? '7d') as any },
-      );
-
-      const tokenExpiracion = new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      );
-
-      await tx.usuario.update({
-        where: { id: usuario.id },
-        data: { tokenInvitacion: token, tokenExpiracion },
-      });
-
-      return { usuario, token };
+    await this.prisma.invitacion.create({
+      data: {
+        correo: dto.correo,
+        numeroEmpleado: dto.numeroEmpleado,
+        institucionId: agente.institucionId,
+        token,
+        expiracion,
+      },
     });
 
-    await this.mailService.sendInvitation(dto.email, token);
+    await this.mailService.sendInvitation(dto.correo, token);
 
     return {
       mensaje: 'Invitación enviada al docente',
-      correo: usuario.correo,
+      correo: dto.correo,
     };
   }
 
@@ -108,5 +69,71 @@ export class AgentesService {
       },
       orderBy: { id: 'desc' },
     });
+  }
+
+  /** Activa o desactiva un docente de la institución. */
+  async cambiarEstadoDocente(agenteId: number, id: number, activo: boolean) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId: agenteId },
+    });
+    if (!agente) {
+      throw new UnauthorizedException(
+        'Solo un agente de internacionalización puede gestionar docentes',
+      );
+    }
+
+    const docenteInstitucion = await this.prisma.docenteInstitucion.findFirst({
+      where: { id, institucionId: agente.institucionId },
+    });
+    if (!docenteInstitucion) {
+      throw new NotFoundException('Docente no encontrado');
+    }
+
+    return this.prisma.docenteInstitucion.update({
+      where: { id },
+      data: { activo },
+      include: { docente: { include: { usuario: true } } },
+    });
+  }
+
+  /** Elimina un docente de la institución (y sus asignaciones). */
+  async eliminarDocente(agenteId: number, id: number) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId: agenteId },
+    });
+    if (!agente) {
+      throw new UnauthorizedException(
+        'Solo un agente de internacionalización puede gestionar docentes',
+      );
+    }
+
+    const docenteInstitucion = await this.prisma.docenteInstitucion.findFirst({
+      where: { id, institucionId: agente.institucionId },
+    });
+    if (!docenteInstitucion) {
+      throw new NotFoundException('Docente no encontrado');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.asignacionDocente.deleteMany({
+        where: { docenteInstitucionId: id },
+      });
+      await tx.docenteInstitucion.delete({ where: { id } });
+
+      const restantes = await tx.docenteInstitucion.count({
+        where: { docenteId: docenteInstitucion.docenteId },
+      });
+      if (restantes === 0) {
+        const docente = await tx.docente.findUnique({
+          where: { id: docenteInstitucion.docenteId },
+        });
+        await tx.docente.delete({ where: { id: docenteInstitucion.docenteId } });
+        if (docente) {
+          await tx.usuario.delete({ where: { id: docente.usuarioId } });
+        }
+      }
+    });
+
+    return { mensaje: 'Docente eliminado' };
   }
 }

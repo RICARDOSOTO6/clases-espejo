@@ -5,7 +5,7 @@
       <span class="auth-brand-name">Clases Espejo</span>
     </div>
     <div class="topbar-user">
-      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidos }}</span>
+      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
       <button class="btn btn-secondary" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
@@ -14,13 +14,26 @@
     <section class="card">
       <h1>Panel del Agente</h1>
       <p>
-        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidos }}</strong>.
+        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</strong>.
       </p>
       <div class="role-badge agente">Agente de Internacionalización</div>
 
       <div class="card-actions">
         <button class="btn btn-primary" (click)="openInvite()">Invitar docente</button>
       </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Mi institución</h2>
+        <button class="btn btn-secondary" (click)="openEditarInstitucion()">Editar</button>
+      </div>
+      @if (institucion(); as inst) {
+        <p><strong>{{ inst.nombre }}</strong></p>
+        <p class="muted">{{ inst.pais }} · {{ inst.correoInstitucional }}</p>
+      } @else {
+        <p class="muted">No se pudo cargar la información de la institución.</p>
+      }
     </section>
 
     <section class="card">
@@ -35,9 +48,17 @@
                 <strong>{{ nombreDocente(d) }}</strong>
                 <span class="muted"> · {{ d.docente.especialidad }}</span>
               </div>
-              <span class="estado" [class.pendiente]="!d.activo">
-                {{ d.activo ? 'Activo' : 'Pendiente de activar' }}
-              </span>
+              <div class="lista-acciones">
+                <span class="estado" [class.pendiente]="!d.activo">
+                  {{ d.activo ? 'Activo' : 'Desactivado' }}
+                </span>
+                <button class="btn btn-secondary" (click)="cambiarEstadoDocente(d)">
+                  {{ d.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button class="btn btn-secondary" (click)="eliminarDocente(d)">
+                  Eliminar
+                </button>
+              </div>
             </li>
           }
         </ul>
@@ -88,31 +109,9 @@
 @if (showInviteModal) {
   <app-modal title="Invitar docente" (close)="closeInvite()">
     <form [formGroup]="inviteForm" (ngSubmit)="submitInvite()">
-      <div class="row">
-        <div class="col form-field">
-          <label for="d-nombres">Nombres</label>
-          <input id="d-nombres" type="text" formControlName="nombres" />
-        </div>
-        <div class="col form-field">
-          <label for="d-apellidos">Apellidos</label>
-          <input id="d-apellidos" type="text" formControlName="apellidos" />
-        </div>
-      </div>
-
       <div class="form-field">
-        <label for="d-email">Correo del docente</label>
-        <input id="d-email" type="email" formControlName="email" />
-      </div>
-
-      <div class="row">
-        <div class="col form-field">
-          <label for="d-grado">Grado académico</label>
-          <input id="d-grado" type="text" formControlName="gradoAcademico" />
-        </div>
-        <div class="col form-field">
-          <label for="d-especialidad">Especialidad</label>
-          <input id="d-especialidad" type="text" formControlName="especialidad" />
-        </div>
+        <label for="d-correo">Correo del docente</label>
+        <input id="d-correo" type="email" formControlName="correo" />
       </div>
 
       <div class="form-field">
@@ -212,6 +211,37 @@
         [disabled]="asignarForm.invalid || asignarLoading()"
       >
         {{ asignarLoading() ? 'Asignando...' : 'Asignar docente' }}
+      </button>
+    </form>
+  </app-modal>
+}
+
+@if (showInstitucionModal) {
+  <app-modal title="Editar institución" (close)="closeInstitucionModal()">
+    <form [formGroup]="institucionForm" (ngSubmit)="submitInstitucion()">
+      <div class="form-field">
+        <label for="i-nombre">Nombre</label>
+        <input id="i-nombre" type="text" formControlName="nombre" />
+      </div>
+      <div class="form-field">
+        <label for="i-pais">País</label>
+        <input id="i-pais" type="text" formControlName="pais" />
+      </div>
+      <div class="form-field">
+        <label for="i-correo">Correo institucional</label>
+        <input id="i-correo" type="email" formControlName="correoInstitucional" />
+      </div>
+
+      @if (institucionError()) {
+        <div class="alert alert-error">{{ institucionError() }}</div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="institucionForm.invalid || institucionLoading()"
+      >
+        {{ institucionLoading() ? 'Guardando...' : 'Guardar' }}
       </button>
     </form>
   </app-modal>

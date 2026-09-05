@@ -7,6 +7,7 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { ActivateAccountDto } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 
 @Component({
@@ -21,8 +22,15 @@ export class ActivateComponent implements OnInit {
 
   token: string | null = null;
   correo = signal<string | null>(null);
+  numeroEmpleado = signal<string | null>(null);
 
   form = this.fb.group({
+    nombres: ['', Validators.required],
+    apellidoPaterno: ['', Validators.required],
+    apellidoMaterno: ['', Validators.required],
+    dni: ['', Validators.required],
+    gradoAcademico: ['', Validators.required],
+    especialidad: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmar: ['', Validators.required],
   });
@@ -43,6 +51,7 @@ export class ActivateComponent implements OnInit {
     this.auth.validarTokenInvitacion(this.token).subscribe({
       next: (res) => {
         this.correo.set(res.correo);
+        this.numeroEmpleado.set(res.numeroEmpleado);
       },
       error: (err: HttpErrorResponse) => {
         this.tokenInvalido.set(true);
@@ -53,7 +62,7 @@ export class ActivateComponent implements OnInit {
     });
   }
 
-  mensajeDe(campo: 'password' | 'confirmar'): string | null {
+  mensajeDe(campo: string): string | null {
     const control = this.form.get(campo);
     if (!control || !control.touched || !control.errors) return null;
     if (control.errors['required']) return 'Este campo es obligatorio';
@@ -77,7 +86,19 @@ export class ActivateComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.auth.activarCuenta(this.token, this.form.value.password!).subscribe({
+    const v = this.form.value;
+    const dto: ActivateAccountDto = {
+      token: this.token,
+      nombres: v.nombres!,
+      apellidoPaterno: v.apellidoPaterno!,
+      apellidoMaterno: v.apellidoMaterno!,
+      dni: v.dni!,
+      gradoAcademico: v.gradoAcademico!,
+      especialidad: v.especialidad!,
+      password: v.password!,
+    };
+
+    this.auth.activarCuenta(dto).subscribe({
       next: () => {
         this.loading.set(false);
         this.success.set(true);

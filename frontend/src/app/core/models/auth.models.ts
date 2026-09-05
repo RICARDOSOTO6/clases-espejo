@@ -3,7 +3,9 @@ export type Rol = 'AGENTE' | 'DOCENTE' | null;
 export interface Usuario {
   id: number;
   nombres: string;
-  apellidos: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  dni: string;
   correo: string;
   activo: boolean;
   rol: Rol;
@@ -16,7 +18,9 @@ export interface LoginResponse {
 
 export interface RegisterDto {
   nombres: string;
-  apellidos: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  dni: string;
   correo: string;
   password: string;
   nombreInstitucion: string;
@@ -40,7 +44,9 @@ export interface Institucion {
 export interface Perfil {
   id: number;
   nombres: string;
-  apellidos: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  dni: string;
   correo: string;
   activo: boolean;
   rol: Rol;
@@ -59,15 +65,22 @@ export interface Perfil {
 }
 
 export interface InviteDocenteDto {
-  nombres: string;
-  apellidos: string;
-  email: string;
-  gradoAcademico: string;
-  especialidad: string;
+  correo: string;
   numeroEmpleado: string;
 }
 
 export interface InviteResponse {
   mensaje: string;
   correo: string;
+}
+
+export interface ActivateAccountDto {
+  token: string;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  dni: string;
+  gradoAcademico: string;
+  especialidad: string;
+  password: string;
 }

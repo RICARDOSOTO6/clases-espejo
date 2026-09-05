@@ -12,7 +12,15 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  apellidos: string;
+  apellidoPaterno: string;
+
+  @IsString()
+  @IsNotEmpty()
+  apellidoMaterno: string;
+
+  @IsString()
+  @IsNotEmpty()
+  dni: string;
 
   @IsEmail()
   correo: string;

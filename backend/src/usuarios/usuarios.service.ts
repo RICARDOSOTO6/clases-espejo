@@ -27,7 +27,9 @@ export class UsuariosService {
     return {
       id: usuario.id,
       nombres: usuario.nombres,
-      apellidos: usuario.apellidos,
+      apellidoPaterno: usuario.apellidoPaterno,
+      apellidoMaterno: usuario.apellidoMaterno,
+      dni: usuario.dni,
       correo: usuario.correo,
       activo: usuario.activo,
       rol,
