@@ -39,10 +39,10 @@ La plataforma busca permitir que dos instituciones educativas puedan:
 
 ## Frontend
 
-* Angular
-* Bootstrap
-
-> El frontend se encuentra en desarrollo y puede tener una estructura diferente a la versión actualmente estable del backend.
+* Angular 21 (componentes standalone, **signals** / modo zoneless)
+* Formularios reactivos con validación personalizada
+* Modo oscuro (persistente en `localStorage`)
+* Catálogos desplegables (países ISO 3166, cargos, grados académicos, programas, periodos)
 
 ---
 
@@ -272,6 +272,28 @@ Desde `backend/`:
 | `npx prisma studio`   | Abre la interfaz de Prisma        |
 | `npm run lint`        | Ejecuta ESLint                    |
 | `npm test`            | Ejecuta pruebas                   |
+| `node scripts/seed-demo.js` | Limpia y siembra datos de demostración |
+
+---
+
+## 🎭 Datos de demostración
+
+Para poblar la base de datos con datos de ejemplo (2 instituciones, agentes, docentes, materias, asignaciones y solicitudes), ejecutar desde `backend/`:
+
+```bash
+node scripts/seed-demo.js
+```
+
+Credenciales de prueba (contraseña común: `Demo1234`):
+
+| Rol | Correo |
+| --- | --- |
+| Agente (México) | `agente.calkini@clasesespejo.mx` |
+| Agente (Colombia) | `agente.colombia@clasesespejo.co` |
+| Docente (México) | `roberto.perez@clasesespejo.mx` |
+| Docente (México) | `laura.martinez@clasesespejo.mx` |
+| Docente (Colombia) | `andres.garcia@clasesespejo.co` |
+| Docente (Colombia) | `camila.rodriguez@clasesespejo.co` |
 
 ---
 
@@ -330,21 +352,43 @@ El backend utiliza autenticación mediante **JWT**.
 
 El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el flujo de:
 
-* Registro de un agente con su institución (FASE 1).
+* Registro de un agente con su institución (FASE 1). Incluye **estándares internacionales**: país con catálogo ISO 3166, tipo y número de documento, y datos de la institución (estado/provincia, ciudad, teléfono).
 * Inicio de sesión y generación de token JWT.
-* Invitación de docentes con envío de correo (FASE 2).
+* Invitación de docentes por correo (FASE 2); **el docente completa su propio registro** y crea sus credenciales.
 * Activación de la cuenta del docente (FASE 3).
+* **Gate de institución**: el agente debe completar el registro de su institución antes de usar el panel.
 
 ### Endpoints
 
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
-| `POST` | `/auth/register` | Registra usuario + institución + agente | No |
+| `POST` | `/auth/register` | Registra agente + institución | No |
 | `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` + rol | No |
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
-| `POST` | `/auth/activate` | Activa la cuenta estableciendo contraseña | No |
-| `POST` | `/agentes/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No |
 | `GET` | `/usuarios/me` | Perfil del usuario autenticado (rol, institución) | JWT |
+| `POST` | `/agentes/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `GET` | `/agentes/docentes` | Lista los docentes de la institución | JWT (agente) |
+| `PATCH` | `/agentes/docentes/:id/estado` | Activa/desactiva un docente | JWT (agente) |
+| `DELETE` | `/agentes/docentes/:id` | Elimina un docente | JWT (agente) |
+| `GET` | `/materias` | Lista las materias de la institución | JWT (agente) |
+| `POST` | `/materias` | Crea una materia | JWT (agente) |
+| `PATCH` | `/materias/:id` | Edita una materia | JWT (agente) |
+| `DELETE` | `/materias/:id` | Elimina una materia | JWT (agente) |
+| `GET` | `/asignaciones` | Lista las asignaciones de la institución | JWT (agente) |
+| `GET` | `/asignaciones/mias` | Lista las asignaciones propias del docente | JWT (docente) |
+| `POST` | `/asignaciones` | Asigna docente a materia por periodo | JWT (agente) |
+| `DELETE` | `/asignaciones/:id` | Quita una asignación | JWT (agente) |
+| `GET` | `/instituciones` | Lista instituciones con registro completo (excepto la propia) | JWT |
+| `GET` | `/instituciones/mia` | Institución del agente | JWT (agente) |
+| `PATCH` | `/instituciones/mia` | Edita la institución (marca registro completo) | JWT (agente) |
+| `GET` | `/instituciones/:id/materias` | Materias de otra institución | JWT |
+| `POST` | `/solicitudes` | El docente crea una solicitud de clase espejo | JWT (docente) |
+| `GET` | `/solicitudes/mias` | Solicitudes del docente | JWT (docente) |
+| `PATCH` | `/solicitudes/:id` | Edita una solicitud pendiente | JWT (docente) |
+| `DELETE` | `/solicitudes/:id` | Cancela una solicitud pendiente | JWT (docente) |
+| `GET` | `/solicitudes/entrantes` | Solicitudes destinadas a la institución | JWT (agente) |
+| `POST` | `/solicitudes/:id/revisar` | Aprueba/rechaza una solicitud | JWT (agente) |
 | `GET` | `/health` | Health check del servicio | No |
 
 Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
@@ -365,11 +409,18 @@ Content-Type: application/json
 ```json
 {
   "nombres": "Juan",
-  "apellidos": "Pérez",
+  "apellidoPaterno": "Pérez",
+  "apellidoMaterno": "López",
+  "tipoDocumento": "DNI",
+  "dni": "PELJ850101",
   "correo": "agente@universidad.edu",
   "password": "123456",
   "nombreInstitucion": "Universidad de Prueba",
   "pais": "México",
+  "codigoPais": "MX",
+  "estado": "Campeche",
+  "ciudad": "Calkiní",
+  "telefono": "+52 981 123 4567",
   "correoInstitucional": "contacto@universidad.edu",
   "cargo": "Coordinador de Internacionalización"
 }
@@ -465,12 +516,16 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] JWT
 * [x] Hash de contraseñas
 * [x] Invitación de docentes por correo (Nodemailer)
-* [x] Activación de cuenta con token de invitación
-* [ ] Gestión completa de instituciones
-* [ ] Gestión completa de docentes
-* [ ] Gestión de materias
-* [ ] Solicitudes de clases espejo
-* [ ] Flujo de revisión
+* [x] Activación de cuenta con token de invitación (auto-registro del docente)
+* [x] Gate de "completar institución"
+* [x] Estándares internacionales (país ISO 3166, tipo de documento, datos de institución)
+* [x] Validación de texto (anti datos sin sentido)
+* [x] Gestión de instituciones (ver/editar la propia + listado)
+* [x] Gestión de docentes (invitar, activar, desactivar, eliminar)
+* [x] Gestión de materias
+* [x] Asignación docente ↔ materia
+* [x] Solicitudes de clases espejo (crear/listar/editar/cancelar)
+* [x] Flujo de revisión (aprobar/rechazar)
 * [ ] Gestión de proyectos
 * [ ] Planificación conjunta
 * [ ] Sesiones
@@ -483,14 +538,12 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 
 * [x] Autenticación (login, registro, activación)
 * [x] Redirección por rol (guards)
-* [x] Panel del agente (invitar docente)
-* [x] Panel del docente (placeholder)
-* [ ] Gestión de usuarios
-* [ ] Gestión de instituciones
-* [ ] Gestión de docentes
-* [ ] Gestión de materias
-* [ ] Solicitudes
-* [ ] Clases espejo
+* [x] Panel del agente (docentes, materias, asignaciones, institución, solicitudes recibidas)
+* [x] Panel del docente (crear/listar solicitudes)
+* [x] Modo oscuro
+* [x] Catálogos desplegables (países, cargos, grados, programas, periodos)
+* [x] Validación de formularios con mensajes de ayuda
+* [ ] Clases espejo (proyectos, planificación, sesiones)
 * [ ] Reportes
 
 ---
@@ -506,20 +559,20 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 - [x] **Frontend:** panel del agente → listar/crear materias + pantalla de asignación.
 - [x] **Entregable:** el agente da de alta materias y las asigna a docentes.
 
-## 🟢 Semana 2 — Catálogo: Docentes, Instituciones y panel real del agente
-- [ ] **Backend:** módulo `docentes` (CRUD) + `instituciones` (ver/editar la propia).
-- [ ] **Frontend:** panel del agente → lista de docentes invitados (estado pendiente/activo) + datos de institución.
-- [ ] **Entregable:** panel del agente funcional.
+## 🟢 Semana 2 — Catálogo: Docentes, Instituciones y panel real del agente ✅
+- [x] **Backend:** docentes (invitar/activar/desactivar/eliminar) + `instituciones` (ver/editar la propia).
+- [x] **Frontend:** panel del agente → lista de docentes (activo/desactivado) + datos de institución + gate de registro.
+- [x] **Entregable:** panel del agente funcional.
 
-## 🟡 Semana 3 — Solicitudes de clase espejo (lado docente)
-- [ ] **Backend:** módulo `solicitudes` (crear, listar las del docente, editar/cancelar si está pendiente).
-- [ ] **Frontend:** panel del docente → crear solicitud + listar "mis solicitudes".
-- [ ] **Entregable:** el docente crea y consulta solicitudes (estado *Pendiente*).
+## 🟡 Semana 3 — Solicitudes de clase espejo (lado docente) ✅
+- [x] **Backend:** módulo `solicitudes` (crear, listar las del docente, editar/cancelar si está pendiente).
+- [x] **Frontend:** panel del docente → crear solicitud + listar "mis solicitudes".
+- [x] **Entregable:** el docente crea y consulta solicitudes (estado *Pendiente*).
 
-## 🟡 Semana 4 — Revisión de solicitudes (lado agente)
-- [ ] **Backend:** módulo `revisiones` (aprobar/rechazar + motivo) + notificación de estado.
-- [ ] **Frontend:** panel del agente → revisar solicitudes (aprobar/rechazar) + el docente ve el estado.
-- [ ] **Entregable:** flujo de aprobación origen → destino completo.
+## 🟡 Semana 4 — Revisión de solicitudes (lado agente) ✅
+- [x] **Backend:** revisión de solicitudes (aprobar/rechazar + motivo) en el módulo `solicitudes`.
+- [x] **Frontend:** panel del agente → revisar solicitudes (aprobar/rechazar) + el docente ve el estado.
+- [x] **Entregable:** flujo de aprobación origen → destino completo.
 
 ## 🟠 Semana 5 — Proyecto + Planificación conjunta
 - [ ] **Backend:** módulo `proyectos` (se crea al aprobar) + `planificaciones`.
