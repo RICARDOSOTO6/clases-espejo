@@ -18,6 +18,7 @@ type UsuarioSeguro = {
   apellidoPaterno: string;
   apellidoMaterno: string;
   dni: string;
+  tipoDocumento: string;
   correo: string;
   activo: boolean;
 };
@@ -50,6 +51,7 @@ export class AuthService {
           apellidoPaterno: dto.apellidoPaterno,
           apellidoMaterno: dto.apellidoMaterno,
           dni: dto.dni,
+          tipoDocumento: dto.tipoDocumento,
           correo: dto.correo,
           passwordHash,
           activo: true,
@@ -60,6 +62,10 @@ export class AuthService {
         data: {
           nombre: dto.nombreInstitucion,
           pais: dto.pais,
+          codigoPais: dto.codigoPais,
+          estado: dto.estado,
+          ciudad: dto.ciudad,
+          telefono: dto.telefono,
           correoInstitucional: dto.correoInstitucional,
           activa: true,
         },
@@ -173,6 +179,7 @@ export class AuthService {
           apellidoPaterno: dto.apellidoPaterno,
           apellidoMaterno: dto.apellidoMaterno,
           dni: dto.dni,
+          tipoDocumento: dto.tipoDocumento,
           correo: invitacion.correo,
           passwordHash,
           activo: true,
@@ -217,6 +224,7 @@ export class AuthService {
       apellidoPaterno: usuario.apellidoPaterno,
       apellidoMaterno: usuario.apellidoMaterno,
       dni: usuario.dni,
+      tipoDocumento: usuario.tipoDocumento,
       correo: usuario.correo,
       activo: usuario.activo,
       rol,

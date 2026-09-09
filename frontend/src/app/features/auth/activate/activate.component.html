@@ -30,11 +30,17 @@
         }
       </p>
 
+      <div class="alert alert-info">
+        Los campos de texto (nombres, apellidos y especialidad) solo aceptan
+        letras. Evita números, símbolos y combinaciones aleatorias.
+      </div>
+
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="row">
           <div class="col form-field">
             <label for="nombres">Nombres</label>
             <input id="nombres" type="text" formControlName="nombres" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('nombres'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
@@ -42,6 +48,7 @@
           <div class="col form-field">
             <label for="apellidoPaterno">Apellido paterno</label>
             <input id="apellidoPaterno" type="text" formControlName="apellidoPaterno" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('apellidoPaterno'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
@@ -52,34 +59,50 @@
           <div class="col form-field">
             <label for="apellidoMaterno">Apellido materno</label>
             <input id="apellidoMaterno" type="text" formControlName="apellidoMaterno" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('apellidoMaterno'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
           </div>
           <div class="col form-field">
-            <label for="dni">DNI</label>
-            <input id="dni" type="text" formControlName="dni" />
-            @if (mensajeDe('dni'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
+            <label for="tipoDocumento">Tipo de documento</label>
+            <select id="tipoDocumento" formControlName="tipoDocumento">
+              @for (t of tiposDocumento; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
           </div>
         </div>
 
         <div class="row">
           <div class="col form-field">
-            <label for="gradoAcademico">Grado académico</label>
-            <input id="gradoAcademico" type="text" formControlName="gradoAcademico" />
-            @if (mensajeDe('gradoAcademico'); as msg) {
+            <label for="dni">Número de documento</label>
+            <input id="dni" type="text" formControlName="dni" />
+            @if (mensajeDe('dni'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
           </div>
           <div class="col form-field">
-            <label for="especialidad">Especialidad</label>
-            <input id="especialidad" type="text" formControlName="especialidad" />
-            @if (mensajeDe('especialidad'); as msg) {
+            <label for="gradoAcademico">Grado académico</label>
+            <select id="gradoAcademico" formControlName="gradoAcademico">
+              <option value="" disabled>Selecciona un grado</option>
+              @for (g of grados; track g) {
+                <option [value]="g">{{ g }}</option>
+              }
+            </select>
+            @if (mensajeDe('gradoAcademico'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
           </div>
+        </div>
+
+        <div class="form-field">
+          <label for="especialidad">Especialidad</label>
+          <input id="especialidad" type="text" formControlName="especialidad" />
+          <p class="field-hint">Solo letras, sin números ni símbolos</p>
+          @if (mensajeDe('especialidad'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
         </div>
 
         <div class="form-field">

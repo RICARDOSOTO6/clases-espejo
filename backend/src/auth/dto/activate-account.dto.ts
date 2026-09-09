@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { EsTextoValido } from '../../common/validators/es-texto-valido';
 
 export class ActivateAccountDto {
   @IsString()
@@ -7,15 +8,22 @@ export class ActivateAccountDto {
 
   @IsString()
   @IsNotEmpty()
+  @EsTextoValido()
   nombres: string;
 
   @IsString()
   @IsNotEmpty()
+  @EsTextoValido()
   apellidoPaterno: string;
 
   @IsString()
   @IsNotEmpty()
+  @EsTextoValido()
   apellidoMaterno: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tipoDocumento: string;
 
   @IsString()
   @IsNotEmpty()
@@ -27,6 +35,7 @@ export class ActivateAccountDto {
 
   @IsString()
   @IsNotEmpty()
+  @EsTextoValido()
   especialidad: string;
 
   @IsString()

@@ -30,6 +30,7 @@ export class UsuariosService {
       apellidoPaterno: usuario.apellidoPaterno,
       apellidoMaterno: usuario.apellidoMaterno,
       dni: usuario.dni,
+      tipoDocumento: usuario.tipoDocumento,
       correo: usuario.correo,
       activo: usuario.activo,
       rol,

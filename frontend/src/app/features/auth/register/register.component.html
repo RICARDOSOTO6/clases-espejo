@@ -8,17 +8,18 @@
     <h1 class="auth-title">Registro de institución</h1>
     <p class="auth-subtitle">Regístrate como Agente de Internacionalización</p>
 
+    <div class="alert alert-info">
+      Los campos de texto (nombres, apellidos, institución y lugares) solo
+      aceptan letras. Evita números, símbolos y combinaciones aleatorias.
+    </div>
+
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="row">
         <div class="col">
           <div class="form-field">
             <label for="nombres">Nombres</label>
-            <input
-              id="nombres"
-              type="text"
-              formControlName="nombres"
-              autocomplete="given-name"
-            />
+            <input id="nombres" type="text" formControlName="nombres" autocomplete="given-name" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('nombres'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
@@ -27,12 +28,8 @@
         <div class="col">
           <div class="form-field">
             <label for="apellidoPaterno">Apellido paterno</label>
-            <input
-              id="apellidoPaterno"
-              type="text"
-              formControlName="apellidoPaterno"
-              autocomplete="family-name"
-            />
+            <input id="apellidoPaterno" type="text" formControlName="apellidoPaterno" autocomplete="family-name" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('apellidoPaterno'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
@@ -44,12 +41,8 @@
         <div class="col">
           <div class="form-field">
             <label for="apellidoMaterno">Apellido materno</label>
-            <input
-              id="apellidoMaterno"
-              type="text"
-              formControlName="apellidoMaterno"
-              autocomplete="family-name"
-            />
+            <input id="apellidoMaterno" type="text" formControlName="apellidoMaterno" autocomplete="family-name" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
             @if (mensajeDe('apellidoMaterno'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
@@ -57,23 +50,27 @@
         </div>
         <div class="col">
           <div class="form-field">
-            <label for="dni">DNI</label>
-            <input id="dni" type="text" formControlName="dni" autocomplete="off" />
-            @if (mensajeDe('dni'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
+            <label for="tipoDocumento">Tipo de documento</label>
+            <select id="tipoDocumento" formControlName="tipoDocumento">
+              @for (t of tiposDocumento; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
           </div>
         </div>
       </div>
 
       <div class="form-field">
+        <label for="dni">Número de documento</label>
+        <input id="dni" type="text" formControlName="dni" autocomplete="off" />
+        @if (mensajeDe('dni'); as msg) {
+          <p class="field-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="form-field">
         <label for="correo">Correo</label>
-        <input
-          id="correo"
-          type="email"
-          formControlName="correo"
-          autocomplete="email"
-        />
+        <input id="correo" type="email" formControlName="correo" autocomplete="email" />
         @if (mensajeDe('correo'); as msg) {
           <p class="field-error">{{ msg }}</p>
         }
@@ -124,6 +121,7 @@
           list="instituciones-sugeridas"
           autocomplete="organization"
         />
+        <p class="field-hint">Solo letras, sin números ni símbolos</p>
         <datalist id="instituciones-sugeridas">
           @for (i of institucionesSugeridas; track i) {
             <option [value]="i"></option>
@@ -134,17 +132,50 @@
         }
       </div>
 
-      <div class="form-field">
-        <label for="pais">País</label>
-        <input
-          id="pais"
-          type="text"
-          formControlName="pais"
-          autocomplete="country-name"
-        />
-        @if (mensajeDe('pais'); as msg) {
-          <p class="field-error">{{ msg }}</p>
-        }
+      <div class="row">
+        <div class="col form-field">
+          <label for="paisCodigo">País</label>
+          <select id="paisCodigo" formControlName="paisCodigo" (change)="onPaisChange()">
+            <option value="" disabled>Selecciona un país</option>
+            @for (p of paises; track p.codigo) {
+              <option [value]="p.codigo">{{ p.nombre }}</option>
+            }
+          </select>
+          @if (mensajeDe('paisCodigo'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+        <div class="col form-field">
+          <label for="estado">Estado / Provincia</label>
+          <input id="estado" type="text" formControlName="estado" />
+          <p class="field-hint">Solo letras, sin números ni símbolos</p>
+          @if (mensajeDe('estado'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col form-field">
+          <label for="ciudad">Ciudad</label>
+          <input id="ciudad" type="text" formControlName="ciudad" />
+          <p class="field-hint">Solo letras, sin números ni símbolos</p>
+          @if (mensajeDe('ciudad'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+        <div class="col form-field">
+          <label for="telefono">
+            Teléfono
+            @if (prefijoTelefono()) {
+              <span class="muted">({{ prefijoTelefono() }})</span>
+            }
+          </label>
+          <input id="telefono" type="tel" formControlName="telefono" />
+          @if (mensajeDe('telefono'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
       </div>
 
       <div class="form-field">

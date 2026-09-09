@@ -6,12 +6,22 @@ import { UpdateInstitucionDto } from './dto/update-institucion.dto';
 export class InstitucionesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Lista las instituciones activas, excepto las del propio usuario. */
+  /** Lista las instituciones con registro completo, excepto las del propio usuario. */
   async listar(usuarioId: number) {
     const propias = await this.institucionesPropias(usuarioId);
     return this.prisma.institucion.findMany({
-      where: { activa: true, id: { notIn: propias } },
-      select: { id: true, nombre: true, pais: true, correoInstitucional: true },
+      where: { activa: true, registroCompleto: true, id: { notIn: propias } },
+      select: {
+        id: true,
+        nombre: true,
+        pais: true,
+        codigoPais: true,
+        estado: true,
+        ciudad: true,
+        telefono: true,
+        correoInstitucional: true,
+        registroCompleto: true,
+      },
       orderBy: { nombre: 'asc' },
     });
   }
@@ -30,7 +40,12 @@ export class InstitucionesService {
       data: {
         nombre: dto.nombre,
         pais: dto.pais,
+        codigoPais: dto.codigoPais,
+        estado: dto.estado,
+        ciudad: dto.ciudad,
+        telefono: dto.telefono,
         correoInstitucional: dto.correoInstitucional,
+        registroCompleto: true,
       },
     });
   }

@@ -6,6 +6,7 @@ export interface Usuario {
   apellidoPaterno: string;
   apellidoMaterno: string;
   dni: string;
+  tipoDocumento: string;
   correo: string;
   activo: boolean;
   rol: Rol;
@@ -20,11 +21,16 @@ export interface RegisterDto {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string;
+  tipoDocumento: string;
   dni: string;
   correo: string;
   password: string;
   nombreInstitucion: string;
   pais: string;
+  codigoPais: string;
+  estado: string;
+  ciudad: string;
+  telefono: string;
   correoInstitucional: string;
   cargo: string;
 }
@@ -38,7 +44,12 @@ export interface Institucion {
   id: number;
   nombre: string;
   pais: string;
+  codigoPais: string;
+  estado: string;
+  ciudad: string;
+  telefono: string;
   correoInstitucional: string;
+  registroCompleto: boolean;
 }
 
 export interface Perfil {
@@ -79,6 +90,7 @@ export interface ActivateAccountDto {
   nombres: string;
   apellidoPaterno: string;
   apellidoMaterno: string;
+  tipoDocumento: string;
   dni: string;
   gradoAcademico: string;
   especialidad: string;
