@@ -25,6 +25,10 @@ export class InstitucionesService {
   actualizarMia(dto: {
     nombre: string;
     pais: string;
+    codigoPais: string;
+    estado: string;
+    ciudad: string;
+    telefono: string;
     correoInstitucional: string;
   }): Observable<Institucion> {
     return this.http.patch<Institucion>(`${API_URL}/instituciones/mia`, dto);

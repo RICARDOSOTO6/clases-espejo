@@ -9,6 +9,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { ActivateAccountDto } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
+import {
+  GRADOS_ACADEMICOS,
+  TIPOS_DOCUMENTO,
+} from '../../../core/constants/catalogos';
+import { esTextoValido } from '../../../core/utils/validators';
 
 @Component({
   selector: 'app-activate',
@@ -20,17 +25,21 @@ export class ActivateComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
 
+  readonly grados = GRADOS_ACADEMICOS;
+  readonly tiposDocumento = TIPOS_DOCUMENTO;
+
   token: string | null = null;
   correo = signal<string | null>(null);
   numeroEmpleado = signal<string | null>(null);
 
   form = this.fb.group({
-    nombres: ['', Validators.required],
-    apellidoPaterno: ['', Validators.required],
-    apellidoMaterno: ['', Validators.required],
+    nombres: ['', [Validators.required, esTextoValido()]],
+    apellidoPaterno: ['', [Validators.required, esTextoValido()]],
+    apellidoMaterno: ['', [Validators.required, esTextoValido()]],
+    tipoDocumento: ['DNI', Validators.required],
     dni: ['', Validators.required],
     gradoAcademico: ['', Validators.required],
-    especialidad: ['', Validators.required],
+    especialidad: ['', [Validators.required, esTextoValido()]],
     password: ['', [Validators.required, Validators.minLength(6)]],
     confirmar: ['', Validators.required],
   });
@@ -67,6 +76,8 @@ export class ActivateComponent implements OnInit {
     if (!control || !control.touched || !control.errors) return null;
     if (control.errors['required']) return 'Este campo es obligatorio';
     if (control.errors['minlength']) return 'Mínimo 6 caracteres';
+    if (control.errors['textoInvalido'])
+      return 'Escribe un valor válido (solo letras, sin secuencias aleatorias)';
     return null;
   }
 
@@ -92,6 +103,7 @@ export class ActivateComponent implements OnInit {
       nombres: v.nombres!,
       apellidoPaterno: v.apellidoPaterno!,
       apellidoMaterno: v.apellidoMaterno!,
+      tipoDocumento: v.tipoDocumento ?? 'DNI',
       dni: v.dni!,
       gradoAcademico: v.gradoAcademico!,
       especialidad: v.especialidad!,

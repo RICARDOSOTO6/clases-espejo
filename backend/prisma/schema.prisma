@@ -12,8 +12,13 @@ model Institucion {
   id                  Int                          @id @default(autoincrement())
   nombre              String
   pais                String
+  codigoPais          String                       @default("") @map("codigo_pais")
+  estado              String                       @default("")
+  ciudad              String                       @default("")
+  telefono            String                       @default("")
   correoInstitucional String                       @map("correo_institucional")
   activa              Boolean
+  registroCompleto    Boolean                      @default(false) @map("registro_completo")
   creadoEn            DateTime                     @default(now()) @map("creado_en")
   actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   agentes             AgenteInternacionalizacion[]
@@ -31,6 +36,7 @@ model Usuario {
   apellidoPaterno String                      @map("apellido_paterno")
   apellidoMaterno String                      @map("apellido_materno")
   dni             String                      @unique
+  tipoDocumento   String                      @default("DNI") @map("tipo_documento")
   correo          String                      @unique
   passwordHash    String?                     @map("password_hash")
   activo          Boolean                     @default(true)

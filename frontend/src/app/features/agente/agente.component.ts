@@ -13,6 +13,11 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { Institucion, InviteDocenteDto } from '../../core/models/auth.models';
 import {
+  PAISES,
+  PERIODOS_ESCOLARES,
+  PROGRAMAS_EDUCATIVOS,
+} from '../../core/constants/catalogos';
+import {
   Asignacion,
   DocenteInstitucion,
   Materia,
@@ -50,6 +55,12 @@ export class AgenteComponent implements OnInit {
   materias = signal<Materia[]>([]);
   asignaciones = signal<Asignacion[]>([]);
   institucion = signal<Institucion | null>(null);
+  institucionCargada = signal(false);
+
+  readonly paises = PAISES;
+  readonly programas = PROGRAMAS_EDUCATIVOS;
+  readonly periodos = PERIODOS_ESCOLARES;
+  prefijoTelefono = signal('');
 
   // --- Modal institución ---
   showInstitucionModal = false;
@@ -58,7 +69,10 @@ export class AgenteComponent implements OnInit {
 
   institucionForm = this.fb.group({
     nombre: ['', Validators.required],
-    pais: ['', Validators.required],
+    paisCodigo: ['', Validators.required],
+    estado: ['', Validators.required],
+    ciudad: ['', Validators.required],
+    telefono: ['', Validators.required],
     correoInstitucional: ['', [Validators.required, Validators.email]],
   });
 
@@ -107,8 +121,25 @@ export class AgenteComponent implements OnInit {
       error: () => this.asignaciones.set([]),
     });
     this.institucionesService.obtenerMia().subscribe({
-      next: (r) => this.institucion.set(r),
-      error: () => this.institucion.set(null),
+      next: (r) => {
+        this.institucion.set(r);
+        this.institucionCargada.set(true);
+        if (!r.registroCompleto) {
+          this.institucionForm.patchValue({
+            nombre: r.nombre,
+            paisCodigo: r.codigoPais,
+            estado: r.estado,
+            ciudad: r.ciudad,
+            telefono: r.telefono,
+            correoInstitucional: r.correoInstitucional,
+          });
+          this.prefijoTelefono.set(this.prefijoDe(r.codigoPais));
+        }
+      },
+      error: () => {
+        this.institucion.set(null);
+        this.institucionCargada.set(true);
+      },
     });
   }
 
@@ -123,9 +154,13 @@ export class AgenteComponent implements OnInit {
     const inst = this.institucion();
     this.institucionForm.patchValue({
       nombre: inst?.nombre ?? '',
-      pais: inst?.pais ?? '',
+      paisCodigo: inst?.codigoPais ?? '',
+      estado: inst?.estado ?? '',
+      ciudad: inst?.ciudad ?? '',
+      telefono: inst?.telefono ?? '',
       correoInstitucional: inst?.correoInstitucional ?? '',
     });
+    this.prefijoTelefono.set(this.prefijoDe(inst?.codigoPais ?? ''));
     this.institucionError.set(null);
     this.showInstitucionModal = true;
   }
@@ -141,14 +176,19 @@ export class AgenteComponent implements OnInit {
     this.institucionLoading.set(true);
     this.institucionError.set(null);
 
+    const v = this.institucionForm.value;
+    const pais = PAISES.find((p) => p.codigo === (v.paisCodigo ?? ''));
+
     this.institucionesService
-      .actualizarMia(
-        this.institucionForm.value as {
-          nombre: string;
-          pais: string;
-          correoInstitucional: string;
-        },
-      )
+      .actualizarMia({
+        nombre: v.nombre ?? '',
+        pais: pais?.nombre ?? '',
+        codigoPais: v.paisCodigo ?? '',
+        estado: v.estado ?? '',
+        ciudad: v.ciudad ?? '',
+        telefono: `${this.prefijoTelefono()} ${v.telefono ?? ''}`.trim(),
+        correoInstitucional: v.correoInstitucional ?? '',
+      })
       .subscribe({
         next: (r) => {
           this.institucionLoading.set(false);
@@ -162,6 +202,19 @@ export class AgenteComponent implements OnInit {
           );
         },
       });
+  }
+
+  institucionCompleta(): boolean {
+    return this.institucion()?.registroCompleto === true;
+  }
+
+  onPaisChange(): void {
+    const codigo = this.institucionForm.get('paisCodigo')?.value;
+    this.prefijoTelefono.set(this.prefijoDe(codigo ?? ''));
+  }
+
+  prefijoDe(codigo: string): string {
+    return PAISES.find((p) => p.codigo === codigo)?.prefijo ?? '';
   }
 
   openInvite(): void {

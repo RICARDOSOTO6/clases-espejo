@@ -301,6 +301,12 @@ select.ng-invalid.ng-touched:focus {
   color: var(--danger);
 }
 
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .password-field {
   position: relative;
 }
@@ -423,6 +429,12 @@ select.ng-invalid.ng-touched:focus {
   background: var(--warning-bg);
   border: 1px solid var(--warning-border);
   color: var(--warning-text);
+}
+
+.alert-info {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------------

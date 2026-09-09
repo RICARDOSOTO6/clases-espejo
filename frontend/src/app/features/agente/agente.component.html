@@ -11,8 +11,73 @@
   </header>
 
   <main class="content">
-    <section class="card">
-      <h1>Panel del Agente</h1>
+    @if (!institucionCargada()) {
+      <section class="card">
+        <p class="muted">Cargando…</p>
+      </section>
+    } @else if (!institucionCompleta()) {
+      <section class="card">
+        <h1>Completa el registro de tu institución</h1>
+        <div class="alert alert-warning">
+          Antes de continuar, completa los datos de tu institución. Este paso
+          desbloquea el panel de docentes y materias.
+        </div>
+        <form [formGroup]="institucionForm" (ngSubmit)="submitInstitucion()">
+          <div class="form-field">
+            <label for="g-nombre">Nombre de la institución</label>
+            <input id="g-nombre" type="text" formControlName="nombre" />
+          </div>
+          <div class="row">
+            <div class="col form-field">
+              <label for="g-pais">País</label>
+              <select id="g-pais" formControlName="paisCodigo" (change)="onPaisChange()">
+                <option value="" disabled>Selecciona un país</option>
+                @for (p of paises; track p.codigo) {
+                  <option [value]="p.codigo">{{ p.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="col form-field">
+              <label for="g-estado">Estado / Provincia</label>
+              <input id="g-estado" type="text" formControlName="estado" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col form-field">
+              <label for="g-ciudad">Ciudad</label>
+              <input id="g-ciudad" type="text" formControlName="ciudad" />
+            </div>
+            <div class="col form-field">
+              <label for="g-telefono">
+                Teléfono
+                @if (prefijoTelefono()) {
+                  <span class="muted">({{ prefijoTelefono() }})</span>
+                }
+              </label>
+              <input id="g-telefono" type="tel" formControlName="telefono" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="g-correo">Correo institucional</label>
+            <input id="g-correo" type="email" formControlName="correoInstitucional" />
+          </div>
+
+          @if (institucionError()) {
+            <div class="alert alert-error">{{ institucionError() }}</div>
+          }
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="institucionForm.invalid || institucionLoading()"
+          >
+            {{ institucionLoading() ? 'Guardando...' : 'Completar registro' }}
+          </button>
+        </form>
+      </section>
+    } @else {
+      <section class="card">
+        <h1>Panel del Agente</h1>
       <p>
         Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</strong>.
       </p>
@@ -103,6 +168,7 @@
         }
       }
     </section>
+    }
   </main>
 </div>
 
@@ -153,7 +219,12 @@
       </div>
       <div class="form-field">
         <label for="m-programa">Programa educativo</label>
-        <input id="m-programa" type="text" formControlName="programaEducativo" />
+        <select id="m-programa" formControlName="programaEducativo">
+          <option value="" disabled>Selecciona un programa</option>
+          @for (p of programas; track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select>
       </div>
       <div class="form-field">
         <label for="m-descripcion">Descripción</label>
@@ -193,12 +264,12 @@
 
       <div class="form-field">
         <label for="a-periodo">Periodo escolar</label>
-        <input
-          id="a-periodo"
-          type="text"
-          formControlName="periodoEscolar"
-          placeholder="Ej. 2026-1"
-        />
+        <select id="a-periodo" formControlName="periodoEscolar">
+          <option value="" disabled>Selecciona un periodo</option>
+          @for (p of periodos; track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select>
       </div>
 
       @if (asignarError()) {
@@ -223,9 +294,35 @@
         <label for="i-nombre">Nombre</label>
         <input id="i-nombre" type="text" formControlName="nombre" />
       </div>
-      <div class="form-field">
-        <label for="i-pais">País</label>
-        <input id="i-pais" type="text" formControlName="pais" />
+      <div class="row">
+        <div class="col form-field">
+          <label for="i-pais">País</label>
+          <select id="i-pais" formControlName="paisCodigo" (change)="onPaisChange()">
+            <option value="" disabled>Selecciona un país</option>
+            @for (p of paises; track p.codigo) {
+              <option [value]="p.codigo">{{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="col form-field">
+          <label for="i-estado">Estado / Provincia</label>
+          <input id="i-estado" type="text" formControlName="estado" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col form-field">
+          <label for="i-ciudad">Ciudad</label>
+          <input id="i-ciudad" type="text" formControlName="ciudad" />
+        </div>
+        <div class="col form-field">
+          <label for="i-telefono">
+            Teléfono
+            @if (prefijoTelefono()) {
+              <span class="muted">({{ prefijoTelefono() }})</span>
+            }
+          </label>
+          <input id="i-telefono" type="tel" formControlName="telefono" />
+        </div>
       </div>
       <div class="form-field">
         <label for="i-correo">Correo institucional</label>

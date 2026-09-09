@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "INSTITUCION" ADD COLUMN "registro_completo" BOOLEAN NOT NULL DEFAULT false;
