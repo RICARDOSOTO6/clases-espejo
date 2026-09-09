@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import {
   AsignacionMia,
   CreateSolicitudDto,
+  RevisarSolicitudDto,
   Solicitud,
+  SolicitudEntrante,
 } from '../models/solicitud.models';
 
 const API_URL = 'http://localhost:3000';
@@ -35,6 +37,19 @@ export class SolicitudesService {
   cancelar(id: number): Observable<{ mensaje: string }> {
     return this.http.delete<{ mensaje: string }>(
       `${API_URL}/solicitudes/${id}`,
+    );
+  }
+
+  listarEntrantes(): Observable<SolicitudEntrante[]> {
+    return this.http.get<SolicitudEntrante[]>(
+      `${API_URL}/solicitudes/entrantes`,
+    );
+  }
+
+  revisar(id: number, dto: RevisarSolicitudDto): Observable<SolicitudEntrante> {
+    return this.http.post<SolicitudEntrante>(
+      `${API_URL}/solicitudes/${id}/revisar`,
+      dto,
     );
   }
 }

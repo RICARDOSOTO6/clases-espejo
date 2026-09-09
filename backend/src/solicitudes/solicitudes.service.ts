@@ -7,8 +7,10 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
+import { RevisarSolicitudDto } from './dto/revisar-solicitud.dto';
 
 const ESTADO_PENDIENTE = 'PENDIENTE';
+const ETAPA_REVISION_INICIAL = 'REVISION_INICIAL';
 
 @Injectable()
 export class SolicitudesService {
@@ -162,6 +164,51 @@ export class SolicitudesService {
     return { mensaje: 'Solicitud cancelada' };
   }
 
+  // --- Lado agente (Semana 4) ---
+  async listarEntrantes(usuarioId: number) {
+    const agente = await this.getAgente(usuarioId);
+    return this.prisma.solicitudClaseEspejo.findMany({
+      where: { institucionDestinoId: agente.institucionId },
+      include: this.includeEntrante(),
+      orderBy: { creadoEn: 'desc' },
+    });
+  }
+
+  async revisar(usuarioId: number, id: number, dto: RevisarSolicitudDto) {
+    const agente = await this.getAgente(usuarioId);
+    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
+      where: { id, institucionDestinoId: agente.institucionId },
+    });
+    if (!solicitud) throw new NotFoundException('Solicitud no encontrada');
+
+    if (solicitud.estado !== ESTADO_PENDIENTE) {
+      throw new BadRequestException('La solicitud ya fue revisada');
+    }
+
+    if (dto.decision === 'RECHAZADA' && !dto.comentario?.trim()) {
+      throw new BadRequestException(
+        'Indica el motivo del rechazo en el comentario',
+      );
+    }
+
+    await this.prisma.revisionSolicitud.create({
+      data: {
+        solicitudId: id,
+        agenteId: agente.id,
+        etapa: ETAPA_REVISION_INICIAL,
+        decision: dto.decision,
+        comentario: dto.comentario ?? '',
+        revisadaEn: new Date(),
+      },
+    });
+
+    return this.prisma.solicitudClaseEspejo.update({
+      where: { id },
+      data: { estado: dto.decision },
+      include: this.includeEntrante(),
+    });
+  }
+
   private async obtenerPropia(docenteId: number, id: number) {
     const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
       where: {
@@ -183,6 +230,37 @@ export class SolicitudesService {
       );
     }
     return docente;
+  }
+
+  private async getAgente(usuarioId: number) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
+    });
+    if (!agente) {
+      throw new UnauthorizedException(
+        'Solo un agente de internacionalización puede revisar solicitudes',
+      );
+    }
+    return agente;
+  }
+
+  private includeEntrante() {
+    return {
+      asignacionOrigen: {
+        include: {
+          materia: true,
+          docenteInstitucion: {
+            include: {
+              institucion: true,
+              docente: { include: { usuario: true } },
+            },
+          },
+        },
+      },
+      institucionDestino: true,
+      materiaDestino: true,
+      revisiones: true,
+    };
   }
 
   private includeCompleto() {

@@ -11,7 +11,12 @@ import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { AgentesService } from '../../core/services/agentes.service';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
+import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { Institucion, InviteDocenteDto } from '../../core/models/auth.models';
+import {
+  RevisarSolicitudDto,
+  SolicitudEntrante,
+} from '../../core/models/solicitud.models';
 import {
   PAISES,
   PERIODOS_ESCOLARES,
@@ -34,6 +39,7 @@ export class AgenteComponent implements OnInit {
   private readonly agentes = inject(AgentesService);
   private readonly materiasService = inject(MateriasService);
   private readonly institucionesService = inject(InstitucionesService);
+  private readonly solicitudesService = inject(SolicitudesService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -103,6 +109,18 @@ export class AgenteComponent implements OnInit {
     periodoEscolar: this.fb.control<string>('', Validators.required),
   });
 
+  // --- Solicitudes recibidas (Semana 4) ---
+  solicitudesEntrantes = signal<SolicitudEntrante[]>([]);
+  showRevisionModal = false;
+  solicitudARevisar: SolicitudEntrante | null = null;
+  revisionLoading = signal(false);
+  revisionError = signal<string | null>(null);
+
+  revisionForm = this.fb.group({
+    decision: ['APROBADA', Validators.required],
+    comentario: [''],
+  });
+
   ngOnInit(): void {
     this.cargarDatos();
   }
@@ -119,6 +137,10 @@ export class AgenteComponent implements OnInit {
     this.materiasService.listarAsignaciones().subscribe({
       next: (r) => this.asignaciones.set(r),
       error: () => this.asignaciones.set([]),
+    });
+    this.solicitudesService.listarEntrantes().subscribe({
+      next: (r) => this.solicitudesEntrantes.set(r),
+      error: () => this.solicitudesEntrantes.set([]),
     });
     this.institucionesService.obtenerMia().subscribe({
       next: (r) => {
@@ -396,6 +418,45 @@ export class AgenteComponent implements OnInit {
     });
   }
 
+  // --- Revisión de solicitudes (Semana 4) ---
+  openRevision(s: SolicitudEntrante): void {
+    this.solicitudARevisar = s;
+    this.revisionForm.reset({ decision: 'APROBADA', comentario: '' });
+    this.revisionError.set(null);
+    this.showRevisionModal = true;
+  }
+
+  closeRevision(): void {
+    this.showRevisionModal = false;
+  }
+
+  submitRevision(): void {
+    if (this.revisionLoading() || !this.solicitudARevisar) return;
+
+    const { decision, comentario } = this.revisionForm.value;
+    this.revisionLoading.set(true);
+    this.revisionError.set(null);
+
+    this.solicitudesService
+      .revisar(this.solicitudARevisar.id, {
+        decision: decision ?? 'APROBADA',
+        comentario: comentario ?? '',
+      } as RevisarSolicitudDto)
+      .subscribe({
+        next: () => {
+          this.revisionLoading.set(false);
+          this.showRevisionModal = false;
+          this.cargarDatos();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.revisionLoading.set(false);
+          this.revisionError.set(
+            extraerMensajeError(err, 'Error al revisar la solicitud'),
+          );
+        },
+      });
+  }
+
   // --- Helpers ---
   nombreDocente(di: DocenteInstitucion): string {
     const u = di.docente?.usuario;
@@ -404,5 +465,33 @@ export class AgenteComponent implements OnInit {
 
   asignacionesDeMateria(materiaId: number): Asignacion[] {
     return this.asignaciones().filter((a) => a.materia.id === materiaId);
+  }
+
+  nombreDocenteEntrante(s: SolicitudEntrante): string {
+    const u = s.asignacionOrigen?.docenteInstitucion?.docente?.usuario;
+    return u
+      ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}`
+      : 'Docente';
+  }
+
+  estadoLabelSolicitud(s: SolicitudEntrante): string {
+    switch (s.estado) {
+      case 'PENDIENTE':
+        return 'Pendiente';
+      case 'APROBADA':
+        return 'Aprobada';
+      case 'RECHAZADA':
+        return 'Rechazada';
+      case 'CANCELADA':
+        return 'Cancelada';
+      default:
+        return s.estado;
+    }
+  }
+
+  formatearFecha(fecha: string): string {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
   }
 }

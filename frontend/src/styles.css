@@ -568,6 +568,10 @@ select.ng-invalid.ng-touched:focus {
   color: var(--warning);
 }
 
+.estado.rechazada {
+  color: var(--danger);
+}
+
 .lista-acciones {
   display: flex;
   align-items: center;
