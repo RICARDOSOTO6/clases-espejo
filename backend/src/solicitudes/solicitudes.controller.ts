@@ -12,6 +12,7 @@ import {
 import { SolicitudesService } from './solicitudes.service';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
+import { RevisarSolicitudDto } from './dto/revisar-solicitud.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
@@ -31,6 +32,20 @@ export class SolicitudesController {
   @Get('mias')
   listarMias(@CurrentUser('sub') usuarioId: number) {
     return this.solicitudesService.listarMias(usuarioId);
+  }
+
+  @Get('entrantes')
+  listarEntrantes(@CurrentUser('sub') usuarioId: number) {
+    return this.solicitudesService.listarEntrantes(usuarioId);
+  }
+
+  @Post(':id/revisar')
+  revisar(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RevisarSolicitudDto,
+  ) {
+    return this.solicitudesService.revisar(usuarioId, id, dto);
   }
 
   @Patch(':id')

@@ -168,6 +168,46 @@
         }
       }
     </section>
+
+    <section class="card">
+      <h2>Solicitudes recibidas</h2>
+      @if (solicitudesEntrantes().length === 0) {
+        <p class="muted">No hay solicitudes entrantes.</p>
+      } @else {
+        <ul class="lista">
+          @for (s of solicitudesEntrantes(); track s.id) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ s.titulo }}</strong>
+                <div class="muted">
+                  De: {{ nombreDocenteEntrante(s) }} ·
+                  {{ s.asignacionOrigen.materia.nombre }}
+                  ({{ s.asignacionOrigen.docenteInstitucion.institucion.nombre }})
+                </div>
+                <div class="muted">
+                  Materia destino: {{ s.materiaDestino?.nombre ?? '—' }} ·
+                  {{ formatearFecha(s.fechaPropuesta) }}
+                </div>
+              </div>
+              <div class="lista-acciones">
+                <span
+                  class="estado"
+                  [class.pendiente]="s.estado === 'PENDIENTE'"
+                  [class.rechazada]="s.estado === 'RECHAZADA'"
+                >
+                  {{ estadoLabelSolicitud(s) }}
+                </span>
+                @if (s.estado === 'PENDIENTE') {
+                  <button class="btn btn-secondary" (click)="openRevision(s)">
+                    Revisar
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
     }
   </main>
 </div>
@@ -339,6 +379,39 @@
         [disabled]="institucionForm.invalid || institucionLoading()"
       >
         {{ institucionLoading() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </form>
+  </app-modal>
+}
+
+@if (showRevisionModal) {
+  <app-modal
+    [title]="'Revisar solicitud · ' + (solicitudARevisar?.titulo ?? '')"
+    (close)="closeRevision()"
+  >
+    <form [formGroup]="revisionForm" (ngSubmit)="submitRevision()">
+      <div class="form-field">
+        <label for="r-decision">Decisión</label>
+        <select id="r-decision" formControlName="decision">
+          <option value="APROBADA">Aprobar</option>
+          <option value="RECHAZADA">Rechazar</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="r-comentario">Comentario (obligatorio si rechazas)</label>
+        <input id="r-comentario" type="text" formControlName="comentario" />
+      </div>
+
+      @if (revisionError()) {
+        <div class="alert alert-error">{{ revisionError() }}</div>
+      }
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="revisionLoading()"
+      >
+        {{ revisionLoading() ? 'Guardando...' : 'Guardar revisión' }}
       </button>
     </form>
   </app-modal>

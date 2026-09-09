@@ -39,7 +39,11 @@
                 </div>
               </div>
               <div class="lista-acciones">
-                <span class="estado" [class.pendiente]="s.estado === 'PENDIENTE'">
+                <span
+                  class="estado"
+                  [class.pendiente]="s.estado === 'PENDIENTE'"
+                  [class.rechazada]="s.estado === 'RECHAZADA'"
+                >
                   {{ estadoLabel(s) }}
                 </span>
                 @if (s.estado === 'PENDIENTE') {
