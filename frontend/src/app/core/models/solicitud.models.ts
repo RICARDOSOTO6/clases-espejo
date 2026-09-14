@@ -71,9 +71,31 @@ export interface SolicitudEntrante {
       };
     };
   };
+  asignacionDestino: {
+    id: number;
+    periodoEscolar: string;
+    materia: Materia;
+    docenteInstitucion: {
+      id: number;
+      numeroEmpleado: string;
+      activo: boolean;
+      docente: {
+        id: number;
+        gradoAcademico: string;
+        especialidad: string;
+        usuario: {
+          id: number;
+          nombres: string;
+          apellidoPaterno: string;
+          apellidoMaterno: string;
+        };
+      };
+    };
+  } | null;
   institucionDestino: Institucion;
   materiaDestino: Materia | null;
   revisiones: RevisionSolicitud[];
+  proyecto: { id: number; estado: string } | null;
 }
 
 export interface CreateSolicitudDto {
@@ -88,4 +110,5 @@ export interface CreateSolicitudDto {
 export interface RevisarSolicitudDto {
   decision: string;
   comentario?: string;
+  asignacionDestinoId?: number;
 }

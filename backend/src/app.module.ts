@@ -10,6 +10,7 @@ import { MateriasModule } from './materias/materias.module';
 import { AsignacionesModule } from './asignaciones/asignaciones.module';
 import { InstitucionesModule } from './instituciones/instituciones.module';
 import { SolicitudesModule } from './solicitudes/solicitudes.module';
+import { ProyectosModule } from './proyectos/proyectos.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SolicitudesModule } from './solicitudes/solicitudes.module';
     AsignacionesModule,
     InstitucionesModule,
     SolicitudesModule,
+    ProyectosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

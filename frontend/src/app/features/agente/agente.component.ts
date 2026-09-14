@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -12,6 +12,7 @@ import { AgentesService } from '../../core/services/agentes.service';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
+import { ProyectosService } from '../../core/services/proyectos.service';
 import { Institucion, InviteDocenteDto } from '../../core/models/auth.models';
 import {
   RevisarSolicitudDto,
@@ -19,6 +20,7 @@ import {
 } from '../../core/models/solicitud.models';
 import {
   PAISES,
+  PAISES_CACE,
   PERIODOS_ESCOLARES,
   PROGRAMAS_EDUCATIVOS,
 } from '../../core/constants/catalogos';
@@ -27,11 +29,12 @@ import {
   DocenteInstitucion,
   Materia,
 } from '../../core/models/materia.models';
+import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-agente',
-  imports: [ReactiveFormsModule, ModalComponent],
+  imports: [ReactiveFormsModule, ModalComponent, RouterLink],
   templateUrl: './agente.component.html',
 })
 export class AgenteComponent implements OnInit {
@@ -40,6 +43,7 @@ export class AgenteComponent implements OnInit {
   private readonly materiasService = inject(MateriasService);
   private readonly institucionesService = inject(InstitucionesService);
   private readonly solicitudesService = inject(SolicitudesService);
+  private readonly proyectosService = inject(ProyectosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
@@ -64,6 +68,7 @@ export class AgenteComponent implements OnInit {
   institucionCargada = signal(false);
 
   readonly paises = PAISES;
+  readonly paisesComunidad = PAISES_CACE;
   readonly programas = PROGRAMAS_EDUCATIVOS;
   readonly periodos = PERIODOS_ESCOLARES;
   prefijoTelefono = signal('');
@@ -111,6 +116,7 @@ export class AgenteComponent implements OnInit {
 
   // --- Solicitudes recibidas (Semana 4) ---
   solicitudesEntrantes = signal<SolicitudEntrante[]>([]);
+  proyectos = signal<Proyecto[]>([]);
   showRevisionModal = false;
   solicitudARevisar: SolicitudEntrante | null = null;
   revisionLoading = signal(false);
@@ -119,6 +125,7 @@ export class AgenteComponent implements OnInit {
   revisionForm = this.fb.group({
     decision: ['APROBADA', Validators.required],
     comentario: [''],
+    asignacionDestinoId: this.fb.control<number | null>(null),
   });
 
   ngOnInit(): void {
@@ -141,6 +148,10 @@ export class AgenteComponent implements OnInit {
     this.solicitudesService.listarEntrantes().subscribe({
       next: (r) => this.solicitudesEntrantes.set(r),
       error: () => this.solicitudesEntrantes.set([]),
+    });
+    this.proyectosService.listarInstitucion().subscribe({
+      next: (r) => this.proyectos.set(r),
+      error: () => this.proyectos.set([]),
     });
     this.institucionesService.obtenerMia().subscribe({
       next: (r) => {
@@ -228,6 +239,23 @@ export class AgenteComponent implements OnInit {
 
   institucionCompleta(): boolean {
     return this.institucion()?.registroCompleto === true;
+  }
+
+  paisUsuario(): { codigo: string; nombre: string } | null {
+    const codigo = this.institucion()?.codigoPais;
+    if (!codigo) return null;
+    const pais = PAISES.find((p) => p.codigo === codigo);
+    return pais ? { codigo: pais.codigo, nombre: pais.nombre } : null;
+  }
+
+  flagUrl(codigo: string): string {
+    return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
+  }
+
+  pendientesEntrantes(): number {
+    return this.solicitudesEntrantes().filter(
+      (s) => s.estado === 'PENDIENTE',
+    ).length;
   }
 
   onPaisChange(): void {
@@ -421,7 +449,11 @@ export class AgenteComponent implements OnInit {
   // --- Revisión de solicitudes (Semana 4) ---
   openRevision(s: SolicitudEntrante): void {
     this.solicitudARevisar = s;
-    this.revisionForm.reset({ decision: 'APROBADA', comentario: '' });
+    this.revisionForm.reset({
+      decision: 'APROBADA',
+      comentario: '',
+      asignacionDestinoId: null,
+    });
     this.revisionError.set(null);
     this.showRevisionModal = true;
   }
@@ -433,7 +465,16 @@ export class AgenteComponent implements OnInit {
   submitRevision(): void {
     if (this.revisionLoading() || !this.solicitudARevisar) return;
 
-    const { decision, comentario } = this.revisionForm.value;
+    const { decision, comentario, asignacionDestinoId } =
+      this.revisionForm.value;
+
+    if (decision === 'APROBADA' && asignacionDestinoId == null) {
+      this.revisionError.set(
+        'Selecciona el docente que impartirá la clase espejo',
+      );
+      return;
+    }
+
     this.revisionLoading.set(true);
     this.revisionError.set(null);
 
@@ -441,6 +482,9 @@ export class AgenteComponent implements OnInit {
       .revisar(this.solicitudARevisar.id, {
         decision: decision ?? 'APROBADA',
         comentario: comentario ?? '',
+        ...(decision === 'APROBADA'
+          ? { asignacionDestinoId: asignacionDestinoId! }
+          : {}),
       } as RevisarSolicitudDto)
       .subscribe({
         next: () => {
@@ -493,5 +537,15 @@ export class AgenteComponent implements OnInit {
     if (!fecha) return '';
     const d = new Date(fecha);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  estadoProyectoLabel(estado: string): string {
+    const labels: Record<string, string> = {
+      EN_PLANIFICACION: 'En planificación',
+      EN_CURSO: 'En curso',
+      FINALIZADO: 'Finalizado',
+      CANCELADO: 'Cancelado',
+    };
+    return labels[estado] ?? estado;
   }
 }

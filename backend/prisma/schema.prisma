@@ -131,7 +131,8 @@ model AsignacionDocente {
   creadoEn             DateTime               @default(now()) @map("creado_en")
   actualizadoEn        DateTime               @default(now()) @updatedAt @map("actualizado_en")
   proyectosDocente     ProyectoDocente[]
-  solicitudesOrigen    SolicitudClaseEspejo[]
+  solicitudesOrigen    SolicitudClaseEspejo[] @relation("SolicitudOrigen")
+  solicitudesDestino   SolicitudClaseEspejo[] @relation("SolicitudDestino")
 
   @@map("ASIGNACION_DOCENTE")
 }
@@ -139,6 +140,7 @@ model AsignacionDocente {
 model SolicitudClaseEspejo {
   id                   Int                  @id @default(autoincrement())
   asignacionOrigenId   Int                  @map("asignacion_origen_id")
+  asignacionDestinoId  Int?                 @map("asignacion_destino_id")
   institucionDestinoId Int                  @map("institucion_destino_id")
   materiaDestinoId     Int?                 @map("materia_destino_id")
   titulo               String
@@ -149,7 +151,8 @@ model SolicitudClaseEspejo {
   creadoEn             DateTime             @default(now()) @map("creado_en")
   actualizadoEn        DateTime             @default(now()) @updatedAt @map("actualizado_en")
   revisiones           RevisionSolicitud[]
-  asignacionOrigen     AsignacionDocente    @relation(fields: [asignacionOrigenId], references: [id])
+  asignacionOrigen     AsignacionDocente    @relation("SolicitudOrigen", fields: [asignacionOrigenId], references: [id])
+  asignacionDestino    AsignacionDocente?   @relation("SolicitudDestino", fields: [asignacionDestinoId], references: [id])
   institucionDestino   Institucion          @relation(fields: [institucionDestinoId], references: [id])
   materiaDestino       Materia?             @relation(fields: [materiaDestinoId], references: [id])
 
@@ -188,6 +191,7 @@ model ProyectoClaseEspejo {
   solicitud     SolicitudClaseEspejo   @relation(fields: [solicitudId], references: [id])
   docentes      ProyectoDocente[]
   sesiones      Sesion[]
+  mensajes      Mensaje[]
 
   @@map("PROYECTO_CLASE_ESPEJO")
 }
@@ -201,10 +205,23 @@ model ProyectoDocente {
   actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   participacionesPlan ParticipacionPlanificacion[]
   participacionesRep  ParticipacionReporte[]
+  mensajes            Mensaje[]
   asignacionDocente   AsignacionDocente            @relation(fields: [asignacionDocenteId], references: [id])
   proyecto            ProyectoClaseEspejo          @relation(fields: [proyectoId], references: [id])
 
   @@map("PROYECTO_DOCENTE")
+}
+
+model Mensaje {
+  id                Int                 @id @default(autoincrement())
+  proyectoId        Int                 @map("proyecto_id")
+  proyectoDocenteId Int                 @map("proyecto_docente_id")
+  contenido         String
+  creadoEn          DateTime            @default(now()) @map("creado_en")
+  proyecto          ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  autor             ProyectoDocente     @relation(fields: [proyectoDocenteId], references: [id])
+
+  @@map("MENSAJE")
 }
 
 model PlanificacionConjunta {

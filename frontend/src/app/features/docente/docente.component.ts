@@ -1,5 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
   ReactiveFormsModule,
@@ -9,34 +9,41 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
+import { ProyectosService } from '../../core/services/proyectos.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
-import { Institucion } from '../../core/models/auth.models';
+import { Institucion, Perfil } from '../../core/models/auth.models';
+import { PAISES, PAISES_CACE } from '../../core/constants/catalogos';
 import { Materia } from '../../core/models/materia.models';
 import {
   AsignacionMia,
   CreateSolicitudDto,
   Solicitud,
 } from '../../core/models/solicitud.models';
+import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-docente',
-  imports: [ReactiveFormsModule, ModalComponent],
+  imports: [ReactiveFormsModule, ModalComponent, RouterLink],
   templateUrl: './docente.component.html',
 })
 export class DocenteComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly institucionesService = inject(InstitucionesService);
+  private readonly proyectosService = inject(ProyectosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   usuario = this.auth.currentUser();
+  readonly paisesComunidad = PAISES_CACE;
 
   asignaciones = signal<AsignacionMia[]>([]);
   instituciones = signal<Institucion[]>([]);
   materiasDestino = signal<Materia[]>([]);
   solicitudes = signal<Solicitud[]>([]);
+  proyectos = signal<Proyecto[]>([]);
+  paisUsuario = signal<{ codigo: string; nombre: string } | null>(null);
 
   // --- Modal solicitud ---
   showSolicitudModal = false;
@@ -64,8 +71,19 @@ export class DocenteComponent implements OnInit {
   }
 
   cargarDatos(): void {
+    this.auth.getPerfil().subscribe({
+      next: (perfil) => this.establecerPaisDesdePerfil(perfil),
+      error: () => {},
+    });
     this.solicitudesService.misAsignaciones().subscribe({
-      next: (r) => this.asignaciones.set(r),
+      next: (r) => {
+        this.asignaciones.set(r);
+        if (!this.paisUsuario()) {
+          this.establecerPais(
+            r[0]?.docenteInstitucion?.institucion?.codigoPais,
+          );
+        }
+      },
       error: () => this.asignaciones.set([]),
     });
     this.institucionesService.listar().subscribe({
@@ -76,6 +94,36 @@ export class DocenteComponent implements OnInit {
       next: (r) => this.solicitudes.set(r),
       error: () => this.solicitudes.set([]),
     });
+    this.proyectosService.listarMios().subscribe({
+      next: (r) => this.proyectos.set(r),
+      error: () => this.proyectos.set([]),
+    });
+  }
+
+  private establecerPaisDesdePerfil(perfil: Perfil): void {
+    const entradas = perfil.docente?.instituciones ?? [];
+    const entrada = entradas.find((i) => i.activo) ?? entradas[0];
+    this.establecerPais(entrada?.institucion?.codigoPais);
+  }
+
+  private establecerPais(codigo: string | undefined): void {
+    if (!codigo || this.paisUsuario()) return;
+    const pais = PAISES.find((p) => p.codigo === codigo);
+    if (pais) {
+      this.paisUsuario.set({ codigo: pais.codigo, nombre: pais.nombre });
+    }
+  }
+
+  flagUrl(codigo: string): string {
+    return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
+  }
+
+  pendientes(): number {
+    return this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length;
+  }
+
+  aprobadas(): number {
+    return this.solicitudes().filter((s) => s.estado === 'APROBADA').length;
   }
 
   logout(): void {
@@ -200,5 +248,15 @@ export class DocenteComponent implements OnInit {
     if (!fecha) return '';
     const d = new Date(fecha);
     return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+
+  estadoProyectoLabel(estado: string): string {
+    const labels: Record<string, string> = {
+      EN_PLANIFICACION: 'En planificación',
+      EN_CURSO: 'En curso',
+      FINALIZADO: 'Finalizado',
+      CANCELADO: 'Cancelado',
+    };
+    return labels[estado] ?? estado;
   }
 }

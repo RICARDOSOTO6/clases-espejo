@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class RevisarSolicitudDto {
   @IsString()
@@ -8,4 +8,8 @@ export class RevisarSolicitudDto {
   @IsString()
   @IsOptional()
   comentario?: string;
+
+  @IsInt()
+  @IsOptional()
+  asignacionDestinoId?: number;
 }
