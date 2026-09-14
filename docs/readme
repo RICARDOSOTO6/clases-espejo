@@ -41,7 +41,7 @@ La plataforma busca permitir que dos instituciones educativas puedan:
 
 * Angular 21 (componentes standalone, **signals** / modo zoneless)
 * Formularios reactivos con validación personalizada
-* Modo oscuro (persistente en `localStorage`)
+* Diseño institucional CACE (paleta y logo de la comunidad), sin modo oscuro
 * Catálogos desplegables (países ISO 3166, cargos, grados académicos, programas, periodos)
 
 ---
@@ -278,7 +278,7 @@ Desde `backend/`:
 
 ## 🎭 Datos de demostración
 
-Para poblar la base de datos con datos de ejemplo (2 instituciones, agentes, docentes, materias, asignaciones y solicitudes), ejecutar desde `backend/`:
+Para poblar la base de datos con una **simulación realista** (2 instituciones, 5 materias por institución, 15 docentes, asignaciones docente↔materia y solicitudes de clase espejo), ejecutar desde `backend/`:
 
 ```bash
 node scripts/seed-demo.js
@@ -291,9 +291,20 @@ Credenciales de prueba (contraseña común: `Demo1234`):
 | Agente (México) | `agente.calkini@clasesespejo.mx` |
 | Agente (Colombia) | `agente.colombia@clasesespejo.co` |
 | Docente (México) | `roberto.perez@clasesespejo.mx` |
+| Docente (México) | `sofia.gomez@clasesespejo.mx` |
+| Docente (México) | `carlos.hernandez@clasesespejo.mx` |
+| Docente (México) | `ana.sanchez@clasesespejo.mx` |
+| Docente (México) | `elena.castro@clasesespejo.mx` |
 | Docente (México) | `laura.martinez@clasesespejo.mx` |
+| Docente (México) | `jorge.morales@clasesespejo.mx` |
+| Docente (México) | `miguel.torres@clasesespejo.mx` |
 | Docente (Colombia) | `andres.garcia@clasesespejo.co` |
+| Docente (Colombia) | `santiago.giraldo@clasesespejo.co` |
 | Docente (Colombia) | `camila.rodriguez@clasesespejo.co` |
+| Docente (Colombia) | `isabella.cardenas@clasesespejo.co` |
+| Docente (Colombia) | `felipe.ortiz@clasesespejo.co` |
+| Docente (Colombia) | `valeria.rojas@clasesespejo.co` |
+| Docente (Colombia) | `diego.mendoza@clasesespejo.co` |
 
 ---
 
@@ -331,6 +342,7 @@ ASIGNACION_DOCENTE
             └── PROYECTO_CLASE_ESPEJO
                     │
                     ├── PROYECTO_DOCENTE
+                    ├── MENSAJE
                     ├── PLANIFICACION_CONJUNTA
                     ├── SESION
                     ├── ACTIVIDAD
@@ -388,7 +400,19 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `PATCH` | `/solicitudes/:id` | Edita una solicitud pendiente | JWT (docente) |
 | `DELETE` | `/solicitudes/:id` | Cancela una solicitud pendiente | JWT (docente) |
 | `GET` | `/solicitudes/entrantes` | Solicitudes destinadas a la institución | JWT (agente) |
-| `POST` | `/solicitudes/:id/revisar` | Aprueba/rechaza una solicitud | JWT (agente) |
+| `POST` | `/solicitudes/:id/revisar` | Aprueba/rechaza una solicitud (al aprobar se crea el proyecto) | JWT (agente) |
+| `GET` | `/proyectos/mios` | Proyectos en los que participa el docente | JWT (docente) |
+| `GET` | `/proyectos/institucion` | Proyectos de la institución del agente | JWT (agente) |
+| `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
+| `PATCH` | `/proyectos/:id` | Actualiza estado, fechas o plataforma | JWT (agente) |
+| `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto | JWT (agente) |
+| `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto | JWT (agente) |
+| `PUT` | `/proyectos/:id/planificacion` | Crea/actualiza la planificación conjunta | JWT |
+| `POST` | `/proyectos/:id/planificacion/confirmar` | El docente confirma su participación | JWT (docente) |
+| `GET` | `/proyectos/:id/reportes` | Lista los reportes de planificación | JWT |
+| `POST` | `/proyectos/:id/reportes` | Genera el reporte de planificación | JWT (agente) |
+| `GET` | `/proyectos/:id/mensajes` | Lista el chat del proyecto | JWT |
+| `POST` | `/proyectos/:id/mensajes` | Envía un mensaje al chat (solo docentes del proyecto) | JWT (docente) |
 | `GET` | `/health` | Health check del servicio | No |
 
 Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
@@ -526,8 +550,9 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Asignación docente ↔ materia
 * [x] Solicitudes de clases espejo (crear/listar/editar/cancelar)
 * [x] Flujo de revisión (aprobar/rechazar)
-* [ ] Gestión de proyectos
-* [ ] Planificación conjunta
+* [x] Gestión de proyectos (se crea automáticamente al aprobar la solicitud)
+* [x] Planificación conjunta
+* [x] Chat entre docentes del proyecto
 * [ ] Sesiones
 * [ ] Actividades
 * [ ] Evidencias
@@ -540,10 +565,12 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Redirección por rol (guards)
 * [x] Panel del agente (docentes, materias, asignaciones, institución, solicitudes recibidas)
 * [x] Panel del docente (crear/listar solicitudes)
-* [x] Modo oscuro
+* [x] Identidad visual CACE (logo, paleta institucional y banderas de la comunidad)
 * [x] Catálogos desplegables (países, cargos, grados, programas, periodos)
 * [x] Validación de formularios con mensajes de ayuda
-* [ ] Clases espejo (proyectos, planificación, sesiones)
+* [x] Clases espejo: proyectos y planificación conjunta
+* [x] Chat entre docentes del proyecto
+* [ ] Clases espejo: sesiones, actividades y evidencias
 * [ ] Reportes
 
 ---
@@ -574,10 +601,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 - [x] **Frontend:** panel del agente → revisar solicitudes (aprobar/rechazar) + el docente ve el estado.
 - [x] **Entregable:** flujo de aprobación origen → destino completo.
 
-## 🟠 Semana 5 — Proyecto + Planificación conjunta
-- [ ] **Backend:** módulo `proyectos` (se crea al aprobar) + `planificaciones`.
-- [ ] **Frontend:** pantalla de planificación conjunta + reporte de planificación.
-- [ ] **Entregable:** solicitud aprobada → proyecto → planificación.
+## 🟡 Semana 5 — Proyecto + Planificación conjunta ✅
+- [x] **Backend:** módulo `proyectos` (se crea al aprobar) + `planificaciones`.
+- [x] **Frontend:** pantalla de planificación conjunta + reporte de planificación.
+- [x] **Entregable:** solicitud aprobada → proyecto → planificación.
 
 ## 🟠 Semana 6 — Sesiones, Actividades y Evidencias
 - [ ] **Backend:** módulos `sesiones`, `actividades`, `evidencias`.
@@ -690,3 +717,4 @@ Se recomienda priorizar:
 Proyecto académico en desarrollo.
 
 La licencia y condiciones de distribución serán definidas posteriormente.
+comunidad de apoyo a  clases espejo uniendo mentes corazones y proyectos
