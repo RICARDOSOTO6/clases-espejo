@@ -1,12 +1,27 @@
 <div class="shell">
   <header class="topbar">
     <div class="topbar-brand">
-      <span class="auth-brand-mark" aria-hidden="true">CE</span>
-      <span class="auth-brand-name">Clases Espejo</span>
+      <div class="topbar-logo-chip">
+        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
+      </div>
+      <div class="topbar-titles">
+        <span class="topbar-name">Clases Espejo</span>
+        <span class="topbar-sub">Uniendo mentes, corazones y proyectos</span>
+      </div>
     </div>
     <div class="topbar-user">
-      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
-      <button class="btn btn-secondary" (click)="logout()">Cerrar sesión</button>
+      @if (paisUsuario(); as pais) {
+        <img
+          class="flag"
+          [src]="flagUrl(pais.codigo)"
+          [alt]="'Bandera de ' + pais.nombre"
+          [title]="pais.nombre"
+          width="22"
+          height="16"
+        />
+      }
+      <span class="topbar-user-name">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
+      <button class="btn btn-outline" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
 
@@ -76,16 +91,78 @@
         </form>
       </section>
     } @else {
-      <section class="card">
-        <h1>Panel del Agente</h1>
-      <p>
-        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</strong>.
-      </p>
-      <div class="role-badge agente">Agente de Internacionalización</div>
+      <section class="card welcome">
+        <div class="welcome-top">
+          <div class="welcome-text">
+            <span class="role-badge agente">Agente de Internacionalización</span>
+            <h1>Bienvenido(a), {{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</h1>
+            <p class="muted">Panel del Agente · Internacionalización</p>
+            @if (institucion(); as inst) {
+              <p class="welcome-meta">
+                <img
+                  class="flag flag-lg"
+                  [src]="flagUrl(inst.codigoPais)"
+                  [alt]="'Bandera de ' + inst.pais"
+                  [title]="inst.pais"
+                  width="24"
+                  height="18"
+                />
+                <strong>{{ inst.nombre }}</strong>
+                @if (inst.ciudad) {
+                  <span>· {{ inst.ciudad }}{{ inst.pais ? ', ' + inst.pais : '' }}</span>
+                }
+              </p>
+            }
+          </div>
+          <button class="btn btn-primary welcome-action" (click)="openInvite()">
+            Invitar docente
+          </button>
+        </div>
+      </section>
 
-      <div class="card-actions">
-        <button class="btn btn-primary" (click)="openInvite()">Invitar docente</button>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value">{{ docentes().length }}</span>
+          <span class="stat-label">Docentes</span>
+        </div>
+        <div class="stat stat-info">
+          <span class="stat-value">{{ materias().length }}</span>
+          <span class="stat-label">Materias</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ asignaciones().length }}</span>
+          <span class="stat-label">Asignaciones</span>
+        </div>
+        <div class="stat stat-warn">
+          <span class="stat-value">{{ pendientesEntrantes() }}</span>
+          <span class="stat-label">Por revisar</span>
+        </div>
       </div>
+
+    <section class="card comunidad">
+      <div class="card-head">
+        <h2>Comunidad CACE</h2>
+        <span class="comunidad-note">Uniendo mentes, corazones y proyectos</span>
+      </div>
+      <p class="muted">
+        Países que conforman la Comunidad de Apoyo a Clases Espejo:
+      </p>
+      <ul class="flags-comunidad">
+        @for (p of paisesComunidad; track p.codigo) {
+          <li class="flag-pais">
+            <img
+              class="flag"
+              [src]="flagUrl(p.codigo)"
+              [alt]="'Bandera de ' + p.nombre"
+              [title]="p.nombre"
+              width="28"
+              height="20"
+              loading="lazy"
+            />
+            <span>{{ p.nombre }}</span>
+          </li>
+        }
+      </ul>
     </section>
 
     <section class="card">
@@ -94,8 +171,20 @@
         <button class="btn btn-secondary" (click)="openEditarInstitucion()">Editar</button>
       </div>
       @if (institucion(); as inst) {
-        <p><strong>{{ inst.nombre }}</strong></p>
-        <p class="muted">{{ inst.pais }} · {{ inst.correoInstitucional }}</p>
+        <p class="inst-name">
+          <img
+            class="flag"
+            [src]="flagUrl(inst.codigoPais)"
+            [alt]="'Bandera de ' + inst.pais"
+            [title]="inst.pais"
+            width="22"
+            height="16"
+          />
+          <strong>{{ inst.nombre }}</strong>
+        </p>
+        <p class="muted">
+          {{ inst.pais }}{{ inst.estado ? ' · ' + inst.estado : '' }}{{ inst.ciudad ? ', ' + inst.ciudad : '' }} · {{ inst.correoInstitucional }}
+        </p>
       } @else {
         <p class="muted">No se pudo cargar la información de la institución.</p>
       }
@@ -192,8 +281,10 @@
               <div class="lista-acciones">
                 <span
                   class="estado"
+                  [class.aprobada]="s.estado === 'APROBADA'"
                   [class.pendiente]="s.estado === 'PENDIENTE'"
                   [class.rechazada]="s.estado === 'RECHAZADA'"
+                  [class.cancelada]="s.estado === 'CANCELADA'"
                 >
                   {{ estadoLabelSolicitud(s) }}
                 </span>
@@ -202,6 +293,45 @@
                     Revisar
                   </button>
                 }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Proyectos de clase espejo</h2>
+      </div>
+      @if (proyectos().length === 0) {
+        <p class="muted">
+          Aún no hay proyectos. Se crean automáticamente al aprobar una solicitud.
+        </p>
+      } @else {
+        <ul class="lista">
+          @for (pr of proyectos(); track pr.id) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ pr.solicitud.titulo }}</strong>
+                <div class="muted">
+                  {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
+                  → {{ pr.solicitud.institucionDestino.nombre }}
+                </div>
+                <div class="muted">
+                  {{ pr.docentes.length }} docente(s) ·
+                  {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                </div>
+              </div>
+              <div class="lista-acciones">
+                <span
+                  class="estado"
+                  [class.pendiente]="pr.estado === 'EN_PLANIFICACION'"
+                  [class.rechazada]="pr.estado === 'CANCELADO'"
+                >
+                  {{ estadoProyectoLabel(pr.estado) }}
+                </span>
+                <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
               </div>
             </li>
           }
@@ -397,6 +527,21 @@
           <option value="RECHAZADA">Rechazar</option>
         </select>
       </div>
+      @if (revisionForm.get('decision')?.value === 'APROBADA') {
+        <div class="form-field">
+          <label for="r-docente">Docente que impartirá la clase espejo</label>
+          <select id="r-docente" formControlName="asignacionDestinoId">
+            <option [ngValue]="null" disabled>Selecciona un docente</option>
+            @for (a of asignaciones(); track a.id) {
+              <option [ngValue]="a.id">
+                {{ nombreDocente(a.docenteInstitucion) }} · {{ a.materia.nombre }}
+                ({{ a.periodoEscolar }})
+              </option>
+            }
+          </select>
+        </div>
+      }
+
       <div class="form-field">
         <label for="r-comentario">Comentario (obligatorio si rechazas)</label>
         <input id="r-comentario" type="text" formControlName="comentario" />

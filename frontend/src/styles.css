@@ -58,51 +58,6 @@
   color-scheme: light;
 }
 
-/* ============================================================
-   Modo oscuro
-   ============================================================ */
-[data-theme='dark'] {
-  /* Neutros */
-  --bg: #0f141a;
-  --surface: #161d26;
-  --text: #e6edf3;
-  --text-muted: #9aa7b4;
-  --border: #2a3542;
-
-  /* Primario */
-  --accent: #4f83c4;
-  --accent-hover: #6a9bd6;
-  --accent-soft: #1c2836;
-
-  /* Secundario */
-  --secondary: #35b0c4;
-  --secondary-soft: #16303a;
-
-  /* Semánticos */
-  --danger: #f08070;
-  --danger-bg: #3a2320;
-  --danger-border: #6b3a34;
-  --success: #4ac48a;
-  --success-bg: #15302a;
-  --success-border: #2f5c47;
-  --warning: #ffd166;
-  --warning-bg: #3a301a;
-  --warning-border: #6b5a2f;
-  --warning-text: #ffd166;
-
-  /* Inputs y hover */
-  --input-bg: #151c24;
-  --hover: #26313d;
-  --border-hover: #3a4757;
-
-  /* Sombras */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45),
-    0 12px 32px rgba(0, 0, 0, 0.5);
-  --ring: 0 0 0 3px rgba(79, 131, 196, 0.35);
-
-  color-scheme: dark;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -657,5 +612,618 @@ select.ng-invalid.ng-touched:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   REBRAND — Identidad CACE (azules oficiales del logo)
+   Comunidad de Apoyo a Clases Espejo
+   ============================================================ */
+
+:root {
+  --accent: #0066aa;
+  --accent-hover: #004477;
+  --accent-deep: #003a66;
+  --accent-soft: #e8f1fa;
+  --secondary: #0066aa;
+  --secondary-soft: #e6f1f9;
+  --ring: 0 0 0 3px rgba(0, 102, 170, 0.25);
+  --shadow-card: 0 1px 2px rgba(0, 68, 119, 0.06),
+    0 14px 34px rgba(0, 68, 119, 0.1);
+  --radius-card: 16px;
+  --radius-field: 10px;
+  --hero-a: #003a66;
+  --hero-b: #0066aa;
+}
+
+/* --- Pantallas de acceso: layout de dos paneles --- */
+
+.auth-layout {
+  height: 100dvh;
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: minmax(320px, 42%) 1fr;
+}
+
+.auth-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  overflow: hidden;
+  background: linear-gradient(140deg, var(--hero-a) 0%, var(--hero-b) 100%);
+  color: #fff;
+}
+
+.auth-hero::before,
+.auth-hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.auth-hero::before {
+  width: 420px;
+  height: 420px;
+  top: -160px;
+  right: -140px;
+}
+
+.auth-hero::after {
+  width: 360px;
+  height: 360px;
+  bottom: -150px;
+  left: -120px;
+}
+
+.auth-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.auth-logo-chip {
+  background: #fff;
+  padding: var(--space-5);
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(0, 20, 40, 0.28);
+}
+
+.auth-logo-chip img {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
+
+.auth-hero-name {
+  margin: var(--space-2) 0 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-hero-lema {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.auth-hero-tag {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.auth-main {
+  display: flex;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-5);
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--bg) 55%);
+}
+
+.auth-main .auth-card {
+  width: 100%;
+  max-width: 430px;
+  margin: auto;
+}
+
+.auth-main .auth-card.wide {
+  max-width: 580px;
+}
+
+/* --- Topbar de marca (azul del logo) --- */
+
+.topbar {
+  background: linear-gradient(90deg, var(--hero-a) 0%, var(--hero-b) 100%);
+  border-bottom: none;
+  color: #fff;
+}
+
+.topbar-logo-chip {
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px;
+  line-height: 0;
+}
+
+.topbar-logo-chip img {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.topbar-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.topbar-name {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.topbar-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.topbar-user-name {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #fff;
+  padding: 0.5rem 1.15rem;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #fff;
+  border-color: #fff;
+  color: var(--accent-deep);
+}
+
+@media (max-width: 960px) {
+  .auth-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .auth-hero {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .auth-logo-chip {
+    padding: var(--space-3);
+    border-radius: 16px;
+  }
+
+  .auth-logo-chip img {
+    width: 84px;
+    height: 84px;
+  }
+
+  .auth-hero-inner {
+    flex-direction: row;
+    justify-content: center;
+    text-align: left;
+    gap: var(--space-4);
+  }
+
+  .auth-hero-name {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .auth-hero-lema,
+  .auth-hero-tag {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-user {
+    justify-content: space-between;
+  }
+
+  .auth-main {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+/* ============================================================
+   Chips del logo: fondo blanco con transparencia ligera
+   ============================================================
+
+   >>> AJUSTE MANUAL DE LA TRANSPARENCIA DEL FONDO DEL LOGO <<<
+   Cambia el último número de "rgba(255, 255, 255, 0.9)":
+     - 1   = fondo 100% opaco (blanco sólido)
+     - 0.9 = blanco casi opaco (valor actual)
+     - 0.7 = se transparenta bastante
+     - 0.5 = medio transparente
+     - 0   = fondo totalmente transparente
+   Aplica al chip del panel de marca y al del topbar.
+*/
+
+.auth-logo-chip,
+.topbar-logo-chip {
+  background: rgba(255, 255, 255, 0.655);
+  border: 1px solid rgba(255, 255, 255, 0.297);
+  box-shadow: none;
+}
+
+.auth-logo-chip {
+  padding: var(--space-3);
+  border-radius: 18px;
+}
+
+.topbar-logo-chip {
+  padding: 5px;
+  border-radius: 10px;
+}
+
+/* Sombra suave para separar el logo del fondo translúcido */
+.auth-logo-chip img,
+.topbar-logo-chip img {
+  filter: drop-shadow(0 2px 4px rgba(0, 20, 40, 0.35));
+}
+
+/* ============================================================
+   Paneles Agente y Docente — identidad y estadísticas
+   ============================================================ */
+
+/* Banderas */
+.flag {
+  display: inline-block;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+  vertical-align: middle;
+}
+
+.topbar-user .flag {
+  width: 22px;
+  height: 16px;
+}
+
+.flag-lg {
+  width: 24px;
+  height: 18px;
+  margin-right: var(--space-2);
+}
+
+/* Tarjeta de bienvenida */
+.welcome-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.welcome-text {
+  min-width: 240px;
+}
+
+.welcome-text h1 {
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.welcome-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-2) 0 0;
+  color: var(--text-muted);
+}
+
+.welcome-meta strong {
+  color: var(--text);
+}
+
+.welcome-action {
+  width: auto;
+  margin: 0;
+  padding: 0.7rem 1.4rem;
+}
+
+.inst-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.inst-name strong {
+  font-size: 1.05rem;
+}
+
+/* Tarjetas de estadísticas */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+}
+
+.stat {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.stat-label {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.stat-warn {
+  border-top-color: var(--warning);
+}
+
+.stat-warn .stat-value {
+  color: #8a6200;
+}
+
+.stat-ok {
+  border-top-color: var(--success);
+}
+
+.stat-ok .stat-value {
+  color: var(--success);
+}
+
+.stat-info {
+  border-top-color: var(--secondary);
+}
+
+.stat-info .stat-value {
+  color: var(--secondary);
+}
+
+/* Estados tipo "pill" */
+.estado {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.estado.pendiente {
+  background: var(--warning-bg);
+  color: #7a5600;
+}
+
+.estado.rechazada {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.estado.cancelada {
+  background: var(--hover);
+  color: var(--text-muted);
+}
+
+/* Listas más pulidas */
+.lista-item {
+  padding: 0.65rem 0.5rem;
+  border-radius: 10px;
+  transition: background-color 0.15s ease;
+}
+
+.lista-item:hover {
+  background: var(--hover);
+}
+
+/* ============================================================
+   Comunidad CACE — países miembros
+   ============================================================ */
+
+.comunidad-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.flags-comunidad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.flag-pais {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.flag-pais:hover {
+  border-color: var(--secondary);
+  box-shadow: var(--ring);
+}
+
+.flag-pais .flag {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   Pantalla de proyecto / planificación conjunta
+   ============================================================ */
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  font-size: 0.9rem;
+}
+
+.meta-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.subtitle {
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.form-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.form-inline .form-field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-inline .btn {
+  width: auto;
+  margin: 0;
+  padding: 0.7rem 1.3rem;
+}
+
+.reporte {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+}
+
+.reporte p {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.reporte-head {
+  margin-bottom: var(--space-2);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 360px;
+  overflow-y: auto;
+  margin-bottom: var(--space-4);
+}
+
+.chat-msg {
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+}
+
+.chat-msg.mio {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  margin-left: var(--space-6);
+}
+
+.chat-msg-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.chat-msg-texto {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chat-form input {
+  flex: 1;
+}
+
+.chat-form .btn-primary {
+  width: auto;
+  margin-top: 0;
+  padding: 0.7rem 1.3rem;
+}
+
+@media (max-width: 640px) {
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-inline .btn {
+    width: 100%;
   }
 }

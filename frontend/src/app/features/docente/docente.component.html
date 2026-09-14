@@ -1,28 +1,105 @@
 <div class="shell">
   <header class="topbar">
     <div class="topbar-brand">
-      <span class="auth-brand-mark" aria-hidden="true">CE</span>
-      <span class="auth-brand-name">Clases Espejo</span>
+      <div class="topbar-logo-chip">
+        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
+      </div>
+      <div class="topbar-titles">
+        <span class="topbar-name">Clases Espejo</span>
+        <span class="topbar-sub">Uniendo mentes, corazones y proyectos</span>
+      </div>
     </div>
     <div class="topbar-user">
-      <span class="muted">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
-      <button class="btn btn-secondary" (click)="logout()">Cerrar sesión</button>
+      @if (paisUsuario(); as pais) {
+        <img
+          class="flag"
+          [src]="flagUrl(pais.codigo)"
+          [alt]="'Bandera de ' + pais.nombre"
+          [title]="pais.nombre"
+          width="22"
+          height="16"
+        />
+      }
+      <span class="topbar-user-name">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
+      <button class="btn btn-outline" (click)="logout()">Cerrar sesión</button>
     </div>
   </header>
 
   <main class="content">
-    <section class="card">
-      <h1>Panel del Docente</h1>
-      <p>
-        Bienvenido(a), <strong>{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</strong>.
+    <section class="card welcome">
+      <div class="welcome-top">
+        <div class="welcome-text">
+          <span class="role-badge">Docente</span>
+          <h1>Bienvenido(a), {{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</h1>
+          <p class="muted">Panel del Docente · Clases espejo colaborativas</p>
+          @if (paisUsuario(); as pais) {
+            <p class="welcome-meta">
+              <img
+                class="flag flag-lg"
+                [src]="flagUrl(pais.codigo)"
+                [alt]="'Bandera de ' + pais.nombre"
+                [title]="pais.nombre"
+                width="24"
+                height="18"
+              />
+              <strong>{{ pais.nombre }}</strong>
+            </p>
+          }
+        </div>
+        <button class="btn btn-primary welcome-action" (click)="openNueva()">
+          Nueva solicitud
+        </button>
+      </div>
+    </section>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">{{ solicitudes().length }}</span>
+        <span class="stat-label">Solicitudes</span>
+      </div>
+      <div class="stat stat-warn">
+        <span class="stat-value">{{ pendientes() }}</span>
+        <span class="stat-label">Pendientes</span>
+      </div>
+      <div class="stat stat-ok">
+        <span class="stat-value">{{ aprobadas() }}</span>
+        <span class="stat-label">Aprobadas</span>
+      </div>
+      <div class="stat stat-info">
+        <span class="stat-value">{{ instituciones().length }}</span>
+        <span class="stat-label">Instituciones</span>
+      </div>
+    </div>
+
+    <section class="card comunidad">
+      <div class="card-head">
+        <h2>Comunidad CACE</h2>
+        <span class="comunidad-note">Uniendo mentes, corazones y proyectos</span>
+      </div>
+      <p class="muted">
+        Países que conforman la Comunidad de Apoyo a Clases Espejo:
       </p>
-      <div class="role-badge">Docente</div>
+      <ul class="flags-comunidad">
+        @for (p of paisesComunidad; track p.codigo) {
+          <li class="flag-pais">
+            <img
+              class="flag"
+              [src]="flagUrl(p.codigo)"
+              [alt]="'Bandera de ' + p.nombre"
+              [title]="p.nombre"
+              width="28"
+              height="20"
+              loading="lazy"
+            />
+            <span>{{ p.nombre }}</span>
+          </li>
+        }
+      </ul>
     </section>
 
     <section class="card">
       <div class="card-head">
         <h2>Mis solicitudes de clase espejo</h2>
-        <button class="btn btn-primary" (click)="openNueva()">Nueva solicitud</button>
       </div>
 
       @if (solicitudes().length === 0) {
@@ -41,8 +118,10 @@
               <div class="lista-acciones">
                 <span
                   class="estado"
+                  [class.aprobada]="s.estado === 'APROBADA'"
                   [class.pendiente]="s.estado === 'PENDIENTE'"
                   [class.rechazada]="s.estado === 'RECHAZADA'"
+                  [class.cancelada]="s.estado === 'CANCELADA'"
                 >
                   {{ estadoLabel(s) }}
                 </span>
@@ -50,6 +129,46 @@
                   <button class="btn btn-secondary" (click)="openEditar(s)">Editar</button>
                   <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Cancelar</button>
                 }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Mis proyectos de clase espejo</h2>
+      </div>
+      @if (proyectos().length === 0) {
+        <p class="muted">
+          Aún no participas en proyectos. Se crean cuando el agente aprueba una
+          solicitud.
+        </p>
+      } @else {
+        <ul class="lista">
+          @for (pr of proyectos(); track pr.id) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ pr.solicitud.titulo }}</strong>
+                <div class="muted">
+                  {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
+                  → {{ pr.solicitud.institucionDestino.nombre }}
+                </div>
+                <div class="muted">
+                  {{ pr.docentes.length }} docente(s) ·
+                  {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                </div>
+              </div>
+              <div class="lista-acciones">
+                <span
+                  class="estado"
+                  [class.pendiente]="pr.estado === 'EN_PLANIFICACION'"
+                  [class.rechazada]="pr.estado === 'CANCELADO'"
+                >
+                  {{ estadoProyectoLabel(pr.estado) }}
+                </span>
+                <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
               </div>
             </li>
           }

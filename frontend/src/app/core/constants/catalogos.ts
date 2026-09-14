@@ -200,6 +200,13 @@ export const PAISES: Pais[] = [
   { codigo: 'ZW', nombre: 'Zimbabue', prefijo: '+263' },
 ];
 
+export const PAISES_CACE = PAISES.filter((p) =>
+  [
+    'MX', 'GT', 'HN', 'SV', 'NI', 'CR', 'PA', 'CU', 'DO',
+    'CO', 'VE', 'EC', 'PE', 'BO', 'CL', 'AR', 'UY', 'PY',
+  ].includes(p.codigo),
+);
+
 export const TIPOS_DOCUMENTO = [
   'DNI',
   'Pasaporte',

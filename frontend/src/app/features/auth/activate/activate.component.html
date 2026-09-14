@@ -1,9 +1,17 @@
-<div class="auth-shell">
-  <main class="auth-card wide">
-    <header class="auth-brand">
-      <span class="auth-brand-mark" aria-hidden="true">CE</span>
-      <span class="auth-brand-name">Clases Espejo</span>
-    </header>
+<div class="auth-layout">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-logo-chip">
+        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
+      </div>
+      <p class="auth-hero-name">Clases Espejo</p>
+      <p class="auth-hero-lema">Uniendo mentes, corazones y proyectos</p>
+      <p class="auth-hero-tag">Comunidad de Apoyo a Clases Espejo</p>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <section class="auth-card wide">
 
     @if (success()) {
       <h1 class="auth-title">¡Cuenta creada!</h1>
@@ -171,5 +179,6 @@
         </button>
       </form>
     }
+    </section>
   </main>
 </div>

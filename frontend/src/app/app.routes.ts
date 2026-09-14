@@ -46,6 +46,14 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('DOCENTE')],
   },
   {
+    path: 'proyectos/:id',
+    loadComponent: () =>
+      import('./features/proyecto/proyecto.component').then(
+        (m) => m.ProyectoComponent,
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: '**',
     redirectTo: '/login',
   },

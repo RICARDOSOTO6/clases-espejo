@@ -12,6 +12,13 @@ import { RevisarSolicitudDto } from './dto/revisar-solicitud.dto';
 const ESTADO_PENDIENTE = 'PENDIENTE';
 const ETAPA_REVISION_INICIAL = 'REVISION_INICIAL';
 
+// Semana 5: proyecto generado al aprobar una solicitud.
+const ESTADO_PROYECTO_INICIAL = 'EN_PLANIFICACION';
+const PLATAFORMA_POR_DEFINIR = 'Por definir';
+const ROL_ORIGEN = 'ORIGEN';
+const ROL_DESTINO = 'DESTINO';
+const DIAS_POR_DEFECTO = 14;
+
 @Injectable()
 export class SolicitudesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -191,6 +198,27 @@ export class SolicitudesService {
       );
     }
 
+    let asignacionDestinoId: number | null = null;
+    if (dto.decision === 'APROBADA') {
+      if (dto.asignacionDestinoId == null) {
+        throw new BadRequestException(
+          'Selecciona el docente que impartirá la clase espejo',
+        );
+      }
+      const destino = await this.prisma.asignacionDocente.findFirst({
+        where: {
+          id: dto.asignacionDestinoId,
+          docenteInstitucion: { institucionId: agente.institucionId },
+        },
+      });
+      if (!destino) {
+        throw new BadRequestException(
+          'La asignación del docente seleccionado no es válida',
+        );
+      }
+      asignacionDestinoId = destino.id;
+    }
+
     await this.prisma.revisionSolicitud.create({
       data: {
         solicitudId: id,
@@ -202,10 +230,68 @@ export class SolicitudesService {
       },
     });
 
-    return this.prisma.solicitudClaseEspejo.update({
+    const actualizada = await this.prisma.solicitudClaseEspejo.update({
       where: { id },
-      data: { estado: dto.decision },
+      data: {
+        estado: dto.decision,
+        ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
+      },
       include: this.includeEntrante(),
+    });
+
+    if (dto.decision === 'APROBADA') {
+      await this.crearProyectoSiNoExiste(id, solicitud, asignacionDestinoId!);
+      return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
+        where: { id },
+        include: this.includeEntrante(),
+      });
+    }
+
+    return actualizada;
+  }
+
+  /**
+   * Semana 5: al aprobar una solicitud se crea el proyecto de clase espejo
+   * y se incorpora al docente de origen como participante.
+   */
+  private async crearProyectoSiNoExiste(
+    solicitudId: number,
+    solicitud: { asignacionOrigenId: number; fechaPropuesta: Date },
+    asignacionDestinoId: number,
+  ): Promise<void> {
+    const existente = await this.prisma.proyectoClaseEspejo.findUnique({
+      where: { solicitudId },
+      select: { id: true },
+    });
+    if (existente) return;
+
+    const inicio = new Date(solicitud.fechaPropuesta);
+    const fin = new Date(inicio);
+    fin.setDate(fin.getDate() + DIAS_POR_DEFECTO);
+
+    const proyecto = await this.prisma.proyectoClaseEspejo.create({
+      data: {
+        solicitudId,
+        estado: ESTADO_PROYECTO_INICIAL,
+        fechaInicio: inicio,
+        fechaFin: fin,
+        plataforma: PLATAFORMA_POR_DEFINIR,
+      },
+    });
+
+    await this.prisma.proyectoDocente.createMany({
+      data: [
+        {
+          proyectoId: proyecto.id,
+          asignacionDocenteId: solicitud.asignacionOrigenId,
+          rol: ROL_ORIGEN,
+        },
+        {
+          proyectoId: proyecto.id,
+          asignacionDocenteId: asignacionDestinoId,
+          rol: ROL_DESTINO,
+        },
+      ],
     });
   }
 
@@ -257,9 +343,18 @@ export class SolicitudesService {
           },
         },
       },
+      asignacionDestino: {
+        include: {
+          materia: true,
+          docenteInstitucion: {
+            include: { docente: { include: { usuario: true } } },
+          },
+        },
+      },
       institucionDestino: true,
       materiaDestino: true,
       revisiones: true,
+      proyecto: { select: { id: true, estado: true } },
     };
   }
 
@@ -274,6 +369,7 @@ export class SolicitudesService {
       institucionDestino: true,
       materiaDestino: true,
       revisiones: true,
+      proyecto: { select: { id: true, estado: true } },
     };
   }
 }
