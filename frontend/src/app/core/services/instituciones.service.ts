@@ -4,7 +4,10 @@ import { Observable } from 'rxjs';
 import { Institucion } from '../models/auth.models';
 import { Materia } from '../models/materia.models';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =
+  window.location.port === '4200'
+    ? `http://${window.location.hostname}:3000`
+    : '';
 
 @Injectable({ providedIn: 'root' })
 export class InstitucionesService {

@@ -10,7 +10,10 @@ import {
   Usuario,
 } from '../models/auth.models';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =
+  window.location.port === '4200'
+    ? `http://${window.location.hostname}:3000`
+    : '';
 const TOKEN_KEY = 'access_token';
 const USER_KEY = 'usuario';
 

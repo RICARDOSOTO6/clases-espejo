@@ -3,7 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { InviteDocenteDto, InviteResponse } from '../models/auth.models';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =
+  window.location.port === '4200'
+    ? `http://${window.location.hostname}:3000`
+    : '';
 
 @Injectable({ providedIn: 'root' })
 export class AgentesService {

@@ -9,7 +9,10 @@ import {
   SolicitudEntrante,
 } from '../models/solicitud.models';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =
+  window.location.port === '4200'
+    ? `http://${window.location.hostname}:3000`
+    : '';
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudesService {
