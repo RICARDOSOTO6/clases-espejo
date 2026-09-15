@@ -1,4 +1,12 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,14 +17,18 @@ import { InstitucionesService } from '../../core/services/instituciones.service'
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { Asignacion } from '../../core/models/materia.models';
 import {
+  Actividad,
+  Evidencia,
   Mensaje,
   ParticipacionPlanificacion,
   Proyecto,
+  Sesion,
 } from '../../core/models/proyecto.models';
+import { ModalComponent } from '../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-proyecto',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalComponent],
   templateUrl: './proyecto.component.html',
 })
 export class ProyectoComponent implements OnInit, OnDestroy {
@@ -80,6 +92,31 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     contenido: ['', Validators.required],
   });
   private mensajesInterval: ReturnType<typeof setInterval> | null = null;
+  chatAbierto = signal(false);
+
+  private readonly chatScroll =
+    viewChild<ElementRef<HTMLDivElement>>('chatScroll');
+  private ultimoConteoMensajes = 0;
+
+  // --- Sesiones, actividades y evidencias (Semana 6) ---
+  sesiones = signal<Sesion[]>([]);
+  actividades = signal<Actividad[]>([]);
+  evidencias = signal<Evidencia[]>([]);
+
+  sesionForm = this.fb.group({
+    titulo: ['', Validators.required],
+    fechaHora: ['', Validators.required],
+    enlaceVirtual: ['', Validators.required],
+  });
+  actividadForm = this.fb.group({
+    titulo: ['', Validators.required],
+    instrucciones: ['', Validators.required],
+    fechaLimite: ['', Validators.required],
+  });
+  evidenciaForm = this.fb.group({
+    tipo: [''],
+  });
+  archivoSeleccionado = signal<File | null>(null);
 
   ngOnInit(): void {
     this.proyectoId = Number(this.route.snapshot.paramMap.get('id'));
@@ -91,6 +128,9 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.cargar();
     this.cargarMensajes();
     this.mensajesInterval = setInterval(() => this.cargarMensajes(), 3000);
+    this.cargarSesiones();
+    this.cargarActividades();
+    this.cargarEvidencias();
 
     if (this.esAgente) {
       this.materiasService.listarAsignaciones().subscribe({
@@ -110,9 +150,26 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   cargarMensajes(): void {
     this.proyectos.listarMensajes(this.proyectoId).subscribe({
-      next: (r) => this.mensajes.set(r),
+      next: (r) => {
+        const hayNuevos = r.length !== this.ultimoConteoMensajes;
+        this.ultimoConteoMensajes = r.length;
+        this.mensajes.set(r);
+        if (hayNuevos) {
+          setTimeout(() => this.scrollChatAbajo());
+        }
+      },
       error: () => {},
     });
+  }
+
+  private scrollChatAbajo(): void {
+    const el = this.chatScroll()?.nativeElement;
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+
+  abrirChat(): void {
+    this.chatAbierto.set(true);
+    setTimeout(() => this.scrollChatAbajo());
   }
 
   enviarMensaje(): void {
@@ -347,6 +404,136 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       });
   }
 
+  // --- Sesiones, actividades y evidencias (Semana 6) ---
+
+  cargarSesiones(): void {
+    this.proyectos.listarSesiones(this.proyectoId).subscribe({
+      next: (r) => this.sesiones.set(r),
+      error: () => this.sesiones.set([]),
+    });
+  }
+
+  crearSesion(): void {
+    if (this.sesionForm.invalid) return;
+    const v = this.sesionForm.value;
+    this.proyectos
+      .crearSesion(this.proyectoId, {
+        titulo: v.titulo ?? '',
+        fechaHora: v.fechaHora ?? '',
+        enlaceVirtual: v.enlaceVirtual ?? '',
+      })
+      .subscribe({
+        next: () => {
+          this.sesionForm.reset();
+          this.ok.set('Sesión creada');
+          this.cargarSesiones();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.error.set(extraerMensajeError(err, 'Error al crear la sesión')),
+      });
+  }
+
+  eliminarSesion(id: number): void {
+    if (!window.confirm('¿Eliminar esta sesión?')) return;
+    this.proyectos.eliminarSesion(this.proyectoId, id).subscribe({
+      next: () => this.cargarSesiones(),
+      error: (err: HttpErrorResponse) =>
+        this.error.set(extraerMensajeError(err, 'Error al eliminar la sesión')),
+    });
+  }
+
+  cargarActividades(): void {
+    this.proyectos.listarActividades(this.proyectoId).subscribe({
+      next: (r) => this.actividades.set(r),
+      error: () => this.actividades.set([]),
+    });
+  }
+
+  crearActividad(): void {
+    if (this.actividadForm.invalid) return;
+    const v = this.actividadForm.value;
+    this.proyectos
+      .crearActividad(this.proyectoId, {
+        titulo: v.titulo ?? '',
+        instrucciones: v.instrucciones ?? '',
+        fechaLimite: v.fechaLimite ?? '',
+      })
+      .subscribe({
+        next: () => {
+          this.actividadForm.reset();
+          this.ok.set('Actividad creada');
+          this.cargarActividades();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.error.set(extraerMensajeError(err, 'Error al crear la actividad')),
+      });
+  }
+
+  eliminarActividad(id: number): void {
+    if (!window.confirm('¿Eliminar esta actividad?')) return;
+    this.proyectos.eliminarActividad(this.proyectoId, id).subscribe({
+      next: () => this.cargarActividades(),
+      error: (err: HttpErrorResponse) =>
+        this.error.set(
+          extraerMensajeError(err, 'Error al eliminar la actividad'),
+        ),
+    });
+  }
+
+  cargarEvidencias(): void {
+    this.proyectos.listarEvidencias(this.proyectoId).subscribe({
+      next: (r) => this.evidencias.set(r),
+      error: () => this.evidencias.set([]),
+    });
+  }
+
+  onArchivoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.item(0) ?? null;
+    if (archivo && archivo.size > 10 * 1024 * 1024) {
+      this.error.set('El archivo supera el límite de 10 MB');
+      this.archivoSeleccionado.set(null);
+      input.value = '';
+      return;
+    }
+    this.archivoSeleccionado.set(archivo);
+  }
+
+  crearEvidencia(): void {
+    const archivo = this.archivoSeleccionado();
+    if (!archivo) {
+      this.error.set('Selecciona un archivo de evidencia');
+      return;
+    }
+    const v = this.evidenciaForm.value;
+    this.proyectos
+      .crearEvidencia(this.proyectoId, archivo, v.tipo ?? '')
+      .subscribe({
+        next: () => {
+          this.evidenciaForm.reset();
+          this.archivoSeleccionado.set(null);
+          this.ok.set('Evidencia registrada');
+          this.cargarEvidencias();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.error.set(
+            extraerMensajeError(err, 'Error al registrar la evidencia'),
+          ),
+      });
+  }
+
+  // En desarrollo (frontend en :4200) el archivo vive en el backend (:3000).
+  urlArchivo(url: string): string {
+    if (url.startsWith('/') && window.location.port === '4200') {
+      return `http://${window.location.hostname}:3000${url}`;
+    }
+    return url;
+  }
+
+  nombreArchivo(url: string): string {
+    return url.split('/').pop() ?? url;
+  }
+
   // --- Helpers de presentación ---
 
   nombreDocente(item: {
@@ -370,6 +557,22 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       m.autor.asignacionDocente.docenteInstitucion.docente.usuario.id ===
       this.usuario?.id
     );
+  }
+
+  iniciales(m: Mensaje): string {
+    const u = m.autor.asignacionDocente.docenteInstitucion.docente.usuario;
+    return `${u.nombres.charAt(0)}${u.apellidoPaterno.charAt(0)}`.toUpperCase();
+  }
+
+  horaDe(fecha: string): string {
+    if (!fecha) return '';
+    const d = new Date(fecha);
+    return isNaN(d.getTime())
+      ? ''
+      : d.toLocaleTimeString('es-MX', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
   }
 
   estadoProyectoLabel(estado: string): string {

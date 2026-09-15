@@ -11,6 +11,11 @@ import { CreateProyectoDocenteDto } from './dto/create-proyecto-docente.dto';
 import { SavePlanificacionDto } from './dto/save-planificacion.dto';
 import { CreateReportePlanificacionDto } from './dto/create-reporte-planificacion.dto';
 import { CreateMensajeDto } from './dto/create-mensaje.dto';
+import { CreateSesionDto } from './dto/create-sesion.dto';
+import { UpdateSesionDto } from './dto/update-sesion.dto';
+import { CreateActividadDto } from './dto/create-actividad.dto';
+import { UpdateActividadDto } from './dto/update-actividad.dto';
+import { CreateEvidenciaDto } from './dto/create-evidencia.dto';
 
 const ESTADO_PLANIFICACION_INICIAL = 'BORRADOR';
 const ESTATUS_PENDIENTE = 'PENDIENTE';
@@ -87,8 +92,8 @@ export class ProyectosService {
   // --- Proyecto ---
 
   async actualizar(usuarioId: number, id: number, dto: UpdateProyectoDto) {
-    const proyecto = await this.obtenerConAcceso(usuarioId, id);
-    await this.exigirAgenteInvolucrado(usuarioId, proyecto);
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
 
     return this.prisma.proyectoClaseEspejo.update({
       where: { id },
@@ -116,7 +121,7 @@ export class ProyectosService {
     dto: CreateProyectoDocenteDto,
   ) {
     const proyecto = await this.obtenerConAcceso(usuarioId, id);
-    await this.exigirAgenteInvolucrado(usuarioId, proyecto);
+    const agente = await this.exigirAgenteInvolucrado(usuarioId, proyecto);
 
     const asignacion = await this.prisma.asignacionDocente.findUnique({
       where: { id: dto.asignacionDocenteId },
@@ -126,13 +131,10 @@ export class ProyectosService {
       throw new NotFoundException('La asignación indicada no existe');
     }
 
-    const involucradas = [
-      proyecto.solicitud.institucionDestinoId,
-      proyecto.solicitud.asignacionOrigen.docenteInstitucion.institucionId,
-    ];
-    if (!involucradas.includes(asignacion.docenteInstitucion.institucionId)) {
-      throw new BadRequestException(
-        'La asignación no pertenece a las instituciones del proyecto',
+    // El agente solo puede sumar docentes de su propia institución.
+    if (asignacion.docenteInstitucion.institucionId !== agente.institucionId) {
+      throw new ForbiddenException(
+        'Solo puedes gestionar docentes de tu institución',
       );
     }
 
@@ -170,14 +172,26 @@ export class ProyectosService {
     proyectoDocenteId: number,
   ) {
     const proyecto = await this.obtenerConAcceso(usuarioId, id);
-    await this.exigirAgenteInvolucrado(usuarioId, proyecto);
+    const agente = await this.exigirAgenteInvolucrado(usuarioId, proyecto);
 
     const participacion = await this.prisma.proyectoDocente.findFirst({
       where: { id: proyectoDocenteId, proyectoId: id },
-      include: { proyecto: true },
+      include: {
+        proyecto: true,
+        asignacionDocente: { include: { docenteInstitucion: true } },
+      },
     });
     if (!participacion) {
       throw new NotFoundException('El docente no participa en este proyecto');
+    }
+    // El agente solo puede retirar docentes de su propia institución.
+    if (
+      participacion.asignacionDocente.docenteInstitucion.institucionId !==
+      agente.institucionId
+    ) {
+      throw new ForbiddenException(
+        'Solo puedes gestionar docentes de tu institución',
+      );
     }
     if (participacion.proyecto.solicitudId === proyecto.solicitud.id) {
       const total = await this.prisma.proyectoDocente.count({
@@ -204,6 +218,7 @@ export class ProyectosService {
     dto: SavePlanificacionDto,
   ) {
     await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
 
     const planificacion = await this.prisma.planificacionConjunta.upsert({
       where: { proyectoId: id },
@@ -348,6 +363,161 @@ export class ProyectosService {
     });
   }
 
+  // --- Sesiones (Semana 6) ---
+
+  async listarSesiones(usuarioId: number, id: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    return this.prisma.sesion.findMany({
+      where: { proyectoId: id },
+      orderBy: { fechaHora: 'asc' },
+    });
+  }
+
+  async crearSesion(usuarioId: number, id: number, dto: CreateSesionDto) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    return this.prisma.sesion.create({
+      data: {
+        proyectoId: id,
+        titulo: dto.titulo,
+        fechaHora: new Date(dto.fechaHora),
+        enlaceVirtual: dto.enlaceVirtual,
+        estado: dto.estado ?? 'PROGRAMADA',
+      },
+    });
+  }
+
+  async actualizarSesion(
+    usuarioId: number,
+    id: number,
+    sesionId: number,
+    dto: UpdateSesionDto,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    const sesion = await this.prisma.sesion.findFirst({
+      where: { id: sesionId, proyectoId: id },
+    });
+    if (!sesion) throw new NotFoundException('Sesión no encontrada');
+    return this.prisma.sesion.update({
+      where: { id: sesionId },
+      data: {
+        ...(dto.titulo !== undefined ? { titulo: dto.titulo } : {}),
+        ...(dto.fechaHora !== undefined
+          ? { fechaHora: new Date(dto.fechaHora) }
+          : {}),
+        ...(dto.enlaceVirtual !== undefined
+          ? { enlaceVirtual: dto.enlaceVirtual }
+          : {}),
+        ...(dto.estado !== undefined ? { estado: dto.estado } : {}),
+      },
+    });
+  }
+
+  async eliminarSesion(usuarioId: number, id: number, sesionId: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    const sesion = await this.prisma.sesion.findFirst({
+      where: { id: sesionId, proyectoId: id },
+    });
+    if (!sesion) throw new NotFoundException('Sesión no encontrada');
+    await this.prisma.sesion.delete({ where: { id: sesionId } });
+    return { mensaje: 'Sesión eliminada' };
+  }
+
+  // --- Actividades (Semana 6) ---
+
+  async listarActividades(usuarioId: number, id: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    return this.prisma.actividad.findMany({
+      where: { proyectoId: id },
+      orderBy: { fechaLimite: 'asc' },
+    });
+  }
+
+  async crearActividad(usuarioId: number, id: number, dto: CreateActividadDto) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    return this.prisma.actividad.create({
+      data: {
+        proyectoId: id,
+        titulo: dto.titulo,
+        instrucciones: dto.instrucciones,
+        fechaLimite: new Date(dto.fechaLimite),
+      },
+    });
+  }
+
+  async actualizarActividad(
+    usuarioId: number,
+    id: number,
+    actividadId: number,
+    dto: UpdateActividadDto,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    const actividad = await this.prisma.actividad.findFirst({
+      where: { id: actividadId, proyectoId: id },
+    });
+    if (!actividad) throw new NotFoundException('Actividad no encontrada');
+    return this.prisma.actividad.update({
+      where: { id: actividadId },
+      data: {
+        ...(dto.titulo !== undefined ? { titulo: dto.titulo } : {}),
+        ...(dto.instrucciones !== undefined
+          ? { instrucciones: dto.instrucciones }
+          : {}),
+        ...(dto.fechaLimite !== undefined
+          ? { fechaLimite: new Date(dto.fechaLimite) }
+          : {}),
+      },
+    });
+  }
+
+  async eliminarActividad(usuarioId: number, id: number, actividadId: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    const actividad = await this.prisma.actividad.findFirst({
+      where: { id: actividadId, proyectoId: id },
+    });
+    if (!actividad) throw new NotFoundException('Actividad no encontrada');
+    await this.prisma.actividad.delete({ where: { id: actividadId } });
+    return { mensaje: 'Actividad eliminada' };
+  }
+
+  // --- Evidencias (Semana 6) ---
+
+  async listarEvidencias(usuarioId: number, id: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    return this.prisma.evidencia.findMany({
+      where: { proyectoId: id },
+      orderBy: { registradaEn: 'desc' },
+    });
+  }
+
+  async crearEvidencia(
+    usuarioId: number,
+    id: number,
+    dto: CreateEvidenciaDto,
+    archivo?: any,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+    if (!archivo) {
+      throw new BadRequestException('Debes adjuntar un archivo de evidencia');
+    }
+    const tipo = dto.tipo?.trim() || 'Archivo';
+    return this.prisma.evidencia.create({
+      data: {
+        proyectoId: id,
+        tipo,
+        archivoUrl: `/uploads/${archivo.filename}`,
+        sesionId: null,
+        registradaEn: new Date(),
+      },
+    });
+  }
+
   // --- Helpers ---
 
   private includeMensaje() {
@@ -434,7 +604,7 @@ export class ProyectosService {
     proyecto: {
       solicitud: ProyectoAccesible['solicitud'];
     },
-  ): Promise<void> {
+  ) {
     const agente = await this.getAgente(usuarioId);
     const involucradas = [
       proyecto.solicitud.institucionDestinoId,
@@ -445,6 +615,27 @@ export class ProyectosService {
         'Solo el agente de una institución participante puede realizar esta acción',
       );
     }
+    return agente;
+  }
+
+  // El agente de internacionalización solo consulta: las acciones que
+  // organizan la clase conjunta quedan reservadas a los docentes participantes.
+  private async exigirDocenteParticipante(usuarioId: number, id: number) {
+    const docente = await this.prisma.docente.findUnique({
+      where: { usuarioId },
+    });
+    if (docente) {
+      const participa = await this.prisma.proyectoDocente.findFirst({
+        where: {
+          proyectoId: id,
+          asignacionDocente: { docenteInstitucion: { docenteId: docente.id } },
+        },
+      });
+      if (participa) return docente;
+    }
+    throw new ForbiddenException(
+      'Solo un docente participante puede modificar la clase conjunta',
+    );
   }
 
   private async getDocente(usuarioId: number) {
