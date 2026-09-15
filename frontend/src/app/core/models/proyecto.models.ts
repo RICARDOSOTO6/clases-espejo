@@ -130,3 +130,26 @@ export interface Mensaje {
     };
   };
 }
+
+export interface Sesion {
+  id: number;
+  titulo: string;
+  fechaHora: string;
+  enlaceVirtual: string;
+  estado: string;
+}
+
+export interface Actividad {
+  id: number;
+  titulo: string;
+  instrucciones: string;
+  fechaLimite: string;
+}
+
+export interface Evidencia {
+  id: number;
+  tipo: string;
+  archivoUrl: string;
+  sesionId: number | null;
+  registradaEn: string;
+}

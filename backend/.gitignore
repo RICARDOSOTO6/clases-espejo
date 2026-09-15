@@ -56,3 +56,9 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# Frontend compilado servido por el backend
+/public
+
+# Archivos subidos por los usuarios (evidencias)
+/uploads
