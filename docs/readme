@@ -404,16 +404,33 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `GET` | `/proyectos/mios` | Proyectos en los que participa el docente | JWT (docente) |
 | `GET` | `/proyectos/institucion` | Proyectos de la institución del agente | JWT (agente) |
 | `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
-| `PATCH` | `/proyectos/:id` | Actualiza estado, fechas o plataforma | JWT (agente) |
-| `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto | JWT (agente) |
-| `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto | JWT (agente) |
-| `PUT` | `/proyectos/:id/planificacion` | Crea/actualiza la planificación conjunta | JWT |
+| `PATCH` | `/proyectos/:id` | Actualiza estado, fechas o plataforma | JWT (docente) |
+| `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto (solo de su institución) | JWT (agente) |
+| `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto (solo de su institución) | JWT (agente) |
+| `PUT` | `/proyectos/:id/planificacion` | Crea/actualiza la planificación conjunta | JWT (docente) |
 | `POST` | `/proyectos/:id/planificacion/confirmar` | El docente confirma su participación | JWT (docente) |
 | `GET` | `/proyectos/:id/reportes` | Lista los reportes de planificación | JWT |
 | `POST` | `/proyectos/:id/reportes` | Genera el reporte de planificación | JWT (agente) |
 | `GET` | `/proyectos/:id/mensajes` | Lista el chat del proyecto | JWT |
 | `POST` | `/proyectos/:id/mensajes` | Envía un mensaje al chat (solo docentes del proyecto) | JWT (docente) |
+| `GET` | `/proyectos/:id/sesiones` | Lista las sesiones programadas | JWT |
+| `POST` | `/proyectos/:id/sesiones` | Programa una sesión | JWT (docente) |
+| `PATCH` | `/proyectos/:id/sesiones/:sesionId` | Edita una sesión | JWT (docente) |
+| `DELETE` | `/proyectos/:id/sesiones/:sesionId` | Elimina una sesión | JWT (docente) |
+| `GET` | `/proyectos/:id/actividades` | Lista las actividades | JWT |
+| `POST` | `/proyectos/:id/actividades` | Crea una actividad | JWT (docente) |
+| `PATCH` | `/proyectos/:id/actividades/:actividadId` | Edita una actividad | JWT (docente) |
+| `DELETE` | `/proyectos/:id/actividades/:actividadId` | Elimina una actividad | JWT (docente) |
+| `GET` | `/proyectos/:id/evidencias` | Lista las evidencias | JWT |
+| `POST` | `/proyectos/:id/evidencias` | Sube una evidencia (archivo, máx. 10 MB) | JWT (docente) |
 | `GET` | `/health` | Health check del servicio | No |
+
+> **Rol del agente en la clase conjunta (solo consulta).** El agente de internacionalización
+> puede ver el proyecto y todos sus detalles y gestionar (agregar/quitar) **únicamente los
+> docentes de su propia institución**. Las acciones que organizan la clase —datos del proyecto,
+> planificación conjunta, sesiones, actividades y evidencias— son exclusivas de los **docentes
+> participantes**. El reporte de planificación sigue correspondiendo al agente, como función de
+> supervisión.
 
 Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
 
@@ -606,10 +623,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 - [x] **Frontend:** pantalla de planificación conjunta + reporte de planificación.
 - [x] **Entregable:** solicitud aprobada → proyecto → planificación.
 
-## 🟠 Semana 6 — Sesiones, Actividades y Evidencias
-- [ ] **Backend:** módulos `sesiones`, `actividades`, `evidencias`.
-- [ ] **Frontend:** agenda de sesiones + actividades + subida de evidencias.
-- [ ] **Entregable:** el proyecto registra sesiones, actividades y evidencias.
+## 🟠 Semana 6 — Sesiones, Actividades y Evidencias ✅
+- [x] **Backend:** módulos `sesiones`, `actividades`, `evidencias`.
+- [x] **Frontend:** agenda de sesiones + actividades + subida de evidencias.
+- [x] **Entregable:** el proyecto registra sesiones, actividades y evidencias.
 
 ## 🔴 Semana 7 — Reportes y Evaluación
 - [ ] **Backend:** módulos `reportes` + `evaluaciones`.
