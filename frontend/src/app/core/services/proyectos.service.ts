@@ -3,14 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   Actividad,
+  CreateEvaluacionDto,
   CreateProyectoDocenteDto,
   CreateReportePlanificacionDto,
+  Evaluacion,
   Evidencia,
   Mensaje,
   PlanificacionConjunta,
   Proyecto,
+  ReporteClase,
   ReportePlanificacion,
   SavePlanificacionDto,
+  SaveReporteClaseDto,
   Sesion,
   UpdateProyectoDto,
 } from '../models/proyecto.models';
@@ -142,15 +146,75 @@ export class ProyectosService {
     return this.http.get<Evidencia[]>(`${API_URL}/proyectos/${id}/evidencias`);
   }
 
-  crearEvidencia(id: number, archivo: File, tipo: string): Observable<Evidencia> {
+  crearEvidencia(
+    id: number,
+    archivo: File,
+    tipo: string,
+    sesionId?: number,
+  ): Observable<Evidencia> {
     const formData = new FormData();
     formData.append('archivo', archivo, archivo.name);
     if (tipo) {
       formData.append('tipo', tipo);
     }
+    if (sesionId != null) {
+      formData.append('sesionId', String(sesionId));
+    }
     return this.http.post<Evidencia>(
       `${API_URL}/proyectos/${id}/evidencias`,
       formData,
     );
+  }
+
+  // --- Reporte de clase conjunta (Semana 7) ---
+
+  listarReportesClase(id: number): Observable<ReporteClase[]> {
+    return this.http.get<ReporteClase[]>(
+      `${API_URL}/proyectos/${id}/reportes-clase`,
+    );
+  }
+
+  guardarReporteClase(
+    id: number,
+    sesionId: number,
+    dto: SaveReporteClaseDto,
+  ): Observable<ReporteClase> {
+    return this.http.put<ReporteClase>(
+      `${API_URL}/proyectos/${id}/sesiones/${sesionId}/reporte`,
+      dto,
+    );
+  }
+
+  confirmarReporteClase(
+    id: number,
+    reporteId: number,
+    observaciones: string,
+  ): Observable<ReporteClase> {
+    return this.http.post<ReporteClase>(
+      `${API_URL}/proyectos/${id}/reportes-clase/${reporteId}/confirmar`,
+      { observaciones },
+    );
+  }
+
+  // --- Evaluación final y cierre (Semana 7) ---
+
+  listarEvaluaciones(id: number): Observable<Evaluacion[]> {
+    return this.http.get<Evaluacion[]>(
+      `${API_URL}/proyectos/${id}/evaluaciones`,
+    );
+  }
+
+  crearEvaluacion(
+    id: number,
+    dto: CreateEvaluacionDto,
+  ): Observable<Evaluacion> {
+    return this.http.post<Evaluacion>(
+      `${API_URL}/proyectos/${id}/evaluaciones`,
+      dto,
+    );
+  }
+
+  cerrarProyecto(id: number): Observable<Proyecto> {
+    return this.http.post<Proyecto>(`${API_URL}/proyectos/${id}/cerrar`, {});
   }
 }

@@ -16,10 +16,20 @@ import { UpdateSesionDto } from './dto/update-sesion.dto';
 import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { CreateEvidenciaDto } from './dto/create-evidencia.dto';
-
-const ESTADO_PLANIFICACION_INICIAL = 'BORRADOR';
-const ESTATUS_PENDIENTE = 'PENDIENTE';
-const ESTATUS_CONFIRMADA = 'CONFIRMADA';
+import { SaveReporteClaseDto } from './dto/save-reporte-clase.dto';
+import { ConfirmarReporteClaseDto } from './dto/confirmar-reporte-clase.dto';
+import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
+import {
+  ESTADO_PLANIFICACION_INICIAL,
+  ESTADO_PROYECTO_CANCELADO,
+  ESTADO_PROYECTO_FINALIZADO,
+  ESTADO_REPORTE_BORRADOR,
+  ESTADO_REPORTE_CONFIRMADO,
+  ESTADO_REPORTE_EN_REVISION,
+  ESTADO_SESION_INICIAL,
+  ESTATUS_CONFIRMADA,
+  ESTATUS_PENDIENTE,
+} from '../common/estados';
 
 /** Proyección mínima necesaria para comprobar el acceso a un proyecto. */
 interface ProyectoAccesible {
@@ -92,8 +102,18 @@ export class ProyectosService {
   // --- Proyecto ---
 
   async actualizar(usuarioId: number, id: number, dto: UpdateProyectoDto) {
-    await this.obtenerConAcceso(usuarioId, id);
+    const proyecto = await this.obtenerConAcceso(usuarioId, id);
     await this.exigirDocenteParticipante(usuarioId, id);
+
+    const inicio = dto.fechaInicio
+      ? new Date(dto.fechaInicio)
+      : proyecto.fechaInicio;
+    const fin = dto.fechaFin ? new Date(dto.fechaFin) : proyecto.fechaFin;
+    if (inicio && fin && fin < inicio) {
+      throw new BadRequestException(
+        'La fecha de fin no puede ser anterior a la fecha de inicio',
+      );
+    }
 
     return this.prisma.proyectoClaseEspejo.update({
       where: { id },
@@ -177,7 +197,6 @@ export class ProyectosService {
     const participacion = await this.prisma.proyectoDocente.findFirst({
       where: { id: proyectoDocenteId, proyectoId: id },
       include: {
-        proyecto: true,
         asignacionDocente: { include: { docenteInstitucion: true } },
       },
     });
@@ -193,15 +212,13 @@ export class ProyectosService {
         'Solo puedes gestionar docentes de tu institución',
       );
     }
-    if (participacion.proyecto.solicitudId === proyecto.solicitud.id) {
-      const total = await this.prisma.proyectoDocente.count({
-        where: { proyectoId: id },
-      });
-      if (total <= 1) {
-        throw new BadRequestException(
-          'El proyecto debe conservar al menos un docente',
-        );
-      }
+    const total = await this.prisma.proyectoDocente.count({
+      where: { proyectoId: id },
+    });
+    if (total <= 1) {
+      throw new BadRequestException(
+        'El proyecto debe conservar al menos un docente',
+      );
     }
 
     await this.prisma.proyectoDocente.delete({
@@ -249,6 +266,7 @@ export class ProyectosService {
 
   async confirmarParticipacion(usuarioId: number, id: number) {
     const proyecto = await this.obtenerConAcceso(usuarioId, id);
+    this.verificarProyectoAbierto(proyecto.estado);
     if (!proyecto.planificacion) {
       throw new BadRequestException('Aún no existe una planificación conjunta');
     }
@@ -340,7 +358,9 @@ export class ProyectosService {
   }
 
   async enviarMensaje(usuarioId: number, id: number, dto: CreateMensajeDto) {
-    await this.obtenerConAcceso(usuarioId, id);
+    const proyecto = await this.obtenerConAcceso(usuarioId, id);
+    // El chat queda en solo lectura cuando la clase espejo está cerrada.
+    this.verificarProyectoAbierto(proyecto.estado);
     const docente = await this.getDocente(usuarioId);
 
     const proyectoDocente = await this.prisma.proyectoDocente.findFirst({
@@ -382,7 +402,7 @@ export class ProyectosService {
         titulo: dto.titulo,
         fechaHora: new Date(dto.fechaHora),
         enlaceVirtual: dto.enlaceVirtual,
-        estado: dto.estado ?? 'PROGRAMADA',
+        estado: dto.estado ?? ESTADO_SESION_INICIAL,
       },
     });
   }
@@ -421,6 +441,17 @@ export class ProyectosService {
       where: { id: sesionId, proyectoId: id },
     });
     if (!sesion) throw new NotFoundException('Sesión no encontrada');
+
+    const [evidencias, reportes] = await Promise.all([
+      this.prisma.evidencia.count({ where: { sesionId } }),
+      this.prisma.reporteClaseConjunta.count({ where: { sesionId } }),
+    ]);
+    if (evidencias > 0 || reportes > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar la sesión: tiene evidencias o un reporte de clase asociados.',
+      );
+    }
+
     await this.prisma.sesion.delete({ where: { id: sesionId } });
     return { mensaje: 'Sesión eliminada' };
   }
@@ -506,15 +537,203 @@ export class ProyectosService {
     if (!archivo) {
       throw new BadRequestException('Debes adjuntar un archivo de evidencia');
     }
+
+    let sesionId: number | null = null;
+    if (dto.sesionId != null) {
+      const sesion = await this.prisma.sesion.findFirst({
+        where: { id: dto.sesionId, proyectoId: id },
+      });
+      if (!sesion) {
+        throw new BadRequestException(
+          'La sesión indicada no pertenece al proyecto',
+        );
+      }
+      sesionId = sesion.id;
+    }
+
     const tipo = dto.tipo?.trim() || 'Archivo';
     return this.prisma.evidencia.create({
       data: {
         proyectoId: id,
         tipo,
         archivoUrl: `/uploads/${archivo.filename}`,
-        sesionId: null,
+        sesionId,
         registradaEn: new Date(),
       },
+    });
+  }
+
+  // --- Reporte de clase conjunta (Semana 7) ---
+
+  async listarReportesClase(usuarioId: number, id: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    return this.prisma.reporteClaseConjunta.findMany({
+      where: { sesion: { proyectoId: id } },
+      include: this.includeReporteClase(),
+      orderBy: { creadoEn: 'asc' },
+    });
+  }
+
+  async obtenerReporteClase(usuarioId: number, id: number, sesionId: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    const sesion = await this.prisma.sesion.findFirst({
+      where: { id: sesionId, proyectoId: id },
+    });
+    if (!sesion) throw new NotFoundException('Sesión no encontrada');
+    return this.prisma.reporteClaseConjunta.findUnique({
+      where: { sesionId },
+      include: this.includeReporteClase(),
+    });
+  }
+
+  async guardarReporteClase(
+    usuarioId: number,
+    id: number,
+    sesionId: number,
+    dto: SaveReporteClaseDto,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+
+    const sesion = await this.prisma.sesion.findFirst({
+      where: { id: sesionId, proyectoId: id },
+    });
+    if (!sesion) throw new NotFoundException('Sesión no encontrada');
+
+    const datos = {
+      desarrolloClase: dto.desarrolloClase.trim(),
+      totalAsistentes: dto.totalAsistentes,
+      incidencias: dto.incidencias.trim(),
+      acuerdosSiguienteSesion: dto.acuerdosSiguienteSesion.trim(),
+    };
+
+    const reporte = await this.prisma.reporteClaseConjunta.upsert({
+      where: { sesionId },
+      create: { sesionId, ...datos, estado: ESTADO_REPORTE_BORRADOR },
+      update: datos,
+    });
+
+    await this.sincronizarParticipacionesReporte(reporte.id, id);
+
+    return this.prisma.reporteClaseConjunta.findUniqueOrThrow({
+      where: { id: reporte.id },
+      include: this.includeReporteClase(),
+    });
+  }
+
+  async confirmarReporteClase(
+    usuarioId: number,
+    id: number,
+    reporteId: number,
+    dto: ConfirmarReporteClaseDto,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    const proyectoDocente = await this.exigirDocenteParticipante(usuarioId, id);
+
+    const reporte = await this.prisma.reporteClaseConjunta.findFirst({
+      where: { id: reporteId, sesion: { proyectoId: id } },
+    });
+    if (!reporte) {
+      throw new NotFoundException('Reporte de clase no encontrado');
+    }
+
+    const existente = await this.prisma.participacionReporte.findFirst({
+      where: {
+        reporteClaseId: reporteId,
+        proyectoDocenteId: proyectoDocente.id,
+      },
+    });
+    const observaciones = dto.observaciones.trim();
+
+    if (existente) {
+      await this.prisma.participacionReporte.update({
+        where: { id: existente.id },
+        data: { observaciones, confirmadoEn: new Date() },
+      });
+    } else {
+      await this.prisma.participacionReporte.create({
+        data: {
+          reporteClaseId: reporteId,
+          proyectoDocenteId: proyectoDocente.id,
+          observaciones,
+          confirmadoEn: new Date(),
+        },
+      });
+    }
+
+    await this.actualizarEstadoReporteClase(reporteId);
+
+    return this.prisma.reporteClaseConjunta.findUniqueOrThrow({
+      where: { id: reporteId },
+      include: this.includeReporteClase(),
+    });
+  }
+
+  // --- Evaluación final y cierre (Semana 7) ---
+
+  async listarEvaluaciones(usuarioId: number, id: number) {
+    await this.obtenerConAcceso(usuarioId, id);
+    return this.prisma.evaluacion.findMany({
+      where: { proyectoId: id },
+      orderBy: { creadoEn: 'asc' },
+    });
+  }
+
+  async crearEvaluacion(
+    usuarioId: number,
+    id: number,
+    dto: CreateEvaluacionDto,
+  ) {
+    await this.obtenerConAcceso(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id);
+
+    return this.prisma.evaluacion.create({
+      data: {
+        proyectoId: id,
+        instrumento: dto.instrumento.trim(),
+        resultado: dto.resultado.trim(),
+        observaciones: dto.observaciones.trim(),
+      },
+    });
+  }
+
+  async cerrarProyecto(usuarioId: number, id: number) {
+    const proyecto = await this.obtenerConAcceso(usuarioId, id);
+
+    if (proyecto.estado === ESTADO_PROYECTO_FINALIZADO) {
+      throw new BadRequestException('La clase espejo ya está finalizada');
+    }
+
+    await this.exigirDocenteParticipante(usuarioId, id);
+
+    const evaluaciones = await this.prisma.evaluacion.count({
+      where: { proyectoId: id },
+    });
+    if (evaluaciones === 0) {
+      throw new BadRequestException(
+        'Registren al menos una evaluación final antes de cerrar la clase espejo',
+      );
+    }
+
+    const sesiones = await this.prisma.sesion.count({
+      where: { proyectoId: id },
+    });
+    const reportesConfirmados = await this.prisma.reporteClaseConjunta.count({
+      where: {
+        sesion: { proyectoId: id },
+        estado: ESTADO_REPORTE_CONFIRMADO,
+      },
+    });
+    if (sesiones > reportesConfirmados) {
+      throw new BadRequestException(
+        'Cada sesión necesita su reporte de clase confirmado por los docentes',
+      );
+    }
+
+    return this.prisma.proyectoClaseEspejo.update({
+      where: { id },
+      data: { estado: ESTADO_PROYECTO_FINALIZADO },
+      include: this.includeProyecto(),
     });
   }
 
@@ -560,6 +779,49 @@ export class ProyectosService {
     });
   }
 
+  private async sincronizarParticipacionesReporte(
+    reporteClaseId: number,
+    proyectoId: number,
+  ): Promise<void> {
+    const docentes = await this.prisma.proyectoDocente.findMany({
+      where: { proyectoId },
+    });
+    const existentes = await this.prisma.participacionReporte.findMany({
+      where: { reporteClaseId },
+    });
+    const faltantes = docentes.filter(
+      (d) => !existentes.some((e) => e.proyectoDocenteId === d.id),
+    );
+    if (faltantes.length === 0) return;
+
+    await this.prisma.participacionReporte.createMany({
+      data: faltantes.map((d) => ({
+        reporteClaseId,
+        proyectoDocenteId: d.id,
+        observaciones: '',
+      })),
+    });
+  }
+
+  /** El reporte queda CONFIRMADO cuando todos los docentes firman su participación. */
+  private async actualizarEstadoReporteClase(reporteClaseId: number) {
+    const participaciones = await this.prisma.participacionReporte.findMany({
+      where: { reporteClaseId },
+    });
+    const completa =
+      participaciones.length > 0 &&
+      participaciones.every((p) => p.confirmadoEn != null);
+
+    await this.prisma.reporteClaseConjunta.update({
+      where: { id: reporteClaseId },
+      data: {
+        estado: completa
+          ? ESTADO_REPORTE_CONFIRMADO
+          : ESTADO_REPORTE_EN_REVISION,
+      },
+    });
+  }
+
   private async obtenerConAcceso(usuarioId: number, id: number) {
     const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
       where: { id },
@@ -602,9 +864,12 @@ export class ProyectosService {
   private async exigirAgenteInvolucrado(
     usuarioId: number,
     proyecto: {
+      estado: string;
       solicitud: ProyectoAccesible['solicitud'];
     },
   ) {
+    this.verificarProyectoAbierto(proyecto.estado);
+
     const agente = await this.getAgente(usuarioId);
     const involucradas = [
       proyecto.solicitud.institucionDestinoId,
@@ -620,6 +885,7 @@ export class ProyectosService {
 
   // El agente de internacionalización solo consulta: las acciones que
   // organizan la clase conjunta quedan reservadas a los docentes participantes.
+  // Un proyecto cerrado (finalizado o cancelado) no admite más cambios.
   private async exigirDocenteParticipante(usuarioId: number, id: number) {
     const docente = await this.prisma.docente.findUnique({
       where: { usuarioId },
@@ -630,12 +896,28 @@ export class ProyectosService {
           proyectoId: id,
           asignacionDocente: { docenteInstitucion: { docenteId: docente.id } },
         },
+        include: { proyecto: { select: { estado: true } } },
       });
-      if (participa) return docente;
+      if (participa) {
+        this.verificarProyectoAbierto(participa.proyecto.estado);
+        return participa;
+      }
     }
     throw new ForbiddenException(
       'Solo un docente participante puede modificar la clase conjunta',
     );
+  }
+
+  /** Un proyecto cerrado no admite más cambios, venga de quien venga. */
+  private verificarProyectoAbierto(estado: string): void {
+    if (
+      estado === ESTADO_PROYECTO_FINALIZADO ||
+      estado === ESTADO_PROYECTO_CANCELADO
+    ) {
+      throw new BadRequestException(
+        'La clase espejo ya está cerrada: no admite más cambios.',
+      );
+    }
   }
 
   private async getDocente(usuarioId: number) {
@@ -682,6 +964,30 @@ export class ProyectosService {
         },
       },
       reportes: { orderBy: { generadoEn: 'desc' as const } },
+    };
+  }
+
+  private includeReporteClase() {
+    return {
+      participaciones: {
+        include: {
+          proyectoDocente: {
+            include: {
+              asignacionDocente: {
+                include: {
+                  materia: true,
+                  docenteInstitucion: {
+                    include: {
+                      institucion: true,
+                      docente: { include: { usuario: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     };
   }
 

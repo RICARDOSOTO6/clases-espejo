@@ -26,6 +26,9 @@ import { UpdateSesionDto } from './dto/update-sesion.dto';
 import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { CreateEvidenciaDto } from './dto/create-evidencia.dto';
+import { SaveReporteClaseDto } from './dto/save-reporte-clase.dto';
+import { ConfirmarReporteClaseDto } from './dto/confirmar-reporte-clase.dto';
+import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
@@ -241,5 +244,81 @@ export class ProyectosController {
     @Body() dto: CreateEvidenciaDto,
   ) {
     return this.proyectosService.crearEvidencia(usuarioId, id, dto, archivo);
+  }
+
+  // --- Reporte de clase conjunta (Semana 7) ---
+
+  @Get(':id/reportes-clase')
+  listarReportesClase(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proyectosService.listarReportesClase(usuarioId, id);
+  }
+
+  @Get(':id/sesiones/:sesionId/reporte')
+  obtenerReporteClase(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('sesionId', ParseIntPipe) sesionId: number,
+  ) {
+    return this.proyectosService.obtenerReporteClase(usuarioId, id, sesionId);
+  }
+
+  @Put(':id/sesiones/:sesionId/reporte')
+  guardarReporteClase(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('sesionId', ParseIntPipe) sesionId: number,
+    @Body() dto: SaveReporteClaseDto,
+  ) {
+    return this.proyectosService.guardarReporteClase(
+      usuarioId,
+      id,
+      sesionId,
+      dto,
+    );
+  }
+
+  @Post(':id/reportes-clase/:reporteId/confirmar')
+  confirmarReporteClase(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('reporteId', ParseIntPipe) reporteId: number,
+    @Body() dto: ConfirmarReporteClaseDto,
+  ) {
+    return this.proyectosService.confirmarReporteClase(
+      usuarioId,
+      id,
+      reporteId,
+      dto,
+    );
+  }
+
+  // --- Evaluación final y cierre (Semana 7) ---
+
+  @Get(':id/evaluaciones')
+  listarEvaluaciones(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proyectosService.listarEvaluaciones(usuarioId, id);
+  }
+
+  @Post(':id/evaluaciones')
+  crearEvaluacion(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateEvaluacionDto,
+  ) {
+    return this.proyectosService.crearEvaluacion(usuarioId, id, dto);
+  }
+
+  @Post(':id/cerrar')
+  cerrarProyecto(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proyectosService.cerrarProyecto(usuarioId, id);
   }
 }

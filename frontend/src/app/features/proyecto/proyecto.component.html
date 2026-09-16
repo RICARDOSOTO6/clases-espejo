@@ -83,6 +83,12 @@
         </div>
       }
 
+      @if (!proyectoAbierto()) {
+        <div class="alert alert-info" role="status">
+          La clase espejo está cerrada: toda la información queda en solo lectura.
+        </div>
+      }
+
       @if (error()) {
         <div class="alert alert-error" role="alert">{{ error() }}</div>
       }
@@ -90,7 +96,7 @@
         <div class="alert alert-success" role="status">{{ ok() }}</div>
       }
 
-      @if (esDocente) {
+      @if (esDocente && proyectoAbierto()) {
         <section class="card">
           <div class="card-head">
             <h2>Datos del proyecto</h2>
@@ -102,8 +108,6 @@
                 <select id="p-estado" formControlName="estado">
                   <option value="EN_PLANIFICACION">En planificación</option>
                   <option value="EN_CURSO">En curso</option>
-                  <option value="FINALIZADO">Finalizado</option>
-                  <option value="CANCELADO">Cancelado</option>
                 </select>
               </div>
               <div class="col form-field">
@@ -204,7 +208,7 @@
           </div>
         }
 
-        @if (esDocente) {
+        @if (esDocente && proyectoAbierto()) {
           <form [formGroup]="planificacionForm" (ngSubmit)="guardarPlanificacion()" novalidate>
             <div class="form-field">
               <label for="pl-objetivos">Objetivos acordados</label>
@@ -267,7 +271,7 @@
           </ul>
         }
 
-        @if (esDocente && p.planificacion && miParticipacion()?.estatusConfirmacion !== 'CONFIRMADA') {
+        @if (esDocente && proyectoAbierto() && p.planificacion && miParticipacion()?.estatusConfirmacion !== 'CONFIRMADA') {
           <button class="btn btn-primary" [disabled]="confirmando()" (click)="confirmarParticipacion()">
             {{ confirmando() ? 'Confirmando...' : 'Confirmar mi participación' }}
           </button>
@@ -279,7 +283,7 @@
           <h2>Reporte de planificación</h2>
         </div>
 
-        @if (esAgente) {
+        @if (esAgente && proyectoAbierto()) {
           <form [formGroup]="reporteForm" (ngSubmit)="generarReporte()" novalidate>
             <div class="form-field">
               <label for="r-acuerdos">Acuerdos</label>
@@ -331,15 +335,98 @@
                     {{ formatearFecha(s.fechaHora) }} · {{ horaDe(s.fechaHora) }}
                   </div>
                   <a class="link-button" [href]="s.enlaceVirtual" target="_blank" rel="noopener">Enlace virtual</a>
+
+                  @if (reporteDeSesion(s.id); as rep) {
+                    <div class="reporte">
+                      <div class="reporte-head">
+                        <strong>Reporte de la clase</strong>
+                        <span class="estado" [class.pendiente]="rep.estado !== 'CONFIRMADO'">
+                          {{ estadoReporteLabel(rep.estado) }}
+                        </span>
+                      </div>
+                      <p><span class="meta-label">Desarrollo:</span> {{ rep.desarrolloClase }}</p>
+                      <p><span class="meta-label">Asistentes:</span> {{ rep.totalAsistentes }}</p>
+                      <p><span class="meta-label">Incidencias:</span> {{ rep.incidencias }}</p>
+                      <p><span class="meta-label">Acuerdos siguientes:</span> {{ rep.acuerdosSiguienteSesion }}</p>
+
+                      <h3 class="subtitle">Firmas de los docentes</h3>
+                      <ul class="lista">
+                        @for (part of rep.participaciones; track part.id) {
+                          <li class="lista-item">
+                            <span>{{ nombreDocente(part.proyectoDocente) }}</span>
+                            <div class="lista-acciones">
+                              <span class="estado" [class.pendiente]="!part.confirmadoEn">
+                                {{ part.confirmadoEn ? 'Confirmado' : 'Pendiente' }}
+                              </span>
+                              @if (part.observaciones) {
+                                <span class="muted">{{ part.observaciones }}</span>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
+
+                      @if (esDocente && proyectoAbierto() && !miParticipacionReporte(rep)?.confirmadoEn) {
+                        @if (reporteAConfirmar() === rep.id) {
+                          <form [formGroup]="observacionesForm" (ngSubmit)="confirmarReporte(rep)" class="form-grid" novalidate>
+                            <div class="form-field">
+                              <label for="rc-obs-{{ rep.id }}">Mis observaciones</label>
+                              <input id="rc-obs-{{ rep.id }}" type="text" formControlName="observaciones" placeholder="Observaciones sobre la clase" />
+                            </div>
+                            <div class="form-grid-actions">
+                              <button type="submit" class="btn btn-primary" [disabled]="observacionesForm.invalid || confirmandoReporteClase()">
+                                {{ confirmandoReporteClase() ? 'Confirmando...' : 'Confirmar' }}
+                              </button>
+                              <button type="button" class="btn btn-secondary" (click)="cancelarConfirmacion()">Cancelar</button>
+                            </div>
+                          </form>
+                        } @else {
+                          <button class="btn btn-primary" (click)="abrirConfirmacion(rep)">Confirmar mi participación</button>
+                        }
+                      }
+                    </div>
+                  } @else {
+                    <p class="muted">Sin reporte de clase.</p>
+                  }
+
+                  @if (sesionReporteAbierta() === s.id) {
+                    <form [formGroup]="reporteClaseForm" (ngSubmit)="guardarReporteClase()" class="form-grid" novalidate>
+                      <div class="form-field">
+                        <label for="rc-desarrollo">Desarrollo de la clase</label>
+                        <input id="rc-desarrollo" type="text" formControlName="desarrolloClase" placeholder="Cómo se desarrolló la clase" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-asistentes">Total de asistentes</label>
+                        <input id="rc-asistentes" type="number" min="0" formControlName="totalAsistentes" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-incidencias">Incidencias</label>
+                        <input id="rc-incidencias" type="text" formControlName="incidencias" placeholder="Incidencias (o 'Ninguna')" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-acuerdos">Acuerdos para la siguiente sesión</label>
+                        <input id="rc-acuerdos" type="text" formControlName="acuerdosSiguienteSesion" placeholder="Qué se acordó" />
+                      </div>
+                      <div class="form-grid-actions">
+                        <button type="submit" class="btn btn-primary" [disabled]="reporteClaseForm.invalid || guardandoReporteClase()">
+                          {{ guardandoReporteClase() ? 'Guardando...' : 'Guardar reporte' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" (click)="cerrarReporte()">Cancelar</button>
+                      </div>
+                    </form>
+                  }
                 </div>
-                @if (esDocente) {
-                  <button class="btn btn-secondary" (click)="eliminarSesion(s.id)">Eliminar</button>
+                @if (esDocente && proyectoAbierto()) {
+                  <div class="lista-acciones">
+                    <button class="btn btn-secondary" (click)="abrirReporte(s)">Reporte de clase</button>
+                    <button class="btn btn-secondary" (click)="eliminarSesion(s.id)">Eliminar</button>
+                  </div>
                 }
               </li>
             }
           </ul>
         }
-        @if (esDocente) {
+        @if (esDocente && proyectoAbierto()) {
           <form [formGroup]="sesionForm" (ngSubmit)="crearSesion()" class="form-grid" novalidate>
             <div class="form-field">
               <label for="s-titulo">Título</label>
@@ -351,10 +438,13 @@
             </div>
             <div class="form-field">
               <label for="s-enlace">Enlace virtual (URL)</label>
-              <input id="s-enlace" type="text" formControlName="enlaceVirtual" placeholder="https://…" />
+              <input id="s-enlace" type="url" formControlName="enlaceVirtual" placeholder="https://…" />
+              <small class="file-hint">Debe empezar por http:// o https://</small>
             </div>
             <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="sesionForm.invalid">Agregar sesión</button>
+              <button type="submit" class="btn btn-primary" [disabled]="sesionForm.invalid || guardandoSesion()">
+                {{ guardandoSesion() ? 'Agregando...' : 'Agregar sesión' }}
+              </button>
             </div>
           </form>
         }
@@ -375,14 +465,14 @@
                   <div class="muted">Entrega: {{ formatearFecha(a.fechaLimite) }}</div>
                   <div class="muted">{{ a.instrucciones }}</div>
                 </div>
-                @if (esDocente) {
+                @if (esDocente && proyectoAbierto()) {
                   <button class="btn btn-secondary" (click)="eliminarActividad(a.id)">Eliminar</button>
                 }
               </li>
             }
           </ul>
         }
-        @if (esDocente) {
+        @if (esDocente && proyectoAbierto()) {
           <form [formGroup]="actividadForm" (ngSubmit)="crearActividad()" class="form-grid" novalidate>
             <div class="form-field">
               <label for="a-titulo">Título</label>
@@ -397,7 +487,9 @@
               <input id="a-limite" type="date" formControlName="fechaLimite" />
             </div>
             <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="actividadForm.invalid">Agregar actividad</button>
+              <button type="submit" class="btn btn-primary" [disabled]="actividadForm.invalid || guardandoActividad()">
+                {{ guardandoActividad() ? 'Agregando...' : 'Agregar actividad' }}
+              </button>
             </div>
           </form>
         }
@@ -416,17 +508,29 @@
                 <div>
                   <strong>{{ e.tipo }}</strong>
                   <a class="link-button" [href]="urlArchivo(e.archivoUrl)" target="_blank" rel="noopener">{{ nombreArchivo(e.archivoUrl) }}</a>
+                  <div class="muted">{{ tituloSesion(e.sesionId) }}</div>
                 </div>
                 <span class="muted">{{ formatearFecha(e.registradaEn) }}</span>
               </li>
             }
           </ul>
         }
-        @if (esDocente) {
+        @if (esDocente && proyectoAbierto()) {
           <form [formGroup]="evidenciaForm" (ngSubmit)="crearEvidencia()" class="form-grid" novalidate>
             <div class="form-field">
               <label for="e-tipo">Tipo (opcional)</label>
               <input id="e-tipo" type="text" formControlName="tipo" placeholder="Ej. fotografía, acta, video…" />
+            </div>
+            <div class="form-field">
+              <label for="e-sesion">Sesión (opcional)</label>
+              <select id="e-sesion" formControlName="sesionId">
+                <option [ngValue]="null">Sin sesión</option>
+                @for (s of sesiones(); track s.id) {
+                  <option [ngValue]="s.id">
+                    {{ s.titulo }} · {{ formatearFecha(s.fechaHora) }}
+                  </option>
+                }
+              </select>
             </div>
             <div class="form-field">
               <label for="e-archivo">Archivo</label>
@@ -434,9 +538,79 @@
               <small class="file-hint">Solo archivos · máx. 10 MB</small>
             </div>
             <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="!archivoSeleccionado()">Registrar evidencia</button>
+              <button type="submit" class="btn btn-primary" [disabled]="!archivoSeleccionado() || subiendoEvidencia()">
+                {{ subiendoEvidencia() ? 'Subiendo...' : 'Registrar evidencia' }}
+              </button>
             </div>
           </form>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Evaluación final</h2>
+        </div>
+        @if (evaluaciones().length === 0) {
+          <p class="muted">Aún no se ha registrado la evaluación final.</p>
+        } @else {
+          @for (ev of evaluaciones(); track ev.id) {
+            <div class="reporte">
+              <div class="reporte-head">
+                <strong>Evaluación del {{ formatearFecha(ev.creadoEn) }}</strong>
+              </div>
+              <p><span class="meta-label">Instrumento:</span> {{ ev.instrumento }}</p>
+              <p><span class="meta-label">Resultado:</span> {{ ev.resultado }}</p>
+              <p><span class="meta-label">Observaciones:</span> {{ ev.observaciones }}</p>
+            </div>
+          }
+        }
+        @if (esDocente && proyectoAbierto()) {
+          <form [formGroup]="evaluacionForm" (ngSubmit)="crearEvaluacion()" class="form-grid" novalidate>
+            <div class="form-field">
+              <label for="ev-instrumento">Instrumento</label>
+              <input id="ev-instrumento" type="text" formControlName="instrumento" placeholder="Ej. rúbrica, encuesta, lista de cotejo" />
+            </div>
+            <div class="form-field">
+              <label for="ev-resultado">Resultado</label>
+              <input id="ev-resultado" type="text" formControlName="resultado" placeholder="Ej. satisfactorio, 4.5/5" />
+            </div>
+            <div class="form-field">
+              <label for="ev-observaciones">Observaciones</label>
+              <input id="ev-observaciones" type="text" formControlName="observaciones" placeholder="Conclusiones de la experiencia" />
+            </div>
+            <div class="form-grid-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="evaluacionForm.invalid || guardandoEvaluacion()">
+                {{ guardandoEvaluacion() ? 'Guardando...' : 'Registrar evaluación' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Cierre de la clase espejo</h2>
+          @if (p.estado === 'FINALIZADO') {
+            <span class="estado">Finalizado</span>
+          }
+        </div>
+        @if (p.estado === 'FINALIZADO') {
+          <div class="alert alert-success" role="status">
+            La clase espejo está finalizada: el ciclo se completó correctamente.
+          </div>
+        } @else {
+          <p class="muted">
+            Al cerrar, el proyecto pasa al estado <strong>Finalizado</strong>. Requiere al
+            menos una evaluación final registrada y que cada sesión tenga su reporte de
+            clase confirmado por los docentes.
+          </p>
+          @if (esDocente && proyectoAbierto()) {
+            <button class="btn btn-primary" [disabled]="cerrando()" (click)="cerrarProyecto()">
+              {{ cerrando() ? 'Cerrando...' : 'Cerrar clase espejo' }}
+            </button>
+          } @else {
+            <p class="muted">Solo los docentes participantes pueden cerrar la clase espejo.</p>
+          }
         }
       </section>
 
@@ -471,7 +645,7 @@
             }
           </div>
 
-          @if (esDocente) {
+          @if (esDocente && proyectoAbierto()) {
             <form
               [formGroup]="mensajeForm"
               (ngSubmit)="enviarMensaje()"
@@ -502,7 +676,11 @@
             </form>
           } @else {
             <p class="chat-nota muted">
-              Solo los docentes participantes pueden escribir en el chat.
+              @if (esDocente) {
+                El chat queda en solo lectura porque la clase espejo está cerrada.
+              } @else {
+                Solo los docentes participantes pueden escribir en el chat.
+              }
             </p>
           }
         </app-modal>
@@ -523,6 +701,20 @@
             <span class="chat-toggle-badge">{{ mensajes().length }}</span>
           }
         </button>
+      }
+
+      @if (confirmacion(); as c) {
+        <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+          <p>{{ c.mensaje }}</p>
+          <div class="form-grid-actions">
+            <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">
+              Confirmar
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="cerrarConfirmacion()">
+              Cancelar
+            </button>
+          </div>
+        </app-modal>
       }
     } @else {
       <section class="card">
