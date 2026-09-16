@@ -26,6 +26,19 @@
   </header>
 
   <main class="content">
+    @if (avisoPanel(); as aviso) {
+      <div
+        class="alert"
+        [class.alert-success]="aviso.tipo === 'ok'"
+        [class.alert-error]="aviso.tipo === 'error'"
+        role="status"
+      >
+        <span>{{ aviso.texto }}</span>
+        <button type="button" class="btn btn-outline" (click)="cerrarAviso()">
+          Cerrar
+        </button>
+      </div>
+    }
     @if (!institucionCargada()) {
       <section class="card">
         <p class="muted">Cargando…</p>
@@ -259,9 +272,11 @@
     </section>
 
     <section class="card">
-      <h2>Solicitudes recibidas</h2>
+      <h2>Solicitudes de clase espejo</h2>
       @if (solicitudesEntrantes().length === 0) {
-        <p class="muted">No hay solicitudes entrantes.</p>
+        <p class="muted">
+          No hay solicitudes en las que participe tu institución.
+        </p>
       } @else {
         <ul class="lista">
           @for (s of solicitudesEntrantes(); track s.id) {
@@ -282,15 +297,14 @@
                 <span
                   class="estado"
                   [class.aprobada]="s.estado === 'APROBADA'"
-                  [class.pendiente]="s.estado === 'PENDIENTE'"
+                  [class.pendiente]="s.estado === 'PENDIENTE' || s.estado === 'APROBADA_POR_ORIGEN'"
                   [class.rechazada]="s.estado === 'RECHAZADA'"
-                  [class.cancelada]="s.estado === 'CANCELADA'"
                 >
                   {{ estadoLabelSolicitud(s) }}
                 </span>
-                @if (s.estado === 'PENDIENTE') {
+                @if (puedeRevisar(s)) {
                   <button class="btn btn-secondary" (click)="openRevision(s)">
-                    Revisar
+                    Revisar ({{ etapaRevision(s) === 'ORIGEN' ? 'origen' : 'destino' }})
                   </button>
                 }
               </div>
@@ -520,14 +534,28 @@
     (close)="closeRevision()"
   >
     <form [formGroup]="revisionForm" (ngSubmit)="submitRevision()">
+      @if (etapaSolicitudARevisar(); as etapa) {
+        <p class="muted">
+          @if (etapa === 'ORIGEN') {
+            Revisión de <strong>origen</strong>: al aprobar, la solicitud pasa al
+            agente de la institución destino.
+          } @else {
+            Revisión de <strong>destino</strong>: al aprobar se crea la clase espejo
+            con el docente que elijas.
+          }
+        </p>
+      }
+
       <div class="form-field">
         <label for="r-decision">Decisión</label>
         <select id="r-decision" formControlName="decision">
-          <option value="APROBADA">Aprobar</option>
+          <option value="APROBADA">
+            {{ etapaSolicitudARevisar() === 'ORIGEN' ? 'Aprobar y enviar al destino' : 'Aprobar' }}
+          </option>
           <option value="RECHAZADA">Rechazar</option>
         </select>
       </div>
-      @if (revisionForm.get('decision')?.value === 'APROBADA') {
+      @if (etapaSolicitudARevisar() === 'DESTINO' && revisionForm.get('decision')?.value === 'APROBADA') {
         <div class="form-field">
           <label for="r-docente">Docente que impartirá la clase espejo</label>
           <select id="r-docente" formControlName="asignacionDestinoId">
@@ -559,5 +587,19 @@
         {{ revisionLoading() ? 'Guardando...' : 'Guardar revisión' }}
       </button>
     </form>
+  </app-modal>
+}
+
+@if (confirmacion(); as c) {
+  <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+    <p>{{ c.mensaje }}</p>
+    <div class="form-grid-actions">
+      <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">
+        Confirmar
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cerrarConfirmacion()">
+        Cancelar
+      </button>
+    </div>
   </app-modal>
 }

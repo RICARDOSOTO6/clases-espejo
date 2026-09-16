@@ -45,6 +45,14 @@ export class DocenteComponent implements OnInit {
   proyectos = signal<Proyecto[]>([]);
   paisUsuario = signal<{ codigo: string; nombre: string } | null>(null);
 
+  /** Avisos y confirmaciones con el mismo estilo que el resto de la aplicación. */
+  avisoPanel = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+  confirmacion = signal<{
+    titulo: string;
+    mensaje: string;
+    accion: () => void;
+  } | null>(null);
+
   // --- Modal solicitud ---
   showSolicitudModal = false;
   editandoSolicitud: Solicitud | null = null;
@@ -119,7 +127,9 @@ export class DocenteComponent implements OnInit {
   }
 
   pendientes(): number {
-    return this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length;
+    return this.solicitudes().filter(
+      (s) => s.estado === 'PENDIENTE' || s.estado === 'APROBADA_POR_ORIGEN',
+    ).length;
   }
 
   aprobadas(): number {
@@ -184,6 +194,13 @@ export class DocenteComponent implements OnInit {
     const v = this.solicitudForm.value;
     if (v.asignacionOrigenId == null || v.institucionDestinoId == null) return;
 
+    const hoy = new Date();
+    const hoyTexto = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    if ((v.fechaPropuesta ?? '') < hoyTexto) {
+      this.solicitudError.set('La fecha propuesta no puede estar en el pasado');
+      return;
+    }
+
     const dto: CreateSolicitudDto = {
       asignacionOrigenId: v.asignacionOrigenId,
       institucionDestinoId: v.institucionDestinoId,
@@ -216,12 +233,44 @@ export class DocenteComponent implements OnInit {
   }
 
   cancelarSolicitud(s: Solicitud): void {
-    if (!window.confirm(`¿Cancelar la solicitud "${s.titulo}"?`)) return;
-    this.solicitudesService.cancelar(s.id).subscribe({
-      next: () => this.cargarDatos(),
-      error: (err: HttpErrorResponse) =>
-        window.alert(extraerMensajeError(err, 'Error al cancelar la solicitud')),
-    });
+    this.confirmarAccion(
+      'Cancelar solicitud',
+      `¿Cancelar la solicitud "${s.titulo}"?`,
+      () =>
+        this.solicitudesService.cancelar(s.id).subscribe({
+          next: () => {
+            this.avisar('ok', 'Solicitud cancelada');
+            this.cargarDatos();
+          },
+          error: (err: HttpErrorResponse) =>
+            this.avisar(
+              'error',
+              extraerMensajeError(err, 'Error al cancelar la solicitud'),
+            ),
+        }),
+    );
+  }
+
+  avisar(tipo: 'ok' | 'error', texto: string): void {
+    this.avisoPanel.set({ tipo, texto });
+  }
+
+  cerrarAviso(): void {
+    this.avisoPanel.set(null);
+  }
+
+  confirmarAccion(titulo: string, mensaje: string, accion: () => void): void {
+    this.confirmacion.set({ titulo, mensaje, accion });
+  }
+
+  cerrarConfirmacion(): void {
+    this.confirmacion.set(null);
+  }
+
+  ejecutarConfirmacion(): void {
+    const c = this.confirmacion();
+    this.confirmacion.set(null);
+    c?.accion();
   }
 
   // --- Helpers ---
@@ -233,12 +282,12 @@ export class DocenteComponent implements OnInit {
     switch (s.estado) {
       case 'PENDIENTE':
         return 'Pendiente';
+      case 'APROBADA_POR_ORIGEN':
+        return 'Aprobada por origen';
       case 'APROBADA':
         return 'Aprobada';
       case 'RECHAZADA':
         return 'Rechazada';
-      case 'CANCELADA':
-        return 'Cancelada';
       default:
         return s.estado;
     }

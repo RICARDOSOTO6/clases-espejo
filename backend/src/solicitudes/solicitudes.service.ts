@@ -8,12 +8,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
 import { RevisarSolicitudDto } from './dto/revisar-solicitud.dto';
-
-const ESTADO_PENDIENTE = 'PENDIENTE';
-const ETAPA_REVISION_INICIAL = 'REVISION_INICIAL';
+import {
+  ESTADO_PROYECTO_INICIAL,
+  ESTADO_SOLICITUD_APROBADA,
+  ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+  ESTADO_SOLICITUD_PENDIENTE,
+  ESTADO_SOLICITUD_RECHAZADA,
+  ETAPA_REVISION_DESTINO,
+  ETAPA_REVISION_ORIGEN,
+} from '../common/estados';
 
 // Semana 5: proyecto generado al aprobar una solicitud.
-const ESTADO_PROYECTO_INICIAL = 'EN_PLANIFICACION';
 const PLATAFORMA_POR_DEFINIR = 'Por definir';
 const ROL_ORIGEN = 'ORIGEN';
 const ROL_DESTINO = 'DESTINO';
@@ -25,6 +30,7 @@ export class SolicitudesService {
 
   async crear(usuarioId: number, dto: CreateSolicitudDto) {
     const docente = await this.getDocente(usuarioId);
+    this.verificarFechaFutura(dto.fechaPropuesta);
 
     const asignacion = await this.prisma.asignacionDocente.findFirst({
       where: {
@@ -72,7 +78,7 @@ export class SolicitudesService {
         titulo: dto.titulo,
         objetivo: dto.objetivo,
         fechaPropuesta: new Date(dto.fechaPropuesta),
-        estado: ESTADO_PENDIENTE,
+        estado: ESTADO_SOLICITUD_PENDIENTE,
       },
       include: this.includeCompleto(),
     });
@@ -93,10 +99,19 @@ export class SolicitudesService {
     const docente = await this.getDocente(usuarioId);
     const solicitud = await this.obtenerPropia(docente.id, id);
 
-    if (solicitud.estado !== ESTADO_PENDIENTE) {
+    // Una solicitud rechazada se puede corregir y reenviar: vuelve a "Pendiente".
+    if (
+      solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE &&
+      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA
+    ) {
       throw new BadRequestException(
-        'Solo se puede editar una solicitud pendiente',
+        'Solo se puede editar una solicitud pendiente o rechazada',
       );
+    }
+    const reenviar = solicitud.estado === ESTADO_SOLICITUD_RECHAZADA;
+
+    if (dto.fechaPropuesta !== undefined) {
+      this.verificarFechaFutura(dto.fechaPropuesta);
     }
 
     const asignacionOrigenId =
@@ -152,6 +167,7 @@ export class SolicitudesService {
         ...(dto.fechaPropuesta !== undefined
           ? { fechaPropuesta: new Date(dto.fechaPropuesta) }
           : {}),
+        ...(reenviar ? { estado: ESTADO_SOLICITUD_PENDIENTE } : {}),
       },
       include: this.includeCompleto(),
     });
@@ -161,45 +177,122 @@ export class SolicitudesService {
     const docente = await this.getDocente(usuarioId);
     const solicitud = await this.obtenerPropia(docente.id, id);
 
-    if (solicitud.estado !== ESTADO_PENDIENTE) {
+    if (
+      solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE &&
+      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA
+    ) {
       throw new BadRequestException(
-        'Solo se puede cancelar una solicitud pendiente',
+        'Solo se puede cancelar una solicitud pendiente o rechazada',
       );
     }
 
-    await this.prisma.solicitudClaseEspejo.delete({ where: { id } });
+    // Una solicitud rechazada tiene revisiones: sin borrarlas, la clave
+    // foránea impide el borrado y el usuario vería un error 500.
+    await this.prisma.$transaction([
+      this.prisma.revisionSolicitud.deleteMany({ where: { solicitudId: id } }),
+      this.prisma.solicitudClaseEspejo.delete({ where: { id } }),
+    ]);
     return { mensaje: 'Solicitud cancelada' };
   }
 
-  // --- Lado agente (Semana 4) ---
+  // --- Lado agente (Semana 4, doble revisión en Semana 7) ---
+
+  /**
+   * Bandeja del agente: solicitudes en las que participa su institución,
+   * ya sea como origen (le toca la 1.ª revisión) o como destino (la 2.ª).
+   */
   async listarEntrantes(usuarioId: number) {
     const agente = await this.getAgente(usuarioId);
     return this.prisma.solicitudClaseEspejo.findMany({
-      where: { institucionDestinoId: agente.institucionId },
+      where: {
+        OR: [
+          { institucionDestinoId: agente.institucionId },
+          {
+            asignacionOrigen: {
+              docenteInstitucion: { institucionId: agente.institucionId },
+            },
+          },
+        ],
+      },
       include: this.includeEntrante(),
       orderBy: { creadoEn: 'desc' },
     });
   }
 
+  /**
+   * Doble revisión: primero el agente de la institución de origen y, si aprueba,
+   * el de destino. La etapa se deduce de la institución del agente y del estado.
+   */
   async revisar(usuarioId: number, id: number, dto: RevisarSolicitudDto) {
     const agente = await this.getAgente(usuarioId);
-    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
-      where: { id, institucionDestinoId: agente.institucionId },
+    const solicitud = await this.prisma.solicitudClaseEspejo.findUnique({
+      where: { id },
+      include: { asignacionOrigen: { include: { docenteInstitucion: true } } },
     });
     if (!solicitud) throw new NotFoundException('Solicitud no encontrada');
 
-    if (solicitud.estado !== ESTADO_PENDIENTE) {
-      throw new BadRequestException('La solicitud ya fue revisada');
+    const institucionOrigen =
+      solicitud.asignacionOrigen.docenteInstitucion.institucionId;
+    const esOrigen = agente.institucionId === institucionOrigen;
+    const esDestino = agente.institucionId === solicitud.institucionDestinoId;
+
+    if (!esOrigen && !esDestino) {
+      throw new NotFoundException('Solicitud no encontrada');
     }
 
-    if (dto.decision === 'RECHAZADA' && !dto.comentario?.trim()) {
-      throw new BadRequestException(
-        'Indica el motivo del rechazo en el comentario',
-      );
+    if (esOrigen && solicitud.estado === ESTADO_SOLICITUD_PENDIENTE) {
+      return this.revisarOrigen(agente.id, solicitud.id, dto);
     }
+    if (esDestino && solicitud.estado === ESTADO_SOLICITUD_APROBADA_POR_ORIGEN) {
+      return this.revisarDestino(agente, solicitud, dto);
+    }
+
+    throw new BadRequestException(
+      'La solicitud no está en una etapa que te corresponda revisar',
+    );
+  }
+
+  /** Etapa 1: el agente de origen autoriza (o rechaza) la propuesta. */
+  private async revisarOrigen(
+    agenteId: number,
+    solicitudId: number,
+    dto: RevisarSolicitudDto,
+  ) {
+    this.exigirMotivoSiRechaza(dto);
+
+    await this.registrarRevision(
+      solicitudId,
+      agenteId,
+      ETAPA_REVISION_ORIGEN,
+      dto,
+    );
+
+    await this.prisma.solicitudClaseEspejo.update({
+      where: { id: solicitudId },
+      data: {
+        estado:
+          dto.decision === ESTADO_SOLICITUD_RECHAZADA
+            ? ESTADO_SOLICITUD_RECHAZADA
+            : ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+      },
+    });
+
+    return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
+      where: { id: solicitudId },
+      include: this.includeEntrante(),
+    });
+  }
+
+  /** Etapa 2: el agente de destino acepta y se crea el proyecto. */
+  private async revisarDestino(
+    agente: { id: number; institucionId: number },
+    solicitud: { id: number; asignacionOrigenId: number; fechaPropuesta: Date },
+    dto: RevisarSolicitudDto,
+  ) {
+    this.exigirMotivoSiRechaza(dto);
 
     let asignacionDestinoId: number | null = null;
-    if (dto.decision === 'APROBADA') {
+    if (dto.decision === ESTADO_SOLICITUD_APROBADA) {
       if (dto.asignacionDestinoId == null) {
         throw new BadRequestException(
           'Selecciona el docente que impartirá la clase espejo',
@@ -219,19 +312,15 @@ export class SolicitudesService {
       asignacionDestinoId = destino.id;
     }
 
-    await this.prisma.revisionSolicitud.create({
-      data: {
-        solicitudId: id,
-        agenteId: agente.id,
-        etapa: ETAPA_REVISION_INICIAL,
-        decision: dto.decision,
-        comentario: dto.comentario ?? '',
-        revisadaEn: new Date(),
-      },
-    });
+    await this.registrarRevision(
+      solicitud.id,
+      agente.id,
+      ETAPA_REVISION_DESTINO,
+      dto,
+    );
 
     const actualizada = await this.prisma.solicitudClaseEspejo.update({
-      where: { id },
+      where: { id: solicitud.id },
       data: {
         estado: dto.decision,
         ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
@@ -239,15 +328,45 @@ export class SolicitudesService {
       include: this.includeEntrante(),
     });
 
-    if (dto.decision === 'APROBADA') {
-      await this.crearProyectoSiNoExiste(id, solicitud, asignacionDestinoId!);
+    if (dto.decision === ESTADO_SOLICITUD_APROBADA) {
+      await this.crearProyectoSiNoExiste(
+        solicitud.id,
+        solicitud,
+        asignacionDestinoId!,
+      );
       return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
-        where: { id },
+        where: { id: solicitud.id },
         include: this.includeEntrante(),
       });
     }
 
     return actualizada;
+  }
+
+  private exigirMotivoSiRechaza(dto: RevisarSolicitudDto): void {
+    if (dto.decision === ESTADO_SOLICITUD_RECHAZADA && !dto.comentario?.trim()) {
+      throw new BadRequestException(
+        'Indica el motivo del rechazo en el comentario',
+      );
+    }
+  }
+
+  private async registrarRevision(
+    solicitudId: number,
+    agenteId: number,
+    etapa: string,
+    dto: RevisarSolicitudDto,
+  ): Promise<void> {
+    await this.prisma.revisionSolicitud.create({
+      data: {
+        solicitudId,
+        agenteId,
+        etapa,
+        decision: dto.decision,
+        comentario: dto.comentario ?? '',
+        revisadaEn: new Date(),
+      },
+    });
   }
 
   /**
@@ -295,8 +414,18 @@ export class SolicitudesService {
     });
   }
 
-  private async obtenerPropia(docenteId: number, id: number) {
-    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
+  /** La fecha propuesta no puede estar en el pasado (se compara por día). */
+  private verificarFechaFutura(fecha: string): void {
+    const hoy = new Date();
+    const hoyTexto = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    if (fecha.slice(0, 10) < hoyTexto) {
+      throw new BadRequestException(
+        'La fecha propuesta no puede estar en el pasado',
+      );
+    }
+  }
+
+  private async obtenerPropia(docenteId: number, id: number) {    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
       where: {
         id,
         asignacionOrigen: { docenteInstitucion: { docenteId } },

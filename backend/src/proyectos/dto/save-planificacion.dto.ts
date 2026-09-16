@@ -1,6 +1,5 @@
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-
-export const ESTADOS_PLANIFICACION = ['BORRADOR', 'EN_REVISION', 'APROBADA'];
+import { ESTADOS_PLANIFICACION } from '../../common/estados';
 
 export class SavePlanificacionDto {
   @IsString()

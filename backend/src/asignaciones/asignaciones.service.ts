@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -58,6 +59,22 @@ export class AsignacionesService {
       where: { id, materia: { institucionId: agente.institucionId } },
     });
     if (!asignacion) throw new NotFoundException('Asignación no encontrada');
+
+    // Sin esto, la base de datos rechaza el borrado y el usuario ve un error 500.
+    const [solicitudes, proyectos] = await Promise.all([
+      this.prisma.solicitudClaseEspejo.count({
+        where: { OR: [{ asignacionOrigenId: id }, { asignacionDestinoId: id }] },
+      }),
+      this.prisma.proyectoDocente.count({
+        where: { asignacionDocenteId: id },
+      }),
+    ]);
+    if (solicitudes > 0 || proyectos > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar la asignación: tiene solicitudes o clases espejo asociadas.',
+      );
+    }
+
     await this.prisma.asignacionDocente.delete({ where: { id } });
     return { mensaje: 'Asignación eliminada' };
   }
