@@ -1,15 +1,13 @@
 import { IsDateString, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-
-export const ESTADOS_PROYECTO = [
-  'EN_PLANIFICACION',
-  'EN_CURSO',
-  'FINALIZADO',
-  'CANCELADO',
-];
+import { ESTADOS_PROYECTO_EDITABLES } from '../../common/estados';
 
 export class UpdateProyectoDto {
+  /**
+   * Solo estados "de trabajo": el cierre a FINALIZADO se hace con
+   * `POST /proyectos/:id/cerrar`, que valida evaluación y reportes.
+   */
   @IsString()
-  @IsIn(ESTADOS_PROYECTO)
+  @IsIn(ESTADOS_PROYECTO_EDITABLES)
   @IsOptional()
   estado?: string;
 

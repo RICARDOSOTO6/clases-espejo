@@ -26,6 +26,19 @@
   </header>
 
   <main class="content">
+    @if (avisoPanel(); as aviso) {
+      <div
+        class="alert"
+        [class.alert-success]="aviso.tipo === 'ok'"
+        [class.alert-error]="aviso.tipo === 'error'"
+        role="status"
+      >
+        <span>{{ aviso.texto }}</span>
+        <button type="button" class="btn btn-outline" (click)="cerrarAviso()">
+          Cerrar
+        </button>
+      </div>
+    }
     <section class="card welcome">
       <div class="welcome-top">
         <div class="welcome-text">
@@ -119,15 +132,17 @@
                 <span
                   class="estado"
                   [class.aprobada]="s.estado === 'APROBADA'"
-                  [class.pendiente]="s.estado === 'PENDIENTE'"
+                  [class.pendiente]="s.estado === 'PENDIENTE' || s.estado === 'APROBADA_POR_ORIGEN'"
                   [class.rechazada]="s.estado === 'RECHAZADA'"
-                  [class.cancelada]="s.estado === 'CANCELADA'"
                 >
                   {{ estadoLabel(s) }}
                 </span>
                 @if (s.estado === 'PENDIENTE') {
                   <button class="btn btn-secondary" (click)="openEditar(s)">Editar</button>
                   <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Cancelar</button>
+                } @else if (s.estado === 'RECHAZADA') {
+                  <button class="btn btn-primary" (click)="openEditar(s)">Corregir y reenviar</button>
+                  <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Descartar</button>
                 }
               </div>
             </li>
@@ -245,5 +260,19 @@
         {{ solicitudLoading() ? 'Guardando...' : 'Guardar' }}
       </button>
     </form>
+  </app-modal>
+}
+
+@if (confirmacion(); as c) {
+  <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+    <p>{{ c.mensaje }}</p>
+    <div class="form-grid-actions">
+      <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">
+        Confirmar
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cerrarConfirmacion()">
+        Cancelar
+      </button>
+    </div>
   </app-modal>
 }

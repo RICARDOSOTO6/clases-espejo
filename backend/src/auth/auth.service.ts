@@ -91,22 +91,49 @@ export class AuthService {
   async login(dto: LoginDto) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { correo: dto.correo },
-      include: { agente: true, docente: true },
+      include: {
+        agente: true,
+        docente: { include: { instituciones: true } },
+      },
     });
 
-    if (!usuario || !usuario.passwordHash) {
+    if (!usuario) {
+      // Puede ser un docente invitado que todavía no activó su cuenta.
+      const invitacion = await this.prisma.invitacion.findFirst({
+        where: {
+          correo: dto.correo,
+          usadaEn: null,
+          expiracion: { gt: new Date() },
+        },
+      });
+      if (invitacion) {
+        throw new UnauthorizedException(
+          'Tienes una invitación pendiente: revisa tu correo para activar tu cuenta.',
+        );
+      }
       throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
-    if (!usuario.activo) {
-      throw new UnauthorizedException(
-        'La cuenta aún no está activa. Revisa tu correo de invitación.',
-      );
+    if (!usuario.passwordHash) {
+      throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
     const coincide = await bcrypt.compare(dto.password, usuario.passwordHash);
     if (!coincide) {
       throw new UnauthorizedException('Correo o contraseña incorrectos');
+    }
+
+    if (!usuario.activo) {
+      throw new UnauthorizedException(
+        'Tu cuenta está desactivada. Contacta a tu institución.',
+      );
+    }
+
+    const vinculos = usuario.docente?.instituciones ?? [];
+    if (vinculos.length > 0 && !vinculos.some((v) => v.activo)) {
+      throw new UnauthorizedException(
+        'Tu cuenta de docente está desactivada por tu institución.',
+      );
     }
 
     const access_token = await this.jwtService.signAsync({

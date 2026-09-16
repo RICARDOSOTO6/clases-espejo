@@ -117,6 +117,15 @@ export class AgenteComponent implements OnInit {
   // --- Solicitudes recibidas (Semana 4) ---
   solicitudesEntrantes = signal<SolicitudEntrante[]>([]);
   proyectos = signal<Proyecto[]>([]);
+
+  /** Avisos y confirmaciones con el mismo estilo que el resto de la aplicación. */
+  avisoPanel = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+  confirmacion = signal<{
+    titulo: string;
+    mensaje: string;
+    accion: () => void;
+  } | null>(null);
+
   showRevisionModal = false;
   solicitudARevisar: SolicitudEntrante | null = null;
   revisionLoading = signal(false);
@@ -252,10 +261,47 @@ export class AgenteComponent implements OnInit {
     return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
   }
 
+  // --- Doble revisión ---
+
+  /** La institución del agente frente a la solicitud. */
+  esInstitucionOrigen(s: SolicitudEntrante): boolean {
+    return (
+      s.asignacionOrigen.docenteInstitucion.institucion.id ===
+      this.institucion()?.id
+    );
+  }
+
+  esInstitucionDestino(s: SolicitudEntrante): boolean {
+    return s.institucionDestino.id === this.institucion()?.id;
+  }
+
+  /**
+   * Etapa que le toca al agente: origen (1.ª) si la solicitud está pendiente,
+   * destino (2.ª) si el origen ya la aprobó.
+   */
+  etapaRevision(s: SolicitudEntrante): 'ORIGEN' | 'DESTINO' | null {
+    if (this.esInstitucionOrigen(s) && s.estado === 'PENDIENTE') {
+      return 'ORIGEN';
+    }
+    if (this.esInstitucionDestino(s) && s.estado === 'APROBADA_POR_ORIGEN') {
+      return 'DESTINO';
+    }
+    return null;
+  }
+
+  puedeRevisar(s: SolicitudEntrante): boolean {
+    return this.etapaRevision(s) !== null;
+  }
+
+  etapaSolicitudARevisar(): 'ORIGEN' | 'DESTINO' | null {
+    return this.solicitudARevisar
+      ? this.etapaRevision(this.solicitudARevisar)
+      : null;
+  }
+
   pendientesEntrantes(): number {
-    return this.solicitudesEntrantes().filter(
-      (s) => s.estado === 'PENDIENTE',
-    ).length;
+    return this.solicitudesEntrantes().filter((s) => this.puedeRevisar(s))
+      .length;
   }
 
   onPaisChange(): void {
@@ -265,6 +311,28 @@ export class AgenteComponent implements OnInit {
 
   prefijoDe(codigo: string): string {
     return PAISES.find((p) => p.codigo === codigo)?.prefijo ?? '';
+  }
+
+  avisar(tipo: 'ok' | 'error', texto: string): void {
+    this.avisoPanel.set({ tipo, texto });
+  }
+
+  cerrarAviso(): void {
+    this.avisoPanel.set(null);
+  }
+
+  confirmarAccion(titulo: string, mensaje: string, accion: () => void): void {
+    this.confirmacion.set({ titulo, mensaje, accion });
+  }
+
+  cerrarConfirmacion(): void {
+    this.confirmacion.set(null);
+  }
+
+  ejecutarConfirmacion(): void {
+    const c = this.confirmacion();
+    this.confirmacion.set(null);
+    c?.accion();
   }
 
   openInvite(): void {
@@ -294,7 +362,7 @@ export class AgenteComponent implements OnInit {
           this.inviteForm.reset();
           this.showInviteModal = false;
           this.cargarDatos();
-          window.alert(`Invitación enviada a ${res.correo}`);
+          this.avisar('ok', `Invitación enviada a ${res.correo}`);
         },
         error: (err: HttpErrorResponse) => {
           this.inviteLoading.set(false);
@@ -310,21 +378,27 @@ export class AgenteComponent implements OnInit {
     this.materiasService.cambiarEstadoDocente(d.id, !d.activo).subscribe({
       next: () => this.cargarDatos(),
       error: (err: HttpErrorResponse) =>
-        window.alert(
+        this.avisar(
+          'error',
           extraerMensajeError(err, 'Error al cambiar el estado del docente'),
         ),
     });
   }
 
   eliminarDocente(d: DocenteInstitucion): void {
-    if (!window.confirm(`¿Eliminar al docente "${this.nombreDocente(d)}"?`)) {
-      return;
-    }
-    this.materiasService.eliminarDocente(d.id).subscribe({
-      next: () => this.cargarDatos(),
-      error: (err: HttpErrorResponse) =>
-        window.alert(extraerMensajeError(err, 'Error al eliminar el docente')),
-    });
+    this.confirmarAccion(
+      'Eliminar docente',
+      `¿Eliminar al docente "${this.nombreDocente(d)}"?`,
+      () =>
+        this.materiasService.eliminarDocente(d.id).subscribe({
+          next: () => this.cargarDatos(),
+          error: (err: HttpErrorResponse) =>
+            this.avisar(
+              'error',
+              extraerMensajeError(err, 'Error al eliminar el docente'),
+            ),
+        }),
+    );
   }
 
   // --- Materias ---
@@ -386,12 +460,19 @@ export class AgenteComponent implements OnInit {
   }
 
   eliminarMateria(m: Materia): void {
-    if (!window.confirm(`¿Eliminar la materia "${m.nombre}"?`)) return;
-    this.materiasService.eliminarMateria(m.id).subscribe({
-      next: () => this.cargarDatos(),
-      error: (err: HttpErrorResponse) =>
-        window.alert(extraerMensajeError(err, 'Error al eliminar la materia')),
-    });
+    this.confirmarAccion(
+      'Eliminar materia',
+      `¿Eliminar la materia "${m.nombre}"?`,
+      () =>
+        this.materiasService.eliminarMateria(m.id).subscribe({
+          next: () => this.cargarDatos(),
+          error: (err: HttpErrorResponse) =>
+            this.avisar(
+              'error',
+              extraerMensajeError(err, 'Error al eliminar la materia'),
+            ),
+        }),
+    );
   }
 
   // --- Asignar docente ---
@@ -438,12 +519,16 @@ export class AgenteComponent implements OnInit {
   }
 
   quitarAsignacion(a: Asignacion): void {
-    if (!window.confirm('¿Quitar esta asignación?')) return;
-    this.materiasService.quitarAsignacion(a.id).subscribe({
-      next: () => this.cargarDatos(),
-      error: (err: HttpErrorResponse) =>
-        window.alert(extraerMensajeError(err, 'Error al quitar la asignación')),
-    });
+    this.confirmarAccion('Quitar asignación', '¿Quitar esta asignación?', () =>
+      this.materiasService.quitarAsignacion(a.id).subscribe({
+        next: () => this.cargarDatos(),
+        error: (err: HttpErrorResponse) =>
+          this.avisar(
+            'error',
+            extraerMensajeError(err, 'Error al quitar la asignación'),
+          ),
+      }),
+    );
   }
 
   // --- Revisión de solicitudes (Semana 4) ---
@@ -468,7 +553,11 @@ export class AgenteComponent implements OnInit {
     const { decision, comentario, asignacionDestinoId } =
       this.revisionForm.value;
 
-    if (decision === 'APROBADA' && asignacionDestinoId == null) {
+    // El docente de destino solo se elige en la 2.ª revisión al aprobar.
+    const esDestino = this.etapaRevision(this.solicitudARevisar) === 'DESTINO';
+    const aprueba = decision === 'APROBADA';
+
+    if (esDestino && aprueba && asignacionDestinoId == null) {
       this.revisionError.set(
         'Selecciona el docente que impartirá la clase espejo',
       );
@@ -482,7 +571,7 @@ export class AgenteComponent implements OnInit {
       .revisar(this.solicitudARevisar.id, {
         decision: decision ?? 'APROBADA',
         comentario: comentario ?? '',
-        ...(decision === 'APROBADA'
+        ...(esDestino && aprueba
           ? { asignacionDestinoId: asignacionDestinoId! }
           : {}),
       } as RevisarSolicitudDto)
@@ -522,12 +611,12 @@ export class AgenteComponent implements OnInit {
     switch (s.estado) {
       case 'PENDIENTE':
         return 'Pendiente';
+      case 'APROBADA_POR_ORIGEN':
+        return 'Aprobada por origen';
       case 'APROBADA':
         return 'Aprobada';
       case 'RECHAZADA':
         return 'Rechazada';
-      case 'CANCELADA':
-        return 'Cancelada';
       default:
         return s.estado;
     }

@@ -1,4 +1,11 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
+import { ESTADOS_SESION } from '../../common/estados';
 
 export class UpdateSesionDto {
   @IsString()
@@ -9,11 +16,12 @@ export class UpdateSesionDto {
   @IsOptional()
   fechaHora?: string;
 
-  @IsString()
+  @IsUrl({ require_protocol: true, protocols: ['http', 'https'], require_tld: false })
   @IsOptional()
   enlaceVirtual?: string;
 
   @IsString()
+  @IsIn(ESTADOS_SESION)
   @IsOptional()
   estado?: string;
 }
