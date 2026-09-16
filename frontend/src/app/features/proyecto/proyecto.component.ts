@@ -18,10 +18,13 @@ import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { Asignacion } from '../../core/models/materia.models';
 import {
   Actividad,
+  Evaluacion,
   Evidencia,
   Mensaje,
   ParticipacionPlanificacion,
+  ParticipacionReporte,
   Proyecto,
+  ReporteClase,
   Sesion,
 } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -106,7 +109,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   sesionForm = this.fb.group({
     titulo: ['', Validators.required],
     fechaHora: ['', Validators.required],
-    enlaceVirtual: ['', Validators.required],
+    enlaceVirtual: [
+      '',
+      [Validators.required, Validators.pattern(/^https?:\/\/.+/i)],
+    ],
   });
   actividadForm = this.fb.group({
     titulo: ['', Validators.required],
@@ -115,8 +121,50 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   });
   evidenciaForm = this.fb.group({
     tipo: [''],
+    sesionId: this.fb.control<number | null>(null),
   });
   archivoSeleccionado = signal<File | null>(null);
+
+  // --- Reporte de clase, evaluación final y cierre (Semana 7) ---
+  reportesClase = signal<ReporteClase[]>([]);
+  evaluaciones = signal<Evaluacion[]>([]);
+
+  /** Sesión cuyo reporte de clase se está redactando. */
+  sesionReporteAbierta = signal<number | null>(null);
+  reporteClaseForm = this.fb.group({
+    desarrolloClase: ['', Validators.required],
+    totalAsistentes: [0, [Validators.required, Validators.min(0)]],
+    incidencias: ['', Validators.required],
+    acuerdosSiguienteSesion: ['', Validators.required],
+  });
+
+  /** Reporte cuya participación está confirmando el docente. */
+  reporteAConfirmar = signal<number | null>(null);
+  observacionesForm = this.fb.group({
+    observaciones: ['', Validators.required],
+  });
+
+  evaluacionForm = this.fb.group({
+    instrumento: ['', Validators.required],
+    resultado: ['', Validators.required],
+    observaciones: ['', Validators.required],
+  });
+  cerrando = signal(false);
+
+  // Botones que deben bloquearse mientras guardan (evita el doble envío).
+  guardandoSesion = signal(false);
+  guardandoActividad = signal(false);
+  subiendoEvidencia = signal(false);
+  guardandoReporteClase = signal(false);
+  confirmandoReporteClase = signal(false);
+  guardandoEvaluacion = signal(false);
+
+  // Confirmaciones con el mismo modal que usa el resto de la aplicación.
+  confirmacion = signal<{
+    titulo: string;
+    mensaje: string;
+    accion: () => void;
+  } | null>(null);
 
   ngOnInit(): void {
     this.proyectoId = Number(this.route.snapshot.paramMap.get('id'));
@@ -131,6 +179,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.cargarSesiones();
     this.cargarActividades();
     this.cargarEvidencias();
+    this.cargarReportesClase();
+    this.cargarEvaluaciones();
 
     if (this.esAgente) {
       this.materiasService.listarAsignaciones().subscribe({
@@ -232,6 +282,12 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   guardarProyecto(): void {
     if (this.guardandoProyecto() || this.proyectoForm.invalid) return;
     const v = this.proyectoForm.value;
+    if (v.fechaInicio && v.fechaFin && v.fechaFin < v.fechaInicio) {
+      this.error.set(
+        'La fecha de fin no puede ser anterior a la fecha de inicio',
+      );
+      return;
+    }
     this.guardandoProyecto.set(true);
     this.error.set(null);
     this.ok.set(null);
@@ -288,15 +344,21 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   quitarDocente(proyectoDocenteId: number, nombre: string): void {
-    if (!window.confirm(`¿Quitar a ${nombre} del proyecto?`)) return;
-    this.proyectos.quitarDocente(this.proyectoId, proyectoDocenteId).subscribe({
-      next: () => {
-        this.ok.set('Docente retirado del proyecto');
-        this.cargar();
-      },
-      error: (err: HttpErrorResponse) =>
-        this.error.set(extraerMensajeError(err, 'Error al quitar docente')),
-    });
+    this.confirmarAccion(
+      'Quitar docente',
+      `¿Quitar a ${nombre} del proyecto?`,
+      () =>
+        this.proyectos
+          .quitarDocente(this.proyectoId, proyectoDocenteId)
+          .subscribe({
+            next: () => {
+              this.ok.set('Docente retirado del proyecto');
+              this.cargar();
+            },
+            error: (err: HttpErrorResponse) =>
+              this.error.set(extraerMensajeError(err, 'Error al quitar docente')),
+          }),
+    );
   }
 
   private rolDeInstitucion(): string {
@@ -414,8 +476,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   crearSesion(): void {
-    if (this.sesionForm.invalid) return;
+    if (this.guardandoSesion() || this.sesionForm.invalid) return;
     const v = this.sesionForm.value;
+    this.guardandoSesion.set(true);
+    this.error.set(null);
     this.proyectos
       .crearSesion(this.proyectoId, {
         titulo: v.titulo ?? '',
@@ -424,22 +488,28 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: () => {
+          this.guardandoSesion.set(false);
           this.sesionForm.reset();
           this.ok.set('Sesión creada');
           this.cargarSesiones();
         },
-        error: (err: HttpErrorResponse) =>
-          this.error.set(extraerMensajeError(err, 'Error al crear la sesión')),
+        error: (err: HttpErrorResponse) => {
+          this.guardandoSesion.set(false);
+          this.error.set(extraerMensajeError(err, 'Error al crear la sesión'));
+        },
       });
   }
 
   eliminarSesion(id: number): void {
-    if (!window.confirm('¿Eliminar esta sesión?')) return;
-    this.proyectos.eliminarSesion(this.proyectoId, id).subscribe({
-      next: () => this.cargarSesiones(),
-      error: (err: HttpErrorResponse) =>
-        this.error.set(extraerMensajeError(err, 'Error al eliminar la sesión')),
-    });
+    this.confirmarAccion('Eliminar sesión', '¿Eliminar esta sesión?', () =>
+      this.proyectos.eliminarSesion(this.proyectoId, id).subscribe({
+        next: () => this.cargarSesiones(),
+        error: (err: HttpErrorResponse) =>
+          this.error.set(
+            extraerMensajeError(err, 'Error al eliminar la sesión'),
+          ),
+      }),
+    );
   }
 
   cargarActividades(): void {
@@ -450,8 +520,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   crearActividad(): void {
-    if (this.actividadForm.invalid) return;
+    if (this.guardandoActividad() || this.actividadForm.invalid) return;
     const v = this.actividadForm.value;
+    this.guardandoActividad.set(true);
+    this.error.set(null);
     this.proyectos
       .crearActividad(this.proyectoId, {
         titulo: v.titulo ?? '',
@@ -460,24 +532,30 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: () => {
+          this.guardandoActividad.set(false);
           this.actividadForm.reset();
           this.ok.set('Actividad creada');
           this.cargarActividades();
         },
-        error: (err: HttpErrorResponse) =>
-          this.error.set(extraerMensajeError(err, 'Error al crear la actividad')),
+        error: (err: HttpErrorResponse) => {
+          this.guardandoActividad.set(false);
+          this.error.set(
+            extraerMensajeError(err, 'Error al crear la actividad'),
+          );
+        },
       });
   }
 
   eliminarActividad(id: number): void {
-    if (!window.confirm('¿Eliminar esta actividad?')) return;
-    this.proyectos.eliminarActividad(this.proyectoId, id).subscribe({
-      next: () => this.cargarActividades(),
-      error: (err: HttpErrorResponse) =>
-        this.error.set(
-          extraerMensajeError(err, 'Error al eliminar la actividad'),
-        ),
-    });
+    this.confirmarAccion('Eliminar actividad', '¿Eliminar esta actividad?', () =>
+      this.proyectos.eliminarActividad(this.proyectoId, id).subscribe({
+        next: () => this.cargarActividades(),
+        error: (err: HttpErrorResponse) =>
+          this.error.set(
+            extraerMensajeError(err, 'Error al eliminar la actividad'),
+          ),
+      }),
+    );
   }
 
   cargarEvidencias(): void {
@@ -505,20 +583,31 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       this.error.set('Selecciona un archivo de evidencia');
       return;
     }
+    if (this.subiendoEvidencia()) return;
     const v = this.evidenciaForm.value;
+    this.subiendoEvidencia.set(true);
+    this.error.set(null);
     this.proyectos
-      .crearEvidencia(this.proyectoId, archivo, v.tipo ?? '')
+      .crearEvidencia(
+        this.proyectoId,
+        archivo,
+        v.tipo ?? '',
+        v.sesionId ?? undefined,
+      )
       .subscribe({
         next: () => {
+          this.subiendoEvidencia.set(false);
           this.evidenciaForm.reset();
           this.archivoSeleccionado.set(null);
           this.ok.set('Evidencia registrada');
           this.cargarEvidencias();
         },
-        error: (err: HttpErrorResponse) =>
+        error: (err: HttpErrorResponse) => {
+          this.subiendoEvidencia.set(false);
           this.error.set(
             extraerMensajeError(err, 'Error al registrar la evidencia'),
-          ),
+          );
+        },
       });
   }
 
@@ -532,6 +621,213 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   nombreArchivo(url: string): string {
     return url.split('/').pop() ?? url;
+  }
+
+  tituloSesion(sesionId: number | null): string {
+    if (sesionId == null) return 'Sin sesión';
+    return this.sesiones().find((s) => s.id === sesionId)?.titulo ?? 'Sesión';
+  }
+
+  // --- Reporte de clase, evaluación final y cierre (Semana 7) ---
+
+  cargarReportesClase(): void {
+    this.proyectos.listarReportesClase(this.proyectoId).subscribe({
+      next: (r) => this.reportesClase.set(r),
+      error: () => this.reportesClase.set([]),
+    });
+  }
+
+  cargarEvaluaciones(): void {
+    this.proyectos.listarEvaluaciones(this.proyectoId).subscribe({
+      next: (r) => this.evaluaciones.set(r),
+      error: () => this.evaluaciones.set([]),
+    });
+  }
+
+  reporteDeSesion(sesionId: number): ReporteClase | null {
+    return this.reportesClase().find((r) => r.sesionId === sesionId) ?? null;
+  }
+
+  miParticipacionReporte(reporte: ReporteClase): ParticipacionReporte | null {
+    return (
+      reporte.participaciones.find(
+        (p) =>
+          p.proyectoDocente.asignacionDocente.docenteInstitucion.docente.usuario
+            .id === this.usuario?.id,
+      ) ?? null
+    );
+  }
+
+  abrirReporte(sesion: Sesion): void {
+    const reporte = this.reporteDeSesion(sesion.id);
+    this.reporteClaseForm.reset({
+      desarrolloClase: reporte?.desarrolloClase ?? '',
+      totalAsistentes: reporte?.totalAsistentes ?? 0,
+      incidencias: reporte?.incidencias ?? '',
+      acuerdosSiguienteSesion: reporte?.acuerdosSiguienteSesion ?? '',
+    });
+    this.error.set(null);
+    this.sesionReporteAbierta.set(sesion.id);
+  }
+
+  cerrarReporte(): void {
+    this.sesionReporteAbierta.set(null);
+  }
+
+  guardarReporteClase(): void {
+    const sesionId = this.sesionReporteAbierta();
+    if (
+      sesionId == null ||
+      this.guardandoReporteClase() ||
+      this.reporteClaseForm.invalid
+    ) {
+      return;
+    }
+    const v = this.reporteClaseForm.value;
+    this.guardandoReporteClase.set(true);
+    this.error.set(null);
+    this.proyectos
+      .guardarReporteClase(this.proyectoId, sesionId, {
+        desarrolloClase: v.desarrolloClase ?? '',
+        totalAsistentes: Number(v.totalAsistentes ?? 0),
+        incidencias: v.incidencias ?? '',
+        acuerdosSiguienteSesion: v.acuerdosSiguienteSesion ?? '',
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoReporteClase.set(false);
+          this.sesionReporteAbierta.set(null);
+          this.ok.set('Reporte de clase guardado');
+          this.cargarReportesClase();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoReporteClase.set(false);
+          this.error.set(
+            extraerMensajeError(err, 'Error al guardar el reporte de clase'),
+          );
+        },
+      });
+  }
+
+  abrirConfirmacion(reporte: ReporteClase): void {
+    const mia = this.miParticipacionReporte(reporte);
+    this.observacionesForm.reset({ observaciones: mia?.observaciones ?? '' });
+    this.error.set(null);
+    this.reporteAConfirmar.set(reporte.id);
+  }
+
+  cancelarConfirmacion(): void {
+    this.reporteAConfirmar.set(null);
+  }
+
+  confirmarReporte(reporte: ReporteClase): void {
+    if (this.confirmandoReporteClase() || this.observacionesForm.invalid) {
+      return;
+    }
+    const observaciones = this.observacionesForm.value.observaciones ?? '';
+    this.confirmandoReporteClase.set(true);
+    this.error.set(null);
+    this.proyectos
+      .confirmarReporteClase(this.proyectoId, reporte.id, observaciones)
+      .subscribe({
+        next: () => {
+          this.confirmandoReporteClase.set(false);
+          this.reporteAConfirmar.set(null);
+          this.ok.set('Participación confirmada en el reporte');
+          this.cargarReportesClase();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.confirmandoReporteClase.set(false);
+          this.error.set(
+            extraerMensajeError(err, 'Error al confirmar el reporte'),
+          );
+        },
+      });
+  }
+
+  crearEvaluacion(): void {
+    if (this.guardandoEvaluacion() || this.evaluacionForm.invalid) return;
+    const v = this.evaluacionForm.value;
+    this.guardandoEvaluacion.set(true);
+    this.error.set(null);
+    this.proyectos
+      .crearEvaluacion(this.proyectoId, {
+        instrumento: v.instrumento ?? '',
+        resultado: v.resultado ?? '',
+        observaciones: v.observaciones ?? '',
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoEvaluacion.set(false);
+          this.evaluacionForm.reset({
+            instrumento: '',
+            resultado: '',
+            observaciones: '',
+          });
+          this.ok.set('Evaluación final registrada');
+          this.cargarEvaluaciones();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoEvaluacion.set(false);
+          this.error.set(
+            extraerMensajeError(err, 'Error al registrar la evaluación'),
+          );
+        },
+      });
+  }
+
+  cerrarProyecto(): void {
+    this.confirmarAccion(
+      'Cerrar clase espejo',
+      '¿Cerrar la clase espejo? El proyecto pasará al estado Finalizado.',
+      () => {
+        this.cerrando.set(true);
+        this.error.set(null);
+        this.ok.set(null);
+        this.proyectos.cerrarProyecto(this.proyectoId).subscribe({
+          next: () => {
+            this.cerrando.set(false);
+            this.ok.set('Clase espejo finalizada');
+            this.cargar();
+          },
+          error: (err: HttpErrorResponse) => {
+            this.cerrando.set(false);
+            this.error.set(
+              extraerMensajeError(err, 'Error al cerrar la clase espejo'),
+            );
+          },
+        });
+      },
+    );
+  }
+
+  estadoReporteLabel(estado: string): string {
+    const labels: Record<string, string> = {
+      BORRADOR: 'Borrador',
+      EN_REVISION: 'En revisión',
+      CONFIRMADO: 'Confirmado',
+    };
+    return labels[estado] ?? estado;
+  }
+
+  /** Un proyecto cerrado queda en solo lectura. */
+  proyectoAbierto(): boolean {
+    const p = this.proyecto();
+    return !!p && p.estado !== 'FINALIZADO' && p.estado !== 'CANCELADO';
+  }
+
+  confirmarAccion(titulo: string, mensaje: string, accion: () => void): void {
+    this.confirmacion.set({ titulo, mensaje, accion });
+  }
+
+  cerrarConfirmacion(): void {
+    this.confirmacion.set(null);
+  }
+
+  ejecutarConfirmacion(): void {
+    const c = this.confirmacion();
+    this.confirmacion.set(null);
+    c?.accion();
   }
 
   // --- Helpers de presentación ---

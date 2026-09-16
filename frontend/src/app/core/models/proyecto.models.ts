@@ -153,3 +153,44 @@ export interface Evidencia {
   sesionId: number | null;
   registradaEn: string;
 }
+
+export interface ParticipacionReporte {
+  id: number;
+  observaciones: string;
+  confirmadoEn: string | null;
+  proyectoDocente: ProyectoDocenteItem;
+}
+
+export interface ReporteClase {
+  id: number;
+  sesionId: number;
+  desarrolloClase: string;
+  totalAsistentes: number;
+  incidencias: string;
+  acuerdosSiguienteSesion: string;
+  estado: string;
+  creadoEn: string;
+  participaciones: ParticipacionReporte[];
+}
+
+export interface SaveReporteClaseDto {
+  desarrolloClase: string;
+  totalAsistentes: number;
+  incidencias: string;
+  acuerdosSiguienteSesion: string;
+}
+
+export interface Evaluacion {
+  id: number;
+  proyectoId: number;
+  instrumento: string;
+  resultado: string;
+  observaciones: string;
+  creadoEn: string;
+}
+
+export interface CreateEvaluacionDto {
+  instrumento: string;
+  resultado: string;
+  observaciones: string;
+}
