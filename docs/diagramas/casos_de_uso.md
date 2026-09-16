@@ -15,7 +15,6 @@ flowchart LR
     %% ACTORES
     %% =========================
 
-    Admin([Administrador del sistema])
     Agente([Agente de internacionalización])
     Docente([Docente])
 
@@ -29,12 +28,8 @@ flowchart LR
         %% Autenticación
         UC1([Iniciar sesión])
 
-        %% Administrador
-        UC2([Gestionar instituciones])
-        UC3([Gestionar usuarios y roles])
-        UC4([Consultar reportes generales])
-
         %% Agente
+        UC2([Editar los datos de su institución])
         UC5([Registrar y actualizar docentes])
         UC6([Registrar y actualizar materias])
         UC7([Asignar docente a materia])
@@ -67,20 +62,11 @@ flowchart LR
 
 
     %% =========================
-    %% RELACIONES ADMINISTRADOR
-    %% =========================
-
-    Admin --> UC1
-    Admin --> UC2
-    Admin --> UC3
-    Admin --> UC4
-
-
-    %% =========================
     %% RELACIONES AGENTE
     %% =========================
 
     Agente --> UC1
+    Agente --> UC2
     Agente --> UC5
     Agente --> UC6
     Agente --> UC7
@@ -129,11 +115,9 @@ flowchart LR
     %% ESTILOS DE ACTORES
     %% =========================
 
-    classDef administrador fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:3px
     classDef agente fill:#FFEDD5,stroke:#EA580C,color:#7C2D12,stroke-width:3px
     classDef docente fill:#DCFCE7,stroke:#16A34A,color:#14532D,stroke-width:3px
 
-    class Admin administrador
     class Agente agente
     class Docente docente
 
@@ -146,41 +130,34 @@ flowchart LR
     classDef notificacion fill:#F3E8FF,stroke:#9333EA,color:#581C87,stroke-width:2px
     classDef proyecto fill:#ECFDF5,stroke:#059669,color:#064E3B,stroke-width:2px
 
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 casoUso
+    class UC1,UC2,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18 casoUso
 
     class UC23 notificacion
     class UC19,UC20,UC21,UC22,UC24 proyecto
 
 
     %% =========================
-    %% FLECHAS DEL ADMINISTRADOR
-    %% =========================
-
-    linkStyle 0,1,2,3 stroke:#2563EB,stroke-width:3px
-
-
-    %% =========================
     %% FLECHAS DEL AGENTE
     %% =========================
 
-    linkStyle 4,5,6,7,8,9,10,11,12,13 stroke:#EA580C,stroke-width:3px
+    linkStyle 0,1,2,3,4,5,6,7,8,9,10 stroke:#EA580C,stroke-width:3px
 
 
     %% =========================
     %% FLECHAS DEL DOCENTE
     %% =========================
 
-    linkStyle 14,15,16,17,18,19,20,21,22,23 stroke:#16A34A,stroke-width:3px
+    linkStyle 11,12,13,14,15,16,17,18,19,20 stroke:#16A34A,stroke-width:3px
 
 
     %% =========================
     %% RELACIONES INTERNAS
     %% =========================
 
-    linkStyle 24,25,26 stroke:#64748B,stroke-width:2px,stroke-dasharray:5
-    linkStyle 27,28 stroke:#9333EA,stroke-width:2px,stroke-dasharray:5
-    linkStyle 29 stroke:#9333EA,stroke-width:2px
-    linkStyle 30,31 stroke:#059669,stroke-width:2px,stroke-dasharray:5
+    linkStyle 21,22,23 stroke:#64748B,stroke-width:2px,stroke-dasharray:5
+    linkStyle 24,25 stroke:#9333EA,stroke-width:2px,stroke-dasharray:5
+    linkStyle 26 stroke:#9333EA,stroke-width:2px
+    linkStyle 27,28 stroke:#059669,stroke-width:2px,stroke-dasharray:5
 
 
     %% =========================
@@ -189,14 +166,12 @@ flowchart LR
 
     subgraph Leyenda["Simbología"]
 
-        L1[Administrador]
         L2[Agente de internacionalización]
         L3[Docente]
         L4[Relación interna del sistema]
 
     end
 
-    class L1 administrador
     class L2 agente
     class L3 docente
     class L4 casoUso
