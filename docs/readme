@@ -397,14 +397,14 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `GET` | `/instituciones/:id/materias` | Materias de otra institución | JWT |
 | `POST` | `/solicitudes` | El docente crea una solicitud de clase espejo | JWT (docente) |
 | `GET` | `/solicitudes/mias` | Solicitudes del docente | JWT (docente) |
-| `PATCH` | `/solicitudes/:id` | Edita una solicitud pendiente | JWT (docente) |
-| `DELETE` | `/solicitudes/:id` | Cancela una solicitud pendiente | JWT (docente) |
-| `GET` | `/solicitudes/entrantes` | Solicitudes destinadas a la institución | JWT (agente) |
-| `POST` | `/solicitudes/:id/revisar` | Aprueba/rechaza una solicitud (al aprobar se crea el proyecto) | JWT (agente) |
+| `PATCH` | `/solicitudes/:id` | Edita una solicitud pendiente o rechazada (al corregirla vuelve a *Pendiente*) | JWT (docente) |
+| `DELETE` | `/solicitudes/:id` | Cancela una solicitud pendiente o rechazada | JWT (docente) |
+| `GET` | `/solicitudes/entrantes` | Solicitudes en las que participa la institución (origen o destino) | JWT (agente) |
+| `POST` | `/solicitudes/:id/revisar` | Doble revisión: aprueba/rechaza (1.º origen, 2.º destino; al aprobar el destino se crea el proyecto) | JWT (agente) |
 | `GET` | `/proyectos/mios` | Proyectos en los que participa el docente | JWT (docente) |
 | `GET` | `/proyectos/institucion` | Proyectos de la institución del agente | JWT (agente) |
 | `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
-| `PATCH` | `/proyectos/:id` | Actualiza estado, fechas o plataforma | JWT (docente) |
+| `PATCH` | `/proyectos/:id` | Actualiza fechas, plataforma o estado (solo *En planificación* / *En curso*) | JWT (docente) |
 | `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto (solo de su institución) | JWT (agente) |
 | `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto (solo de su institución) | JWT (agente) |
 | `PUT` | `/proyectos/:id/planificacion` | Crea/actualiza la planificación conjunta | JWT (docente) |
@@ -412,7 +412,7 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `GET` | `/proyectos/:id/reportes` | Lista los reportes de planificación | JWT |
 | `POST` | `/proyectos/:id/reportes` | Genera el reporte de planificación | JWT (agente) |
 | `GET` | `/proyectos/:id/mensajes` | Lista el chat del proyecto | JWT |
-| `POST` | `/proyectos/:id/mensajes` | Envía un mensaje al chat (solo docentes del proyecto) | JWT (docente) |
+| `POST` | `/proyectos/:id/mensajes` | Envía un mensaje al chat (solo docentes del proyecto y con la clase abierta) | JWT (docente) |
 | `GET` | `/proyectos/:id/sesiones` | Lista las sesiones programadas | JWT |
 | `POST` | `/proyectos/:id/sesiones` | Programa una sesión | JWT (docente) |
 | `PATCH` | `/proyectos/:id/sesiones/:sesionId` | Edita una sesión | JWT (docente) |
@@ -422,15 +422,22 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `PATCH` | `/proyectos/:id/actividades/:actividadId` | Edita una actividad | JWT (docente) |
 | `DELETE` | `/proyectos/:id/actividades/:actividadId` | Elimina una actividad | JWT (docente) |
 | `GET` | `/proyectos/:id/evidencias` | Lista las evidencias | JWT |
-| `POST` | `/proyectos/:id/evidencias` | Sube una evidencia (archivo, máx. 10 MB) | JWT (docente) |
+| `POST` | `/proyectos/:id/evidencias` | Sube una evidencia (archivo, máx. 10 MB; `sesionId` opcional) | JWT (docente) |
+| `GET` | `/proyectos/:id/reportes-clase` | Lista los reportes de clase del proyecto | JWT |
+| `GET` | `/proyectos/:id/sesiones/:sesionId/reporte` | Reporte de clase de una sesión | JWT |
+| `PUT` | `/proyectos/:id/sesiones/:sesionId/reporte` | Crea/actualiza el reporte de clase de una sesión | JWT (docente) |
+| `POST` | `/proyectos/:id/reportes-clase/:reporteId/confirmar` | El docente firma el reporte con sus observaciones | JWT (docente) |
+| `GET` | `/proyectos/:id/evaluaciones` | Lista las evaluaciones finales | JWT |
+| `POST` | `/proyectos/:id/evaluaciones` | Registra una evaluación final | JWT (docente) |
+| `POST` | `/proyectos/:id/cerrar` | Cierra la clase espejo (pasa a *Finalizado*) | JWT (docente) |
 | `GET` | `/health` | Health check del servicio | No |
 
 > **Rol del agente en la clase conjunta (solo consulta).** El agente de internacionalización
 > puede ver el proyecto y todos sus detalles y gestionar (agregar/quitar) **únicamente los
 > docentes de su propia institución**. Las acciones que organizan la clase —datos del proyecto,
-> planificación conjunta, sesiones, actividades y evidencias— son exclusivas de los **docentes
-> participantes**. El reporte de planificación sigue correspondiendo al agente, como función de
-> supervisión.
+> planificación conjunta, sesiones, actividades, evidencias, reporte de clase y evaluación
+> final— son exclusivas de los **docentes participantes**. El reporte de planificación sigue
+> correspondiendo al agente, como función de supervisión.
 
 Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
 
@@ -570,11 +577,11 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Gestión de proyectos (se crea automáticamente al aprobar la solicitud)
 * [x] Planificación conjunta
 * [x] Chat entre docentes del proyecto
-* [ ] Sesiones
-* [ ] Actividades
-* [ ] Evidencias
-* [ ] Evaluaciones
-* [ ] Reportes
+* [x] Sesiones
+* [x] Actividades
+* [x] Evidencias
+* [x] Evaluaciones
+* [x] Reportes
 
 ## Frontend
 
@@ -587,8 +594,8 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Validación de formularios con mensajes de ayuda
 * [x] Clases espejo: proyectos y planificación conjunta
 * [x] Chat entre docentes del proyecto
-* [ ] Clases espejo: sesiones, actividades y evidencias
-* [ ] Reportes
+* [x] Clases espejo: sesiones, actividades y evidencias
+* [x] Reporte de clase conjunta, evaluación final y cierre
 
 ---
 
@@ -628,10 +635,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 - [x] **Frontend:** agenda de sesiones + actividades + subida de evidencias.
 - [x] **Entregable:** el proyecto registra sesiones, actividades y evidencias.
 
-## 🔴 Semana 7 — Reportes y Evaluación
-- [ ] **Backend:** módulos `reportes` + `evaluaciones`.
-- [ ] **Frontend:** reporte de clase conjunta + evaluación final + cierre.
-- [ ] **Entregable:** ciclo completo hasta *Finalizado*.
+## 🔴 Semana 7 — Reportes y Evaluación ✅
+- [x] **Backend:** reporte de clase conjunta por sesión (con firmas de los docentes) + evaluación final + cierre del proyecto.
+- [x] **Frontend:** reporte de clase en cada sesión + evaluación final + cierre.
+- [x] **Entregable:** ciclo completo hasta *Finalizado*.
 
 ## 🔵 Semana 8 — Pulido, pruebas y despliegue
 - [ ] Recuperación de contraseña (reemplaza el placeholder actual).
