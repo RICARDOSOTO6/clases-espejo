@@ -95,7 +95,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     contenido: ['', Validators.required],
   });
   private mensajesInterval: ReturnType<typeof setInterval> | null = null;
+  private mensajesEnVuelo = false;
+  private erroresMensajes = 0;
   chatAbierto = signal(false);
+  errorChat = signal<string | null>(null);
 
   private readonly chatScroll =
     viewChild<ElementRef<HTMLDivElement>>('chatScroll');
@@ -174,8 +177,6 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     }
 
     this.cargar();
-    this.cargarMensajes();
-    this.mensajesInterval = setInterval(() => this.cargarMensajes(), 3000);
     this.cargarSesiones();
     this.cargarActividades();
     this.cargarEvidencias();
@@ -187,9 +188,16 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         next: (r) => this.asignaciones.set(r),
         error: () => this.asignaciones.set([]),
       });
+      // Sin esta institución no se puede saber el rol del docente que se agrega.
       this.instituciones.obtenerMia().subscribe({
         next: (i) => this.miInstitucionId.set(i.id),
-        error: () => {},
+        error: (err: HttpErrorResponse) =>
+          this.error.set(
+            extraerMensajeError(
+              err,
+              'No se pudo determinar tu institución: recarga la página antes de agregar docentes',
+            ),
+          ),
       });
     }
   }
@@ -199,8 +207,15 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   cargarMensajes(): void {
+    // Sin este cerrojo, una respuesta antigua podía pisar la lista y dejar
+    // fuera el mensaje recién enviado.
+    if (this.mensajesEnVuelo) return;
+    this.mensajesEnVuelo = true;
+
     this.proyectos.listarMensajes(this.proyectoId).subscribe({
       next: (r) => {
+        this.mensajesEnVuelo = false;
+        this.erroresMensajes = 0;
         const hayNuevos = r.length !== this.ultimoConteoMensajes;
         this.ultimoConteoMensajes = r.length;
         this.mensajes.set(r);
@@ -208,7 +223,12 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           setTimeout(() => this.scrollChatAbajo());
         }
       },
-      error: () => {},
+      error: () => {
+        this.mensajesEnVuelo = false;
+        this.erroresMensajes += 1;
+        // Tras varios fallos seguidos se deja de insistir cada 3 segundos.
+        if (this.erroresMensajes >= 5) this.detenerPollingMensajes();
+      },
     });
   }
 
@@ -219,7 +239,24 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   abrirChat(): void {
     this.chatAbierto.set(true);
+    this.errorChat.set(null);
+    this.cargarMensajes();
+    // El sondeo solo corre con el chat abierto: antes latía cada 3 s siempre.
+    this.detenerPollingMensajes();
+    this.mensajesInterval = setInterval(() => this.cargarMensajes(), 3000);
     setTimeout(() => this.scrollChatAbajo());
+  }
+
+  cerrarChat(): void {
+    this.chatAbierto.set(false);
+    this.detenerPollingMensajes();
+  }
+
+  private detenerPollingMensajes(): void {
+    if (this.mensajesInterval) {
+      clearInterval(this.mensajesInterval);
+      this.mensajesInterval = null;
+    }
   }
 
   enviarMensaje(): void {
@@ -236,7 +273,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoMensaje.set(false);
-        this.error.set(extraerMensajeError(err, 'Error al enviar el mensaje'));
+        // El error se muestra dentro del chat: la alerta de la página queda
+        // tapada por el propio modal.
+        this.errorChat.set(
+          extraerMensajeError(err, 'Error al enviar el mensaje'),
+        );
       },
     });
   }
@@ -319,6 +360,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   agregarDocente(): void {
     const asignacionId = this.asignacionSeleccionada.value;
     if (this.agregandoDocente() || asignacionId == null) return;
+    // Sin institución conocida, el rol se guardaría mal (DESTINO por defecto).
+    if (this.miInstitucionId() == null) {
+      this.error.set(
+        'No se pudo determinar tu institución: recarga la página antes de agregar docentes.',
+      );
+      return;
+    }
 
     this.agregandoDocente.set(true);
     this.error.set(null);
@@ -471,7 +519,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   cargarSesiones(): void {
     this.proyectos.listarSesiones(this.proyectoId).subscribe({
       next: (r) => this.sesiones.set(r),
-      error: () => this.sesiones.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.sesiones.set([]);
+        this.avisarErrorCarga(err, 'No se pudieron cargar las sesiones');
+      },
     });
   }
 
@@ -515,7 +566,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   cargarActividades(): void {
     this.proyectos.listarActividades(this.proyectoId).subscribe({
       next: (r) => this.actividades.set(r),
-      error: () => this.actividades.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.actividades.set([]);
+        this.avisarErrorCarga(err, 'No se pudieron cargar las actividades');
+      },
     });
   }
 
@@ -561,7 +615,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   cargarEvidencias(): void {
     this.proyectos.listarEvidencias(this.proyectoId).subscribe({
       next: (r) => this.evidencias.set(r),
-      error: () => this.evidencias.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.evidencias.set([]);
+        this.avisarErrorCarga(err, 'No se pudieron cargar las evidencias');
+      },
     });
   }
 
@@ -633,15 +690,30 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   cargarReportesClase(): void {
     this.proyectos.listarReportesClase(this.proyectoId).subscribe({
       next: (r) => this.reportesClase.set(r),
-      error: () => this.reportesClase.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.reportesClase.set([]);
+        this.avisarErrorCarga(
+          err,
+          'No se pudieron cargar los reportes de clase',
+        );
+      },
     });
   }
 
   cargarEvaluaciones(): void {
     this.proyectos.listarEvaluaciones(this.proyectoId).subscribe({
       next: (r) => this.evaluaciones.set(r),
-      error: () => this.evaluaciones.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.evaluaciones.set([]);
+        this.avisarErrorCarga(err, 'No se pudo cargar la evaluación final');
+      },
     });
+  }
+
+  private avisarErrorCarga(err: HttpErrorResponse, contexto: string): void {
+    this.error.set(
+      `${contexto}: ${extraerMensajeError(err, 'error de conexión')}`,
+    );
   }
 
   reporteDeSesion(sesionId: number): ReporteClase | null {
@@ -903,6 +975,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private aFechaInput(fecha: string): string {
     if (!fecha) return '';
     const d = new Date(fecha);
-    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+    if (isNaN(d.getTime())) return '';
+    // Fecha local: `toISOString()` es UTC y el input mostraba otro día.
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 }

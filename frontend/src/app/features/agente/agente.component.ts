@@ -118,6 +118,10 @@ export class AgenteComponent implements OnInit {
   solicitudesEntrantes = signal<SolicitudEntrante[]>([]);
   proyectos = signal<Proyecto[]>([]);
 
+  // Secciones colapsables (materias empieza plegada).
+  mostrarDocentes = signal(true);
+  mostrarMaterias = signal(false);
+
   /** Avisos y confirmaciones con el mismo estilo que el resto de la aplicación. */
   avisoPanel = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   confirmacion = signal<{
@@ -142,26 +146,70 @@ export class AgenteComponent implements OnInit {
   }
 
   cargarDatos(): void {
+    this.cargarDocentes();
+    this.cargarMaterias();
+    this.cargarAsignaciones();
+    this.cargarSolicitudes();
+    this.cargarProyectos();
+    this.cargarInstitucion();
+  }
+
+  /**
+   * Recargas por recurso: antes, cada acción puntual recargaba las seis fuentes,
+   * lo que hacía parpadear los contadores y podía pisar el formulario de
+   * institución mientras se escribía.
+   */
+  cargarDocentes(): void {
     this.materiasService.listarDocentes().subscribe({
       next: (r) => this.docentes.set(r),
-      error: () => this.docentes.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.docentes.set([]);
+        this.avisarErrorCarga(err);
+      },
     });
+  }
+
+  cargarMaterias(): void {
     this.materiasService.listarMaterias().subscribe({
       next: (r) => this.materias.set(r),
-      error: () => this.materias.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.materias.set([]);
+        this.avisarErrorCarga(err);
+      },
     });
+  }
+
+  cargarAsignaciones(): void {
     this.materiasService.listarAsignaciones().subscribe({
       next: (r) => this.asignaciones.set(r),
-      error: () => this.asignaciones.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.asignaciones.set([]);
+        this.avisarErrorCarga(err);
+      },
     });
+  }
+
+  cargarSolicitudes(): void {
     this.solicitudesService.listarEntrantes().subscribe({
       next: (r) => this.solicitudesEntrantes.set(r),
-      error: () => this.solicitudesEntrantes.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.solicitudesEntrantes.set([]);
+        this.avisarErrorCarga(err);
+      },
     });
+  }
+
+  cargarProyectos(): void {
     this.proyectosService.listarInstitucion().subscribe({
       next: (r) => this.proyectos.set(r),
-      error: () => this.proyectos.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.proyectos.set([]);
+        this.avisarErrorCarga(err);
+      },
     });
+  }
+
+  cargarInstitucion(): void {
     this.institucionesService.obtenerMia().subscribe({
       next: (r) => {
         this.institucion.set(r);
@@ -178,11 +226,24 @@ export class AgenteComponent implements OnInit {
           this.prefijoTelefono.set(this.prefijoDe(r.codigoPais));
         }
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.institucion.set(null);
         this.institucionCargada.set(true);
+        this.avisarErrorCarga(err);
       },
     });
+  }
+
+  private avisarErrorCarga(err: HttpErrorResponse): void {
+    this.avisar(
+      'error',
+      `No se pudieron cargar los datos: ${extraerMensajeError(err, 'error de conexión')}`,
+    );
+  }
+
+  reintentarCarga(): void {
+    this.cerrarAviso();
+    this.cargarDatos();
   }
 
   // --- Invitar docente ---
@@ -304,6 +365,35 @@ export class AgenteComponent implements OnInit {
       .length;
   }
 
+  // --- Agrupación de solicitudes y proyectos por estado ---
+  solicitudesPendientes(): SolicitudEntrante[] {
+    return this.solicitudesEntrantes().filter((s) =>
+      ['PENDIENTE', 'APROBADA_POR_ORIGEN'].includes(s.estado),
+    );
+  }
+
+  solicitudesAceptadas(): SolicitudEntrante[] {
+    return this.solicitudesEntrantes().filter((s) => s.estado === 'APROBADA');
+  }
+
+  solicitudesRechazadas(): SolicitudEntrante[] {
+    return this.solicitudesEntrantes().filter((s) => s.estado === 'RECHAZADA');
+  }
+
+  proyectosActivos(): Proyecto[] {
+    return this.proyectos().filter((p) =>
+      ['EN_PLANIFICACION', 'EN_CURSO'].includes(p.estado),
+    );
+  }
+
+  proyectosFinalizados(): Proyecto[] {
+    return this.proyectos().filter((p) => p.estado === 'FINALIZADO');
+  }
+
+  proyectosCancelados(): Proyecto[] {
+    return this.proyectos().filter((p) => p.estado === 'CANCELADO');
+  }
+
   onPaisChange(): void {
     const codigo = this.institucionForm.get('paisCodigo')?.value;
     this.prefijoTelefono.set(this.prefijoDe(codigo ?? ''));
@@ -361,7 +451,7 @@ export class AgenteComponent implements OnInit {
           this.inviteLoading.set(false);
           this.inviteForm.reset();
           this.showInviteModal = false;
-          this.cargarDatos();
+          this.cargarDocentes();
           this.avisar('ok', `Invitación enviada a ${res.correo}`);
         },
         error: (err: HttpErrorResponse) => {
@@ -376,7 +466,7 @@ export class AgenteComponent implements OnInit {
   // --- Estado y eliminación de docentes ---
   cambiarEstadoDocente(d: DocenteInstitucion): void {
     this.materiasService.cambiarEstadoDocente(d.id, !d.activo).subscribe({
-      next: () => this.cargarDatos(),
+      next: () => this.cargarDocentes(),
       error: (err: HttpErrorResponse) =>
         this.avisar(
           'error',
@@ -391,7 +481,7 @@ export class AgenteComponent implements OnInit {
       `¿Eliminar al docente "${this.nombreDocente(d)}"?`,
       () =>
         this.materiasService.eliminarDocente(d.id).subscribe({
-          next: () => this.cargarDatos(),
+          next: () => this.cargarDocentes(),
           error: (err: HttpErrorResponse) =>
             this.avisar(
               'error',
@@ -448,7 +538,7 @@ export class AgenteComponent implements OnInit {
         this.materiaLoading.set(false);
         this.showMateriaModal = false;
         this.materiaForm.reset();
-        this.cargarDatos();
+        this.cargarMaterias();
       },
       error: (err: HttpErrorResponse) => {
         this.materiaLoading.set(false);
@@ -465,7 +555,7 @@ export class AgenteComponent implements OnInit {
       `¿Eliminar la materia "${m.nombre}"?`,
       () =>
         this.materiasService.eliminarMateria(m.id).subscribe({
-          next: () => this.cargarDatos(),
+          next: () => this.cargarMaterias(),
           error: (err: HttpErrorResponse) =>
             this.avisar(
               'error',
@@ -507,7 +597,7 @@ export class AgenteComponent implements OnInit {
         next: () => {
           this.asignarLoading.set(false);
           this.showAsignarModal = false;
-          this.cargarDatos();
+          this.cargarAsignaciones();
         },
         error: (err: HttpErrorResponse) => {
           this.asignarLoading.set(false);
@@ -521,7 +611,7 @@ export class AgenteComponent implements OnInit {
   quitarAsignacion(a: Asignacion): void {
     this.confirmarAccion('Quitar asignación', '¿Quitar esta asignación?', () =>
       this.materiasService.quitarAsignacion(a.id).subscribe({
-        next: () => this.cargarDatos(),
+        next: () => this.cargarAsignaciones(),
         error: (err: HttpErrorResponse) =>
           this.avisar(
             'error',
@@ -564,6 +654,14 @@ export class AgenteComponent implements OnInit {
       return;
     }
 
+    // El backend lo exige: se avisa aquí para no gastar un viaje al servidor.
+    if (decision === 'RECHAZADA' && !(comentario ?? '').trim()) {
+      this.revisionError.set(
+        'Indica el motivo del rechazo en el comentario',
+      );
+      return;
+    }
+
     this.revisionLoading.set(true);
     this.revisionError.set(null);
 
@@ -579,7 +677,8 @@ export class AgenteComponent implements OnInit {
         next: () => {
           this.revisionLoading.set(false);
           this.showRevisionModal = false;
-          this.cargarDatos();
+          this.cargarSolicitudes();
+          this.cargarProyectos();
         },
         error: (err: HttpErrorResponse) => {
           this.revisionLoading.set(false);
@@ -625,7 +724,9 @@ export class AgenteComponent implements OnInit {
   formatearFecha(fecha: string): string {
     if (!fecha) return '';
     const d = new Date(fecha);
-    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+    if (isNaN(d.getTime())) return '';
+    // Fecha local: `toISOString()` es UTC y podía devolver el día siguiente.
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   estadoProyectoLabel(estado: string): string {

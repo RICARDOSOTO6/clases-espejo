@@ -7,7 +7,8 @@ export function extraerMensajeError(
   const message = err?.error?.message;
   if (typeof message === 'string') return message;
   if (Array.isArray(message) && message.length > 0) {
-    return String(message[0]);
+    // class-validator devuelve un array de avisos: se muestran todos.
+    return message.map((m) => String(m)).join(' · ');
   }
   return fallback;
 }

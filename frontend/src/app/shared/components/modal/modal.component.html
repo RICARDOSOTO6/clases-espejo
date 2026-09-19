@@ -1,16 +1,17 @@
-<div class="modal-backdrop" (click)="closeModal()"></div>
+<div class="modal-backdrop" (click)="onBackdrop()"></div>
 
 <div
+  #contenedor
   class="modal"
   [class.modal-xs]="size === 'xs'"
   [class.modal-lg]="size === 'lg'"
   [class.modal-sm]="size === 'sm'"
   role="dialog"
   aria-modal="true"
-  aria-labelledby="modal-title"
+  [attr.aria-labelledby]="idTitulo"
 >
   <div class="modal-header">
-    <h2 id="modal-title">{{ title }}</h2>
+    <h2 [id]="idTitulo">{{ title }}</h2>
     <button type="button" class="modal-close" (click)="closeModal()" aria-label="Cerrar">
       ✕
     </button>

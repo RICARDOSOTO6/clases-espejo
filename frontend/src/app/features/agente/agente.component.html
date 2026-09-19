@@ -31,10 +31,15 @@
         class="alert"
         [class.alert-success]="aviso.tipo === 'ok'"
         [class.alert-error]="aviso.tipo === 'error'"
-        role="status"
+        [attr.role]="aviso.tipo === 'error' ? 'alert' : 'status'"
       >
         <span>{{ aviso.texto }}</span>
-        <button type="button" class="btn btn-outline" (click)="cerrarAviso()">
+        @if (aviso.tipo === 'error') {
+          <button type="button" class="btn btn-secondary" (click)="reintentarCarga()">
+            Reintentar
+          </button>
+        }
+        <button type="button" class="btn btn-secondary" (click)="cerrarAviso()">
           Cerrar
         </button>
       </div>
@@ -91,7 +96,7 @@
           </div>
 
           @if (institucionError()) {
-            <div class="alert alert-error">{{ institucionError() }}</div>
+            <div class="alert alert-error" role="alert">{{ institucionError() }}</div>
           }
 
           <button
@@ -154,9 +159,14 @@
 
     <section class="card comunidad">
       <div class="card-head">
-        <h2>Comunidad CACE</h2>
-        <span class="comunidad-note">Uniendo mentes, corazones y proyectos</span>
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </span>
+          <h2>Comunidad CACE</h2>
+        </div>
       </div>
+      <p class="comunidad-note">Uniendo mentes, corazones y proyectos</p>
       <p class="muted">
         Países que conforman la Comunidad de Apoyo a Clases Espejo:
       </p>
@@ -204,152 +214,309 @@
     </section>
 
     <section class="card">
-      <h2>Docentes de la institución</h2>
-      @if (docentes().length === 0) {
-        <p class="muted">Aún no hay docentes invitados.</p>
-      } @else {
-        <ul class="lista">
-          @for (d of docentes(); track d.id) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ nombreDocente(d) }}</strong>
-                <span class="muted"> · {{ d.docente.especialidad }}</span>
-              </div>
-              <div class="lista-acciones">
-                <span class="estado" [class.pendiente]="!d.activo">
-                  {{ d.activo ? 'Activo' : 'Desactivado' }}
-                </span>
-                <button class="btn btn-secondary" (click)="cambiarEstadoDocente(d)">
-                  {{ d.activo ? 'Desactivar' : 'Activar' }}
-                </button>
-                <button class="btn btn-secondary" (click)="eliminarDocente(d)">
-                  Eliminar
-                </button>
-              </div>
-            </li>
-          }
-        </ul>
-      }
-    </section>
-
-    <section class="card">
       <div class="card-head">
-        <h2>Materias</h2>
-        <button class="btn btn-primary" (click)="openNuevaMateria()">Nueva materia</button>
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <h2>Docentes de la institución</h2>
+          <span class="card-head-count">{{ docentes().length }}</span>
+        </div>
+        <button type="button" class="collapse-toggle" [class.cerrado]="!mostrarDocentes()"
+          (click)="mostrarDocentes.set(!mostrarDocentes())"
+          [attr.aria-expanded]="mostrarDocentes()" aria-controls="sec-docentes">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
       </div>
-
-      @if (materias().length === 0) {
-        <p class="muted">No hay materias registradas.</p>
-      } @else {
-        @for (m of materias(); track m.id) {
-          <div class="materia">
-            <div class="materia-head">
-              <div>
-                <strong>{{ m.nombre }}</strong>
-                <span class="muted"> ({{ m.clave }})</span>
-              </div>
-              <div class="materia-acciones">
-                <button class="btn btn-secondary" (click)="openAsignar(m)">Asignar</button>
-                <button class="btn btn-secondary" (click)="openEditarMateria(m)">Editar</button>
-                <button class="btn btn-secondary" (click)="eliminarMateria(m)">Eliminar</button>
-              </div>
-            </div>
-            <p class="muted">{{ m.programaEducativo }} · {{ m.descripcion }}</p>
-
-            @if (asignacionesDeMateria(m.id).length > 0) {
-              <ul class="lista">
-                @for (a of asignacionesDeMateria(m.id); track a.id) {
-                  <li class="lista-item">
-                    <span>{{ nombreDocente(a.docenteInstitucion) }} · {{ a.periodoEscolar }}</span>
-                    <button class="link-button" (click)="quitarAsignacion(a)">Quitar</button>
-                  </li>
-                }
-              </ul>
+      @if (mostrarDocentes()) {
+        @if (docentes().length === 0) {
+          <p class="muted">Aún no hay docentes invitados.</p>
+        } @else {
+          <ul class="lista">
+            @for (d of docentes(); track d.id) {
+              <li class="lista-item">
+                <div>
+                  <strong>{{ nombreDocente(d) }}</strong>
+                  <span class="muted"> · {{ d.docente.especialidad }}</span>
+                </div>
+                <div class="lista-acciones">
+                  <span class="estado" [class.pendiente]="!d.activo">
+                    {{ d.activo ? 'Activo' : 'Desactivado' }}
+                  </span>
+                  <button class="btn btn-secondary" (click)="cambiarEstadoDocente(d)">
+                    {{ d.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                  <button class="btn btn-secondary" (click)="eliminarDocente(d)">
+                    Eliminar
+                  </button>
+                </div>
+              </li>
             }
-          </div>
+          </ul>
         }
       }
     </section>
 
     <section class="card">
-      <h2>Solicitudes de clase espejo</h2>
-      @if (solicitudesEntrantes().length === 0) {
-        <p class="muted">
-          No hay solicitudes en las que participe tu institución.
-        </p>
-      } @else {
-        <ul class="lista">
-          @for (s of solicitudesEntrantes(); track s.id) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ s.titulo }}</strong>
-                <div class="muted">
-                  De: {{ nombreDocenteEntrante(s) }} ·
-                  {{ s.asignacionOrigen.materia.nombre }}
-                  ({{ s.asignacionOrigen.docenteInstitucion.institucion.nombre }})
+      <div class="card-head">
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </span>
+          <h2>Materias</h2>
+          <span class="card-head-count">{{ materias().length }}</span>
+        </div>
+        <div class="card-head-actions">
+          <button class="btn btn-primary" (click)="openNuevaMateria()">Nueva materia</button>
+          <button type="button" class="collapse-toggle" [class.cerrado]="!mostrarMaterias()"
+            (click)="mostrarMaterias.set(!mostrarMaterias())"
+            [attr.aria-expanded]="mostrarMaterias()" aria-controls="sec-materias">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      @if (mostrarMaterias()) {
+        @if (materias().length === 0) {
+          <p class="muted">No hay materias registradas.</p>
+        } @else {
+          @for (m of materias(); track m.id) {
+            <div class="materia">
+              <div class="materia-head">
+                <div>
+                  <strong>{{ m.nombre }}</strong>
+                  <span class="muted"> ({{ m.clave }})</span>
                 </div>
-                <div class="muted">
-                  Materia destino: {{ s.materiaDestino?.nombre ?? '—' }} ·
-                  {{ formatearFecha(s.fechaPropuesta) }}
+                <div class="materia-acciones">
+                  <button class="btn btn-secondary" (click)="openAsignar(m)">Asignar</button>
+                  <button class="btn btn-secondary" (click)="openEditarMateria(m)">Editar</button>
+                  <button class="btn btn-secondary" (click)="eliminarMateria(m)">Eliminar</button>
                 </div>
               </div>
-              <div class="lista-acciones">
-                <span
-                  class="estado"
-                  [class.aprobada]="s.estado === 'APROBADA'"
-                  [class.pendiente]="s.estado === 'PENDIENTE' || s.estado === 'APROBADA_POR_ORIGEN'"
-                  [class.rechazada]="s.estado === 'RECHAZADA'"
-                >
-                  {{ estadoLabelSolicitud(s) }}
-                </span>
-                @if (puedeRevisar(s)) {
-                  <button class="btn btn-secondary" (click)="openRevision(s)">
-                    Revisar ({{ etapaRevision(s) === 'ORIGEN' ? 'origen' : 'destino' }})
-                  </button>
-                }
-              </div>
-            </li>
+              <p class="muted">{{ m.programaEducativo }} · {{ m.descripcion }}</p>
+
+              @if (asignacionesDeMateria(m.id).length > 0) {
+                <ul class="lista">
+                  @for (a of asignacionesDeMateria(m.id); track a.id) {
+                    <li class="lista-item">
+                      <span>{{ nombreDocente(a.docenteInstitucion) }} · {{ a.periodoEscolar }}</span>
+                      <button class="link-button" (click)="quitarAsignacion(a)">Quitar</button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           }
-        </ul>
+        }
       }
     </section>
 
     <section class="card">
       <div class="card-head">
-        <h2>Proyectos de clase espejo</h2>
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          </span>
+          <h2>Solicitudes de clase espejo</h2>
+          <span class="card-head-count">{{ solicitudesEntrantes().length }}</span>
+        </div>
       </div>
+
+      @if (solicitudesEntrantes().length === 0) {
+        <p class="muted">
+          No hay solicitudes en las que participe tu institución.
+        </p>
+      } @else {
+        <div class="tablero">
+          <div class="tablero-col tablero-col-pendiente">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>Pendientes de revisión</span>
+              <span class="grupo-count">{{ solicitudesPendientes().length }}</span>
+            </div>
+            @if (solicitudesPendientes().length === 0) {
+              <p class="tarjeta-vacia muted">Sin pendientes</p>
+            } @else {
+              @for (s of solicitudesPendientes(); track s.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ s.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    De: {{ nombreDocenteEntrante(s) }} ·
+                    {{ s.asignacionOrigen.materia.nombre }}
+                    ({{ s.asignacionOrigen.docenteInstitucion.institucion.nombre }})
+                  </div>
+                  <div class="tarjeta-sub">
+                    Materia destino: {{ s.materiaDestino?.nombre ?? '—' }} ·
+                    {{ formatearFecha(s.fechaPropuesta) }}
+                  </div>
+                  @if (puedeRevisar(s)) {
+                    <div class="tarjeta-acciones">
+                      <button class="btn btn-secondary" (click)="openRevision(s)">
+                        Revisar ({{ etapaRevision(s) === 'ORIGEN' ? 'origen' : 'destino' }})
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          <div class="tablero-col tablero-col-aceptada">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>Aceptadas</span>
+              <span class="grupo-count">{{ solicitudesAceptadas().length }}</span>
+            </div>
+            @if (solicitudesAceptadas().length === 0) {
+              <p class="tarjeta-vacia muted">Sin aceptadas</p>
+            } @else {
+              @for (s of solicitudesAceptadas(); track s.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ s.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    De: {{ nombreDocenteEntrante(s) }} ·
+                    {{ s.asignacionOrigen.materia.nombre }}
+                    ({{ s.asignacionOrigen.docenteInstitucion.institucion.nombre }})
+                  </div>
+                  <div class="tarjeta-sub">
+                    Materia destino: {{ s.materiaDestino?.nombre ?? '—' }} ·
+                    {{ formatearFecha(s.fechaPropuesta) }}
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="tablero-col tablero-col-rechazada">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>Rechazadas</span>
+              <span class="grupo-count">{{ solicitudesRechazadas().length }}</span>
+            </div>
+            @if (solicitudesRechazadas().length === 0) {
+              <p class="tarjeta-vacia muted">Sin rechazadas</p>
+            } @else {
+              @for (s of solicitudesRechazadas(); track s.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ s.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    De: {{ nombreDocenteEntrante(s) }} ·
+                    {{ s.asignacionOrigen.materia.nombre }}
+                    ({{ s.asignacionOrigen.docenteInstitucion.institucion.nombre }})
+                  </div>
+                  <div class="tarjeta-sub">
+                    Materia destino: {{ s.materiaDestino?.nombre ?? '—' }} ·
+                    {{ formatearFecha(s.fechaPropuesta) }}
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </span>
+          <h2>Proyectos de clase espejo</h2>
+          <span class="card-head-count">{{ proyectos().length }}</span>
+        </div>
+      </div>
+
       @if (proyectos().length === 0) {
         <p class="muted">
           Aún no hay proyectos. Se crean automáticamente al aprobar una solicitud.
         </p>
       } @else {
-        <ul class="lista">
-          @for (pr of proyectos(); track pr.id) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ pr.solicitud.titulo }}</strong>
-                <div class="muted">
-                  {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
-                  → {{ pr.solicitud.institucionDestino.nombre }}
+        <div class="tablero">
+          <div class="tablero-col tablero-col-activo">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>En planificación / En curso</span>
+              <span class="grupo-count">{{ proyectosActivos().length }}</span>
+            </div>
+            @if (proyectosActivos().length === 0) {
+              <p class="tarjeta-vacia muted">Ningún proyecto activo</p>
+            } @else {
+              @for (pr of proyectosActivos(); track pr.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ pr.solicitud.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
+                    → {{ pr.solicitud.institucionDestino.nombre }}
+                  </div>
+                  <div class="tarjeta-sub">
+                    {{ pr.docentes.length }} docente(s) ·
+                    {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                  </div>
+                  <div class="tarjeta-acciones">
+                    <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
+                  </div>
                 </div>
-                <div class="muted">
-                  {{ pr.docentes.length }} docente(s) ·
-                  {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+              }
+            }
+          </div>
+
+          <div class="tablero-col tablero-col-finalizado">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>Finalizados</span>
+              <span class="grupo-count">{{ proyectosFinalizados().length }}</span>
+            </div>
+            @if (proyectosFinalizados().length === 0) {
+              <p class="tarjeta-vacia muted">Ningún proyecto finalizado</p>
+            } @else {
+              @for (pr of proyectosFinalizados(); track pr.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ pr.solicitud.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
+                    → {{ pr.solicitud.institucionDestino.nombre }}
+                  </div>
+                  <div class="tarjeta-sub">
+                    {{ pr.docentes.length }} docente(s) ·
+                    {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                  </div>
+                  <div class="tarjeta-acciones">
+                    <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
+                  </div>
                 </div>
-              </div>
-              <div class="lista-acciones">
-                <span
-                  class="estado"
-                  [class.pendiente]="pr.estado === 'EN_PLANIFICACION'"
-                  [class.rechazada]="pr.estado === 'CANCELADO'"
-                >
-                  {{ estadoProyectoLabel(pr.estado) }}
-                </span>
-                <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
-              </div>
-            </li>
-          }
-        </ul>
+              }
+            }
+          </div>
+
+          <div class="tablero-col tablero-col-cancelado">
+            <div class="tablero-col-head">
+              <span class="grupo-dot"></span>
+              <span>Cancelados</span>
+              <span class="grupo-count">{{ proyectosCancelados().length }}</span>
+            </div>
+            @if (proyectosCancelados().length === 0) {
+              <p class="tarjeta-vacia muted">Ningún proyecto cancelado</p>
+            } @else {
+              @for (pr of proyectosCancelados(); track pr.id) {
+                <div class="tarjeta">
+                  <div class="tarjeta-titulo">{{ pr.solicitud.titulo }}</div>
+                  <div class="tarjeta-sub">
+                    {{ pr.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}
+                    → {{ pr.solicitud.institucionDestino.nombre }}
+                  </div>
+                  <div class="tarjeta-sub">
+                    {{ pr.docentes.length }} docente(s) ·
+                    {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                  </div>
+                  <div class="tarjeta-acciones">
+                    <a class="btn btn-secondary" [routerLink]="['/proyectos', pr.id]">Abrir</a>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
       }
     </section>
     }
@@ -370,7 +537,7 @@
       </div>
 
       @if (inviteError()) {
-        <div class="alert alert-error">{{ inviteError() }}</div>
+        <div class="alert alert-error" role="alert">{{ inviteError() }}</div>
       }
       @if (inviteSuccess()) {
         <div class="alert alert-success">{{ inviteSuccess() }}</div>
@@ -416,7 +583,7 @@
       </div>
 
       @if (materiaError()) {
-        <div class="alert alert-error">{{ materiaError() }}</div>
+        <div class="alert alert-error" role="alert">{{ materiaError() }}</div>
       }
 
       <button
@@ -457,7 +624,7 @@
       </div>
 
       @if (asignarError()) {
-        <div class="alert alert-error">{{ asignarError() }}</div>
+        <div class="alert alert-error" role="alert">{{ asignarError() }}</div>
       }
 
       <button
@@ -514,7 +681,7 @@
       </div>
 
       @if (institucionError()) {
-        <div class="alert alert-error">{{ institucionError() }}</div>
+        <div class="alert alert-error" role="alert">{{ institucionError() }}</div>
       }
 
       <button
@@ -576,7 +743,7 @@
       </div>
 
       @if (revisionError()) {
-        <div class="alert alert-error">{{ revisionError() }}</div>
+        <div class="alert alert-error" role="alert">{{ revisionError() }}</div>
       }
 
       <button
