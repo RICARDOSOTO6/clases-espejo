@@ -100,12 +100,29 @@ export class DocenteComponent implements OnInit {
     });
     this.solicitudesService.listarMias().subscribe({
       next: (r) => this.solicitudes.set(r),
-      error: () => this.solicitudes.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.solicitudes.set([]);
+        this.avisar(
+          'error',
+          `No se pudieron cargar tus solicitudes: ${extraerMensajeError(err, 'error de conexión')}`,
+        );
+      },
     });
     this.proyectosService.listarMios().subscribe({
       next: (r) => this.proyectos.set(r),
-      error: () => this.proyectos.set([]),
+      error: (err: HttpErrorResponse) => {
+        this.proyectos.set([]);
+        this.avisar(
+          'error',
+          `No se pudieron cargar tus proyectos: ${extraerMensajeError(err, 'error de conexión')}`,
+        );
+      },
     });
+  }
+
+  reintentarCarga(): void {
+    this.cerrarAviso();
+    this.cargarDatos();
   }
 
   private establecerPaisDesdePerfil(perfil: Perfil): void {
@@ -142,15 +159,43 @@ export class DocenteComponent implements OnInit {
   }
 
   onDestinoChange(): void {
-    const destinoId = this.solicitudForm.get('institucionDestinoId')?.value;
+    this.cargarMateriasDestino(
+      this.solicitudForm.get('institucionDestinoId')?.value ?? null,
+      false,
+    );
+  }
+
+  /**
+   * Recarga las materias de la institución destino. Con `conservarSeleccion`
+   * (al editar) NO borra la materia ya elegida: antes, cualquier edición
+   * eliminaba la materia destino sin avisar.
+   */
+  private cargarMateriasDestino(
+    destinoId: number | null,
+    conservarSeleccion: boolean,
+  ): void {
+    const seleccionada =
+      this.solicitudForm.get('materiaDestinoId')?.value ?? null;
     this.materiasDestino.set([]);
-    this.solicitudForm.patchValue({ materiaDestinoId: null });
-    if (destinoId != null) {
-      this.institucionesService.listarMaterias(destinoId).subscribe({
-        next: (r) => this.materiasDestino.set(r),
-        error: () => this.materiasDestino.set([]),
-      });
+    if (!conservarSeleccion) {
+      this.solicitudForm.patchValue({ materiaDestinoId: null });
     }
+    if (destinoId == null) return;
+
+    this.institucionesService.listarMaterias(destinoId).subscribe({
+      next: (r) => {
+        this.materiasDestino.set(r);
+        // Si la materia guardada ya no pertenece a esta institución, se limpia.
+        if (
+          conservarSeleccion &&
+          seleccionada != null &&
+          !r.some((m) => m.id === seleccionada)
+        ) {
+          this.solicitudForm.patchValue({ materiaDestinoId: null });
+        }
+      },
+      error: () => this.materiasDestino.set([]),
+    });
   }
 
   openNueva(): void {
@@ -180,7 +225,8 @@ export class DocenteComponent implements OnInit {
     });
     this.solicitudError.set(null);
     this.showSolicitudModal = true;
-    this.onDestinoChange();
+    // Recarga las materias destino conservando la que la solicitud ya tenía.
+    this.cargarMateriasDestino(s.institucionDestino.id, true);
   }
 
   closeSolicitudModal(): void {
@@ -296,7 +342,9 @@ export class DocenteComponent implements OnInit {
   formatearFecha(fecha: string): string {
     if (!fecha) return '';
     const d = new Date(fecha);
-    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+    if (isNaN(d.getTime())) return '';
+    // Fecha local: `toISOString()` es UTC y podía devolver el día siguiente.
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   estadoProyectoLabel(estado: string): string {

@@ -31,10 +31,15 @@
         class="alert"
         [class.alert-success]="aviso.tipo === 'ok'"
         [class.alert-error]="aviso.tipo === 'error'"
-        role="status"
+        [attr.role]="aviso.tipo === 'error' ? 'alert' : 'status'"
       >
         <span>{{ aviso.texto }}</span>
-        <button type="button" class="btn btn-outline" (click)="cerrarAviso()">
+        @if (aviso.tipo === 'error') {
+          <button type="button" class="btn btn-secondary" (click)="reintentarCarga()">
+            Reintentar
+          </button>
+        }
+        <button type="button" class="btn btn-secondary" (click)="cerrarAviso()">
           Cerrar
         </button>
       </div>
@@ -179,7 +184,8 @@
                 <span
                   class="estado"
                   [class.pendiente]="pr.estado === 'EN_PLANIFICACION'"
-                  [class.rechazada]="pr.estado === 'CANCELADO'"
+                  [class.aprobada]="pr.estado === 'FINALIZADO'"
+                  [class.cancelada]="pr.estado === 'CANCELADO'"
                 >
                   {{ estadoProyectoLabel(pr.estado) }}
                 </span>
@@ -249,7 +255,7 @@
       </div>
 
       @if (solicitudError()) {
-        <div class="alert alert-error">{{ solicitudError() }}</div>
+        <div class="alert alert-error" role="alert">{{ solicitudError() }}</div>
       }
 
       <button

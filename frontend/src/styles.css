@@ -215,7 +215,7 @@ input,
 select {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-field);
   background: var(--input-bg);
   color: var(--text);
@@ -238,6 +238,17 @@ select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: var(--ring);
+}
+
+/* Foco visible con contraste suficiente (el anillo solo no llegaba a 3:1). */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+.btn:focus-visible,
+.lista-acciones button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 input.ng-invalid.ng-touched,
@@ -341,12 +352,12 @@ select.ng-invalid.ng-touched:focus {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
-  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 58, 102, 0.25);
 }
 
 .btn-secondary {
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   color: var(--text-muted);
   padding: 0.55rem 1.25rem;
 }
@@ -390,6 +401,19 @@ select.ng-invalid.ng-touched:focus {
   background: var(--accent-soft);
   border: 1px solid var(--accent);
   color: var(--accent);
+}
+
+/* `.btn-outline` es blanco (para la topbar azul): dentro de una alerta clara
+   quedaría invisible, así que se adapta. */
+.alert .btn-outline {
+  color: var(--accent-deep);
+  border-color: var(--accent-deep);
+}
+
+.alert .btn-outline:hover:not(:disabled) {
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+  color: #fff;
 }
 
 /* ------------------------------------------------------------
@@ -443,9 +467,28 @@ select.ng-invalid.ng-touched:focus {
 }
 
 .content {
-  max-width: 760px;
+  width: 70%;
+  max-width: 1600px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-5);
+}
+
+@media (max-width: 768px) {
+  .content {
+    width: 100%;
+  }
+}
+
+/* Evita que campos y celdas se desborden en rejillas y filas */
+.row .col,
+.form-grid .form-field,
+.meta-item {
+  min-width: 0;
+}
+
+input,
+select {
+  min-width: 0;
 }
 
 .card {
@@ -625,15 +668,26 @@ select.ng-invalid.ng-touched:focus {
   --accent-hover: #004477;
   --accent-deep: #003a66;
   --accent-soft: #e8f1fa;
-  --secondary: #0066aa;
-  --secondary-soft: #e6f1f9;
-  --ring: 0 0 0 3px rgba(0, 102, 170, 0.25);
+  /* `--secondary` recupera un tono propio: antes era idéntico a `--accent`. */
+  --secondary: #0d7a6f;
+  --secondary-soft: #e3f2f0;
+  --ring: 0 0 0 3px rgba(0, 68, 119, 0.45);
   --shadow-card: 0 1px 2px rgba(0, 68, 119, 0.06),
     0 14px 34px rgba(0, 68, 119, 0.1);
   --radius-card: 16px;
   --radius-field: 10px;
   --hero-a: #003a66;
   --hero-b: #0066aa;
+
+  /* Accesibilidad: contraste AA en texto y 3:1 en bordes de control y foco. */
+  --text-muted: #5b6675;
+  --border-strong: #808b99;
+  --border-hover: #6e7a88;
+  --success: #0f6b41;
+  --warning: #b8860b;
+  --neutral-bg: #eef1f5;
+  --neutral-text: #4b5565;
+  --focus: #004477;
 }
 
 /* --- Pantallas de acceso: layout de dos paneles --- */
@@ -997,7 +1051,7 @@ select.ng-invalid.ng-touched:focus {
 }
 
 .stat-warn .stat-value {
-  color: #8a6200;
+  color: var(--warning-text);
 }
 
 .stat-ok {
@@ -1039,8 +1093,14 @@ select.ng-invalid.ng-touched:focus {
 }
 
 .estado.cancelada {
-  background: var(--hover);
-  color: var(--text-muted);
+  background: var(--neutral-bg);
+  color: var(--neutral-text);
+}
+
+/* "Aprobada" no tenía regla: se veía igual que "Activo". */
+.estado.aprobada {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
 }
 
 /* Listas más pulidas */
@@ -1209,7 +1269,9 @@ select.ng-invalid.ng-touched:focus {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
+  /* Antes era blanco sobre blanco translúcido (1.47:1, ilegible). */
+  background: var(--accent-deep);
+  color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -1435,9 +1497,21 @@ select.ng-invalid.ng-touched:focus {
   grid-column: 1 / -1;
 }
 
+/* Acciones de formulario: en fila y separadas (antes salían apiladas y pegadas). */
+.form-grid-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .form-grid .btn {
   width: 100%;
   margin: 0;
+}
+
+.form-grid-actions .btn {
+  width: auto;
+  flex: 1 1 auto;
 }
 
 .file-input {
@@ -1464,11 +1538,320 @@ select.ng-invalid.ng-touched:focus {
   cursor: pointer;
 }
 
+/* Firefox y navegadores modernos usan el selector estándar. */
+.file-input::file-selector-button {
+  margin-right: 0.6rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Objetivos táctiles: el mínimo de WCAG 2.2 son 24 px. */
+.lista-acciones .btn-secondary {
+  min-height: 32px;
+}
+
+.link-button {
+  padding: 0.25rem 0.35rem;
+}
+
 .file-hint {
   display: block;
   margin-top: 4px;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+/* ============================================================
+   Proyecto en dos columnas + iconos de sección
+   ============================================================ */
+
+.proyecto-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+.proyecto-col {
+  min-width: 0;
+}
+
+.card-head-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.card-head-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.card-head-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.card-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.card-head-count {
+  margin-left: var(--space-1);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Botón para colapsar secciones */
+.collapse-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.collapse-toggle:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.collapse-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.collapse-toggle svg {
+  transition: transform 0.2s ease;
+}
+
+.collapse-toggle.cerrado svg {
+  transform: rotate(-90deg);
+}
+
+/* Grupos por estado (solicitudes y proyectos) */
+.grupo-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.grupo-head:first-child {
+  margin-top: 0;
+}
+
+.grupo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.grupo-count {
+  margin-left: auto;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.grupo-pendiente .grupo-dot {
+  background: var(--warning);
+}
+
+.grupo-aceptada .grupo-dot {
+  background: var(--success);
+}
+
+.grupo-rechazada .grupo-dot {
+  background: var(--danger);
+}
+
+.grupo-activo .grupo-dot {
+  background: var(--accent);
+}
+
+.grupo-finalizado .grupo-dot {
+  background: var(--success);
+}
+
+.grupo-cancelado .grupo-dot {
+  background: var(--text-muted);
+}
+
+/* ============================================================
+   Tablero (Kanban) para solicitudes y proyectos
+   ============================================================ */
+
+.tablero {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.tablero-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+}
+
+.tablero-col::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tablero-col::-webkit-scrollbar-thumb {
+  background: rgba(0, 102, 170, 0.25);
+  border-radius: 999px;
+}
+
+.tablero-col-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tablero-col-head .grupo-count {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.tablero-col-pendiente .tablero-col-head {
+  background: var(--warning-bg);
+  color: #7a5600;
+}
+
+.tablero-col-aceptada .tablero-col-head {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.tablero-col-rechazada .tablero-col-head {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.tablero-col-activo .tablero-col-head {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.tablero-col-finalizado .tablero-col-head {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.tablero-col-cancelado .tablero-col-head {
+  background: var(--hover);
+  color: var(--text-muted);
+}
+
+.tarjeta {
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  box-shadow: 0 1px 2px rgba(20, 42, 67, 0.05);
+}
+
+.tarjeta-titulo {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.tarjeta-sub {
+  margin-bottom: 3px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.tarjeta-vacia {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-field);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.tarjeta-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.tarjeta-acciones .btn-secondary {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .tablero {
+    grid-template-columns: 1fr;
+  }
+
+  .tablero-col {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .tablero-col-head {
+    position: static;
+  }
+}
+
+@media (max-width: 1024px) {
+  .proyecto-cols {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
