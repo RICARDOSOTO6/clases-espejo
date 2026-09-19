@@ -159,9 +159,14 @@ export class SolicitudesService {
         ...(dto.institucionDestinoId !== undefined
           ? { institucionDestinoId: dto.institucionDestinoId }
           : {}),
+        // Si cambia la institución destino y no se reenvía la materia, la
+        // anterior ya no le pertenece: se limpia en vez de dejarla incoherente.
         ...(dto.materiaDestinoId !== undefined
           ? { materiaDestinoId: dto.materiaDestinoId ?? null }
-          : {}),
+          : dto.institucionDestinoId !== undefined &&
+              dto.institucionDestinoId !== solicitud.institucionDestinoId
+            ? { materiaDestinoId: null }
+            : {}),
         ...(dto.titulo !== undefined ? { titulo: dto.titulo } : {}),
         ...(dto.objetivo !== undefined ? { objetivo: dto.objetivo } : {}),
         ...(dto.fechaPropuesta !== undefined
@@ -260,15 +265,9 @@ export class SolicitudesService {
   ) {
     this.exigirMotivoSiRechaza(dto);
 
-    await this.registrarRevision(
-      solicitudId,
-      agenteId,
-      ETAPA_REVISION_ORIGEN,
-      dto,
-    );
-
-    await this.prisma.solicitudClaseEspejo.update({
-      where: { id: solicitudId },
+    // Transición condicional: si otra revisión ganó la carrera, esta no aplica.
+    const cambio = await this.prisma.solicitudClaseEspejo.updateMany({
+      where: { id: solicitudId, estado: ESTADO_SOLICITUD_PENDIENTE },
       data: {
         estado:
           dto.decision === ESTADO_SOLICITUD_RECHAZADA
@@ -276,6 +275,16 @@ export class SolicitudesService {
             : ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
       },
     });
+    if (cambio.count === 0) {
+      throw new BadRequestException('La solicitud ya fue revisada');
+    }
+
+    await this.registrarRevision(
+      solicitudId,
+      agenteId,
+      ETAPA_REVISION_ORIGEN,
+      dto,
+    );
 
     return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
       where: { id: solicitudId },
@@ -312,6 +321,22 @@ export class SolicitudesService {
       asignacionDestinoId = destino.id;
     }
 
+    // Transición condicional: solo una petición cierra la 2.ª etapa, así que el
+    // proyecto no se crea dos veces.
+    const cambio = await this.prisma.solicitudClaseEspejo.updateMany({
+      where: {
+        id: solicitud.id,
+        estado: ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+      },
+      data: {
+        estado: dto.decision,
+        ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
+      },
+    });
+    if (cambio.count === 0) {
+      throw new BadRequestException('La solicitud ya fue revisada');
+    }
+
     await this.registrarRevision(
       solicitud.id,
       agente.id,
@@ -319,28 +344,18 @@ export class SolicitudesService {
       dto,
     );
 
-    const actualizada = await this.prisma.solicitudClaseEspejo.update({
-      where: { id: solicitud.id },
-      data: {
-        estado: dto.decision,
-        ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
-      },
-      include: this.includeEntrante(),
-    });
-
     if (dto.decision === ESTADO_SOLICITUD_APROBADA) {
       await this.crearProyectoSiNoExiste(
         solicitud.id,
         solicitud,
         asignacionDestinoId!,
       );
-      return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
-        where: { id: solicitud.id },
-        include: this.includeEntrante(),
-      });
     }
 
-    return actualizada;
+    return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
+      where: { id: solicitud.id },
+      include: this.includeEntrante(),
+    });
   }
 
   private exigirMotivoSiRechaza(dto: RevisarSolicitudDto): void {

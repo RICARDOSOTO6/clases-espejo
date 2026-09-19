@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -76,7 +77,7 @@ export class AgentesService {
     // La misma duración del token, para que no queden dos vencimientos distintos.
     const expiracion = new Date(Date.now() + duracionEnMs(expiraEn));
 
-    await this.prisma.invitacion.create({
+    const invitacion = await this.prisma.invitacion.create({
       data: {
         correo: dto.correo,
         numeroEmpleado: dto.numeroEmpleado,
@@ -86,7 +87,16 @@ export class AgentesService {
       },
     });
 
-    await this.mailService.sendInvitation(dto.correo, token);
+    try {
+      await this.mailService.sendInvitation(dto.correo, token);
+    } catch {
+      // Si el correo no sale, la invitación no debe quedarse bloqueando el
+      // reenvío durante días sin que nadie reciba nada.
+      await this.prisma.invitacion.delete({ where: { id: invitacion.id } });
+      throw new ServiceUnavailableException(
+        'No se pudo enviar el correo de invitación. Revisa la configuración de correo e inténtalo de nuevo.',
+      );
+    }
 
     return {
       mensaje: 'Invitación enviada al docente',
