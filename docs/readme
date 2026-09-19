@@ -4,6 +4,75 @@
 
 Una clase espejo permite que docentes de distintas instituciones coordinen una experiencia académica conjunta utilizando herramientas de comunicación y colaboración virtual.
 
+> **Última actualización:** al cierre de la Semana 7 (ciclo completo hasta *Finalizado*) más la ronda de pulido y auditoría.
+
+---
+
+## 📘 Documentación del proyecto
+
+| Documento | Contenido |
+| --- | --- |
+| `docs/readme` (este archivo) | Documentación técnica: instalación, API, modelo de datos, estado y plan. |
+| `docs/manual-de-usuario.md` | **Manual de usuario** paso a paso para agente y docente. |
+| `docs/guia-de-despliegue.md` | **Guía de despliegue** en un servidor Linux o Windows (base de datos, servicio, HTTPS, respaldos). |
+| `docs/receta-para-montarlo.md` | La misma instalación contada **como una receta de cocina**, paso a paso y sin formalidades. |
+| `docs/auditorias/reporte-qa-clasesespejo.md` | Primera auditoría QA (código). |
+| `docs/auditorias/reporte-qa-clasesespejo-v2.md` | Segunda auditoría QA. |
+| `docs/auditorias/respuesta-auditoria.md` | Respuesta punto por punto a las auditorías 1 y 2 + tercera revisión. |
+| `docs/auditorias/auditoria-v3-y-analisis-de-diseno.md` | Tercera auditoría + análisis de diseño (calendario y recordatorios). |
+| `docs/diagramas/` | Casos de uso, entidad-relación, diagramas de flujo y de secuencia. |
+
+---
+
+## 🧭 Índice
+
+**Puesta en marcha**
+
+* [Tecnologías](#-tecnologías)
+* [Estructura general](#-estructura-general)
+* [Requisitos](#-requisitos)
+* [Instalación](#-instalación)
+* [Configuración del Backend](#-configuración-del-backend)
+* [Configuración de PostgreSQL](#-configuración-de-postgresql)
+* [Variables de entorno](#-variables-de-entorno)
+* [Prisma](#-prisma)
+* [Ejecutar el Backend](#-ejecutar-el-backend)
+* [Compilar y desplegar el frontend](#-compilar-y-desplegar-el-frontend)
+* [Comandos principales](#-comandos-principales)
+* [Datos de demostración](#-datos-de-demostración)
+* [Guía de despliegue (documento aparte)](guia-de-despliegue.md)
+* [Receta para montarlo (documento aparte)](receta-para-montarlo.md)
+
+**Diseño del sistema**
+
+* [Modelo de datos](#-modelo-de-datos)
+* [Autenticación y roles](#-autenticación-y-roles)
+* [Flujo de estados](#-flujo-de-estados)
+* [Endpoints de la API](#-endpoints-de-la-api)
+  * [Autenticación y usuarios](#autenticación-y-usuarios)
+  * [Panel del agente](#panel-del-agente)
+  * [Solicitudes de clase espejo](#solicitudes-de-clase-espejo)
+  * [Proyecto, planificación y chat](#proyecto-planificación-y-chat)
+  * [Sesiones, actividades y evidencias](#sesiones-actividades-y-evidencias)
+  * [Reportes de clase, evaluación y cierre](#reportes-de-clase-evaluación-y-cierre)
+* [Seguridad implementada](#-seguridad-implementada)
+
+**Desarrollo y calidad**
+
+* [Pruebas de API](#-pruebas-de-api)
+* [Consideraciones importantes para desarrolladores](#-consideraciones-importantes-para-desarrolladores)
+* [Estado actual del proyecto](#-estado-actual-del-proyecto)
+* [Auditorías y control de calidad](#-auditorías-y-control-de-calidad)
+* [Plan de desarrollo (metas semanales)](#-plan-de-desarrollo-metas-semanales)
+* [Guía para agentes / futuros desarrolladores](#-guía-para-agentes--futuros-desarrolladores)
+
+**Cierre**
+
+* [Flujo general del sistema](#-flujo-general-del-sistema)
+* [Recomendaciones para futuros desarrolladores](#-recomendaciones-para-futuros-desarrolladores)
+* [Filosofía del proyecto](#-filosofía-del-proyecto)
+* [Licencia](#-licencia)
+
 ---
 
 ## 🎯 Objetivo del proyecto
@@ -23,26 +92,28 @@ La plataforma busca permitir que dos instituciones educativas puedan:
 
 ---
 
-# 🛠️ Tecnologías
+# 🛠 Tecnologías
 
 ## Backend
 
 * **Node.js**
 * **NestJS 11**
 * **TypeScript**
-* **Prisma ORM 6.19.3**
+* **Prisma ORM 6.19.3** (generador propio → `backend/generated/prisma`)
 * **PostgreSQL**
-* **JWT** para autenticación
+* **JWT** para autenticación (`@nestjs/jwt`)
 * **bcrypt** para manejo seguro de contraseñas
-* **class-validator / class-transformer**
+* **class-validator / class-transformer** para validación de DTO
+* **multer** para la subida de archivos (evidencias)
 * **Nodemailer** para el envío de correos de invitación
 
 ## Frontend
 
-* Angular 21 (componentes standalone, **signals** / modo zoneless)
+* Angular 21 (componentes standalone, **signals** / modo **zoneless**)
 * Formularios reactivos con validación personalizada
-* Diseño institucional CACE (paleta y logo de la comunidad), sin modo oscuro
+* Diseño institucional CACE (paleta y logo de la comunidad), **CSS propio sin librería de UI**
 * Catálogos desplegables (países ISO 3166, cargos, grados académicos, programas, periodos)
+* Sin modo oscuro (descartado por decisión institucional)
 
 ---
 
@@ -53,25 +124,56 @@ ClasesEspejo/
 │
 ├── backend/
 │   ├── src/
-│   │   ├── auth/
-│   │   ├── mail/
-│   │   ├── prisma/
+│   │   ├── auth/            # registro, login, activación por invitación, JWT
+│   │   ├── usuarios/        # /usuarios/me (perfil y rol)
+│   │   ├── agentes/         # panel del agente: invitar/gestionar docentes
+│   │   ├── instituciones/   # mi institución + catálogo para solicitudes
+│   │   ├── materias/        # CRUD de materias
+│   │   ├── asignaciones/    # docente ↔ materia por periodo
+│   │   ├── solicitudes/     # clases espejo: crear, editar, doble revisión
+│   │   ├── proyectos/       # proyecto + planificación + chat + sesiones +
+│   │   │                    #   actividades + evidencias + reportes + evaluación
+│   │   ├── mail/            # envío de correos (Nodemailer)
+│   │   ├── prisma/          # PrismaService (omit global de passwordHash)
+│   │   ├── common/
+│   │   │   ├── estados.ts               # estados del dominio centralizados
+│   │   │   ├── filters/                 # filtro de errores de Prisma
+│   │   │   └── guards/                  # rate limit del login/activación
 │   │   ├── app.module.ts
-│   │   └── main.ts
+│   │   └── main.ts          # CORS, filtros, estáticos, /uploads, SPA fallback
 │   │
 │   ├── prisma/
-│   │   └── schema.prisma
+│   │   └── schema.prisma    # modelo de datos completo
 │   │
 │   ├── generated/
-│   │   └── prisma/
+│   │   └── prisma/          # cliente generado (NO editar a mano)
 │   │
-│   ├── .env
+│   ├── scripts/
+│   │   ├── seed-demo.js             # siembra base (instituciones, docentes, materias)
+│   │   ├── seed-demo-clases.js      # simulación de clases (proyectos y solicitudes)
+│   │   └── borrar-demo-clases.js    # deshace la simulación de clases
+│   │
+│   ├── uploads/             # evidencias subidas (no versionado)
+│   ├── public/              # frontend compilado que sirve NestJS
+│   ├── .env                 # NO versionado
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── tsconfig.build.json
 │
-└── frontend/
-    └── ...
+├── frontend/
+│   └── src/app/
+│       ├── core/            # servicios, guards, interceptores, utilidades
+│       ├── shared/          # componentes reutilizables (modal, etc.)
+│       └── features/
+│           ├── auth/        # login, registro, activación
+│           ├── agente/      # panel del agente de internacionalización
+│           ├── docente/     # panel del docente (solicitudes)
+│           └── proyecto/    # clase espejo: planificación → cierre
+│
+└── docs/
+    ├── manual-de-usuario.md
+    ├── auditorias/
+    └── diagramas/
 ```
 
 ---
@@ -127,7 +229,7 @@ npm install
 
 ---
 
-# 🗄️ Configuración de PostgreSQL
+# 🗄 Configuración de PostgreSQL
 
 Crear una base de datos PostgreSQL para el proyecto.
 
@@ -138,6 +240,16 @@ ClasesconjuntasBD
 ```
 
 El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
+
+Para crear las tablas a partir del esquema:
+
+```bash
+npx prisma db push
+```
+
+> `prisma db push` sincroniza el esquema sin generar migraciones. Es el modo usado
+> durante el desarrollo; para un despliegue formal conviene pasar a
+> `npx prisma migrate dev` / `npx prisma migrate deploy`.
 
 ---
 
@@ -163,22 +275,40 @@ Ejemplo:
 DATABASE_URL="postgresql://postgres:TU_CONTRASEÑA@localhost:5432/ClasesconjuntasBD?schema=public"
 ```
 
-> Nunca subir contraseñas, claves JWT u otros secretos al repositorio.
-
-Además, para autenticación y envío de correos se utilizan:
+Además, para autenticación, enlaces de activación y envío de correos:
 
 ```env
-JWT_SECRET="clave-secreta"
+# --- Autenticación (JWT) ---
+JWT_SECRET="clave-secreta-de-al-menos-16-caracteres"
 JWT_EXPIRES_IN="1d"
 INVITATION_EXPIRES_IN="7d"
-APP_URL="http://localhost:3000"
-SMTP_HOST="localhost"
+
+# --- URL pública del frontend (se usa en el enlace de activación) ---
+FRONTEND_URL="http://localhost:4200"
+
+# --- Servicio de correo (Nodemailer / SMTP) ---
+SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_SECURE="false"
 SMTP_USER=""
 SMTP_PASS=""
 MAIL_FROM="no-reply@clasesespejo.local"
+
+# --- Opcional ---
+PORT="3000"
 ```
+
+| Variable | Uso |
+| --- | --- |
+| `DATABASE_URL` | Cadena de conexión de PostgreSQL (la usa Prisma). |
+| `JWT_SECRET` | Firma de los tokens. **La aplicación no arranca si falta o tiene menos de 16 caracteres.** |
+| `JWT_EXPIRES_IN` | Vigencia del token de sesión. |
+| `INVITATION_EXPIRES_IN` | Vigencia del token de invitación a docentes. |
+| `FRONTEND_URL` | URL del frontend; se usa para armar el enlace de activación y como origen permitido en CORS (admite varias separadas por coma). |
+| `SMTP_*`, `MAIL_FROM` | Servidor de correo saliente para las invitaciones. |
+| `PORT` | Puerto del backend (por defecto `3000`). |
+
+> Nunca subir contraseñas, claves JWT ni otros secretos al repositorio.
 
 ---
 
@@ -206,6 +336,10 @@ Después de instalar las dependencias o modificar el esquema:
 npx prisma generate
 ```
 
+> En Windows, `prisma generate` falla con `EPERM` si el backend está corriendo y
+> mantiene abierta la DLL del cliente generado. **Detén el servidor antes de
+> regenerar.**
+
 ## Validar el esquema
 
 ```bash
@@ -222,7 +356,7 @@ npx prisma studio
 
 ---
 
-# ▶️ Ejecutar el Backend
+# ▶ Ejecutar el Backend
 
 Modo desarrollo:
 
@@ -234,6 +368,7 @@ El servidor debería iniciar correctamente y mostrar:
 
 ```text
 Nest application successfully started
+Backend corriendo en http://localhost:3000
 ```
 
 Por defecto, la aplicación utiliza:
@@ -244,15 +379,45 @@ http://localhost:3000
 
 ---
 
-# 🧪 Compilar el Backend
+# 🏗 Compilar y desplegar el frontend
 
-Para comprobar que el proyecto puede compilarse:
+NestJS sirve el frontend ya compilado desde `backend/public`, de modo que en
+producción **todo el sistema corre en un solo puerto** (`3000`).
+
+## 1. Compilar Angular directamente en `backend/public`
+
+Desde `frontend/`:
 
 ```bash
-npm run build
+npx ng build --output-path ../backend/public --delete-output-path
 ```
 
-Una compilación correcta debe terminar sin errores de TypeScript.
+> El build debe hacerse con `output-path` apuntando a `backend/public`; si se
+> compila en `frontend/dist`, hay que copiar el resultado a mano.
+
+## 2. Reiniciar el backend
+
+`main.ts` comprueba si existe `backend/public/index.html` **al arrancar**:
+
+* Si existe, sirve los archivos estáticos y aplica el **fallback SPA** (cualquier
+  `GET` sin extensión que no sea una ruta de la API devuelve `index.html`).
+* Si no existe, el backend solo expone la API.
+
+Los prefijos de la API se derivan del router de NestJS (más una lista conocida
+como red de seguridad), así que **un módulo nuevo no queda "tapado" por el
+`index.html`**.
+
+## 3. URLs del sistema en producción
+
+| Recurso | URL |
+| --- | --- |
+| Aplicación (frontend + API) | `http://localhost:3000` |
+| API | `http://localhost:3000/<prefijo>` (p. ej. `/auth`) |
+| Evidencias subidas | `http://localhost:3000/uploads/<archivo>` |
+
+En desarrollo se puede trabajar con dos servidores (`ng serve` en `4200` +
+NestJS en `3000`): los servicios del frontend detectan el puerto y apuntan al
+backend automáticamente.
 
 ---
 
@@ -269,22 +434,68 @@ Desde `backend/`:
 | `npm run start:prod`  | Ejecuta la versión compilada      |
 | `npx prisma generate` | Genera el cliente Prisma          |
 | `npx prisma validate` | Valida el esquema Prisma          |
+| `npx prisma db push`  | Sincroniza el esquema con la base |
 | `npx prisma studio`   | Abre la interfaz de Prisma        |
 | `npm run lint`        | Ejecuta ESLint                    |
 | `npm test`            | Ejecuta pruebas                   |
-| `node scripts/seed-demo.js` | Limpia y siembra datos de demostración |
+| `node scripts/seed-demo.js` | Limpia y siembra los datos base de demostración |
+| `node scripts/seed-demo-clases.js` | Simula clases espejo (proyectos y solicitudes) |
+| `node scripts/borrar-demo-clases.js` | Elimina la simulación de clases |
+
+Desde `frontend/`:
+
+| Comando | Función |
+| --- | --- |
+| `npm install` | Instala dependencias |
+| `npm start` | Servidor de desarrollo en `http://localhost:4200` |
+| `npm run build` | Compila para producción |
+| `npm test` | Ejecuta las pruebas unitarias |
 
 ---
 
 ## 🎭 Datos de demostración
 
-Para poblar la base de datos con una **simulación realista** (2 instituciones, 5 materias por institución, 15 docentes, asignaciones docente↔materia y solicitudes de clase espejo), ejecutar desde `backend/`:
+La siembra se hace en **dos pasos**, ambos desde `backend/`.
+
+### Paso 1 — Datos base
 
 ```bash
 node scripts/seed-demo.js
 ```
 
-Credenciales de prueba (contraseña común: `Demo1234`):
+Crea **2 instituciones**, **5 materias por institución**, **15 docentes**,
+las asignaciones docente ↔ materia y las solicitudes de clase espejo.
+
+### Paso 2 — Simulación de clases (opcional, para demos)
+
+```bash
+node scripts/seed-demo-clases.js
+```
+
+Genera un escenario con **varias clases espejo simultáneas** en todos los
+estados posibles, para evaluar la vista del docente cuando tiene trabajo
+pendiente y trabajo terminado a la vez:
+
+* **11 proyectos:** 3 *Finalizado*, 3 *En curso*, 4 *En planificación* y 1 *Cancelado*.
+* **19 solicitudes:** 4 *Pendiente*, 2 *Aprobada por origen*, 11 *Aprobada* y 2 *Rechazada*.
+* **19 sesiones**, **8 evidencias** y **~15 eventos de agenda** en los próximos 21 días
+  (con días que llegan a tener 2 coincidencias).
+* Fechas calculadas **relativas al día de ejecución**, así que la demo nunca
+  queda "vieja".
+* Escribe `backend/scripts/demo-clases-ids.json` con los identificadores creados.
+
+Para deshacer únicamente la simulación (respetando los datos base):
+
+```bash
+node scripts/borrar-demo-clases.js
+```
+
+> ⚠ El script de borrado elimina en orden seguro de claves foráneas y también
+> los archivos de evidencia de la simulación.
+
+### Credenciales de prueba
+
+Contraseña común: `Demo1234`
 
 | Rol | Correo |
 | --- | --- |
@@ -308,47 +519,61 @@ Credenciales de prueba (contraseña común: `Demo1234`):
 
 ---
 
-# 🗃️ Modelo de datos
+# 🗃 Modelo de datos
 
-El sistema actualmente contempla las siguientes entidades principales:
+El sistema contempla las siguientes entidades:
 
 ```text
-INSTITUCION
-    │
-    ├── DOCENTE_INSTITUCION
-    │       │
-    │       └── DOCENTE
-    │
-    ├── MATERIA
-    │
-    └── AGENTE_INTERNACIONALIZACION
-
 USUARIO
     │
     ├── DOCENTE
-    └── AGENTE_INTERNACIONALIZACION
-
-DOCENTE_INSTITUCION
+    │       │
+    │       └── DOCENTE_INSTITUCION  ←── INSTITUCION
+    │                   │
+    │                   └── ASIGNACION_DOCENTE
+    │                               │
+    │                               ├── MATERIA
+    │                               │
+    │                               └── SOLICITUD_CLASE_ESPEJO
+    │                                       │
+    │                                       ├── REVISION_SOLICITUD
+    │                                       └── PROYECTO_CLASE_ESPEJO
+    │                                               │
+    │                                               ├── PROYECTO_DOCENTE
+    │                                               │       ├── PARTICIPACION_PLANIFICACION
+    │                                               │       └── PARTICIPACION_REPORTE
+    │                                               ├── MENSAJE
+    │                                               ├── PLANIFICACION_CONJUNTA
+    │                                               │       └── REPORTE_PLANIFICACION
+    │                                               ├── SESION
+    │                                               │       ├── ACTIVIDAD
+    │                                               │       ├── EVIDENCIA
+    │                                               │       └── REPORTE_CLASE_CONJUNTA
+    │                                               ├── EVIDENCIA
+    │                                               └── EVALUACION
     │
-    └── ASIGNACION_DOCENTE
-            │
-            └── MATERIA
-
-ASIGNACION_DOCENTE
-    │
-    └── SOLICITUD_CLASE_ESPEJO
-            │
-            ├── REVISION_SOLICITUD
-            └── PROYECTO_CLASE_ESPEJO
-                    │
-                    ├── PROYECTO_DOCENTE
-                    ├── MENSAJE
-                    ├── PLANIFICACION_CONJUNTA
-                    ├── SESION
-                    ├── ACTIVIDAD
-                    ├── EVALUACION
-                    └── EVIDENCIA
+    └── AGENTE_INTERNACIONALIZACION ── INSTITUCION
+                                        │
+                                        ├── MATERIA
+                                        └── INVITACION
 ```
+
+Notas sobre el modelo:
+
+* **`INSTITUCION`** se relaciona con los docentes a través de
+  `DOCENTE_INSTITUCION`; un docente puede pertenecer a más de una institución.
+* **`ASIGNACION_DOCENTE`** es el vínculo real que se usa en las solicitudes y en
+  los proyectos (docente + materia + periodo escolar, dentro de una institución).
+* **`SOLICITUD_CLASE_ESPEJO`** guarda institución/materia de **origen** y de
+  **destino**; cada revisión queda registrada en **`REVISION_SOLICITUD`** con su
+  etapa (*origen* o *destino*), el agente que revisó y el motivo.
+* **`PROYECTO_CLASE_ESPEJO`** nace automáticamente cuando el **destino** aprueba.
+* **`PLANIFICACION_CONJUNTA`** es única por proyecto y guarda las
+  participaciones (`PARTICIPACION_PLANIFICACION`) y los reportes de planificación.
+* **`REPORTE_CLASE_CONJUNTA`** es único por sesión y guarda las firmas de los
+  docentes (`PARTICIPACION_REPORTE`) con sus observaciones.
+* **`INVITACION`** almacena el token de activación de un docente y su consumo
+  (`usadaEn`), lo que impide reutilizarlo.
 
 El modelo completo y sus relaciones se encuentran en:
 
@@ -358,7 +583,7 @@ backend/prisma/schema.prisma
 
 ---
 
-# 🔐 Autenticación
+# 🔐 Autenticación y roles
 
 El backend utiliza autenticación mediante **JWT**.
 
@@ -367,26 +592,146 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 * Registro de un agente con su institución (FASE 1). Incluye **estándares internacionales**: país con catálogo ISO 3166, tipo y número de documento, y datos de la institución (estado/provincia, ciudad, teléfono).
 * Inicio de sesión y generación de token JWT.
 * Invitación de docentes por correo (FASE 2); **el docente completa su propio registro** y crea sus credenciales.
-* Activación de la cuenta del docente (FASE 3).
+* Activación de la cuenta del docente (FASE 3), consumiendo la invitación de forma atómica (una invitación solo se puede usar una vez).
 * **Gate de institución**: el agente debe completar el registro de su institución antes de usar el panel.
 
-### Endpoints
+## Roles
+
+| Rol | Alcance |
+| --- | --- |
+| **AGENTE** | Agente de internacionalización. Gestiona su institución, sus docentes, sus materias y sus asignaciones. Revisa las solicitudes entrantes y supervisa las clases espejo de su institución. |
+| **DOCENTE** | Propone clases espejo y, una vez aprobadas, organiza la clase conjunta (planificación, sesiones, actividades, evidencias, reportes y evaluación). |
+
+## Matriz de permisos
+
+| Acción | Agente | Docente |
+| --- | :---: | :---: |
+| Ver/editar su institución | ✅ | ❌ |
+| Invitar, activar/desactivar y eliminar docentes | ✅ | ❌ |
+| Crear y editar materias / asignaciones | ✅ | ❌ |
+| Crear una solicitud de clase espejo | ❌ | ✅ |
+| Editar/cancelar su propia solicitud (Pendiente o Rechazada) | ❌ | ✅ |
+| Revisar solicitudes (aprobar/rechazar con motivo) | ✅ | ❌ |
+| Ver el proyecto y **todos** sus detalles | ✅ (consulta) | ✅ |
+| Agregar/quitar docentes del proyecto | ✅ *(solo de su institución)* | ❌ |
+| Datos del proyecto, planificación, sesiones, actividades, evidencias | ❌ | ✅ |
+| Chat del proyecto | ❌ | ✅ |
+| Reporte de clase conjunto y firmas | ❌ | ✅ |
+| Evaluación final y cierre del proyecto | ❌ | ✅ |
+| Reporte de planificación | ✅ (supervisión) | ❌ |
+
+> **Rol del agente en la clase conjunta (solo consulta).** El agente de internacionalización
+> puede ver el proyecto y todos sus detalles y gestionar (agregar/quitar) **únicamente los
+> docentes de su propia institución**. Las acciones que organizan la clase —datos del proyecto,
+> planificación conjunta, sesiones, actividades, evidencias, reporte de clase y evaluación
+> final— son exclusivas de los **docentes participantes**. El reporte de planificación sigue
+> correspondiendo al agente, como función de supervisión.
+
+Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
+
+---
+
+# 🔄 Flujo de estados
+
+## Solicitud de clase espejo (doble revisión)
+
+```text
+                    ┌──────────────────────── RECHAZADA ◄── motivo
+                    │                              ▲
+PENDIENTE ──────────┤                              │
+   ▲                │                              │
+   │                └─► APROBADA_POR_ORIGEN ───────┤
+   │                        (revisa el agente       │
+   │                         de la institución      │
+   │                         de ORIGEN)             │
+   │                              │                 │
+   │                              ▼                 │
+   │                        (revisa el agente       │
+   │                         de la institución      │
+   │                         de DESTINO) ───────────┘
+   │                              │
+   └── el docente edita una       ▼
+       solicitud RECHAZADA   APROBADA  ──► se crea el PROYECTO
+       (vuelve a PENDIENTE)
+```
+
+* La revisión de **origen** verifica que la propuesta sea viable desde la
+  institución que la publica.
+* La revisión de **destino** es la aceptación final: al aprobar se crea el
+  **proyecto** y su **planificación conjunta**.
+* Ambas transiciones usan actualizaciones condicionales (`updateMany`), así que
+  dos revisiones simultáneas no pueden pisarse.
+* Al **cancelar** una solicitud se eliminan sus revisiones y la solicitud en una
+  sola transacción.
+
+## Proyecto
+
+```text
+EN_PLANIFICACION ──► EN_CURSO ──► FINALIZADO
+        │                 │
+        └─────────────────┴──► CANCELADO
+```
+
+* `FINALIZADO` **no** se puede fijar a mano desde "Datos del proyecto": solo lo
+  asigna la acción **Cerrar clase espejo**, que valida los requisitos.
+* El cierre exige **al menos una evaluación final** y que **cada sesión no
+  cancelada** tenga su reporte de clase confirmado.
+
+## Reporte de clase (por sesión)
+
+```text
+BORRADOR ──► EN_REVISION ──► CONFIRMADO
+```
+
+* Cada docente **firma** el reporte con sus observaciones.
+* Si el contenido del reporte cambia después de firmado, las firmas se reinician
+  y el reporte vuelve a `BORRADOR` (se hace en una transacción).
+
+## Sesiones
+
+```text
+PROGRAMADA ──► EN_CURSO ──► FINALIZADA
+      └──────────────────► CANCELADA
+```
+
+## Planificación
+
+```text
+BORRADOR ──► EN_REVISION ──► APROBADA
+```
+
+Los estados viven en un solo archivo (`backend/src/common/estados.ts`) para que
+DTO y servicios compartan exactamente los mismos valores.
+
+---
+
+# 🌐 Endpoints de la API
+
+## Autenticación y usuarios
 
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
+| `GET` | `/` | Estado del servicio (con el frontend compilado, devuelve el `index.html`) | No |
+| `GET` | `/health` | Health check del servicio | No |
 | `POST` | `/auth/register` | Registra agente + institución | No |
-| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` + rol | No |
+| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` + rol | No *(limitado a 10 intentos/min)* |
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
-| `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No |
+| `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No *(limitado a 10 intentos/min)* |
 | `GET` | `/usuarios/me` | Perfil del usuario autenticado (rol, institución) | JWT |
+
+## Panel del agente
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
 | `POST` | `/agentes/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
 | `GET` | `/agentes/docentes` | Lista los docentes de la institución | JWT (agente) |
 | `PATCH` | `/agentes/docentes/:id/estado` | Activa/desactiva un docente | JWT (agente) |
 | `DELETE` | `/agentes/docentes/:id` | Elimina un docente | JWT (agente) |
 | `GET` | `/materias` | Lista las materias de la institución | JWT (agente) |
+| `GET` | `/materias/:id` | Detalle de una materia | JWT (agente) |
 | `POST` | `/materias` | Crea una materia | JWT (agente) |
 | `PATCH` | `/materias/:id` | Edita una materia | JWT (agente) |
-| `DELETE` | `/materias/:id` | Elimina una materia | JWT (agente) |
+| `DELETE` | `/materias/:id` | Elimina una materia (valida dependencias) | JWT (agente) |
 | `GET` | `/asignaciones` | Lista las asignaciones de la institución | JWT (agente) |
 | `GET` | `/asignaciones/mias` | Lista las asignaciones propias del docente | JWT (docente) |
 | `POST` | `/asignaciones` | Asigna docente a materia por periodo | JWT (agente) |
@@ -395,12 +740,22 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `GET` | `/instituciones/mia` | Institución del agente | JWT (agente) |
 | `PATCH` | `/instituciones/mia` | Edita la institución (marca registro completo) | JWT (agente) |
 | `GET` | `/instituciones/:id/materias` | Materias de otra institución | JWT |
+
+## Solicitudes de clase espejo
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
 | `POST` | `/solicitudes` | El docente crea una solicitud de clase espejo | JWT (docente) |
 | `GET` | `/solicitudes/mias` | Solicitudes del docente | JWT (docente) |
 | `PATCH` | `/solicitudes/:id` | Edita una solicitud pendiente o rechazada (al corregirla vuelve a *Pendiente*) | JWT (docente) |
 | `DELETE` | `/solicitudes/:id` | Cancela una solicitud pendiente o rechazada | JWT (docente) |
 | `GET` | `/solicitudes/entrantes` | Solicitudes en las que participa la institución (origen o destino) | JWT (agente) |
 | `POST` | `/solicitudes/:id/revisar` | Doble revisión: aprueba/rechaza (1.º origen, 2.º destino; al aprobar el destino se crea el proyecto) | JWT (agente) |
+
+## Proyecto, planificación y chat
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
 | `GET` | `/proyectos/mios` | Proyectos en los que participa el docente | JWT (docente) |
 | `GET` | `/proyectos/institucion` | Proyectos de la institución del agente | JWT (agente) |
 | `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
@@ -413,6 +768,11 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `POST` | `/proyectos/:id/reportes` | Genera el reporte de planificación | JWT (agente) |
 | `GET` | `/proyectos/:id/mensajes` | Lista el chat del proyecto | JWT |
 | `POST` | `/proyectos/:id/mensajes` | Envía un mensaje al chat (solo docentes del proyecto y con la clase abierta) | JWT (docente) |
+
+## Sesiones, actividades y evidencias
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
 | `GET` | `/proyectos/:id/sesiones` | Lista las sesiones programadas | JWT |
 | `POST` | `/proyectos/:id/sesiones` | Programa una sesión | JWT (docente) |
 | `PATCH` | `/proyectos/:id/sesiones/:sesionId` | Edita una sesión | JWT (docente) |
@@ -422,7 +782,12 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `PATCH` | `/proyectos/:id/actividades/:actividadId` | Edita una actividad | JWT (docente) |
 | `DELETE` | `/proyectos/:id/actividades/:actividadId` | Elimina una actividad | JWT (docente) |
 | `GET` | `/proyectos/:id/evidencias` | Lista las evidencias | JWT |
-| `POST` | `/proyectos/:id/evidencias` | Sube una evidencia (archivo, máx. 10 MB; `sesionId` opcional) | JWT (docente) |
+| `POST` | `/proyectos/:id/evidencias` | Sube una evidencia (archivo, máx. 10 MB; `sesionId` opcional) | JWT (docente participante) |
+
+## Reportes de clase, evaluación y cierre
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
 | `GET` | `/proyectos/:id/reportes-clase` | Lista los reportes de clase del proyecto | JWT |
 | `GET` | `/proyectos/:id/sesiones/:sesionId/reporte` | Reporte de clase de una sesión | JWT |
 | `PUT` | `/proyectos/:id/sesiones/:sesionId/reporte` | Crea/actualiza el reporte de clase de una sesión | JWT (docente) |
@@ -430,16 +795,28 @@ El módulo de autenticación se encuentra en `backend/src/auth/` e implementa el
 | `GET` | `/proyectos/:id/evaluaciones` | Lista las evaluaciones finales | JWT |
 | `POST` | `/proyectos/:id/evaluaciones` | Registra una evaluación final | JWT (docente) |
 | `POST` | `/proyectos/:id/cerrar` | Cierra la clase espejo (pasa a *Finalizado*) | JWT (docente) |
-| `GET` | `/health` | Health check del servicio | No |
 
-> **Rol del agente en la clase conjunta (solo consulta).** El agente de internacionalización
-> puede ver el proyecto y todos sus detalles y gestionar (agregar/quitar) **únicamente los
-> docentes de su propia institución**. Las acciones que organizan la clase —datos del proyecto,
-> planificación conjunta, sesiones, actividades, evidencias, reporte de clase y evaluación
-> final— son exclusivas de los **docentes participantes**. El reporte de planificación sigue
-> correspondiendo al agente, como función de supervisión.
+---
 
-Las contraseñas **no se almacenan directamente**. Se utiliza `bcrypt` para generar hashes.
+# 🛡 Seguridad implementada
+
+Medidas presentes hoy en el código (resultado, en buena parte, de las
+auditorías):
+
+| Medida | Detalle |
+| --- | --- |
+| **Hash de contraseñas** | `bcrypt`; el modelo `Usuario` **omite `passwordHash` por defecto** (configuración global de `PrismaService`), y solo el login lo pide explícitamente. |
+| **JWT obligatorio en la firma** | La app **no arranca** si `JWT_SECRET` falta o tiene menos de 16 caracteres. |
+| **Cuenta vigente por petición** | `JwtAuthGuard` verifica en cada request que el usuario siga activo y que conserve al menos una institución activa. |
+| **Rate limit** | `RateLimitGuard` en `POST /auth/login` y `POST /auth/activate`: 10 intentos por minuto por `ip + correo`. |
+| **Invitaciones de un solo uso** | La activación consume la invitación con un `updateMany` condicional (`usadaEn: null`); si ya se usó, la operación se aborta. |
+| **CORS restringido** | Solo los orígenes de `FRONTEND_URL` (lista separada por comas) más `localhost:4200` / `127.0.0.1:4200`. |
+| **Lista blanca de archivos** | Las evidencias aceptan solo PDF, imágenes, Office, texto y ZIP; **se rechazan `.html`, `.svg` y `.js`**, que servidos desde el mismo origen podrían ejecutar código. |
+| **Descarga forzada de archivos** | `/uploads` responde con `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` y `Content-Security-Policy: default-src 'none'`. |
+| **Autorización antes de escribir** | En `POST /proyectos/:id/evidencias`, el `DocenteParticipanteGuard` valida el permiso **antes** de que multer escriba el archivo en disco. |
+| **Errores de integridad legibles** | Un filtro global traduce `PrismaClientKnownRequestError`: `P2002`→409, `P2003`→400, `P2025`→404. |
+| **Validación de entrada** | `ValidationPipe` global con `whitelist` y `transform`; los DTO usan `class-validator`. |
+| **Transiciones atómicas** | Revisiones de solicitudes, consumo de invitaciones y reinicio de firmas usan transacciones o `updateMany` condicionales. |
 
 ---
 
@@ -492,7 +869,7 @@ Los endpoints disponibles pueden cambiar conforme avance el desarrollo.
 
 ---
 
-# ⚠️ Consideraciones importantes para desarrolladores
+# ⚠ Consideraciones importantes para desarrolladores
 
 ### 1. No modificar `generated/prisma` manualmente
 
@@ -511,6 +888,11 @@ npx prisma generate
 ```
 
 en lugar de editar manualmente los archivos generados.
+
+> El proyecto **no** usa la ruta por defecto de Prisma: el cliente se genera en
+> `backend/generated/prisma` y, al compilar, queda en
+> `backend/dist/generated/prisma`. Al ejecutar la versión compilada hay que
+> tener eso en cuenta.
 
 ---
 
@@ -532,6 +914,10 @@ Ejemplo:
 .env
 ```
 
+Tampoco deben versionarse `backend/uploads/` (evidencias de los usuarios),
+`backend/public/` (frontend compilado) ni `backend/generated/prisma/` (cliente
+generado): los tres ya están en `.gitignore`.
+
 ---
 
 ### 3. Prisma y TypeScript
@@ -549,39 +935,90 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 
 ---
 
+### 4. Frontend zoneless: todo el estado debe ser `signal()`
+
+El frontend corre **sin zone.js**. Cualquier cambio de estado asíncrono
+(respuestas HTTP, temporizadores) debe dispararse a través de `signal()`,
+`computed()` o `effect()`. Una variable de clase normal **no** actualizará la
+vista.
+
+---
+
+### 5. Los estados del dominio se editan en un solo archivo
+
+Los valores de estado (`PENDIENTE`, `EN_CURSO`, `CONFIRMADO`, …) están en
+`backend/src/common/estados.ts`. **No escribirlos como cadenas sueltas** en
+servicios o DTO: agregar el estado en ese archivo y referenciarlo por su
+constante.
+
+---
+
+### 6. Después de tocar el proyecto hay que reconstruir el frontend
+
+`backend/public` contiene una **copia compilada** del frontend. Si se cambia el
+frontend y no se vuelve a compilar contra `backend/public`, la aplicación servida
+en el puerto `3000` seguirá mostrando la versión anterior.
+
+---
+
 # 📌 Estado actual del proyecto
 
 ## Backend
+
+### Base
 
 * [x] Configuración inicial de NestJS
 * [x] PostgreSQL
 * [x] Prisma
 * [x] Modelo de datos
 * [x] Configuración de variables de entorno
+
+### Autenticación y usuarios
+
 * [x] Módulo de autenticación
-* [x] Registro de usuarios
+* [x] Registro de usuarios (agente + institución)
 * [x] Login
 * [x] JWT
 * [x] Hash de contraseñas
 * [x] Invitación de docentes por correo (Nodemailer)
-* [x] Activación de cuenta con token de invitación (auto-registro del docente)
+* [x] Activación de cuenta con token de invitación de un solo uso (auto-registro del docente)
 * [x] Gate de "completar institución"
+* [x] Verificación de cuenta vigente en cada petición
+* [x] Rate limit en login y activación
+
+### Catálogos
+
 * [x] Estándares internacionales (país ISO 3166, tipo de documento, datos de institución)
 * [x] Validación de texto (anti datos sin sentido)
 * [x] Gestión de instituciones (ver/editar la propia + listado)
 * [x] Gestión de docentes (invitar, activar, desactivar, eliminar)
 * [x] Gestión de materias
 * [x] Asignación docente ↔ materia
+
+### Clases espejo
+
 * [x] Solicitudes de clases espejo (crear/listar/editar/cancelar)
-* [x] Flujo de revisión (aprobar/rechazar)
+* [x] Doble revisión (origen → destino) con motivo y auditoría de revisiones
 * [x] Gestión de proyectos (se crea automáticamente al aprobar la solicitud)
-* [x] Planificación conjunta
+* [x] Planificación conjunta + confirmación de participación
+* [x] Reporte de planificación (supervisión del agente)
 * [x] Chat entre docentes del proyecto
 * [x] Sesiones
 * [x] Actividades
-* [x] Evidencias
-* [x] Evaluaciones
-* [x] Reportes
+* [x] Evidencias (subida real de archivos con lista blanca y límite de 10 MB)
+* [x] Reporte de clase conjunta con firmas de los docentes
+* [x] Evaluaciones finales
+* [x] Cierre del proyecto con validaciones
+
+### Robustez
+
+* [x] Filtro global de errores de Prisma (respuestas legibles)
+* [x] Transiciones de estado atómicas y en transacción donde corresponde
+* [x] Autorización por recurso (agente solo de su institución; docente participante)
+* [x] CORS restringido y cabeceras seguras en `/uploads`
+* [x] Filtro de evidencias antes de escribir en disco
+* [ ] Migraciones formales de Prisma (`migrate`) — hoy se usa `db push`
+* [ ] Cobertura de pruebas automatizadas (Jest) del flujo completo
 
 ## Frontend
 
@@ -596,6 +1033,46 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 * [x] Chat entre docentes del proyecto
 * [x] Clases espejo: sesiones, actividades y evidencias
 * [x] Reporte de clase conjunta, evaluación final y cierre
+* [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
+* [x] Mensajes de error claros y botones de reintento por sección
+* [x] Estados de carga en todos los botones de guardado
+* [x] Accesibilidad y contraste revisados (foco visible, áreas táctiles)
+* [x] Sin modo oscuro (decisión institucional)
+* [ ] Recuperación de contraseña ("olvidé mi contraseña")
+
+---
+
+# 🧾 Auditorías y control de calidad
+
+El proyecto pasó por **tres rondas de auditoría** documentadas en `docs/auditorias/`:
+
+| Ronda | Hallazgos | Estado |
+| --- | --- | --- |
+| QA 1 (`reporte-qa-clasesespejo.md`) | 12 hallazgos | Todos corregidos |
+| QA 2 (`reporte-qa-clasesespejo-v2.md`) | 3 hallazgos técnicos + 6 de UX | Todos corregidos |
+| QA 3 (`auditoria-v3-y-analisis-de-diseno.md`) | Problemas de código, diseño y accesibilidad | Todos corregidos |
+
+Pendientes reconocidos de la tercera ronda (documentados, no bloqueantes):
+
+* `m7` — Agregar restricciones `@@unique` a `ASIGNACION_DOCENTE`,
+  `DOCENTE_INSTITUCION` y `MATERIA` (requiere migración de base de datos).
+* `m14` — Sustituir métodos de plantilla O(n²) por `computed()`.
+* `m15`, `m17`, `m18`, `m19`, `m20` — Mejoras menores de diseño y mantenimiento.
+
+Además, la tercera auditoría incluyó un **análisis de diseño** sobre si hacía
+falta un **calendario** y un **sistema de recordatorios**. Conclusión: hoy no
+existe una agenda que cruce proyectos (el docente ve 11 tarjetas por proyecto),
+por lo que un calendario queda justificado, y los recordatorios de mayor valor
+son:
+
+1. Sesiones cuyo reporte de clase sigue sin firmar.
+2. Actividades que vencen en menos de 48 horas.
+3. Sesiones próximas.
+4. Proyectos atascados en planificación sin ninguna sesión programada.
+5. Evaluación final o cierre pendientes.
+
+La recomendación es empezar por lo más barato y de mayor impacto: una tarjeta
+**"Pendientes de la semana"** en el panel del docente.
 
 ---
 
@@ -639,12 +1116,15 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 - [x] **Backend:** reporte de clase conjunta por sesión (con firmas de los docentes) + evaluación final + cierre del proyecto.
 - [x] **Frontend:** reporte de clase en cada sesión + evaluación final + cierre.
 - [x] **Entregable:** ciclo completo hasta *Finalizado*.
+- [x] **Extra:** tres rondas de auditoría (código, UX y accesibilidad) con sus correcciones.
 
 ## 🔵 Semana 8 — Pulido, pruebas y despliegue
+- [x] Build de producción del frontend servido por NestJS (`backend/public`).
+- [x] Documentación final (este README + manual de usuario).
+- [x] Corrección de bugs y validaciones derivadas de las auditorías.
+- [x] Simulación de datos para demostración (múltiples clases simultáneas).
 - [ ] Recuperación de contraseña (reemplaza el placeholder actual).
-- [ ] Prueba integral del flujo completo (de registro a evaluación).
-- [ ] Corrección de bugs y validaciones.
-- [ ] Documentación final + build de producción.
+- [ ] Prueba integral del flujo completo (de registro a evaluación) sobre la versión compilada.
 - [ ] **Entregable:** producto listo para presentar/entregar.
 
 ---
@@ -653,9 +1133,10 @@ Esta configuración está relacionada con la compatibilidad actual entre NestJS,
 
 - **Backend:** NestJS 11 + Prisma + PostgreSQL. Módulos en `backend/src/`.
 - **Frontend:** Angular 21 standalone + **signals** (modo zoneless) + guards. En `frontend/src/app/`.
-- El **schema** (`backend/prisma/schema.prisma`) ya contiene todas las tablas; solo falta la lógica de negocio.
+- El **schema** (`backend/prisma/schema.prisma`) ya contiene todas las tablas.
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
-- Endpoints ya existentes: ver la sección **"Autenticación"**.
+- Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
+- Endpoints ya existentes: ver la sección **"Endpoints de la API"**.
 - Al final de cada semana, hacer un **commit** descriptivo.
 
 ---
@@ -671,25 +1152,28 @@ Institución A
 Docente publica propuesta
       │
       ▼
-Selecciona institución destino
+Selecciona institución destino y materia
       │
       ▼
-Se genera solicitud
+Se genera la solicitud (Pendiente)
       │
       ▼
-Institución B recibe solicitud
+Agente de la institución ORIGEN revisa ──► rechaza (con motivo) ──► el docente corrige
       │
       ▼
-Agente de internacionalización revisa
+Aprobada por origen
       │
       ▼
-Aceptación / rechazo
+Agente de la institución DESTINO revisa ──► rechaza (con motivo) ──► el docente corrige
       │
       ▼
-Creación del proyecto
+Aprobada  ──►  Se crea el PROYECTO (+ planificación conjunta)
       │
       ▼
-Planificación conjunta
+Planificación conjunta y confirmación de los docentes
+      │
+      ▼
+Docentes agregados de ambas instituciones
       │
       ▼
 Sesiones de clase
@@ -698,7 +1182,13 @@ Sesiones de clase
 Actividades y evidencias
       │
       ▼
-Reportes y evaluación
+Reporte de clase por sesión (firmas de los docentes)
+      │
+      ▼
+Evaluación final
+      │
+      ▼
+Cierre  ──►  Finalizado
 ```
 
 ---
@@ -715,8 +1205,11 @@ Antes de realizar cambios importantes:
 6. No subir archivos `.env`.
 7. Ejecutar `npm run build` después de cambios importantes.
 8. Ejecutar `npx prisma validate` después de modificar el esquema.
-9. Generar nuevamente Prisma después de modificar `schema.prisma`.
-10. Crear commits pequeños y descriptivos.
+9. Generar nuevamente Prisma después de modificar `schema.prisma` (con el backend detenido).
+10. Recompilar el frontend contra `backend/public` si se cambió el cliente.
+11. Crear commits pequeños y descriptivos.
+12. Usar las constantes de `common/estados.ts` en lugar de cadenas de estado sueltas.
+13. Recordar que el frontend es **zoneless**: el estado asíncrono va en `signal()`.
 
 ---
 
@@ -741,4 +1234,9 @@ Se recomienda priorizar:
 Proyecto académico en desarrollo.
 
 La licencia y condiciones de distribución serán definidas posteriormente.
-comunidad de apoyo a  clases espejo uniendo mentes corazones y proyectos
+
+comunidad de apoyo a clases espejo uniendo mentes corazones y proyectos
+
+---
+
+[↑ Volver al índice](#-índice)
