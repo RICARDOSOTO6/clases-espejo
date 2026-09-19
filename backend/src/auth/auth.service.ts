@@ -95,6 +95,9 @@ export class AuthService {
         agente: true,
         docente: { include: { instituciones: true } },
       },
+      // El cliente omite `passwordHash` por defecto: aquí hace falta para
+      // comparar la contraseña (la respuesta sigue construida con campos fijos).
+      omit: { passwordHash: false },
     });
 
     if (!usuario) {
@@ -200,6 +203,15 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const { usuario } = await this.prisma.$transaction(async (tx) => {
+      // Consumo atómico: si otra petición ya la usó, esta transacción no crea nada.
+      const consumo = await tx.invitacion.updateMany({
+        where: { id: invitacion.id, usadaEn: null },
+        data: { usadaEn: new Date() },
+      });
+      if (consumo.count === 0) {
+        throw new BadRequestException('La invitación ya fue usada');
+      }
+
       const usuario = await tx.usuario.create({
         data: {
           nombres: dto.nombres,
@@ -228,11 +240,6 @@ export class AuthService {
           numeroEmpleado: invitacion.numeroEmpleado,
           activo: true,
         },
-      });
-
-      await tx.invitacion.update({
-        where: { id: invitacion.id },
-        data: { usadaEn: new Date() },
       });
 
       return { usuario };

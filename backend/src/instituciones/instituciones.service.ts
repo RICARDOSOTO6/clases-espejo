@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateInstitucionDto } from './dto/update-institucion.dto';
 
@@ -51,6 +51,14 @@ export class InstitucionesService {
   }
 
   async listarMaterias(id: number) {
+    // Solo instituciones publicadas: igual que el listado general.
+    const institucion = await this.prisma.institucion.findFirst({
+      where: { id, activa: true, registroCompleto: true },
+      select: { id: true },
+    });
+    if (!institucion) {
+      throw new NotFoundException('Institución no encontrada');
+    }
     return this.prisma.materia.findMany({
       where: { institucionId: id, activa: true },
       orderBy: { nombre: 'asc' },

@@ -68,12 +68,20 @@ export class MateriasService {
     });
     if (!materia) throw new NotFoundException('Materia no encontrada');
 
-    const asignaciones = await this.prisma.asignacionDocente.count({
-      where: { materiaId: id },
-    });
+    const [asignaciones, solicitudes] = await Promise.all([
+      this.prisma.asignacionDocente.count({ where: { materiaId: id } }),
+      this.prisma.solicitudClaseEspejo.count({
+        where: { materiaDestinoId: id },
+      }),
+    ]);
     if (asignaciones > 0) {
       throw new BadRequestException(
         'No se puede eliminar: la materia tiene docentes asignados',
+      );
+    }
+    if (solicitudes > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar: la materia figura como materia destino en solicitudes de clase espejo',
       );
     }
 

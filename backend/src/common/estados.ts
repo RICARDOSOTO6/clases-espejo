@@ -56,6 +56,7 @@ export const ESTADOS_SESION = [
   'CANCELADA',
 ];
 export const ESTADO_SESION_INICIAL = 'PROGRAMADA';
+export const ESTADO_SESION_CANCELADA = 'CANCELADA';
 
 // --- Confirmaciones ---
 export const ESTATUS_PENDIENTE = 'PENDIENTE';

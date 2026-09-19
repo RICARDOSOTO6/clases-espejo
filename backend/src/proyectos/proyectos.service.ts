@@ -27,6 +27,7 @@ import {
   ESTADO_REPORTE_CONFIRMADO,
   ESTADO_REPORTE_EN_REVISION,
   ESTADO_SESION_INICIAL,
+  ESTADO_SESION_CANCELADA,
   ESTATUS_CONFIRMADA,
   ESTATUS_PENDIENTE,
 } from '../common/estados';
@@ -218,6 +219,23 @@ export class ProyectosService {
     if (total <= 1) {
       throw new BadRequestException(
         'El proyecto debe conservar al menos un docente',
+      );
+    }
+
+    // Las participaciones y los mensajes apuntan a esta fila: sin comprobarlo,
+    // la clave foránea haría fallar el borrado con un 500.
+    const [participaciones, firmas, mensajes] = await Promise.all([
+      this.prisma.participacionPlanificacion.count({
+        where: { proyectoDocenteId },
+      }),
+      this.prisma.participacionReporte.count({
+        where: { proyectoDocenteId },
+      }),
+      this.prisma.mensaje.count({ where: { proyectoDocenteId } }),
+    ]);
+    if (participaciones > 0 || firmas > 0 || mensajes > 0) {
+      throw new BadRequestException(
+        'No se puede quitar al docente: ya tiene participaciones, firmas o mensajes en este proyecto.',
       );
     }
 
@@ -607,11 +625,36 @@ export class ProyectosService {
       acuerdosSiguienteSesion: dto.acuerdosSiguienteSesion.trim(),
     };
 
+    const previo = await this.prisma.reporteClaseConjunta.findUnique({
+      where: { sesionId },
+    });
+    const contenidoCambio =
+      !previo ||
+      previo.desarrolloClase !== datos.desarrolloClase ||
+      previo.totalAsistentes !== datos.totalAsistentes ||
+      previo.incidencias !== datos.incidencias ||
+      previo.acuerdosSiguienteSesion !== datos.acuerdosSiguienteSesion;
+
     const reporte = await this.prisma.reporteClaseConjunta.upsert({
       where: { sesionId },
       create: { sesionId, ...datos, estado: ESTADO_REPORTE_BORRADOR },
       update: datos,
     });
+
+    // Si el texto cambió, las firmas anteriores dejan de ser válidas: si no, el
+    // acta podría cerrarse con contenido que ningún docente firmó.
+    if (previo && contenidoCambio) {
+      await this.prisma.$transaction([
+        this.prisma.participacionReporte.updateMany({
+          where: { reporteClaseId: reporte.id },
+          data: { confirmadoEn: null },
+        }),
+        this.prisma.reporteClaseConjunta.update({
+          where: { id: reporte.id },
+          data: { estado: ESTADO_REPORTE_BORRADOR },
+        }),
+      ]);
+    }
 
     await this.sincronizarParticipacionesReporte(reporte.id, id);
 
@@ -716,7 +759,7 @@ export class ProyectosService {
     }
 
     const sesiones = await this.prisma.sesion.count({
-      where: { proyectoId: id },
+      where: { proyectoId: id, estado: { not: ESTADO_SESION_CANCELADA } },
     });
     const reportesConfirmados = await this.prisma.reporteClaseConjunta.count({
       where: {
