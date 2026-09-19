@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -31,9 +32,28 @@ import { ConfirmarReporteClaseDto } from './dto/confirmar-reporte-clase.dto';
 import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { DocenteParticipanteGuard } from './guards/docente-participante.guard';
 
 // Configuración de subida de evidencias: solo archivos, máx. 10 MB,
 // guardados en backend/uploads con nombre único.
+const EXTENSIONES_EVIDENCIA = [
+  '.pdf',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.txt',
+  '.csv',
+  '.zip',
+];
+
 const EVIDENCIAS_MULTER = {
   storage: diskStorage({
     destination: join(process.cwd(), 'uploads'),
@@ -43,6 +63,20 @@ const EVIDENCIAS_MULTER = {
     },
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
+  // Lista blanca de extensiones: evita subir .html, .svg o .js, que servidos
+  // desde el mismo origen podrían ejecutar código y robar el token.
+  fileFilter: (_req: any, file: any, cb: any) => {
+    const extension = extname(file.originalname).toLowerCase();
+    if (!EXTENSIONES_EVIDENCIA.includes(extension)) {
+      return cb(
+        new BadRequestException(
+          `Tipo de archivo no permitido (${extension || 'sin extensión'}). Se aceptan PDF, imágenes, Office, texto y ZIP.`,
+        ),
+        false,
+      );
+    }
+    cb(null, true);
+  },
 };
 
 @Controller('proyectos')
@@ -236,6 +270,7 @@ export class ProyectosController {
   }
 
   @Post(':id/evidencias')
+  @UseGuards(DocenteParticipanteGuard)
   @UseInterceptors(FileInterceptor('archivo', EVIDENCIAS_MULTER))
   crearEvidencia(
     @CurrentUser('sub') usuarioId: number,
