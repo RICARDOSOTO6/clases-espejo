@@ -8,6 +8,8 @@ export interface Usuario {
   dni: string;
   tipoDocumento: string;
   correo: string;
+  /** Ruta de la foto de perfil (por ejemplo `/avatares/avatar-123.png`). */
+  fotoUrl?: string | null;
   activo: boolean;
   rol: Rol;
 }
@@ -59,6 +61,7 @@ export interface Perfil {
   apellidoMaterno: string;
   dni: string;
   correo: string;
+  fotoUrl?: string | null;
   activo: boolean;
   rol: Rol;
   agente: { id: number; cargo: string; institucion: Institucion } | null;

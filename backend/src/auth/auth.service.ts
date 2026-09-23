@@ -20,6 +20,7 @@ type UsuarioSeguro = {
   dni: string;
   tipoDocumento: string;
   correo: string;
+  fotoUrl: string | null;
   activo: boolean;
 };
 
@@ -260,6 +261,7 @@ export class AuthService {
       dni: usuario.dni,
       tipoDocumento: usuario.tipoDocumento,
       correo: usuario.correo,
+      fotoUrl: usuario.fotoUrl,
       activo: usuario.activo,
       rol,
     };

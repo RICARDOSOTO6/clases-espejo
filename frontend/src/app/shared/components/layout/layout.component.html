@@ -157,7 +157,11 @@
           @if (flagUrl) {
             <img class="navbar-flag" [src]="flagUrl" [alt]="flagAlt" width="22" height="16" />
           }
-          <span class="navbar-avatar" aria-hidden="true">{{ iniciales() }}</span>
+          @if (foto(); as imagen) {
+            <img class="avatar-img avatar-img--navbar" [src]="imagen" [alt]="'Foto de ' + userName" />
+          } @else {
+            <span class="navbar-avatar" aria-hidden="true">{{ iniciales() }}</span>
+          }
           <span class="navbar-user-name">{{ userName }}</span>
           <svg class="navbar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="m6 9 6 6 6-6" />
@@ -167,7 +171,11 @@
         @if (panelAbierto() === 'usuario') {
           <div class="dropdown-panel dropdown-panel--user" role="dialog" aria-label="Tu cuenta">
             <div class="dropdown-user">
-              <span class="dropdown-user-avatar" aria-hidden="true">{{ iniciales() }}</span>
+              @if (foto(); as imagen) {
+                <img class="avatar-img avatar-img--dropdown" [src]="imagen" [alt]="'Foto de ' + userName" />
+              } @else {
+                <span class="dropdown-user-avatar" aria-hidden="true">{{ iniciales() }}</span>
+              }
               <span class="dropdown-item-text">
                 <span class="dropdown-item-title">{{ userName }}</span>
                 <span class="dropdown-item-detail">{{ rolEtiqueta() }}</span>
@@ -305,7 +313,15 @@
   <app-modal title="Mi perfil" size="sm" (close)="cerrarPerfil()">
     <div class="perfil">
       <div class="perfil-head">
-        <span class="perfil-avatar" aria-hidden="true">{{ iniciales() }}</span>
+        @if (foto(); as imagen) {
+          <img
+            class="avatar-img avatar-img--perfil"
+            [src]="imagen"
+            [alt]="'Foto de ' + userName"
+          />
+        } @else {
+          <span class="perfil-avatar" aria-hidden="true">{{ iniciales() }}</span>
+        }
         <div class="perfil-identidad">
           <p class="perfil-nombre">{{ userName }}</p>
           <p class="perfil-rol">{{ rolEtiqueta() }}</p>
@@ -316,6 +332,50 @@
             </p>
           }
         </div>
+      </div>
+
+      <div class="perfil-foto">
+        <div class="perfil-foto-acciones">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fotoInput.click()"
+            [disabled]="subiendoFoto()"
+          >
+            {{ subiendoFoto() ? 'Subiendo…' : (foto() ? 'Cambiar foto' : 'Añadir foto') }}
+          </button>
+          @if (foto()) {
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="quitarFoto()"
+              [disabled]="subiendoFoto()"
+            >
+              Quitar foto
+            </button>
+          }
+          <input
+            #fotoInput
+            type="file"
+            class="archivo-oculto"
+            accept="image/png,image/jpeg,image/webp"
+            (change)="alSeleccionarFoto($event)"
+            aria-label="Elegir foto de perfil"
+          />
+        </div>
+        <p class="muted perfil-foto-nota">
+          PNG, JPG o WEBP · máximo 2 MB. Sin foto se muestran tus iniciales.
+        </p>
+        @if (errorFoto(); as errorFotoTexto) {
+          <div class="alert alert-error" role="alert">
+            <span>{{ errorFotoTexto }}</span>
+          </div>
+        }
+        @if (okFoto(); as okFotoTexto) {
+          <div class="alert alert-success" role="status">
+            <span>{{ okFotoTexto }}</span>
+          </div>
+        }
       </div>
 
       @if (cargandoPerfil()) {
