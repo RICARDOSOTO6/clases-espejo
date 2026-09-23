@@ -12,11 +12,20 @@ import {
   ESTADO_PROYECTO_INICIAL,
   ESTADO_SOLICITUD_APROBADA,
   ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+  ESTADO_SOLICITUD_CADUCADA,
   ESTADO_SOLICITUD_PENDIENTE,
   ESTADO_SOLICITUD_RECHAZADA,
+  ESTADOS_SOLICITUD_EN_REVISION,
   ETAPA_REVISION_DESTINO,
   ETAPA_REVISION_ORIGEN,
 } from '../common/estados';
+import {
+  corteCaducidad,
+  diasHasta,
+  fechaLimiteRevision,
+  urgenciaSegunDias,
+  type Urgencia,
+} from '../common/plazos';
 
 // Semana 5: proyecto generado al aprobar una solicitud.
 const PLATAFORMA_POR_DEFINIR = 'Por definir';
@@ -86,29 +95,81 @@ export class SolicitudesService {
 
   async listarMias(usuarioId: number) {
     const docente = await this.getDocente(usuarioId);
-    return this.prisma.solicitudClaseEspejo.findMany({
+    // Antes de responder se revisa si alguna propuesta venció sin respuesta.
+    await this.caducarVencidas();
+    const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         asignacionOrigen: { docenteInstitucion: { docenteId: docente.id } },
       },
       include: this.includeCompleto(),
       orderBy: { creadoEn: 'desc' },
     });
+    return solicitudes.map((solicitud) => this.conPlazos(solicitud));
+  }
+
+  /**
+   * Añade a cada solicitud el plazo de respuesta calculado: hasta cuándo se
+   * puede responder, cuántos días quedan y qué urgencia tiene.
+   */
+  private conPlazos<T extends { fechaPropuesta: Date; estado: string }>(
+    solicitud: T,
+  ): T & {
+    fechaLimite: Date;
+    diasRestantes: number;
+    urgencia: Urgencia;
+    enRevision: boolean;
+  } {
+    const fechaLimite = fechaLimiteRevision(solicitud.fechaPropuesta);
+    const diasRestantes = diasHasta(fechaLimite);
+    const enRevision = ESTADOS_SOLICITUD_EN_REVISION.includes(
+      solicitud.estado,
+    );
+    return {
+      ...solicitud,
+      fechaLimite,
+      diasRestantes,
+      // Solo las que esperan respuesta tienen urgencia: las demás están cerradas.
+      urgencia: enRevision ? urgenciaSegunDias(diasRestantes) : 'NORMAL',
+      enRevision,
+    };
+  }
+
+  /**
+   * Cancela las solicitudes cuyo plazo de respuesta venció: nadie contestó
+   * (etapa de origen) o nadie confirmó (etapa de destino).
+   *
+   * No se registra una revisión porque quien caduca no es un agente; el estado
+   * y la fecha límite ya explican el motivo. Se llama al listar y desde el
+   * planificador de recordatorios.
+   */
+  async caducarVencidas(): Promise<number> {
+    const { count } = await this.prisma.solicitudClaseEspejo.updateMany({
+      where: {
+        estado: { in: ESTADOS_SOLICITUD_EN_REVISION },
+        fechaPropuesta: { lt: corteCaducidad() },
+      },
+      data: { estado: ESTADO_SOLICITUD_CADUCADA },
+    });
+    return count;
   }
 
   async actualizar(usuarioId: number, id: number, dto: UpdateSolicitudDto) {
     const docente = await this.getDocente(usuarioId);
     const solicitud = await this.obtenerPropia(docente.id, id);
 
-    // Una solicitud rechazada se puede corregir y reenviar: vuelve a "Pendiente".
-    if (
-      solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE &&
-      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA
-    ) {
+    // Una solicitud rechazada o caducada se puede corregir y reenviar: vuelve a
+    // "Pendiente" (con la fecha nueva, que debe ser futura).
+    const editables = [
+      ESTADO_SOLICITUD_PENDIENTE,
+      ESTADO_SOLICITUD_RECHAZADA,
+      ESTADO_SOLICITUD_CADUCADA,
+    ];
+    if (!editables.includes(solicitud.estado)) {
       throw new BadRequestException(
-        'Solo se puede editar una solicitud pendiente o rechazada',
+        'Solo se puede editar una solicitud pendiente, rechazada o caducada',
       );
     }
-    const reenviar = solicitud.estado === ESTADO_SOLICITUD_RECHAZADA;
+    const reenviar = solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE;
 
     if (dto.fechaPropuesta !== undefined) {
       this.verificarFechaFutura(dto.fechaPropuesta);
@@ -184,10 +245,11 @@ export class SolicitudesService {
 
     if (
       solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE &&
-      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA
+      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA &&
+      solicitud.estado !== ESTADO_SOLICITUD_CADUCADA
     ) {
       throw new BadRequestException(
-        'Solo se puede cancelar una solicitud pendiente o rechazada',
+        'Solo se puede cancelar una solicitud pendiente, rechazada o caducada',
       );
     }
 
@@ -208,7 +270,8 @@ export class SolicitudesService {
    */
   async listarEntrantes(usuarioId: number) {
     const agente = await this.getAgente(usuarioId);
-    return this.prisma.solicitudClaseEspejo.findMany({
+    await this.caducarVencidas();
+    const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         OR: [
           { institucionDestinoId: agente.institucionId },
@@ -222,6 +285,7 @@ export class SolicitudesService {
       include: this.includeEntrante(),
       orderBy: { creadoEn: 'desc' },
     });
+    return solicitudes.map((solicitud) => this.conPlazos(solicitud));
   }
 
   /**
@@ -243,6 +307,12 @@ export class SolicitudesService {
 
     if (!esOrigen && !esDestino) {
       throw new NotFoundException('Solicitud no encontrada');
+    }
+
+    if (solicitud.estado === ESTADO_SOLICITUD_CADUCADA) {
+      throw new BadRequestException(
+        'La solicitud caducó por falta de respuesta: el docente debe reenviarla con una fecha nueva',
+      );
     }
 
     if (esOrigen && solicitud.estado === ESTADO_SOLICITUD_PENDIENTE) {

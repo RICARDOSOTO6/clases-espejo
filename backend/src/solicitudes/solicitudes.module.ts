@@ -7,5 +7,7 @@ import { AuthModule } from '../auth/auth.module';
   imports: [AuthModule],
   controllers: [SolicitudesController],
   providers: [SolicitudesService],
+  // El módulo de recordatorios reutiliza el listado y el cálculo de plazos.
+  exports: [SolicitudesService],
 })
 export class SolicitudesModule {}

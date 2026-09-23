@@ -11,11 +11,23 @@ export const ESTADOS_SOLICITUD = [
   'APROBADA_POR_ORIGEN',
   'APROBADA',
   'RECHAZADA',
+  'CADUCADA',
 ];
 export const ESTADO_SOLICITUD_PENDIENTE = 'PENDIENTE';
 export const ESTADO_SOLICITUD_APROBADA_POR_ORIGEN = 'APROBADA_POR_ORIGEN';
 export const ESTADO_SOLICITUD_APROBADA = 'APROBADA';
 export const ESTADO_SOLICITUD_RECHAZADA = 'RECHAZADA';
+/** Venció el plazo de respuesta: la canceló el sistema, no una institución. */
+export const ESTADO_SOLICITUD_CADUCADA = 'CADUCADA';
+
+/**
+ * Solicitudes que todavía esperan respuesta de alguna institución. Son las
+ * únicas que pueden caducar (y las que aparecen en los recordatorios).
+ */
+export const ESTADOS_SOLICITUD_EN_REVISION: string[] = [
+  ESTADO_SOLICITUD_PENDIENTE,
+  ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+];
 
 export const ETAPAS_REVISION = ['REVISION_ORIGEN', 'REVISION_DESTINO'];
 export const ETAPA_REVISION_ORIGEN = 'REVISION_ORIGEN';
