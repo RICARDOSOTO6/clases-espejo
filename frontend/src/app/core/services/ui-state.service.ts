@@ -43,6 +43,21 @@ export class UiStateService {
   /** Contadores del menú lateral, por clave (por ejemplo `solicitudes`). */
   readonly contadores = signal<Record<string, number>>({});
 
+  /**
+   * La pantalla debe abrir el calendario. Lo pide el menú lateral, que no puede
+   * llamar directamente a la pantalla porque el layout proyecta su contenido.
+   */
+  readonly abrirCalendario = signal(false);
+
+  solicitarCalendario(): void {
+    this.abrirCalendario.set(true);
+  }
+
+  /** La pantalla avisa de que ya abrió (o cerró) el calendario. */
+  atenderCalendario(): void {
+    this.abrirCalendario.set(false);
+  }
+
   publicarPendientes(lista: PendienteUi[]): void {
     this.pendientes.set(lista);
   }
@@ -61,6 +76,7 @@ export class UiStateService {
     this.chats.set([]);
     this.contadores.set({});
     this.busqueda.set('');
+    this.abrirCalendario.set(false);
   }
 
   limpiarBusqueda(): void {

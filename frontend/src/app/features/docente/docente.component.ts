@@ -3,6 +3,7 @@ import {
   OnDestroy,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -36,6 +37,7 @@ import {
 import { RecordatoriosService } from '../../core/services/recordatorios.service';
 import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
 import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
+import { AgendaComponent } from '../../shared/components/agenda/agenda.component';
 import {
   claseUrgencia,
   etiquetaUrgencia,
@@ -49,6 +51,7 @@ import {
     RouterLink,
     LayoutComponent,
     CalendarioComponent,
+    AgendaComponent,
   ],
   templateUrl: './docente.component.html',
 })
@@ -62,6 +65,28 @@ export class DocenteComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (buscador, campana y contadores). */
   readonly ui = inject(UiStateService);
+
+  /** El calendario vive en su propia ventana emergente. */
+  readonly calendarioAbierto = signal(false);
+
+  constructor() {
+    // El menú lateral pide abrir el calendario a través del estado compartido,
+    // porque el layout proyecta el contenido y no puede llamarnos directamente.
+    effect(() => {
+      if (this.ui.abrirCalendario()) {
+        this.calendarioAbierto.set(true);
+        this.ui.atenderCalendario();
+      }
+    });
+  }
+
+  abrirCalendario(): void {
+    this.calendarioAbierto.set(true);
+  }
+
+  cerrarCalendario(): void {
+    this.calendarioAbierto.set(false);
+  }
 
   usuario = this.auth.currentUser();
   readonly paisesComunidad = PAISES_CACE;

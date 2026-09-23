@@ -1,9 +1,15 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  computed,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   ClaseAgenda,
   SolicitudAgenda,
-  TareaAgenda,
   Urgencia,
 } from '../../../core/models/recordatorio.models';
 import {
@@ -11,6 +17,7 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../../core/utils/urgencia.util';
+import { ModalComponent } from '../modal/modal.component';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MS_DIA = 24 * 60 * 60 * 1000;
@@ -32,18 +39,6 @@ interface DiaCalendario {
   restantes: number;
 }
 
-/** Un evento de la lista «próximos». */
-interface EventoProximo {
-  tipo: 'CLASE' | 'VENCIMIENTO';
-  titulo: string;
-  detalle: string;
-  fecha: Date;
-  urgencia: Urgencia;
-  dias: number;
-  proyectoId?: number;
-  enlace?: string;
-}
-
 /** Clave local `YYYY-MM-DD` (con `toISOString` se adelantaba un día). */
 function clave(fecha: Date): string {
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
@@ -59,20 +54,14 @@ function sumarDias(fecha: Date, dias: number): Date {
   return copia;
 }
 
-/** Días entre dos fechas, sin contar la hora. */
-function diasEntre(desde: Date, hasta: Date): number {
-  const a = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate());
-  const b = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate());
-  return Math.round((b.getTime() - a.getTime()) / MS_DIA);
-}
-
 /**
- * Calendario de la clase espejo: una casilla por día con las sesiones
- * programadas y los vencimientos de solicitudes, más la lista de lo próximo.
+ * Calendario mensual en una ventana emergente: una casilla por día con las
+ * sesiones programadas y los vencimientos de solicitudes. Al pulsar un día se
+ * muestra el detalle de lo que ocurre ese día.
  */
 @Component({
   selector: 'app-calendario',
-  imports: [RouterLink],
+  imports: [RouterLink, ModalComponent],
   templateUrl: './calendario.component.html',
 })
 export class CalendarioComponent {
@@ -80,8 +69,9 @@ export class CalendarioComponent {
   @Input() clases: ClaseAgenda[] = [];
   /** Solicitudes con su plazo de respuesta. */
   @Input() vencimientos: SolicitudAgenda[] = [];
-  /** Lo que falta por hacer (sin fecha límite). */
-  @Input() tareas: TareaAgenda[] = [];
+
+  /** Se emite al cerrar la ventana. */
+  @Output() cerrar = new EventEmitter<void>();
 
   readonly diasSemana = DIAS_SEMANA;
   readonly mes = signal(inicioDeMes(new Date()));
@@ -135,10 +125,7 @@ export class CalendarioComponent {
     for (const dia of casillas) {
       const puntos: { clase: boolean; urgencia: Urgencia }[] = [
         ...dia.clases.map(() => ({ clase: true, urgencia: 'NORMAL' as Urgencia })),
-        ...dia.vencimientos.map((v) => ({
-          clase: false,
-          urgencia: v.urgencia,
-        })),
+        ...dia.vencimientos.map((v) => ({ clase: false, urgencia: v.urgencia })),
       ];
       dia.puntos = puntos.slice(0, MAX_PUNTOS);
       dia.restantes = Math.max(0, puntos.length - MAX_PUNTOS);
@@ -147,7 +134,7 @@ export class CalendarioComponent {
     return casillas;
   });
 
-  /** Día elegido (o el de hoy si no se ha elegido ninguno). */
+  /** Día elegido (o el de hoy si todavía no se ha pulsado ninguno). */
   readonly detalleDelDia = computed<DiaCalendario | null>(() => {
     const elegido = this.diaElegido();
     const lista = this.dias();
@@ -166,51 +153,27 @@ export class CalendarioComponent {
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   });
 
-  /** Lo próximo: clases y vencimientos desde hoy, en orden. */
-  readonly proximos = computed<EventoProximo[]>(() => {
-    const hoy = new Date();
-    const eventos: EventoProximo[] = [
-      ...this.clases.map((clase) => {
-        const fecha = new Date(clase.fechaHora);
-        const dias = diasEntre(hoy, fecha);
-        return {
-          tipo: 'CLASE' as const,
-          titulo: clase.titulo,
-          detalle: `${clase.contraparte} · ${fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`,
-          fecha,
-          urgencia: (dias <= 1 ? 'CRITICA' : dias <= 7 ? 'PROXIMA' : 'NORMAL') as Urgencia,
-          dias,
-          proyectoId: clase.proyectoId,
-          enlace: clase.enlaceVirtual,
-        };
-      }),
-      ...this.vencimientos.map((vencimiento) => {
-        const fecha = new Date(vencimiento.fechaLimite);
-        return {
-          tipo: 'VENCIMIENTO' as const,
-          titulo: vencimiento.titulo,
-          detalle: `Plazo de respuesta: ${vencimiento.etapa === 'ORIGEN' ? 'revisión de origen' : 'confirmación de destino'}`,
-          fecha,
-          urgencia: vencimiento.urgencia,
-          dias: vencimiento.diasRestantes,
-          proyectoId: undefined,
-          enlace: undefined,
-        };
-      }),
-    ];
-    return eventos
-      .filter((evento) => evento.dias >= 0)
-      .sort((a, b) => a.fecha.getTime() - b.fecha.getTime())
-      .slice(0, 8);
+  /** Resumen en una línea de lo que hay ese día. */
+  readonly resumenDia = computed(() => {
+    const dia = this.detalleDelDia();
+    if (!dia) return '';
+    const partes: string[] = [];
+    if (dia.clases.length > 0) {
+      partes.push(
+        dia.clases.length === 1
+          ? '1 clase espejo programada'
+          : `${dia.clases.length} clases espejo programadas`,
+      );
+    }
+    if (dia.vencimientos.length > 0) {
+      partes.push(
+        dia.vencimientos.length === 1
+          ? '1 solicitud pendiente de respuesta'
+          : `${dia.vencimientos.length} solicitudes pendientes de respuesta`,
+      );
+    }
+    return partes.join(' · ');
   });
-
-  readonly tareasOrdenadas = computed(() =>
-    [...this.tareas].sort(
-      (a, b) =>
-        ({ VENCIDA: 0, CRITICA: 1, PROXIMA: 2, NORMAL: 3 })[a.urgencia] -
-        ({ VENCIDA: 0, CRITICA: 1, PROXIMA: 2, NORMAL: 3 })[b.urgencia],
-    ),
-  );
 
   // --- Navegación ---
 
@@ -245,27 +208,6 @@ export class CalendarioComponent {
     return avisoUrgencia(urgencia);
   }
 
-  /** Etiqueta corta para una tarea sin fecha límite. */
-  etiquetaTarea(urgencia: Urgencia): string {
-    return (
-      {
-        VENCIDA: 'Atrasada',
-        CRITICA: 'Urgente',
-        PROXIMA: 'Pronto',
-        NORMAL: 'Cuando puedas',
-      }[urgencia] ?? 'Pendiente'
-    );
-  }
-
-  fechaLarga(fecha: Date | string): string {
-    const d = new Date(fecha);
-    return d.toLocaleDateString('es-MX', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
-
   hora(fecha: Date | string): string {
     return new Date(fecha).toLocaleTimeString('es-MX', {
       hour: '2-digit',
@@ -282,6 +224,6 @@ export class CalendarioComponent {
     });
     return total === 0
       ? base
-      : `${base}: ${dia.clases.length} sesión(es) y ${dia.vencimientos.length} vencimiento(s)`;
+      : `${base}: ${dia.clases.length} clase(s) y ${dia.vencimientos.length} vencimiento(s)`;
   }
 }

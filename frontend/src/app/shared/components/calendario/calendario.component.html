@@ -1,162 +1,124 @@
-<div class="calendario">
-  <div class="calendario-head">
-    <div class="calendario-head-text">
-      <h3 class="calendario-titulo">{{ tituloMes() }}</h3>
-      <p class="muted">
-        Sesiones programadas y vencimientos de solicitudes de tus clases espejo.
-      </p>
+<app-modal title="Calendario de clases espejo" size="lg" (close)="cerrar.emit()">
+  <div class="calendario">
+    <div class="calendario-head">
+      <div class="calendario-head-text">
+        <h3 class="calendario-titulo">{{ tituloMes() }}</h3>
+        <p class="muted">
+          Pulsa un día con punto para ver qué clases o vencimientos tiene.
+        </p>
+      </div>
+      <div class="calendario-nav">
+        <button type="button" class="btn btn-secondary" (click)="mesAnterior()" aria-label="Mes anterior">
+          ‹
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="irHoy()">Hoy</button>
+        <button type="button" class="btn btn-secondary" (click)="mesSiguiente()" aria-label="Mes siguiente">
+          ›
+        </button>
+      </div>
     </div>
-    <div class="calendario-nav">
-      <button type="button" class="btn btn-secondary" (click)="mesAnterior()" aria-label="Mes anterior">
-        ‹
-      </button>
-      <button type="button" class="btn btn-secondary" (click)="irHoy()">Hoy</button>
-      <button type="button" class="btn btn-secondary" (click)="mesSiguiente()" aria-label="Mes siguiente">
-        ›
-      </button>
-    </div>
-  </div>
 
-  <div class="calendario-grid" role="grid" [attr.aria-label]="'Calendario de ' + tituloMes()">
-    @for (nombre of diasSemana; track nombre) {
-      <span class="calendario-dow" role="columnheader">{{ nombre }}</span>
-    }
-    @for (dia of dias(); track dia.clave) {
-      <button
-        type="button"
-        role="gridcell"
-        class="calendario-dia"
-        [class.fuera]="!dia.delMes"
-        [class.hoy]="dia.esHoy"
-        [class.elegido]="detalleDelDia()?.clave === dia.clave"
-        (click)="elegir(dia)"
-        [attr.aria-label]="etiquetaDia(dia)"
-      >
-        <span class="calendario-numero">{{ dia.numero }}</span>
-        <span class="calendario-puntos" aria-hidden="true">
-          @for (punto of dia.puntos; track $index) {
-            <span
-              class="punto"
-              [class.punto--clase]="punto.clase"
-              [class.punto--critica]="!punto.clase && punto.urgencia === 'CRITICA'"
-              [class.punto--vencida]="!punto.clase && punto.urgencia === 'VENCIDA'"
-              [class.punto--proxima]="!punto.clase && punto.urgencia === 'PROXIMA'"
-            ></span>
+    <div class="calendario-cuerpo">
+      <div>
+        <div class="calendario-grid" role="grid" [attr.aria-label]="'Calendario de ' + tituloMes()">
+          @for (nombre of diasSemana; track nombre) {
+            <span class="calendario-dow" role="columnheader">{{ nombre }}</span>
           }
-          @if (dia.restantes > 0) {
-            <span class="punto-mas">+{{ dia.restantes }}</span>
+          @for (dia of dias(); track dia.clave) {
+            <button
+              type="button"
+              role="gridcell"
+              class="calendario-dia"
+              [class.fuera]="!dia.delMes"
+              [class.hoy]="dia.esHoy"
+              [class.con-eventos]="dia.puntos.length > 0"
+              [class.elegido]="detalleDelDia()?.clave === dia.clave"
+              (click)="elegir(dia)"
+              [attr.aria-label]="etiquetaDia(dia)"
+            >
+              <span class="calendario-numero">{{ dia.numero }}</span>
+              <span class="calendario-puntos" aria-hidden="true">
+                @for (punto of dia.puntos; track $index) {
+                  <span
+                    class="punto"
+                    [class.punto--clase]="punto.clase"
+                    [class.punto--critica]="!punto.clase && punto.urgencia === 'CRITICA'"
+                    [class.punto--vencida]="!punto.clase && punto.urgencia === 'VENCIDA'"
+                    [class.punto--proxima]="!punto.clase && punto.urgencia === 'PROXIMA'"
+                  ></span>
+                }
+                @if (dia.restantes > 0) {
+                  <span class="punto-mas">+{{ dia.restantes }}</span>
+                }
+              </span>
+            </button>
           }
-        </span>
-      </button>
-    }
-  </div>
+        </div>
 
-  <ul class="calendario-leyenda">
-    <li><span class="punto punto--clase"></span> Sesión de clase espejo</li>
-    <li><span class="punto punto--proxima"></span> Solicitud por vencer</li>
-    <li><span class="punto punto--critica"></span> Vence en 2 días o menos</li>
-    <li><span class="punto punto--vencida"></span> Plazo terminado</li>
-  </ul>
-
-  @if (detalleDelDia(); as dia) {
-    <div class="calendario-detalle">
-      <p class="calendario-detalle-titulo">{{ tituloDia() }}</p>
-      @if (dia.clases.length === 0 && dia.vencimientos.length === 0) {
-        <p class="muted">Sin eventos este día.</p>
-      } @else {
-        <ul class="lista">
-          @for (clase of dia.clases; track clase.id) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ clase.titulo }}</strong>
-                <div class="muted">
-                  {{ hora(clase.fechaHora) }} · {{ clase.contraparte }}
-                </div>
-              </div>
-              <div class="lista-acciones">
-                <a class="btn btn-secondary" [routerLink]="['/proyectos', clase.proyectoId]">
-                  Abrir clase
-                </a>
-              </div>
-            </li>
-          }
-          @for (vencimiento of dia.vencimientos; track vencimiento.id) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ vencimiento.titulo }}</strong>
-                <div class="muted">
-                  Plazo de respuesta ·
-                  {{ vencimiento.etapa === 'ORIGEN' ? 'revisión de origen' : 'confirmación de destino' }}
-                </div>
-              </div>
-              <div class="lista-acciones">
-                <span [class]="clase(vencimiento.urgencia)">
-                  {{ etiqueta(vencimiento.urgencia, vencimiento.diasRestantes) }}
-                </span>
-              </div>
-            </li>
-          }
+        <ul class="calendario-leyenda">
+          <li><span class="punto punto--clase"></span> Sesión de clase espejo</li>
+          <li><span class="punto punto--proxima"></span> Solicitud por vencer</li>
+          <li><span class="punto punto--critica"></span> Vence en 2 días o menos</li>
+          <li><span class="punto punto--vencida"></span> Plazo terminado</li>
         </ul>
-      }
-    </div>
-  }
+      </div>
 
-  <div class="calendario-columnas">
-    <div>
-      <h4 class="calendario-subtitulo">Lo próximo</h4>
-      @if (proximos().length === 0) {
-        <p class="muted">No hay clases ni vencimientos por delante.</p>
-      } @else {
-        <ul class="lista">
-          @for (evento of proximos(); track evento.tipo + evento.titulo + evento.dias) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ evento.titulo }}</strong>
-                <div class="muted">
-                  {{ evento.tipo === 'CLASE' ? 'Sesión' : 'Vencimiento' }} ·
-                  {{ fechaLarga(evento.fecha) }} · {{ evento.detalle }}
+      <div class="calendario-lado">
+        @if (detalleDelDia(); as dia) {
+          <p class="calendario-detalle-titulo">{{ tituloDia() }}</p>
+          @if (dia.puntos.length === 0) {
+            <p class="muted">
+              Sin eventos este día. Los días con punto azul tienen una sesión
+              programada y los ámbar o rojos, un vencimiento.
+            </p>
+          } @else {
+            <p class="calendario-resumen-dia">{{ resumenDia() }}</p>
+
+            @for (clase of dia.clases; track clase.id) {
+              <div class="evento-dia">
+                <div class="evento-dia-head">
+                  <span class="evento-dia-hora">{{ hora(clase.fechaHora) }}</span>
+                  <span class="punto punto--clase" aria-hidden="true"></span>
+                </div>
+                <p class="evento-dia-titulo">{{ clase.titulo }}</p>
+                <p class="evento-dia-sub">{{ clase.contraparte }}</p>
+                <div class="evento-dia-acciones">
+                  @if (clase.enlaceVirtual) {
+                    <a class="btn btn-secondary" [href]="clase.enlaceVirtual" target="_blank" rel="noopener">
+                      Entrar a la sesión
+                    </a>
+                  }
+                  <a class="btn btn-primary" [routerLink]="['/proyectos', clase.proyectoId]">
+                    Abrir clase espejo
+                  </a>
                 </div>
               </div>
-              <div class="lista-acciones">
-                <span [class]="clase(evento.urgencia)">
-                  {{ etiqueta(evento.urgencia, evento.dias) }}
-                </span>
-                @if (evento.proyectoId) {
-                  <a class="btn btn-secondary" [routerLink]="['/proyectos', evento.proyectoId]">
-                    Abrir
-                  </a>
+            }
+
+            @for (vencimiento of dia.vencimientos; track vencimiento.id) {
+              <div class="evento-dia">
+                <div class="evento-dia-head">
+                  <span [class]="clase(vencimiento.urgencia)">
+                    {{ etiqueta(vencimiento.urgencia, vencimiento.diasRestantes) }}
+                  </span>
+                </div>
+                <p class="evento-dia-titulo">{{ vencimiento.titulo }}</p>
+                <p class="evento-dia-sub">
+                  {{
+                    vencimiento.etapa === 'ORIGEN'
+                      ? 'Espera la revisión de la institución de origen'
+                      : 'Espera la confirmación de la institución de destino'
+                  }}
+                  · {{ vencimiento.contraparte }}
+                </p>
+                @if (aviso(vencimiento.urgencia); as texto) {
+                  <p class="evento-dia-aviso">{{ texto }}</p>
                 }
               </div>
-            </li>
+            }
           }
-        </ul>
-      }
-    </div>
-
-    <div>
-      <h4 class="calendario-subtitulo">Por hacer</h4>
-      @if (tareasOrdenadas().length === 0) {
-        <p class="muted">Nada pendiente por tu parte.</p>
-      } @else {
-        <ul class="lista">
-          @for (tarea of tareasOrdenadas(); track tarea.tipo + tarea.titulo) {
-            <li class="lista-item">
-              <div>
-                <strong>{{ tarea.titulo }}</strong>
-                <div class="muted">{{ tarea.detalle }}</div>
-              </div>
-              <div class="lista-acciones">
-                <span [class]="clase(tarea.urgencia)">
-                  {{ etiquetaTarea(tarea.urgencia) }}
-                </span>
-                <a class="btn btn-secondary" [routerLink]="['/proyectos', tarea.proyectoId]">
-                  Abrir
-                </a>
-              </div>
-            </li>
-          }
-        </ul>
-      }
+        }
+      </div>
     </div>
   </div>
-</div>
+</app-modal>

@@ -1065,8 +1065,9 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Chat entre docentes del proyecto
 * [x] Clases espejo: sesiones, actividades y evidencias
 * [x] Reporte de clase conjunta, evaluación final y cierre
-* [x] Calendario mensual con sesiones y vencimientos, listas de «lo próximo» y
-      «por hacer», y marcas de urgencia (crítica, próxima, vencida)
+* [x] Calendario mensual **en una ventana emergente** (con el detalle del día
+      elegido) y sección de recordatorios con las listas «lo próximo» y «por
+      hacer», más las marcas de urgencia (crítica, próxima, vencida)
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado
