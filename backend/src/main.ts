@@ -17,6 +17,7 @@ const PREFIJOS_API_CONOCIDOS = [
   '/instituciones',
   '/solicitudes',
   '/proyectos',
+  '/recordatorios',
   '/health',
 ];
 
