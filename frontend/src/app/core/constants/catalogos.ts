@@ -211,7 +211,7 @@ export const TIPOS_DOCUMENTO = [
   'DNI',
   'Pasaporte',
   'Cédula de identidad',
-  'NIE',
+  'INE',
   'Otro',
 ];
 

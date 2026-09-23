@@ -16,7 +16,7 @@ Fecha del informe: **23 de septiembre de 2026**
 | **Rama** | `master` |
 | **Periodo documentado** | **28 de agosto → 23 de septiembre de 2026** (evidencia en Git) |
 | **Días con actividad registrada** | 10 |
-| **Commits** | 44 |
+| **Commits** | 46 |
 | **Stack** | NestJS 11 + Prisma 6.19.3 + PostgreSQL 17 · Angular 21 (zoneless) + TypeScript |
 | **Plan de referencia** | `docs/readme`, plan de desarrollo de 8 semanas |
 
@@ -34,7 +34,7 @@ Fecha del informe: **23 de septiembre de 2026**
 | --- | --- |
 | Semanas del plan completadas | **7 de 8** (semanas 1 a 7 terminadas y verificadas; la 8 en curso) |
 | Ritmo | Las 7 semanas se completaron en **3 semanas calendario** de trabajo registrado |
-| Commits | 44 (5 en agosto, 39 en septiembre) |
+| Commits | 46 (5 en agosto, 41 en septiembre) |
 | Código fuente | **17 138 líneas** (backend 5 219 · frontend 11 919) |
 | Modelo de datos | **22 tablas**, 10 migraciones aplicables |
 | API | **62 endpoints** en 9 controladores |
@@ -56,7 +56,7 @@ integral sobre la versión compilada y el despliegue.
 
 | Tipo de evidencia | Fuente | Qué demuestra |
 | --- | --- | --- |
-| **Historial de versiones** | `git log` (44 commits, 28-ago → 23-sep) | Qué se hizo, cuándo y en qué orden |
+| **Historial de versiones** | `git log` (46 commits, 28-ago → 23-sep) | Qué se hizo, cuándo y en qué orden |
 | **Migraciones** | `backend/prisma/migrations/` (9 carpetas con fecha en el nombre) | Cómo evolucionó el modelo de datos |
 | **Documentos** | `docs/` (13 archivos Markdown + tesis) | Diseño, auditorías, manuales y guías |
 | **Código** | `backend/src`, `frontend/src` | Implementación de cada módulo |
@@ -278,6 +278,8 @@ perfil.
 | `b364cc6` · 23-sep | *docs: el informe refleja que el repositorio remoto ya está al día* |
 | `ca24fe5` · 23-sep | *fix(invitaciones): el enlace del correo apunta a donde se usa la aplicación* |
 | `d19d1d6` · 23-sep | *docs: como se resuelve la URL publica del enlace de invitacion (tuneles y proxy)* |
+| `ad14620` · 23-sep | *docs: el informe incluye la foto, los enlaces con túnel y las cifras finales* |
+| *(este commit)* · 23-sep | *fix(catalogos): el tipo de documento es INE, no NIE* |
 | Migración `20260923191140_agregar_foto_perfil_usuario` | `ALTER TABLE "USUARIO" ADD COLUMN "foto_url" TEXT;` — soporte de la foto de perfil |
 
 **1. Interfaz habilitada (evidencia: `02796b0`, `37f5d17`).** Los elementos del
@@ -349,6 +351,15 @@ que bloquea la imagen entre orígenes distintos. Se añadió la utilidad
 a `cross-origin`. Además, la foto ahora se **recorta en cuadrado y se reduce a
 512 px en el navegador** antes de subirla, así que sirve cualquier foto y el
 archivo guardado baja a decenas de KB.
+
+**7. Corrección del catálogo de documentos (evidencia: el commit de esta
+corrección).** El
+selector de "tipo de documento" del registro ofrecía **`NIE`** (número de
+identidad de extranjero, que se usa en España) en lugar de **`INE`** (credencial
+del Instituto Nacional Electoral, la identificación habitual en México). Se
+corrigió en el catálogo (`frontend/src/app/core/constants/catalogos.ts`) y se
+comprobó que **ningún usuario** de la base tiene guardado el valor antiguo, así
+que no hubo que migrar datos.
 
 **Verificación de esta fase (ejecutada el 23-sep):** backend y frontend compilan,
 el servicio sirve la aplicación (`/` → SPA), `GET /recordatorios` responde con
@@ -541,7 +552,7 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 | --- | --- |
 | Archivos versionados | 403 |
 | Tamaño del historial | 4.3 MB |
-| Commits | 44 |
+| Commits | 46 |
 | Ramas | `master` |
 
 ---
@@ -642,18 +653,17 @@ puedan citarse con hash y fecha en el documento de tesis.
 | 3 | Índices `@@unique` (hallazgo m7) | Media | Requiere migración de base de datos |
 | 4 | 6 hallazgos menores restantes (m14, m15, m17–m20) | Baja | Ninguno bloquea el uso |
 
-### 12.2 Repositorio remoto
+### 12.2 Repositorio remoto al día
 
-**Verificado el 23-sep-2026:** el `push` se completó y `origin/master` llegó a
-**40 commits**; los **4 posteriores** (arreglo de la foto, corrección del informe
-y enlaces de invitación) quedan pendientes de subir. Todo lo anterior
-—auditorías, correcciones, documentación, recordatorios, calendario y foto de
-perfil— está respaldado en
-<https://github.com/RICARDOSOTO6/clases-espejo>.
+**Verificado el 23-sep-2026:** el `push` se completó y `origin/master` quedó al
+día (`ad14620`). Todo el trabajo —auditorías, correcciones, documentación,
+recordatorios, calendario, foto de perfil y enlaces de invitación— está
+respaldado en <https://github.com/RICARDOSOTO6/clases-espejo>.
 
 El `push` no se pudo hacer desde el entorno de desarrollo por un error del
 backend TLS de Git (`schannel: AcquireCredentialsHandle failed`); se resolvió
-ejecutándolo desde una terminal propia.
+ejecutándolo desde una terminal propia. Los commits posteriores a esa fecha
+quedan pendientes de subir, como es habitual.
 
 ### 12.3 Observaciones sobre la calidad de la propia evidencia
 
@@ -667,7 +677,7 @@ ejecutándolo desde una terminal propia.
 
 ---
 
-## 13. Anexo A — Tabla completa de commits (44)
+## 13. Anexo A — Tabla completa de commits (46)
 
 | # | Hash | Fecha | Mensaje |
 | --- | --- | --- | --- |
@@ -715,6 +725,8 @@ ejecutándolo desde una terminal propia.
 | 42 | `b364cc6` | 23-sep | docs: el informe refleja que el repositorio remoto ya está al día |
 | 43 | `ca24fe5` | 23-sep | fix(invitaciones): el enlace del correo apunta a donde se usa la aplicación |
 | 44 | `d19d1d6` | 23-sep | docs: como se resuelve la URL publica del enlace de invitacion (tuneles y proxy) |
+| 45 | `ad14620` | 23-sep | docs: el informe incluye la foto, los enlaces con túnel y las cifras finales |
+| 46 | *(este commit)* | 23-sep | fix(catalogos): el tipo de documento es INE, no NIE |
 
 **Distribución por día:**
 
@@ -729,7 +741,7 @@ ejecutándolo desde una terminal propia.
 | 14-sep | 2 |
 | 15-sep | 7 |
 | 18-sep | 6 |
-| 23-sep | 16 |
+| 23-sep | 18 |
 
 ---
 
@@ -802,7 +814,7 @@ cd frontend && npx tsc -p tsconfig.app.json --noEmit
 ## 15. Conclusión
 
 Entre el **28 de agosto y el 23 de septiembre de 2026**, en **10 días de trabajo
-registrado y 44 commits**, el proyecto pasó de una carpeta vacía a una plataforma
+registrado y 46 commits**, el proyecto pasó de una carpeta vacía a una plataforma
 funcional con:
 
 * **17 138 líneas de código** en 11 módulos de backend y 8 componentes de frontend,
@@ -826,8 +838,8 @@ funcional con:
 
 Queda **un solo frente abierto**, acotado: cerrar los dos pendientes funcionales
 de la semana 8 (recuperación de contraseña y prueba integral sobre la versión
-compilada), y subir los 4 commits más recientes. Todo lo anterior está respaldado
-en GitHub.
+compilada). El respaldo en GitHub está al día y la documentación describe el
+sistema tal como funciona hoy.
 
 ---
 
