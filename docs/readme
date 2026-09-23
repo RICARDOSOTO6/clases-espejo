@@ -16,6 +16,8 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | `docs/manual-de-usuario.md` | **Manual de usuario** paso a paso para agente y docente. |
 | `docs/guia-de-despliegue.md` | **Guía de despliegue** en un servidor Linux o Windows (base de datos, servicio, HTTPS, respaldos). |
 | `docs/receta-para-montarlo.md` | La misma instalación contada **como una receta de cocina**, paso a paso y sin formalidades. |
+| `docs/practica-en-maquina-virtual.md` | **Ensayo general en una máquina virtual**: montarlo, romperlo y arreglarlo (12 ejercicios) antes de tocar un servidor real. |
+| `docs/informe-de-actividades.md` | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
 | `docs/auditorias/reporte-qa-clasesespejo.md` | Primera auditoría QA (código). |
 | `docs/auditorias/reporte-qa-clasesespejo-v2.md` | Segunda auditoría QA. |
 | `docs/auditorias/respuesta-auditoria.md` | Respuesta punto por punto a las auditorías 1 y 2 + tercera revisión. |
@@ -42,6 +44,8 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 * [Datos de demostración](#-datos-de-demostración)
 * [Guía de despliegue (documento aparte)](guia-de-despliegue.md)
 * [Receta para montarlo (documento aparte)](receta-para-montarlo.md)
+* [Práctica en máquina virtual (documento aparte)](practica-en-maquina-virtual.md)
+* [Informe de actividades con evidencia (documento aparte)](informe-de-actividades.md)
 
 **Diseño del sistema**
 
