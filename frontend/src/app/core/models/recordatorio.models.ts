@@ -43,6 +43,10 @@ export interface Agenda {
   generadoEn: string;
   /** Solicitudes que caducaron en esta consulta por falta de respuesta. */
   caducadasAhora: number;
+  /** Reglas vigentes del backend, para no duplicarlas en el cliente. */
+  configuracion: {
+    diasAntelacionRevision: number;
+  };
   resumen: {
     vencidas: number;
     criticas: number;

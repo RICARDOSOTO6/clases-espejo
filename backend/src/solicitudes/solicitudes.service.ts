@@ -21,11 +21,17 @@ import {
 } from '../common/estados';
 import {
   corteCaducidad,
+  diaDeColumna,
+  diaLocal,
+  diasAntelacionRevision,
   diasHasta,
   fechaLimiteRevision,
+  fechaMinimaPropuesta,
+  textoDeColumna,
   urgenciaSegunDias,
   type Urgencia,
 } from '../common/plazos';
+import type { Prisma } from '../../generated/prisma/client';
 
 // Semana 5: proyecto generado al aprobar una solicitud.
 const PLATAFORMA_POR_DEFINIR = 'Por definir';
@@ -39,7 +45,7 @@ export class SolicitudesService {
 
   async crear(usuarioId: number, dto: CreateSolicitudDto) {
     const docente = await this.getDocente(usuarioId);
-    this.verificarFechaFutura(dto.fechaPropuesta);
+    this.verificarFechaPropuesta(dto.fechaPropuesta);
 
     const asignacion = await this.prisma.asignacionDocente.findFirst({
       where: {
@@ -96,7 +102,7 @@ export class SolicitudesService {
   async listarMias(usuarioId: number) {
     const docente = await this.getDocente(usuarioId);
     // Antes de responder se revisa si alguna propuesta venció sin respuesta.
-    await this.caducarVencidas();
+    await this.mantenimiento();
     const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         asignacionOrigen: { docenteInstitucion: { docenteId: docente.id } },
@@ -153,6 +159,50 @@ export class SolicitudesService {
     return count;
   }
 
+  /**
+   * Repara solicitudes que quedaron APROBADAS sin su clase espejo. Hoy el
+   * cambio de estado y la creación del proyecto van en la misma transacción, así
+   * que no puede volver a pasar; esto cierra el caso de los datos anteriores.
+   */
+  async reconciliarProyectos(): Promise<number> {
+    const huerfanas = await this.prisma.solicitudClaseEspejo.findMany({
+      where: {
+        estado: ESTADO_SOLICITUD_APROBADA,
+        proyecto: null,
+        asignacionDestinoId: { not: null },
+      },
+      select: {
+        id: true,
+        asignacionOrigenId: true,
+        asignacionDestinoId: true,
+        fechaPropuesta: true,
+      },
+      take: 50,
+    });
+
+    for (const solicitud of huerfanas) {
+      await this.crearProyectoSiNoExiste(
+        solicitud.id,
+        solicitud,
+        solicitud.asignacionDestinoId!,
+      );
+    }
+    return huerfanas.length;
+  }
+
+  /**
+   * Tareas de mantenimiento que se ejecutan antes de listar y desde el
+   * planificador: caducar lo vencido y reparar aprobaciones sin proyecto.
+   */
+  async mantenimiento(): Promise<{
+    caducadas: number;
+    reconciliadas: number;
+  }> {
+    const caducadas = await this.caducarVencidas();
+    const reconciliadas = await this.reconciliarProyectos();
+    return { caducadas, reconciliadas };
+  }
+
   async actualizar(usuarioId: number, id: number, dto: UpdateSolicitudDto) {
     const docente = await this.getDocente(usuarioId);
     const solicitud = await this.obtenerPropia(docente.id, id);
@@ -172,7 +222,7 @@ export class SolicitudesService {
     const reenviar = solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE;
 
     if (dto.fechaPropuesta !== undefined) {
-      this.verificarFechaFutura(dto.fechaPropuesta);
+      this.verificarFechaPropuesta(dto.fechaPropuesta);
     }
 
     const asignacionOrigenId =
@@ -270,7 +320,7 @@ export class SolicitudesService {
    */
   async listarEntrantes(usuarioId: number) {
     const agente = await this.getAgente(usuarioId);
-    await this.caducarVencidas();
+    await this.mantenimiento();
     const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         OR: [
@@ -294,6 +344,9 @@ export class SolicitudesService {
    */
   async revisar(usuarioId: number, id: number, dto: RevisarSolicitudDto) {
     const agente = await this.getAgente(usuarioId);
+    // Antes de decidir se comprueba el vencimiento: entre dos pasadas del
+    // planificador, una solicitud fuera de plazo no debe poder aprobarse.
+    await this.mantenimiento();
     const solicitud = await this.prisma.solicitudClaseEspejo.findUnique({
       where: { id },
       include: { asignacionOrigen: { include: { docenteInstitucion: true } } },
@@ -335,26 +388,31 @@ export class SolicitudesService {
   ) {
     this.exigirMotivoSiRechaza(dto);
 
-    // Transición condicional: si otra revisión ganó la carrera, esta no aplica.
-    const cambio = await this.prisma.solicitudClaseEspejo.updateMany({
-      where: { id: solicitudId, estado: ESTADO_SOLICITUD_PENDIENTE },
-      data: {
-        estado:
-          dto.decision === ESTADO_SOLICITUD_RECHAZADA
-            ? ESTADO_SOLICITUD_RECHAZADA
-            : ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
-      },
-    });
-    if (cambio.count === 0) {
-      throw new BadRequestException('La solicitud ya fue revisada');
-    }
+    // El cambio de estado y su registro van juntos: si fallara el segundo, la
+    // solicitud quedaría revisada sin historial.
+    await this.prisma.$transaction(async (tx) => {
+      // Transición condicional: si otra revisión ganó la carrera, esta no aplica.
+      const cambio = await tx.solicitudClaseEspejo.updateMany({
+        where: { id: solicitudId, estado: ESTADO_SOLICITUD_PENDIENTE },
+        data: {
+          estado:
+            dto.decision === ESTADO_SOLICITUD_RECHAZADA
+              ? ESTADO_SOLICITUD_RECHAZADA
+              : ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+        },
+      });
+      if (cambio.count === 0) {
+        throw new BadRequestException('La solicitud ya fue revisada');
+      }
 
-    await this.registrarRevision(
-      solicitudId,
-      agenteId,
-      ETAPA_REVISION_ORIGEN,
-      dto,
-    );
+      await this.registrarRevision(
+        solicitudId,
+        agenteId,
+        ETAPA_REVISION_ORIGEN,
+        dto,
+        tx,
+      );
+    });
 
     return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
       where: { id: solicitudId },
@@ -391,36 +449,43 @@ export class SolicitudesService {
       asignacionDestinoId = destino.id;
     }
 
-    // Transición condicional: solo una petición cierra la 2.ª etapa, así que el
-    // proyecto no se crea dos veces.
-    const cambio = await this.prisma.solicitudClaseEspejo.updateMany({
-      where: {
-        id: solicitud.id,
-        estado: ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
-      },
-      data: {
-        estado: dto.decision,
-        ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
-      },
-    });
-    if (cambio.count === 0) {
-      throw new BadRequestException('La solicitud ya fue revisada');
-    }
+    // Aprobar la solicitud y crear la clase espejo es **una sola operación**: si
+    // fallara el proyecto, la solicitud quedaría APROBADA sin proyecto y sin
+    // ninguna vía de recuperación por la API.
+    await this.prisma.$transaction(async (tx) => {
+      // Transición condicional: solo una petición cierra la 2.ª etapa, así que el
+      // proyecto no se crea dos veces.
+      const cambio = await tx.solicitudClaseEspejo.updateMany({
+        where: {
+          id: solicitud.id,
+          estado: ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+        },
+        data: {
+          estado: dto.decision,
+          ...(asignacionDestinoId != null ? { asignacionDestinoId } : {}),
+        },
+      });
+      if (cambio.count === 0) {
+        throw new BadRequestException('La solicitud ya fue revisada');
+      }
 
-    await this.registrarRevision(
-      solicitud.id,
-      agente.id,
-      ETAPA_REVISION_DESTINO,
-      dto,
-    );
-
-    if (dto.decision === ESTADO_SOLICITUD_APROBADA) {
-      await this.crearProyectoSiNoExiste(
+      await this.registrarRevision(
         solicitud.id,
-        solicitud,
-        asignacionDestinoId!,
+        agente.id,
+        ETAPA_REVISION_DESTINO,
+        dto,
+        tx,
       );
-    }
+
+      if (dto.decision === ESTADO_SOLICITUD_APROBADA) {
+        await this.crearProyectoSiNoExiste(
+          solicitud.id,
+          solicitud,
+          asignacionDestinoId!,
+          tx,
+        );
+      }
+    });
 
     return this.prisma.solicitudClaseEspejo.findUniqueOrThrow({
       where: { id: solicitud.id },
@@ -441,8 +506,9 @@ export class SolicitudesService {
     agenteId: number,
     etapa: string,
     dto: RevisarSolicitudDto,
+    cliente: Prisma.TransactionClient = this.prisma,
   ): Promise<void> {
-    await this.prisma.revisionSolicitud.create({
+    await cliente.revisionSolicitud.create({
       data: {
         solicitudId,
         agenteId,
@@ -462,18 +528,21 @@ export class SolicitudesService {
     solicitudId: number,
     solicitud: { asignacionOrigenId: number; fechaPropuesta: Date },
     asignacionDestinoId: number,
+    cliente: Prisma.TransactionClient = this.prisma,
   ): Promise<void> {
-    const existente = await this.prisma.proyectoClaseEspejo.findUnique({
+    const existente = await cliente.proyectoClaseEspejo.findUnique({
       where: { solicitudId },
       select: { id: true },
     });
     if (existente) return;
 
-    const inicio = new Date(solicitud.fechaPropuesta);
+    // Aritmética en UTC: `fechaPropuesta` es una columna DATE y se lee como
+    // medianoche UTC. Con `getDate()/setDate()` se sumaba o restaba un día.
+    const inicio = diaDeColumna(solicitud.fechaPropuesta);
     const fin = new Date(inicio);
-    fin.setDate(fin.getDate() + DIAS_POR_DEFECTO);
+    fin.setUTCDate(fin.getUTCDate() + DIAS_POR_DEFECTO);
 
-    const proyecto = await this.prisma.proyectoClaseEspejo.create({
+    const proyecto = await cliente.proyectoClaseEspejo.create({
       data: {
         solicitudId,
         estado: ESTADO_PROYECTO_INICIAL,
@@ -483,7 +552,7 @@ export class SolicitudesService {
       },
     });
 
-    await this.prisma.proyectoDocente.createMany({
+    await cliente.proyectoDocente.createMany({
       data: [
         {
           proyectoId: proyecto.id,
@@ -499,13 +568,23 @@ export class SolicitudesService {
     });
   }
 
-  /** La fecha propuesta no puede estar en el pasado (se compara por día). */
-  private verificarFechaFutura(fecha: string): void {
-    const hoy = new Date();
-    const hoyTexto = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    if (fecha.slice(0, 10) < hoyTexto) {
+  /**
+   * La fecha propuesta debe ser futura y respetar la antelación con la que las
+   * instituciones pueden responder. Sin esto, una propuesta para pasado mañana
+   * nacía ya caducada y nadie podía contestarla.
+   */
+  private verificarFechaPropuesta(fecha: string): void {
+    const propuesta = fecha.slice(0, 10);
+    const hoy = textoDeColumna(diaLocal());
+    if (propuesta < hoy) {
       throw new BadRequestException(
         'La fecha propuesta no puede estar en el pasado',
+      );
+    }
+    const minimo = textoDeColumna(fechaMinimaPropuesta());
+    if (propuesta < minimo) {
+      throw new BadRequestException(
+        `Propón la clase con al menos ${diasAntelacionRevision()} días de antelación (desde el ${minimo})`,
       );
     }
   }

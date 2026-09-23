@@ -42,6 +42,11 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../core/utils/urgencia.util';
+import {
+  fechaLarga,
+  fechaTexto,
+  hoyTexto,
+} from '../../core/utils/fecha.util';
 
 @Component({
   selector: 'app-docente',
@@ -443,10 +448,16 @@ export class DocenteComponent implements OnInit, OnDestroy {
     const v = this.solicitudForm.value;
     if (v.asignacionOrigenId == null || v.institucionDestinoId == null) return;
 
-    const hoy = new Date();
-    const hoyTexto = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-    if ((v.fechaPropuesta ?? '') < hoyTexto) {
+    if ((v.fechaPropuesta ?? '') < hoyTexto()) {
       this.solicitudError.set('La fecha propuesta no puede estar en el pasado');
+      return;
+    }
+
+    // La propuesta debe respetar la antelación con la que se puede responder.
+    if ((v.fechaPropuesta ?? '') < this.fechaMinimaPropuesta()) {
+      this.solicitudError.set(
+        `Propón la clase con al menos ${this.diasAntelacion()} días de antelación (desde el ${fechaLarga(this.fechaMinimaPropuesta())})`,
+      );
       return;
     }
 
@@ -544,12 +555,27 @@ export class DocenteComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Día de calendario tal como lo guarda el backend. Se toma el texto para no
+   * restar un día en husos negativos ni degradar el dato al guardar. */
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const d = new Date(fecha);
-    if (isNaN(d.getTime())) return '';
-    // Fecha local: `toISOString()` es UTC y podía devolver el día siguiente.
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return fechaTexto(fecha);
+  }
+
+  /** Igual que `formatearFecha`, pero para mostrar: «15 mar 2027». */
+  fechaLegible(fecha: string): string {
+    return fechaLarga(fecha);
+  }
+
+  /** Antelación exigida para proponer (la manda el backend; 7 por defecto). */
+  diasAntelacion(): number {
+    return this.agenda()?.configuracion?.diasAntelacionRevision ?? 7;
+  }
+
+  /** Primera fecha que se puede proponer, como texto `YYYY-MM-DD`. */
+  fechaMinimaPropuesta(): string {
+    const minimo = new Date();
+    minimo.setDate(minimo.getDate() + this.diasAntelacion());
+    return hoyTexto(minimo);
   }
 
   estadoProyectoLabel(estado: string): string {

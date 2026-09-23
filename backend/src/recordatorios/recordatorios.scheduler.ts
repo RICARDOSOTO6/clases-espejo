@@ -37,10 +37,16 @@ export class RecordatoriosScheduler implements OnModuleInit, OnModuleDestroy {
 
   private async revisar(): Promise<void> {
     try {
-      const caducadas = await this.solicitudes.caducarVencidas();
+      const { caducadas, reconciliadas } =
+        await this.solicitudes.mantenimiento();
       if (caducadas > 0) {
         this.logger.log(
           `${caducadas} solicitud(es) caducaron por falta de respuesta`,
+        );
+      }
+      if (reconciliadas > 0) {
+        this.logger.warn(
+          `${reconciliadas} solicitud(es) aprobadas no tenían clase espejo: se creó el proyecto`,
         );
       }
     } catch (error) {

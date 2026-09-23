@@ -52,6 +52,7 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../core/utils/urgencia.util';
+import { fechaTexto } from '../../core/utils/fecha.util';
 
 @Component({
   selector: 'app-agente',
@@ -992,12 +993,9 @@ export class AgenteComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Día de calendario tal como lo guarda el backend (sin desfase de zona). */
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const d = new Date(fecha);
-    if (isNaN(d.getTime())) return '';
-    // Fecha local: `toISOString()` es UTC y podía devolver el día siguiente.
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return fechaTexto(fecha);
   }
 
   estadoProyectoLabel(estado: string): string {

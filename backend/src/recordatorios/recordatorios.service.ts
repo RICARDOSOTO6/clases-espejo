@@ -8,7 +8,9 @@ import {
   ESTATUS_PENDIENTE,
 } from '../common/estados';
 import {
+  diasAntelacionRevision,
   diasHasta,
+  diasHastaInstante,
   urgenciaSegunDias,
   type Urgencia,
 } from '../common/plazos';
@@ -76,7 +78,8 @@ export class RecordatoriosService {
     });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
-    const caducadasAhora = await this.solicitudes.caducarVencidas();
+    const { caducadas: caducadasAhora } =
+      await this.solicitudes.mantenimiento();
     const esAgente = Boolean(usuario.agente);
 
     const solicitudes = esAgente
@@ -94,6 +97,11 @@ export class RecordatoriosService {
     return {
       generadoEn: new Date(),
       caducadasAhora,
+      // Reglas vigentes: el frontend las usa en el formulario en vez de repetir
+      // el valor por su cuenta.
+      configuracion: {
+        diasAntelacionRevision: diasAntelacionRevision(),
+      },
       resumen: {
         vencidas: cuenta('VENCIDA'),
         criticas: cuenta('CRITICA'),
@@ -313,7 +321,8 @@ export class RecordatoriosService {
       );
       const yaFirme = Boolean(mia?.confirmadoEn);
       const fecha = reporte.sesion.fechaHora;
-      const dias = diasHasta(fecha);
+      // `fechaHora` es un instante (TIMESTAMP), no un día de calendario.
+      const dias = diasHastaInstante(fecha);
       tareas.push({
         tipo: 'REPORTE',
         titulo: yaFirme
@@ -374,7 +383,9 @@ export class RecordatoriosService {
 
     const proyectos = await this.prisma.proyectoClaseEspejo.findMany({
       where: {
-        estado: 'EN_PLANIFICACION',
+        // El aviso sigue siendo válido mientras la clase esté abierta, también
+        // en curso: antes solo miraba «EN_PLANIFICACION» y desaparecía al avanzar.
+        estado: { in: ESTADOS_PROYECTO_EDITABLES },
         solicitud: {
           OR: [
             { institucionDestinoId: agente.institucionId },

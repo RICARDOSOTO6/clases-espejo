@@ -17,6 +17,7 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../../core/utils/urgencia.util';
+import { fechaTexto, horaTexto } from '../../../core/utils/fecha.util';
 import { ModalComponent } from '../modal/modal.component';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -117,9 +118,10 @@ export class CalendarioComponent {
       porClave.get(clave(new Date(clase.fechaHora)))?.clases.push(clase);
     }
     for (const vencimiento of this.vencimientos) {
-      porClave.get(clave(new Date(vencimiento.fechaLimite)))?.vencimientos.push(
-        vencimiento,
-      );
+      // `fechaLimite` es una columna DATE: su día es el texto, no la fecha local.
+      porClave
+        .get(fechaTexto(vencimiento.fechaLimite))
+        ?.vencimientos.push(vencimiento);
     }
 
     for (const dia of casillas) {

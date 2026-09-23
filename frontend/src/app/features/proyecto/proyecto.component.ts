@@ -17,6 +17,7 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
+import { fechaLarga, fechaTexto } from '../../core/utils/fecha.util';
 import { Asignacion } from '../../core/models/materia.models';
 import {
   Actividad,
@@ -1048,17 +1049,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     return estatus === 'CONFIRMADA' ? 'Confirmada' : 'Pendiente';
   }
 
+  /** Día de calendario, legible y sin desfase de zona. */
   formatearFecha(fecha: string | null): string {
-    if (!fecha) return '—';
-    const d = new Date(fecha);
-    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-MX');
+    return fecha ? fechaLarga(fecha) : '—';
   }
 
+  /** Valor para un `<input type="date">`: el día tal como lo guarda el backend. */
   private aFechaInput(fecha: string): string {
-    if (!fecha) return '';
-    const d = new Date(fecha);
-    if (isNaN(d.getTime())) return '';
-    // Fecha local: `toISOString()` es UTC y el input mostraba otro día.
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return fechaTexto(fecha);
   }
 }

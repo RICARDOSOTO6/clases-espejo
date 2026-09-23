@@ -10,6 +10,7 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../../core/utils/urgencia.util';
+import { fechaLarga as formatearFechaLarga } from '../../../core/utils/fecha.util';
 
 const MS_DIA = 24 * 60 * 60 * 1000;
 
