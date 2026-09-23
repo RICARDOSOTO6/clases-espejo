@@ -46,8 +46,16 @@ export class AgentesService {
   /**
    * FASE 2: El agente envía una invitación al docente (solo correo + número de empleado).
    * El docente se registrará después usando el token de la invitación.
+   *
+   * `urlPublica` es la dirección desde la que el docente abrirá el enlace: con
+   * un túnel o un proxy cambia, así que la calcula el controlador a partir de la
+   * petición en vez de leer una variable fija.
    */
-  async invitarDocente(agenteId: number, dto: InviteDocenteDto) {
+  async invitarDocente(
+    agenteId: number,
+    dto: InviteDocenteDto,
+    urlPublica: string,
+  ) {
     const agente = await this.getAgente(agenteId);
 
     const yaEsUsuario = await this.prisma.usuario.findUnique({
@@ -88,7 +96,7 @@ export class AgentesService {
     });
 
     try {
-      await this.mailService.sendInvitation(dto.correo, token);
+      await this.mailService.sendInvitation(dto.correo, token, urlPublica);
     } catch {
       // Si el correo no sale, la invitación no debe quedarse bloqueando el
       // reenvío durante días sin que nadie reciba nada.
