@@ -9,6 +9,11 @@ en un servidor **Linux** o **Windows**.
 > 🍳 **¿Prefieres la versión sin formalidades?** Está en
 > `docs/receta-para-montarlo.md`: los mismos pasos contados como una receta de
 > cocina, con los datos de la máquina de desarrollo.
+>
+> 🥋 **¿Es tu primera vez y prefieres practicar sin riesgo?** En
+> `docs/practica-en-maquina-virtual.md` está el ensayo general: montar el sistema
+> en una máquina virtual, romperlo a propósito (12 ejercicios) y arreglarlo, con
+> snapshots para deshacer todo.
 
 ---
 
