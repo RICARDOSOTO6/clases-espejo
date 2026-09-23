@@ -561,7 +561,7 @@ clases concluidas, en proceso y pendientes **al mismo tiempo**.
 | 7 | Codificación de caracteres | Búsqueda de texto corrupto en los documentos | ✅ 0 ocurrencias |
 | 8 | La aplicación se sirve compilada | `GET /` y `GET /login` con el backend de prueba | ✅ 200 y contiene `<app-root>` |
 | 9 | Recordatorios con datos reales | `GET /recordatorios` (docente y agente) | ✅ Resumen, solicitudes con plazo, clases y tareas |
-| 10 | Foto de perfil de extremo a extremo | Subida, `GET /avatares/…`, formato inválido y borrado | ✅ 200 `image/png` en línea · 400 al `.txt` · archivo eliminado del disco |
+| 10 | Foto de perfil de extremo a extremo | Subida, `GET /avatares/…`, formato inválido y borrado | ✅ 200 `image/png` en línea · `Cross-Origin-Resource-Policy: cross-origin` (se ve desde el frontend en `:4200`) · 400 al `.txt` · archivo eliminado del disco |
 
 ### 10.2 Ejecutadas durante el desarrollo (sesiones previas a los commits del 18-sep-2026)
 
@@ -605,21 +605,17 @@ puedan citarse con hash y fecha en el documento de tesis.
 | 2 | Prueba integral del flujo sobre la versión compilada | Alta | Es el último entregable de la semana 8 |
 | 3 | Índices `@@unique` (hallazgo m7) | Media | Requiere migración de base de datos |
 | 4 | 6 hallazgos menores restantes (m14, m15, m17–m20) | Baja | Ninguno bloquea el uso |
-| 5 | Subir los commits al repositorio remoto | Alta | Ver 12.2 |
 
-### 12.2 Observación importante: el repositorio remoto está desactualizado
+### 12.2 Repositorio remoto al día
 
-**Verificado el 23-sep-2026:** la rama local está **20 commits por delante** de
-`origin/master`. Todo el trabajo desde el 15-sep (auditorías, correcciones,
-documentación, recordatorios, calendario y foto de perfil) **no está respaldado
-en GitHub**. Mientras eso no se resuelva, el respaldo externo del proyecto no
-existe.
+**Verificado el 23-sep-2026:** el `push` se completó y `origin/master` contiene
+**40 commits** (el último, `13c0bb2`). Todo el trabajo —auditorías, correcciones,
+documentación, recordatorios, calendario y foto de perfil— está respaldado en
+<https://github.com/RICARDOSOTO6/clases-espejo>.
 
-El `push` falla desde el entorno de desarrollo con un error del backend TLS de
-Git (`schannel: AcquireCredentialsHandle failed`). El comando a ejecutar en una
-terminal propia es `git push origin master`; si ahí se reproduce el error, la
-solución estándar es cambiar el backend TLS a OpenSSL:
-`git config --global http.sslBackend openssl`.
+El `push` no se pudo hacer desde el entorno de desarrollo por un error del
+backend TLS de Git (`schannel: AcquireCredentialsHandle failed`); se resolvió
+ejecutándolo desde una terminal propia.
 
 ### 12.3 Observaciones sobre la calidad de la propia evidencia
 
@@ -784,9 +780,9 @@ funcional con:
   compilando, frontend sin errores de tipos, foto de perfil funcionando de extremo
   a extremo y documentación sin enlaces rotos.
 
-Los dos frentes abiertos son concretos y están acotados: subir los 20 commits
-pendientes al repositorio remoto, y cerrar los dos pendientes funcionales de la
-semana 8 (recuperación de contraseña y prueba integral).
+Queda **un solo frente abierto**, acotado: cerrar los dos pendientes funcionales
+de la semana 8 (recuperación de contraseña y prueba integral sobre la versión
+compilada). El respaldo en GitHub está al día.
 
 ---
 
