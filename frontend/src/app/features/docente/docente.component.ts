@@ -21,10 +21,11 @@ import {
 } from '../../core/models/solicitud.models';
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { LayoutComponent } from '../../shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-docente',
-  imports: [ReactiveFormsModule, ModalComponent, RouterLink],
+  imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
   templateUrl: './docente.component.html',
 })
 export class DocenteComponent implements OnInit {
@@ -37,6 +38,22 @@ export class DocenteComponent implements OnInit {
 
   usuario = this.auth.currentUser();
   readonly paisesComunidad = PAISES_CACE;
+
+  /** Nombre completo para la navbar. */
+  get nombreUsuario(): string {
+    const u = this.usuario;
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}` : '';
+  }
+
+  /** Bandera del país del usuario para la navbar. */
+  get banderaUrl(): string | null {
+    const p = this.paisUsuario();
+    return p ? this.flagUrl(p.codigo) : null;
+  }
+
+  get banderaAlt(): string {
+    return this.paisUsuario()?.nombre ?? '';
+  }
 
   asignaciones = signal<AsignacionMia[]>([]);
   instituciones = signal<Institucion[]>([]);

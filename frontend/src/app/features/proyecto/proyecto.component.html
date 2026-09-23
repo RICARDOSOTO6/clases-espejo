@@ -1,19 +1,9 @@
-<div class="shell">
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo-chip">
-        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
-      </div>
-      <div class="topbar-titles">
-        <span class="topbar-name">Clases Espejo</span>
-        <span class="topbar-sub">Uniendo mentes, corazones y proyectos</span>
-      </div>
-    </div>
-    <div class="topbar-user">
-      <span class="topbar-user-name">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
-      <button class="btn btn-outline" (click)="logout()">Cerrar sesión</button>
-    </div>
-  </header>
+<app-layout
+  [userName]="nombreUsuario"
+  [rol]="esAgente ? 'AGENTE' : 'DOCENTE'"
+  [homeRoute]="panelUrl"
+  (logout)="logout()"
+>
 
   <main class="content">
     <p>
@@ -451,7 +441,7 @@
                 @if (esDocente && proyectoAbierto()) {
                   <div class="lista-acciones">
                     <button class="btn btn-secondary" (click)="abrirReporte(s)">Reporte de clase</button>
-                    <button class="btn btn-secondary" (click)="eliminarSesion(s.id)">Eliminar</button>
+                    <button class="btn btn-danger" (click)="eliminarSesion(s.id)">Eliminar</button>
                   </div>
                 }
               </li>
@@ -503,7 +493,7 @@
                   <div class="muted">{{ a.instrucciones }}</div>
                 </div>
                 @if (esDocente && proyectoAbierto()) {
-                  <button class="btn btn-secondary" (click)="eliminarActividad(a.id)">Eliminar</button>
+                  <button class="btn btn-danger" (click)="eliminarActividad(a.id)">Eliminar</button>
                 }
               </li>
             }
@@ -781,4 +771,4 @@
       </section>
     }
   </main>
-</div>
+</app-layout>

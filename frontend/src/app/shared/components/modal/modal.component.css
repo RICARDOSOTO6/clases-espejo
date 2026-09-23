@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(11, 31, 51, 0.55);
+  background: rgba(15, 23, 42, 0.5);
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   z-index: 1000;
@@ -19,11 +19,11 @@
   max-height: min(90vh, 760px);
   overflow: hidden;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-xl);
   box-shadow:
-    0 30px 80px rgba(11, 31, 51, 0.35),
-    0 2px 8px rgba(11, 31, 51, 0.08);
+    0 24px 60px rgba(15, 23, 42, 0.2),
+    var(--shadow-card);
   z-index: 1001;
   animation: modal-pop 0.2s ease-out;
 }
@@ -48,13 +48,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: 1.1rem 1.4rem 1.1rem 1.6rem;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(
-    90deg,
-    rgba(0, 68, 119, 0.09),
-    rgba(0, 102, 170, 0.05)
-  );
+  padding: 1rem 1.4rem 1rem 1.6rem;
+  border-bottom: 1px solid var(--neutral-200);
+  background: var(--surface);
 }
 
 .modal-header::before {
@@ -64,12 +60,14 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+  background: var(--primary-700);
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .modal-close {
@@ -78,27 +76,20 @@
   width: 34px;
   height: 34px;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-muted);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
+  transition: background-color 0.15s ease, color 0.15s ease,
     border-color 0.15s ease;
 }
 
 .modal-close:hover {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--accent-hover);
-}
-
-.modal-close:focus-visible {
-  outline: none;
-  box-shadow: var(--ring);
+  background: var(--hover);
+  border-color: var(--neutral-200);
+  color: var(--text);
 }
 
 .modal-body {
@@ -112,9 +103,9 @@
 }
 
 .modal-body::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--neutral-300);
   border: 3px solid var(--surface);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .modal-body::-webkit-scrollbar-thumb:hover {

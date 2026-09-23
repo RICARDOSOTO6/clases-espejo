@@ -1,29 +1,11 @@
-<div class="shell">
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="topbar-logo-chip">
-        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
-      </div>
-      <div class="topbar-titles">
-        <span class="topbar-name">Clases Espejo</span>
-        <span class="topbar-sub">Uniendo mentes, corazones y proyectos</span>
-      </div>
-    </div>
-    <div class="topbar-user">
-      @if (paisUsuario(); as pais) {
-        <img
-          class="flag"
-          [src]="flagUrl(pais.codigo)"
-          [alt]="'Bandera de ' + pais.nombre"
-          [title]="pais.nombre"
-          width="22"
-          height="16"
-        />
-      }
-      <span class="topbar-user-name">{{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</span>
-      <button class="btn btn-outline" (click)="logout()">Cerrar sesión</button>
-    </div>
-  </header>
+<app-layout
+  [userName]="nombreUsuario"
+  rol="AGENTE"
+  [flagUrl]="banderaUrl"
+  [flagAlt]="banderaAlt"
+  homeRoute="/agente"
+  (logout)="logout()"
+>
 
   <main class="content">
     @if (avisoPanel(); as aviso) {
@@ -246,7 +228,7 @@
                   <button class="btn btn-secondary" (click)="cambiarEstadoDocente(d)">
                     {{ d.activo ? 'Desactivar' : 'Activar' }}
                   </button>
-                  <button class="btn btn-secondary" (click)="eliminarDocente(d)">
+                  <button class="btn btn-danger" (click)="eliminarDocente(d)">
                     Eliminar
                   </button>
                 </div>
@@ -290,7 +272,7 @@
                 <div class="materia-acciones">
                   <button class="btn btn-secondary" (click)="openAsignar(m)">Asignar</button>
                   <button class="btn btn-secondary" (click)="openEditarMateria(m)">Editar</button>
-                  <button class="btn btn-secondary" (click)="eliminarMateria(m)">Eliminar</button>
+                  <button class="btn btn-danger" (click)="eliminarMateria(m)">Eliminar</button>
                 </div>
               </div>
               <p class="muted">{{ m.programaEducativo }} · {{ m.descripcion }}</p>
@@ -521,7 +503,7 @@
     </section>
     }
   </main>
-</div>
+</app-layout>
 
 @if (showInviteModal) {
   <app-modal title="Invitar docente" (close)="closeInvite()">
