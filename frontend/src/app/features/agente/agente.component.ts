@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
@@ -32,13 +39,17 @@ import {
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import {
+  PendienteUi,
+  UiStateService,
+} from '../../core/services/ui-state.service';
 
 @Component({
   selector: 'app-agente',
   imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
   templateUrl: './agente.component.html',
 })
-export class AgenteComponent implements OnInit {
+export class AgenteComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly agentes = inject(AgentesService);
   private readonly materiasService = inject(MateriasService);
@@ -47,6 +58,8 @@ export class AgenteComponent implements OnInit {
   private readonly proyectosService = inject(ProyectosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  /** Estado compartido con el esqueleto (buscador, campana y contadores). */
+  readonly ui = inject(UiStateService);
 
   usuario = this.auth.currentUser();
 
@@ -139,6 +152,54 @@ export class AgenteComponent implements OnInit {
   mostrarDocentes = signal(true);
   mostrarMaterias = signal(false);
 
+  /** Texto del contador de una tarjeta: "X de Y" con la búsqueda activa. */
+  contador(visibles: number, total: number): string {
+    return this.ui.busqueda() ? `${visibles} de ${total}` : `${total}`;
+  }
+
+  /** Docentes que pasan el filtro del buscador de la barra superior. */
+  readonly docentesFiltrados = computed(() =>
+    this.docentes().filter((d) =>
+      this.ui.coincide(
+        this.nombreDocente(d),
+        d.numeroEmpleado,
+        d.docente?.usuario?.correo,
+        d.docente?.especialidad,
+        d.activo ? 'activo' : 'desactivado',
+      ),
+    ),
+  );
+
+  /** Materias que pasan el filtro del buscador. */
+  readonly materiasFiltradas = computed(() =>
+    this.materias().filter((m) =>
+      this.ui.coincide(m.nombre, m.clave, m.programaEducativo, m.descripcion),
+    ),
+  );
+
+  /** ¿La solicitud coincide con lo escrito en el buscador? */
+  private coincideSolicitud(s: SolicitudEntrante): boolean {
+    return this.ui.coincide(
+      s.titulo,
+      s.objetivo,
+      s.institucionDestino?.nombre,
+      s.asignacionOrigen?.docenteInstitucion?.institucion?.nombre,
+      s.asignacionOrigen?.materia?.nombre,
+      this.nombreDocenteEntrante(s),
+      this.estadoLabelSolicitud(s),
+    );
+  }
+
+  /** ¿La clase espejo coincide con lo escrito en el buscador? */
+  private coincideProyecto(p: Proyecto): boolean {
+    return this.ui.coincide(
+      p.solicitud?.titulo,
+      p.solicitud?.asignacionOrigen?.docenteInstitucion?.institucion?.nombre,
+      p.solicitud?.institucionDestino?.nombre,
+      this.estadoProyectoLabel(p.estado),
+    );
+  }
+
   /** Avisos y confirmaciones con el mismo estilo que el resto de la aplicación. */
   avisoPanel = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   confirmacion = signal<{
@@ -171,6 +232,78 @@ export class AgenteComponent implements OnInit {
     this.cargarInstitucion();
   }
 
+  ngOnDestroy(): void {
+    // Al salir de la pantalla no se dejan pendientes ni búsqueda de otro panel.
+    this.ui.limpiarPantalla();
+  }
+
+  /** Docentes a los que todavía no se les asignó ninguna materia. */
+  private docentesSinMateria(): number {
+    const conMateria = new Set(
+      this.asignaciones().map((a) => a.docenteInstitucion.id),
+    );
+    return this.docentes().filter((d) => !conMateria.has(d.id)).length;
+  }
+
+  /**
+   * Publica en el esqueleto lo que el agente tiene pendiente: contadores del
+   * menú lateral, avisos de la campana y clases espejo con chat.
+   */
+  private publicarEnLayout(): void {
+    const porRevisar = this.pendientesEntrantes();
+    const activos = this.proyectosActivos();
+
+    this.ui.publicarContadores({
+      docentes: this.docentes().length,
+      materias: this.materias().length,
+      solicitudes: porRevisar,
+      proyectos: activos.length,
+    });
+
+    const avisos: PendienteUi[] = [];
+    if (this.institucionCargada() && !this.institucionCompleta()) {
+      avisos.push({
+        titulo: 'Completa el registro de tu institución',
+        detalle: 'Sin esos datos, otras instituciones no pueden colaborar contigo.',
+        ancla: 'institucion',
+        tono: 'error',
+      });
+    }
+    if (porRevisar > 0) {
+      avisos.push({
+        titulo: `${porRevisar} solicitud(es) esperan tu revisión`,
+        detalle: 'Revisa y responde para no detener a los docentes.',
+        ancla: 'solicitudes',
+        tono: 'aviso',
+      });
+    }
+    if (this.docentesSinMateria() > 0) {
+      avisos.push({
+        titulo: `${this.docentesSinMateria()} docente(s) sin materia asignada`,
+        detalle: 'Sin asignación no pueden proponer una clase espejo.',
+        ancla: 'docentes',
+        tono: 'aviso',
+      });
+    }
+    if (activos.length > 0) {
+      avisos.push({
+        titulo: `${activos.length} clase(s) espejo activa(s)`,
+        detalle: 'Puedes consultar su avance cuando quieras.',
+        ancla: 'proyectos',
+        tono: 'ok',
+      });
+    }
+    this.ui.publicarPendientes(avisos);
+
+    this.ui.publicarChats(
+      activos.map((p) => ({
+        id: p.id,
+        titulo: p.solicitud?.titulo ?? `Clase espejo #${p.id}`,
+        detalle: `${p.solicitud?.asignacionOrigen?.docenteInstitucion?.institucion?.nombre ?? ''} → ${p.solicitud?.institucionDestino?.nombre ?? ''}`,
+      })),
+    );
+  }
+
   /**
    * Recargas por recurso: antes, cada acción puntual recargaba las seis fuentes,
    * lo que hacía parpadear los contadores y podía pisar el formulario de
@@ -178,9 +311,13 @@ export class AgenteComponent implements OnInit {
    */
   cargarDocentes(): void {
     this.materiasService.listarDocentes().subscribe({
-      next: (r) => this.docentes.set(r),
+      next: (r) => {
+        this.docentes.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.docentes.set([]);
+        this.publicarEnLayout();
         this.avisarErrorCarga(err);
       },
     });
@@ -188,9 +325,13 @@ export class AgenteComponent implements OnInit {
 
   cargarMaterias(): void {
     this.materiasService.listarMaterias().subscribe({
-      next: (r) => this.materias.set(r),
+      next: (r) => {
+        this.materias.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.materias.set([]);
+        this.publicarEnLayout();
         this.avisarErrorCarga(err);
       },
     });
@@ -198,9 +339,13 @@ export class AgenteComponent implements OnInit {
 
   cargarAsignaciones(): void {
     this.materiasService.listarAsignaciones().subscribe({
-      next: (r) => this.asignaciones.set(r),
+      next: (r) => {
+        this.asignaciones.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.asignaciones.set([]);
+        this.publicarEnLayout();
         this.avisarErrorCarga(err);
       },
     });
@@ -208,9 +353,13 @@ export class AgenteComponent implements OnInit {
 
   cargarSolicitudes(): void {
     this.solicitudesService.listarEntrantes().subscribe({
-      next: (r) => this.solicitudesEntrantes.set(r),
+      next: (r) => {
+        this.solicitudesEntrantes.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.solicitudesEntrantes.set([]);
+        this.publicarEnLayout();
         this.avisarErrorCarga(err);
       },
     });
@@ -218,9 +367,13 @@ export class AgenteComponent implements OnInit {
 
   cargarProyectos(): void {
     this.proyectosService.listarInstitucion().subscribe({
-      next: (r) => this.proyectos.set(r),
+      next: (r) => {
+        this.proyectos.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.proyectos.set([]);
+        this.publicarEnLayout();
         this.avisarErrorCarga(err);
       },
     });
@@ -231,6 +384,7 @@ export class AgenteComponent implements OnInit {
       next: (r) => {
         this.institucion.set(r);
         this.institucionCargada.set(true);
+        this.publicarEnLayout();
         if (!r.registroCompleto) {
           this.institucionForm.patchValue({
             nombre: r.nombre,
@@ -384,31 +538,43 @@ export class AgenteComponent implements OnInit {
 
   // --- Agrupación de solicitudes y proyectos por estado ---
   solicitudesPendientes(): SolicitudEntrante[] {
-    return this.solicitudesEntrantes().filter((s) =>
-      ['PENDIENTE', 'APROBADA_POR_ORIGEN'].includes(s.estado),
+    return this.solicitudesEntrantes().filter(
+      (s) =>
+        ['PENDIENTE', 'APROBADA_POR_ORIGEN'].includes(s.estado) &&
+        this.coincideSolicitud(s),
     );
   }
 
   solicitudesAceptadas(): SolicitudEntrante[] {
-    return this.solicitudesEntrantes().filter((s) => s.estado === 'APROBADA');
+    return this.solicitudesEntrantes().filter(
+      (s) => s.estado === 'APROBADA' && this.coincideSolicitud(s),
+    );
   }
 
   solicitudesRechazadas(): SolicitudEntrante[] {
-    return this.solicitudesEntrantes().filter((s) => s.estado === 'RECHAZADA');
+    return this.solicitudesEntrantes().filter(
+      (s) => s.estado === 'RECHAZADA' && this.coincideSolicitud(s),
+    );
   }
 
   proyectosActivos(): Proyecto[] {
-    return this.proyectos().filter((p) =>
-      ['EN_PLANIFICACION', 'EN_CURSO'].includes(p.estado),
+    return this.proyectos().filter(
+      (p) =>
+        ['EN_PLANIFICACION', 'EN_CURSO'].includes(p.estado) &&
+        this.coincideProyecto(p),
     );
   }
 
   proyectosFinalizados(): Proyecto[] {
-    return this.proyectos().filter((p) => p.estado === 'FINALIZADO');
+    return this.proyectos().filter(
+      (p) => p.estado === 'FINALIZADO' && this.coincideProyecto(p),
+    );
   }
 
   proyectosCancelados(): Proyecto[] {
-    return this.proyectos().filter((p) => p.estado === 'CANCELADO');
+    return this.proyectos().filter(
+      (p) => p.estado === 'CANCELADO' && this.coincideProyecto(p),
+    );
   }
 
   onPaisChange(): void {

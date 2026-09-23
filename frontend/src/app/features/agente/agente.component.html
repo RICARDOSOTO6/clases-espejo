@@ -139,7 +139,7 @@
         </div>
       </div>
 
-    <section class="card comunidad">
+    <section id="comunidad" class="card comunidad">
       <div class="card-head">
         <div class="card-head-title">
           <span class="card-head-icon" aria-hidden="true">
@@ -172,7 +172,7 @@
 
     <section class="card">
       <div class="card-head">
-        <h2>Mi institución</h2>
+        <h2 id="institucion">Mi institución</h2>
         <button class="btn btn-secondary" (click)="openEditarInstitucion()">Editar</button>
       </div>
       @if (institucion(); as inst) {
@@ -201,8 +201,10 @@
           <span class="card-head-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </span>
-          <h2>Docentes de la institución</h2>
-          <span class="card-head-count">{{ docentes().length }}</span>
+          <h2 id="docentes">Docentes de la institución</h2>
+          <span class="card-head-count">
+            {{ contador(docentesFiltrados().length, docentes().length) }}
+          </span>
         </div>
         <button type="button" class="collapse-toggle" [class.cerrado]="!mostrarDocentes()"
           (click)="mostrarDocentes.set(!mostrarDocentes())"
@@ -211,11 +213,17 @@
         </button>
       </div>
       @if (mostrarDocentes()) {
-        @if (docentes().length === 0) {
-          <p class="muted">Aún no hay docentes invitados.</p>
+        @if (docentesFiltrados().length === 0) {
+          <p class="muted">
+            @if (docentes().length === 0) {
+              Aún no hay docentes invitados.
+            } @else {
+              Ningún docente coincide con «{{ ui.busqueda() }}».
+            }
+          </p>
         } @else {
           <ul class="lista">
-            @for (d of docentes(); track d.id) {
+            @for (d of docentesFiltrados(); track d.id) {
               <li class="lista-item">
                 <div>
                   <strong>{{ nombreDocente(d) }}</strong>
@@ -245,8 +253,10 @@
           <span class="card-head-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
           </span>
-          <h2>Materias</h2>
-          <span class="card-head-count">{{ materias().length }}</span>
+          <h2 id="materias">Materias</h2>
+          <span class="card-head-count">
+            {{ contador(materiasFiltradas().length, materias().length) }}
+          </span>
         </div>
         <div class="card-head-actions">
           <button class="btn btn-primary" (click)="openNuevaMateria()">Nueva materia</button>
@@ -259,10 +269,16 @@
       </div>
 
       @if (mostrarMaterias()) {
-        @if (materias().length === 0) {
-          <p class="muted">No hay materias registradas.</p>
+        @if (materiasFiltradas().length === 0) {
+          <p class="muted">
+            @if (materias().length === 0) {
+              No hay materias registradas.
+            } @else {
+              Ninguna materia coincide con «{{ ui.busqueda() }}».
+            }
+          </p>
         } @else {
-          @for (m of materias(); track m.id) {
+          @for (m of materiasFiltradas(); track m.id) {
             <div class="materia">
               <div class="materia-head">
                 <div>
@@ -299,7 +315,7 @@
           <span class="card-head-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
           </span>
-          <h2>Solicitudes de clase espejo</h2>
+          <h2 id="solicitudes">Solicitudes de clase espejo</h2>
           <span class="card-head-count">{{ solicitudesEntrantes().length }}</span>
         </div>
       </div>
@@ -404,7 +420,7 @@
           <span class="card-head-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
           </span>
-          <h2>Proyectos de clase espejo</h2>
+          <h2 id="proyectos">Proyectos de clase espejo</h2>
           <span class="card-head-count">{{ proyectos().length }}</span>
         </div>
       </div>

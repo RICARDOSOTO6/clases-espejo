@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
@@ -22,19 +29,25 @@ import {
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import {
+  PendienteUi,
+  UiStateService,
+} from '../../core/services/ui-state.service';
 
 @Component({
   selector: 'app-docente',
   imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
   templateUrl: './docente.component.html',
 })
-export class DocenteComponent implements OnInit {
+export class DocenteComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly institucionesService = inject(InstitucionesService);
   private readonly proyectosService = inject(ProyectosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  /** Estado compartido con el esqueleto (buscador, campana y contadores). */
+  readonly ui = inject(UiStateService);
 
   usuario = this.auth.currentUser();
   readonly paisesComunidad = PAISES_CACE;
@@ -61,6 +74,31 @@ export class DocenteComponent implements OnInit {
   solicitudes = signal<Solicitud[]>([]);
   proyectos = signal<Proyecto[]>([]);
   paisUsuario = signal<{ codigo: string; nombre: string } | null>(null);
+
+  /** Solicitudes que pasan el filtro del buscador de la barra superior. */
+  readonly solicitudesFiltradas = computed(() =>
+    this.solicitudes().filter((s) =>
+      this.ui.coincide(
+        s.titulo,
+        s.objetivo,
+        s.institucionDestino?.nombre,
+        s.asignacionOrigen?.materia?.nombre,
+      ),
+    ),
+  );
+
+  /** Clases espejo que pasan el filtro del buscador. */
+  readonly proyectosFiltrados = computed(() =>
+    this.proyectos().filter((p) =>
+      this.ui.coincide(
+        p.solicitud?.titulo,
+        p.solicitud?.institucionDestino?.nombre,
+        p.solicitud?.asignacionOrigen?.docenteInstitucion?.institucion?.nombre,
+        p.solicitud?.asignacionOrigen?.materia?.nombre,
+        this.estadoProyectoLabel(p.estado),
+      ),
+    ),
+  );
 
   /** Avisos y confirmaciones con el mismo estilo que el resto de la aplicación. */
   avisoPanel = signal<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
@@ -116,9 +154,13 @@ export class DocenteComponent implements OnInit {
       error: () => this.instituciones.set([]),
     });
     this.solicitudesService.listarMias().subscribe({
-      next: (r) => this.solicitudes.set(r),
+      next: (r) => {
+        this.solicitudes.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.solicitudes.set([]);
+        this.publicarEnLayout();
         this.avisar(
           'error',
           `No se pudieron cargar tus solicitudes: ${extraerMensajeError(err, 'error de conexión')}`,
@@ -126,9 +168,13 @@ export class DocenteComponent implements OnInit {
       },
     });
     this.proyectosService.listarMios().subscribe({
-      next: (r) => this.proyectos.set(r),
+      next: (r) => {
+        this.proyectos.set(r);
+        this.publicarEnLayout();
+      },
       error: (err: HttpErrorResponse) => {
         this.proyectos.set([]);
+        this.publicarEnLayout();
         this.avisar(
           'error',
           `No se pudieron cargar tus proyectos: ${extraerMensajeError(err, 'error de conexión')}`,
@@ -140,6 +186,64 @@ export class DocenteComponent implements OnInit {
   reintentarCarga(): void {
     this.cerrarAviso();
     this.cargarDatos();
+  }
+
+  ngOnDestroy(): void {
+    // Al salir de la pantalla no se dejan pendientes ni búsqueda de otro panel.
+    this.ui.limpiarPantalla();
+  }
+
+  /**
+   * Publica en el esqueleto lo que el usuario tiene pendiente: contadores del
+   * menú lateral, avisos de la campana y clases espejo con chat.
+   */
+  private publicarEnLayout(): void {
+    const solicitudes = this.solicitudes();
+    const proyectos = this.proyectos();
+    const activos = proyectos.filter(
+      (p) => p.estado === 'EN_PLANIFICACION' || p.estado === 'EN_CURSO',
+    );
+
+    this.ui.publicarContadores({
+      solicitudes: this.pendientes(),
+      proyectos: activos.length,
+    });
+
+    const avisos: PendienteUi[] = [];
+    if (this.pendientes() > 0) {
+      avisos.push({
+        titulo: `${this.pendientes()} solicitud(es) sin resolver`,
+        detalle: 'Están pendientes de revisión por las instituciones.',
+        ancla: 'solicitudes',
+        tono: 'aviso',
+      });
+    }
+    if (this.aprobadas() > 0) {
+      avisos.push({
+        titulo: `${this.aprobadas()} clase(s) espejo aprobada(s)`,
+        detalle: 'Completa la planificación conjunta.',
+        ancla: 'proyectos',
+        tono: 'ok',
+      });
+    }
+    const enCurso = proyectos.filter((p) => p.estado === 'EN_CURSO').length;
+    if (enCurso > 0) {
+      avisos.push({
+        titulo: `${enCurso} clase(s) espejo en curso`,
+        detalle: 'Registra la sesión y firma su reporte de clase.',
+        ancla: 'proyectos',
+        tono: 'ok',
+      });
+    }
+    this.ui.publicarPendientes(avisos);
+
+    this.ui.publicarChats(
+      activos.map((p) => ({
+        id: p.id,
+        titulo: p.solicitud?.titulo ?? `Clase espejo #${p.id}`,
+        detalle: `${p.solicitud?.asignacionOrigen?.docenteInstitucion?.institucion?.nombre ?? ''} → ${p.solicitud?.institucionDestino?.nombre ?? ''}`,
+      })),
+    );
   }
 
   private establecerPaisDesdePerfil(perfil: Perfil): void {

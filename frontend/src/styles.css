@@ -2044,3 +2044,437 @@ textarea.ng-invalid.ng-touched:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ----------------------------------------------------------------------------
+   20. Esqueleto interactivo: desplegables, insignias, perfil y ayuda
+   ---------------------------------------------------------------------------- */
+
+/* — Barra superior — */
+.navbar-user {
+  /* Es un botón: se neutraliza el estilo nativo. */
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  border: 0;
+  border-left: 1px solid var(--neutral-200);
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.navbar-user:hover {
+  background: var(--hover);
+}
+
+.navbar-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-aux);
+  flex-shrink: 0;
+}
+
+.navbar-icon {
+  position: relative;
+}
+
+.navbar-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--danger-700);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.navbar-search input {
+  padding-right: 38px;
+}
+
+.navbar-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-aux);
+  cursor: pointer;
+}
+
+.navbar-search-clear:hover {
+  background: var(--neutral-200);
+  color: var(--text);
+}
+
+.navbar-search-clear svg {
+  position: static;
+  transform: none;
+  width: 14px;
+  height: 14px;
+  pointer-events: auto;
+}
+
+/* — Desplegables — */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 120;
+  width: min(340px, calc(100vw - 28px));
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-elevated);
+}
+
+.dropdown-title {
+  margin: 0 0 var(--space-2);
+  padding: 0 var(--space-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-aux);
+}
+
+.dropdown-empty {
+  margin: 0;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0.55rem var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--hover);
+}
+
+.dropdown-item svg {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  color: var(--text-aux);
+}
+
+.dropdown-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dropdown-item-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dropdown-item-detail {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.dropdown-item--danger .dropdown-item-title,
+.dropdown-item--danger svg {
+  color: var(--danger);
+}
+
+.dropdown-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--warning-700);
+  flex-shrink: 0;
+}
+
+.dropdown-dot--ok {
+  background: var(--success-700);
+}
+
+.dropdown-dot--error {
+  background: var(--danger-700);
+}
+
+.dropdown-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.dropdown-user-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-700);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dropdown-panel--user {
+  width: min(280px, calc(100vw - 28px));
+}
+
+/* — Menú lateral — */
+.sidebar-link--button {
+  color: var(--text-muted);
+}
+
+.sidebar-link--button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.sidebar-link--danger,
+.sidebar-link--danger svg {
+  color: var(--danger);
+}
+
+.sidebar-link--danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--primary-100);
+  color: var(--primary-800);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.sidebar-link.is-active .sidebar-badge {
+  background: var(--primary-700);
+  color: #fff;
+}
+
+/* Las secciones con ancla no quedan tapadas por la barra superior. */
+.content [id] {
+  scroll-margin-top: calc(var(--navbar-h) + var(--space-4));
+}
+
+/* — Ventana de perfil — */
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.perfil-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--primary-100);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--primary-50), var(--surface));
+}
+
+.perfil-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary-700);
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.perfil-nombre {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.perfil-rol {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.perfil-pais {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.perfil-datos {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.perfil-fila {
+  display: flex;
+  gap: var(--space-3);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.perfil-fila:last-child {
+  border-bottom: 0;
+}
+
+.perfil-fila dt {
+  flex: 0 0 42%;
+  font-size: 0.82rem;
+  color: var(--text-aux);
+}
+
+.perfil-fila dd {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+/* — Ventana de ayuda — */
+.ayuda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ayuda-intro {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.ayuda-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.ayuda-atajos {
+  padding: var(--space-4);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  background: var(--neutral-50);
+}
+
+.ayuda-atajos-title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-aux);
+}
+
+.ayuda-atajos ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.ayuda kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--neutral-300);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+@media (max-width: 1024px) {
+  /* Con el menú colapsado a iconos no cabe el contador. */
+  .sidebar-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .dropdown-panel {
+    position: fixed;
+    top: calc(var(--navbar-h) + var(--space-2));
+    right: var(--space-3);
+    left: var(--space-3);
+    width: auto;
+  }
+
+  .navbar-chevron {
+    display: none;
+  }
+}
