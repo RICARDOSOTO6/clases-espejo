@@ -28,10 +28,11 @@ import {
   Sesion,
 } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { LayoutComponent } from '../../shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-proyecto',
-  imports: [ReactiveFormsModule, RouterLink, ModalComponent],
+  imports: [ReactiveFormsModule, RouterLink, ModalComponent, LayoutComponent],
   templateUrl: './proyecto.component.html',
 })
 export class ProyectoComponent implements OnInit, OnDestroy {
@@ -47,6 +48,12 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
   readonly panelUrl = this.esAgente ? '/agente' : '/docente';
+
+  /** Nombre completo para la navbar. */
+  get nombreUsuario(): string {
+    const u = this.usuario;
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}` : '';
+  }
 
   proyectoId = 0;
   proyecto = signal<Proyecto | null>(null);

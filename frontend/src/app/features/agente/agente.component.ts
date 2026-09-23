@@ -31,10 +31,11 @@ import {
 } from '../../core/models/materia.models';
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { LayoutComponent } from '../../shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-agente',
-  imports: [ReactiveFormsModule, ModalComponent, RouterLink],
+  imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
   templateUrl: './agente.component.html',
 })
 export class AgenteComponent implements OnInit {
@@ -48,6 +49,22 @@ export class AgenteComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   usuario = this.auth.currentUser();
+
+  /** Nombre completo para la navbar. */
+  get nombreUsuario(): string {
+    const u = this.usuario;
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}` : '';
+  }
+
+  /** Bandera del país del usuario para la navbar. */
+  get banderaUrl(): string | null {
+    const p = this.paisUsuario();
+    return p ? this.flagUrl(p.codigo) : null;
+  }
+
+  get banderaAlt(): string {
+    return this.paisUsuario()?.nombre ?? '';
+  }
 
   // --- Invitar docente ---
   showInviteModal = false;
