@@ -18,9 +18,17 @@ export class MailService {
     });
   }
 
-  async sendInvitation(to: string, token: string): Promise<void> {
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:4200';
-    const link = `${frontendUrl}/activate?token=${token}`;
+  /**
+   * Envía la invitación al docente. La URL pública llega desde fuera (la
+   * resuelve `common/url-publica.ts` a partir de la petición) para que el enlace
+   * funcione igual en local, con un túnel o con un dominio propio.
+   */
+  async sendInvitation(
+    to: string,
+    token: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/activate?token=${token}`;
 
     await this.transporter.sendMail({
       from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',

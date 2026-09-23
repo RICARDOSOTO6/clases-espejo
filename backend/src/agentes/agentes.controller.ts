@@ -7,13 +7,16 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AgentesService } from './agentes.service';
 import { InviteDocenteDto } from './dto/invite-docente.dto';
 import { UpdateEstadoDocenteDto } from './dto/update-estado.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { resolverUrlPublica } from '../common/url-publica';
 
 @Controller('agentes')
 export class AgentesController {
@@ -24,8 +27,15 @@ export class AgentesController {
   invitarDocente(
     @CurrentUser('sub') agenteId: number,
     @Body() dto: InviteDocenteDto,
+    @Req() peticion: Request,
   ) {
-    return this.agentesService.invitarDocente(agenteId, dto);
+    // El enlace del correo debe apuntar a donde está el docente: el dominio o el
+    // túnel desde el que se está usando la aplicación, no a localhost.
+    return this.agentesService.invitarDocente(
+      agenteId,
+      dto,
+      resolverUrlPublica(peticion),
+    );
   }
 
   @Get('docentes')
