@@ -51,6 +51,32 @@ export class AuthService {
     return this.http.get<Perfil>(`${API_URL}/usuarios/me`);
   }
 
+  /**
+   * Sube la foto de perfil y actualiza la sesión en memoria y en el navegador,
+   * para que la barra superior muestre la imagen sin recargar.
+   */
+  subirFotoPerfil(
+    archivo: File,
+  ): Observable<{ id: number; fotoUrl: string | null }> {
+    const datos = new FormData();
+    datos.append('foto', archivo);
+    return this.http
+      .post<{ id: number; fotoUrl: string | null }>(
+        `${API_URL}/usuarios/me/foto`,
+        datos,
+      )
+      .pipe(tap((res) => this.actualizarFoto(res.fotoUrl)));
+  }
+
+  /** Quita la foto de perfil y vuelve a las iniciales. */
+  quitarFotoPerfil(): Observable<{ mensaje: string; fotoUrl: null }> {
+    return this.http
+      .delete<{ mensaje: string; fotoUrl: null }>(
+        `${API_URL}/usuarios/me/foto`,
+      )
+      .pipe(tap(() => this.actualizarFoto(null)));
+  }
+
   validarTokenInvitacion(
     token: string,
   ): Observable<{ valido: boolean; correo: string; numeroEmpleado: string }> {
@@ -84,6 +110,17 @@ export class AuthService {
       localStorage.setItem(USER_KEY, JSON.stringify(res.usuario));
     }
     this.currentUserSignal.set(res.usuario);
+  }
+
+  /** Refresca la foto del usuario guardado sin tocar el resto de la sesión. */
+  private actualizarFoto(fotoUrl: string | null): void {
+    const usuario = this.currentUserSignal();
+    if (!usuario) return;
+    const actualizado = { ...usuario, fotoUrl };
+    if (isBrowser()) {
+      localStorage.setItem(USER_KEY, JSON.stringify(actualizado));
+    }
+    this.currentUserSignal.set(actualizado);
   }
 
   private readUser(): Usuario | null {

@@ -1,5 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { basename, join } from 'path';
+import { existsSync, unlinkSync } from 'fs';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** Carpeta donde se guardan las fotos de perfil (dentro de `uploads`). */
+export const AVATARES_DIR = join(process.cwd(), 'uploads', 'avatares');
 
 @Injectable()
 export class UsuariosService {
@@ -32,6 +37,7 @@ export class UsuariosService {
       dni: usuario.dni,
       tipoDocumento: usuario.tipoDocumento,
       correo: usuario.correo,
+      fotoUrl: usuario.fotoUrl,
       activo: usuario.activo,
       rol,
       agente: usuario.agente
@@ -55,5 +61,59 @@ export class UsuariosService {
           }
         : null,
     };
+  }
+
+  /**
+   * Guarda la foto de perfil recién subida y borra la anterior, para no dejar
+   * archivos huérfanos en el disco.
+   */
+  async guardarFoto(usuarioId: number, archivo: { filename: string }) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { fotoUrl: true },
+    });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    const fotoUrl = `/avatares/${archivo.filename}`;
+    const actualizado = await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: { fotoUrl },
+      select: { id: true, fotoUrl: true },
+    });
+
+    borrarAvatar(usuario.fotoUrl);
+    return actualizado;
+  }
+
+  /** Quita la foto de perfil y borra el archivo del disco. */
+  async quitarFoto(usuarioId: number) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { fotoUrl: true },
+    });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: { fotoUrl: null },
+    });
+    borrarAvatar(usuario.fotoUrl);
+
+    return { mensaje: 'Foto de perfil eliminada', fotoUrl: null };
+  }
+}
+
+/**
+ * Borra un avatar del disco. `basename` evita que una ruta manipulada salga de
+ * la carpeta de avatares.
+ */
+function borrarAvatar(fotoUrl: string | null): void {
+  if (!fotoUrl) return;
+  const ruta = join(AVATARES_DIR, basename(fotoUrl));
+  if (!existsSync(ruta)) return;
+  try {
+    unlinkSync(ruta);
+  } catch {
+    // Si el archivo está en uso, la petición no debe fallar por eso.
   }
 }

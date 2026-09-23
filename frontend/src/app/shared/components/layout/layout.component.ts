@@ -396,10 +396,84 @@ export class LayoutComponent {
 
   // --- Perfil y ayuda ---
 
+  /** Foto de perfil: manda la de la sesión y, si no, la del perfil cargado. */
+  readonly foto = computed(
+    () =>
+      this.auth.currentUser()?.fotoUrl ?? this.perfil()?.fotoUrl ?? null,
+  );
+
+  readonly subiendoFoto = signal(false);
+  readonly errorFoto = signal<string | null>(null);
+  readonly okFoto = signal<string | null>(null);
+
+  /** Valida y sube la foto elegida en el formulario. */
+  alSeleccionarFoto(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    // Permite volver a elegir el mismo archivo después de un error.
+    entrada.value = '';
+    if (!archivo) return;
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(archivo.type)) {
+      this.errorFoto.set('La foto debe ser PNG, JPG o WEBP.');
+      return;
+    }
+    if (archivo.size > 2 * 1024 * 1024) {
+      this.errorFoto.set('La foto no puede pesar más de 2 MB.');
+      return;
+    }
+
+    this.subiendoFoto.set(true);
+    this.errorFoto.set(null);
+    this.okFoto.set(null);
+    this.auth.subirFotoPerfil(archivo).subscribe({
+      next: () => {
+        this.subiendoFoto.set(false);
+        this.okFoto.set('Foto de perfil actualizada');
+        this.refrescarPerfil();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.subiendoFoto.set(false);
+        this.errorFoto.set(
+          extraerMensajeError(error, 'No se pudo subir la foto'),
+        );
+      },
+    });
+  }
+
+  quitarFoto(): void {
+    this.subiendoFoto.set(true);
+    this.errorFoto.set(null);
+    this.okFoto.set(null);
+    this.auth.quitarFotoPerfil().subscribe({
+      next: () => {
+        this.subiendoFoto.set(false);
+        this.okFoto.set('Foto de perfil eliminada');
+        this.refrescarPerfil();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.subiendoFoto.set(false);
+        this.errorFoto.set(
+          extraerMensajeError(error, 'No se pudo quitar la foto'),
+        );
+      },
+    });
+  }
+
+  /** Vuelve a pedir el perfil para que la ventana muestre la foto al día. */
+  private refrescarPerfil(): void {
+    this.auth.getPerfil().subscribe({
+      next: (perfil) => this.perfil.set(perfil),
+      error: () => {},
+    });
+  }
+
   abrirPerfil(): void {
     this.panelAbierto.set(null);
     this.cerrarSidebar();
     this.perfilAbierto.set(true);
+    this.errorFoto.set(null);
+    this.okFoto.set(null);
     if (this.perfil() || this.cargandoPerfil()) return;
 
     this.cargandoPerfil.set(true);

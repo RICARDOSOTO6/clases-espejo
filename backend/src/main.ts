@@ -71,6 +71,20 @@ async function bootstrap() {
   });
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
+  // Fotos de perfil: son imágenes, así que se sirven en línea para poder
+  // mostrarlas con <img>. La carpeta solo acepta PNG, JPG y WEBP (nunca SVG) y
+  // se mantiene el nosniff para que el navegador no adivine el tipo.
+  const avataresDir = join(uploadsDir, 'avatares');
+  mkdirSync(avataresDir, { recursive: true });
+  app.use('/avatares', (_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    next();
+  });
+  app.useStaticAssets(avataresDir, { prefix: '/avatares/' });
+
   // Servir el frontend compilado (carpeta backend/public) si existe.
   const publicDir = join(process.cwd(), 'public');
   const indexHtml = join(publicDir, 'index.html');
