@@ -397,25 +397,27 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 
 ## 6. Inventario de evidencia documental
 
-### 6.1 Documentos (14 archivos, 7 400 líneas)
+### 6.1 Documentos (16 archivos, 7 924 líneas)
 
 | Documento | Líneas | Tipo |
 | --- | --- | --- |
 | `docs/readme` | 1 316 | Técnico |
 | `docs/practica-en-maquina-virtual.md` | 1 014 | Operativo |
 | `docs/receta-para-montarlo.md` | 931 | Operativo |
-| `docs/informe-de-actividades.md` (este informe) | 837 | Gestión |
+| `docs/informe-de-actividades.md` (este informe) | 849 | Gestión |
 | `docs/guia-de-despliegue.md` | 815 | Operativo |
 | `docs/manual-de-usuario.md` | 797 | Usuario |
 | `docs/auditorias/auditoria-v3-y-analisis-de-diseno.md` | 435 | Calidad |
+| `docs/auditorias/reporte-qa-clasesespejo-v4.md` | 369 | Calidad |
 | `docs/auditorias/reporte-qa-clasesespejo.md` | 243 | Calidad |
 | `docs/diagramas/entidad_relacion.md` | 235 | Diseño |
 | `docs/diagramas/diagrama de flujo.md` | 204 | Diseño |
 | `docs/diagramas/casos_de_uso.md` | 179 | Diseño |
 | `docs/auditorias/reporte-qa-clasesespejo-v2.md` | 167 | Calidad |
 | `docs/auditorias/respuesta-auditoria.md` | 161 | Calidad |
+| `docs/auditorias/respuesta-auditoria-v4.md` | 143 | Calidad |
 | `docs/diagramas/diagrama_de_secuencias.md` | 66 | Diseño |
-| **Total** | **7 400** | |
+| **Total** | **7 924** | |
 
 **Otros archivos de evidencia:**
 
