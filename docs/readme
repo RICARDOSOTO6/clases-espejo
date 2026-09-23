@@ -393,11 +393,14 @@ producción **todo el sistema corre en un solo puerto** (`3000`).
 Desde `frontend/`:
 
 ```bash
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 ```
 
-> El build debe hacerse con `output-path` apuntando a `backend/public`; si se
-> compila en `frontend/dist`, hay que copiar el resultado a mano.
+> El destino del build está configurado en `frontend/angular.json`
+> (`outputPath` → `../backend/public`, con los archivos del navegador en la raíz).
+> Por eso **no hay que pasar `--output-path`**: si se pasa apuntando a
+> `backend/public`, Angular crea una subcarpeta `browser/` y el backend deja de
+> encontrar `index.html`. Tampoco hace falta compilar en `frontend/dist`.
 
 ## 2. Reiniciar el backend
 
