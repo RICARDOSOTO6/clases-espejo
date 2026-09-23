@@ -673,6 +673,17 @@ Se calculan solas según los días que quedan. **Crítica** (ámbar): 2 días o 
 **Próxima** (azul): hasta 7 días. **Vencida** (rojo): el plazo ya terminó y la
 solicitud se canceló. Si no respondes a tiempo, la solicitud se cancela sola.
 
+**¿Cómo pongo mi foto de perfil?**
+Pulsa tu nombre (arriba a la derecha) o **Mi perfil** en el menú lateral, y en la
+ventana que se abre usa **Añadir foto** (o **Cambiar foto** si ya tienes una).
+Debe ser **PNG, JPG o WEBP** y pesar **menos de 2 MB**. Si no pones ninguna, se
+muestran tus iniciales. Con **Quitar foto** vuelves a las iniciales.
+
+**La foto no se sube.**
+Revisa el formato y el peso: solo PNG, JPG o WEBP, máximo 2 MB. Un archivo de
+otro tipo (por ejemplo un PDF o un icono `.svg`) se rechaza a propósito. Si el
+mensaje es de conexión, vuelve a intentarlo con **Reintentar**.
+
 **El proyecto se ve en solo lectura.**
 Está **Finalizado** o **Cancelado**: se conserva como historial y ya no admite
 cambios.

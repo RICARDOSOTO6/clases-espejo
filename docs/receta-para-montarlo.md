@@ -446,7 +446,7 @@ psql "postgresql://clasesespejo:UnaClaveLarga2026@localhost:5432/clasesconjuntas
 ```
 
 Para crear las tablas **no escribas SQL a mano**: lo hace Prisma (paso 10).
-Son 9 migraciones que crean las 22 tablas del sistema.
+Son 10 migraciones que crean las 22 tablas del sistema.
 
 > El usuario dueño de la base **no necesita** ser superusuario ni tener permiso
 > para crear bases: con ser dueño, `prisma migrate deploy` hace todo.
