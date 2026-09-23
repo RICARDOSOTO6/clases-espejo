@@ -309,11 +309,40 @@ PORT="3000"
 | `JWT_EXPIRES_IN` | Vigencia del token de sesión. |
 | `REVISION_DIAS_ANTELACION` | Días de antelación con los que debe responderse una solicitud antes de la fecha propuesta (por defecto `7`). Pasado ese plazo, la solicitud caduca sola. |
 | `INVITATION_EXPIRES_IN` | Vigencia del token de invitación a docentes. |
-| `FRONTEND_URL` | URL del frontend; se usa para armar el enlace de activación y como origen permitido en CORS (admite varias separadas por coma). |
+| `FRONTEND_URL` | URL del frontend. Se usa como **primera opción** para el enlace de activación y como origen permitido en CORS (admite varias separadas por coma). |
+| `URLS_PERMITIDAS` | Opcional. Lista de hosts (admite `*.dominio`) que se aceptan para deducir la URL pública de la petición. Vacío = se acepta cualquier host válido. |
 | `SMTP_*`, `MAIL_FROM` | Servidor de correo saliente para las invitaciones. |
 | `PORT` | Puerto del backend (por defecto `3000`). |
 
 > Nunca subir contraseñas, claves JWT ni otros secretos al repositorio.
+
+## Enlaces públicos (invitaciones) con túnel o proxy
+
+El correo de invitación lleva un enlace del tipo `<url-pública>/activate?token=…`.
+Si esa URL fuera siempre `localhost`, el docente **no podría abrirlo desde su
+equipo**; pasa con un túnel (`cloudflared`, `ngrok`), con un proxy inverso nuevo
+o al probar desde otra máquina de la red.
+
+Por eso la URL se resuelve en este orden (`backend/src/common/url-publica.ts`):
+
+1. **`FRONTEND_URL`**, si apunta a algo distinto de `localhost`. Es lo correcto
+   cuando el sistema ya tiene dominio propio.
+2. **El origen real de la petición** (`X-Forwarded-Proto` / `X-Forwarded-Host`,
+   `Origin`, `Referer` o `Host`), siempre que no sea `localhost`. Esto hace que
+   **el túnel funcione sin tocar la configuración**: el enlace apunta a la misma
+   dirección desde la que el agente está usando la aplicación.
+3. **`FRONTEND_URL`** aunque sea `localhost` (desarrollo).
+
+Para acotar el paso 2 en un servidor expuesto, definir `URLS_PERMITIDAS` con los
+hosts legítimos (`URLS_PERMITIDAS="*.trycloudflare.com,clases.miescuela.edu"`):
+los demás se descartan y se usa `FRONTEND_URL`.
+
+> **Consejo con túneles:** apunta el túnel al **puerto 3000** (`cloudflared tunnel
+> --url http://localhost:3000`). Al servir ahí el frontend compilado y la API, todo
+> queda en el mismo origen y no hay que tocar CORS. Si en cambio apuntas el túnel
+> al `4200` (`ng serve`), el servidor de desarrollo de Angular bloquea los hosts
+> desconocidos: habría que añadirlos en `angular.json`
+> (`projects.frontend.architect.build.options.security.allowedHosts`).
 
 ---
 

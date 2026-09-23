@@ -616,6 +616,14 @@ habilitará solo.
 Revisa la carpeta de **spam**. Si no aparece, pide al agente que te invite de
 nuevo: los enlaces caducan y **solo se pueden usar una vez**.
 
+**Invité a un docente y el enlace no le funciona.**
+El enlace apunta a la **misma dirección desde la que estás usando la
+aplicación**. Si tu agente está abriendo el sistema en `localhost` (su propia
+computadora), el enlace solo funciona en esa computadora. Para invitar a alguien
+de otra institución hay que usar la dirección pública del sistema (el dominio de
+la escuela o un túnel como `cloudflared`): el enlace se genera solo con esa
+dirección, sin configurar nada.
+
 **El enlace de activación dice "Enlace no válido".**
 Ya caducó o ya fue usado. Solicita una nueva invitación.
 
