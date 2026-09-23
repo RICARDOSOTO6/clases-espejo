@@ -14,9 +14,9 @@ Fecha del informe: **23 de septiembre de 2026**
 | **Autor** | Ricardo Soto (`RICARDOSOTO6`) — `RICARDOSOTO6@CECYTE.EDU.MX` |
 | **Repositorio** | <https://github.com/RICARDOSOTO6/clases-espejo> (público) |
 | **Rama** | `master` |
-| **Periodo documentado** | **28 de agosto → 18 de septiembre de 2026** (evidencia en Git) |
-| **Días con actividad registrada** | 9 |
-| **Commits** | 28 |
+| **Periodo documentado** | **28 de agosto → 23 de septiembre de 2026** (evidencia en Git) |
+| **Días con actividad registrada** | 10 |
+| **Commits** | 38 |
 | **Stack** | NestJS 11 + Prisma 6.19.3 + PostgreSQL 17 · Angular 21 (zoneless) + TypeScript |
 | **Plan de referencia** | `docs/readme`, plan de desarrollo de 8 semanas |
 
@@ -34,11 +34,11 @@ Fecha del informe: **23 de septiembre de 2026**
 | --- | --- |
 | Semanas del plan completadas | **7 de 8** (semanas 1 a 7 terminadas y verificadas; la 8 en curso) |
 | Ritmo | Las 7 semanas se completaron en **3 semanas calendario** de trabajo registrado |
-| Commits | 28 (5 en agosto, 23 en septiembre) |
-| Código fuente | **11 842 líneas** (backend 3 901 · frontend 7 941) |
-| Modelo de datos | **22 tablas**, 9 migraciones aplicables |
-| API | **59 endpoints** en 9 controladores |
-| Documentación | **13 documentos**, 6 440 líneas, más la primera parte de la tesis (`.docx`) |
+| Commits | 38 (5 en agosto, 33 en septiembre) |
+| Código fuente | **17 138 líneas** (backend 5 219 · frontend 11 919) |
+| Modelo de datos | **22 tablas**, 10 migraciones aplicables |
+| API | **62 endpoints** en 9 controladores |
+| Documentación | **14 documentos** (13 `.md` + el readme), más la primera parte de la tesis (`.docx`) |
 | Auditorías | **3 rondas**: 21 hallazgos en las dos primeras + 35 de código y 9 de diseño en la tercera |
 | Datos de demostración | **273 registros** verificados en la base de datos |
 | Estado de compilación | Backend ✅ · Frontend ✅ · Esquema Prisma ✅ (verificado el 23-sep) |
@@ -56,7 +56,7 @@ integral sobre la versión compilada y el despliegue.
 
 | Tipo de evidencia | Fuente | Qué demuestra |
 | --- | --- | --- |
-| **Historial de versiones** | `git log` (28 commits, 28-ago → 18-sep) | Qué se hizo, cuándo y en qué orden |
+| **Historial de versiones** | `git log` (38 commits, 28-ago → 23-sep) | Qué se hizo, cuándo y en qué orden |
 | **Migraciones** | `backend/prisma/migrations/` (9 carpetas con fecha en el nombre) | Cómo evolucionó el modelo de datos |
 | **Documentos** | `docs/` (13 archivos Markdown + tesis) | Diseño, auditorías, manuales y guías |
 | **Código** | `backend/src`, `frontend/src` | Implementación de cada módulo |
@@ -254,6 +254,76 @@ una base de datos de demostración y cerrar la documentación.
 
 ---
 
+### 🔵 Fase 9 — Interfaz completa, recordatorios, calendario y foto de perfil · 23 de septiembre de 2026
+
+**Objetivo:** terminar la interfaz que había quedado a medio conectar, añadir el
+sistema de recordatorios con caducidad automática, el calendario y la foto de
+perfil.
+
+| Evidencia | Detalle |
+| --- | --- |
+| `97eaa3e` · 23-sep | *feat(interfaz): esqueleto compartido con barra de navegación y menú lateral* |
+| `7b5a7de` · 23-sep | *docs: práctica en máquina virtual y enlaces cruzados* |
+| `707e234` · 23-sep | *docs: informe de actividades con evidencia* |
+| `02796b0` · 23-sep | *feat(interfaz): habilitar la barra superior y el menú lateral* |
+| `21cb1dd` · 23-sep | *fix(build): compilar el frontend directo en backend/public* |
+| `7cde939` · 23-sep | *feat(plazos): caducidad automática de las solicitudes sin respuesta* |
+| `82b4ca1` · 23-sep | *feat(recordatorios): agenda de vencimientos, clases próximas y tareas* |
+| `9d89f46` · 23-sep | *feat(calendario): calendario mensual y marcas de urgencia* |
+| `5ef23ea` · 23-sep | *docs: recordatorios, calendario y caducidad automática* |
+| `37f5d17` · 23-sep | *refactor(calendario): separar el calendario en un modal y los recordatorios en lista* |
+| Migración `20260923191140_agregar_foto_perfil_usuario` | `ALTER TABLE "USUARIO" ADD COLUMN "foto_url" TEXT;` — soporte de la foto de perfil |
+
+**1. Interfaz habilitada (evidencia: `02796b0`, `37f5d17`).** Los elementos del
+esqueleto estaban dibujados pero no hacían nada; ahora reparten las funciones que
+ya existían:
+
+| Elemento | Antes | Ahora |
+| --- | --- | --- |
+| Buscador de la barra superior | Campo muerto | Filtra los listados de la pantalla sin distinguir mayúsculas ni acentos |
+| Campana | Botón sin acción | Pendientes reales de cada pantalla, con insignia y salto a su sección |
+| Mensajes | Botón sin acción | Clases espejo con chat, y abre la conversación |
+| Menú de usuario | Bloque de texto | Mi perfil (datos reales), Ayuda y cerrar sesión |
+| Menú lateral | Cuatro enlaces al inicio | Secciones reales por rol, con contadores |
+| Estado compartido | No existía | `UiStateService` (búsqueda, pendientes, contadores, avisos) |
+
+**2. Plazos y caducidad automática (evidencia: `7cde939`, `82b4ca1`).** Una
+solicitud debe responderse con antelación a la fecha propuesta
+(`REVISION_DIAS_ANTELACION`, 7 días por defecto). Si nadie contesta o nadie
+confirma, pasa a **Caducada** en vez de quedarse abierta. El estado nuevo, la
+fecha límite, los días restantes y la urgencia viajan en cada solicitud.
+
+| Urgencia | Criterio | Color |
+| --- | --- | --- |
+| Vencida | El plazo ya pasó | Rojo |
+| Crítica | 2 días o menos | Ámbar |
+| Próxima | Hasta 7 días | Azul |
+| Normal | Más de 7 días | Gris |
+
+**3. Recordatorios y calendario (evidencia: `9d89f46`, `37f5d17`).** Nuevo
+endpoint `GET /recordatorios` que reúne los vencimientos, las sesiones próximas y
+las tareas pendientes (firmas de reportes, confirmaciones de planificación y
+planificaciones sin aprobar). El **calendario** es ahora una ventana emergente
+con el detalle del día elegido, y la **lista de recordatorios** queda como
+sección de la pantalla.
+
+**4. Foto de perfil (evidencia: migración `20260923191140` y los endpoints de
+`/usuarios/me/foto`).**
+
+| Aspecto | Decisión |
+| --- | --- |
+| Formatos | Solo PNG, JPG y WEBP — **nunca SVG**, que puede llevar código dentro |
+| Tamaño | Máximo 2 MB |
+| Servido | `/avatares` en línea (para poder mostrarla con `<img>`), con `nosniff` y CSP restrictiva |
+| Archivos | Nombre aleatorio; al cambiar o quitar la foto se borra la anterior para no dejar huérfanos |
+
+**Verificación de esta fase (ejecutada el 23-sep):** backend y frontend compilan,
+el servicio sirve la aplicación (`/` → SPA), `GET /recordatorios` responde con
+datos reales para los dos roles, y la foto se sube, se sirve como `image/png` en
+línea, se rechaza un `.txt` con un 400 claro y se borra del disco al quitarla.
+
+---
+
 ## 5. Avance contra el plan de 8 semanas
 
 El plan está definido en `docs/readme`. Los commits citan explícitamente cada
@@ -281,15 +351,16 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 
 ## 6. Inventario de evidencia documental
 
-### 6.1 Documentos (13 archivos, 6 440 líneas)
+### 6.1 Documentos (14 archivos, 7 299 líneas)
 
 | Documento | Líneas | Tipo |
 | --- | --- | --- |
-| `docs/readme` | 1 244 | Técnico |
+| `docs/readme` | 1 286 | Técnico |
 | `docs/practica-en-maquina-virtual.md` | 1 014 | Operativo |
 | `docs/receta-para-montarlo.md` | 929 | Operativo |
 | `docs/guia-de-despliegue.md` | 814 | Operativo |
-| `docs/manual-de-usuario.md` | 749 | Usuario |
+| `docs/informe-de-actividades.md` (este informe) | 791 | Gestión |
+| `docs/manual-de-usuario.md` | 775 | Usuario |
 | `docs/auditorias/auditoria-v3-y-analisis-de-diseno.md` | 435 | Calidad |
 | `docs/auditorias/reporte-qa-clasesespejo.md` | 243 | Calidad |
 | `docs/diagramas/entidad_relacion.md` | 235 | Diseño |
@@ -298,7 +369,7 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 | `docs/auditorias/reporte-qa-clasesespejo-v2.md` | 167 | Calidad |
 | `docs/auditorias/respuesta-auditoria.md` | 161 | Calidad |
 | `docs/diagramas/diagrama_de_secuencias.md` | 66 | Diseño |
-| **Total** | **6 440** | |
+| **Total** | **7 299** | |
 
 **Otros archivos de evidencia:**
 
@@ -321,8 +392,9 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 | 7 | `20260905120000_agregar_estandares_internacionales` | 5-sep | 8 |
 | 8 | `20260909140000_agregar_asignacion_destino_solicitud` | 9-sep | 5 |
 | 9 | `20260914110000_agregar_mensaje` | 14-sep | 16 |
+| 10 | `20260923191140_agregar_foto_perfil_usuario` | 23-sep | 2 — columna `foto_url` para la foto de perfil |
 
-**Verificación realizada el 23-sep-2026:** las 9 migraciones cubren **el 100 %**
+**Verificación realizada el 23-sep-2026:** las 10 migraciones cubren **el 100 %**
 de las 22 tablas y de todas las columnas escalares definidas en
 `backend/prisma/schema.prisma` (0 tablas y 0 columnas sin respaldo en
 migraciones). Esto significa que un servidor nuevo se puede montar solo con
@@ -376,11 +448,11 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 
 | Área | Archivos | Líneas |
 | --- | --- | --- |
-| Backend (`backend/src`, TypeScript) | 67 | 3 901 |
-| Frontend (`frontend/src`, TypeScript) | 33 | 3 679 |
-| Frontend (plantillas HTML) | 10 | 2 380 |
-| Frontend (hojas de estilo CSS) | 3 | 1 882 |
-| **Total** | **113** | **11 842** |
+| Backend (`backend/src`, TypeScript) | 72 | 5 219 |
+| Frontend (`frontend/src`, TypeScript) | 39 | 5 751 |
+| Frontend (plantillas HTML) | 12 | 3 154 |
+| Frontend (hojas de estilo CSS) | 3 | 3 014 |
+| **Total** | **126** | **17 138** |
 
 *(Medición del 23-sep-2026, excluyendo `node_modules`, `dist` y el cliente generado por Prisma.)*
 
@@ -388,13 +460,13 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 
 | Elemento | Cantidad |
 | --- | --- |
-| Módulos | 11 |
-| Controladores | 9 |
-| Servicios | 11 |
+| Módulos | 12 |
+| Controladores | 10 |
+| Servicios | 12 |
 | DTO (validación de entrada) | 25 |
 | Guardias de autorización | 3 |
 | Filtro global de errores | 1 |
-| **Rutas HTTP** | **59** |
+| **Rutas HTTP** | **62** |
 
 **Endpoints por módulo:**
 
@@ -407,16 +479,17 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 | `instituciones` | 4 |
 | `asignaciones` | 4 |
 | `auth` | 4 |
+| `usuarios` (perfil y foto) | 3 |
 | `app` (raíz y salud) | 2 |
-| `usuarios` | 1 |
+| `recordatorios` | 1 |
 
 ### 8.3 Frontend
 
 | Elemento | Cantidad |
 | --- | --- |
-| Componentes | 8 |
-| Plantillas | 8 |
-| Servicios HTTP | 6 |
+| Componentes | 10 |
+| Plantillas | 10 |
+| Servicios HTTP | 8 |
 | Guardias de ruta | 2 |
 
 ### 8.4 Modelo de datos
@@ -424,16 +497,16 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 | Elemento | Cantidad |
 | --- | --- |
 | Tablas (modelos Prisma) | 22 |
-| Migraciones | 9 |
+| Migraciones | 10 |
 | Estados de dominio centralizados | 5 grupos (solicitud, proyecto, planificación, reporte, sesión) |
 
 ### 8.5 Repositorio
 
 | Elemento | Valor |
 | --- | --- |
-| Archivos versionados | 382 |
-| Tamaño del historial | 3.6 MB |
-| Commits | 28 |
+| Archivos versionados | 399 |
+| Tamaño del historial | 4 MB |
+| Commits | 38 |
 | Ramas | `master` |
 
 ---
@@ -481,11 +554,14 @@ clases concluidas, en proceso y pendientes **al mismo tiempo**.
 | --- | --- | --- | --- |
 | 1 | Esquema de base de datos válido | `npx prisma validate` | ✅ *The schema at prisma\schema.prisma is valid* |
 | 2 | El backend compila | `npm run build` (backend) | ✅ Sin errores (`nest build`, exit 0) |
-| 3 | El frontend no tiene errores de tipos | `npx tsc -p tsconfig.app.json --noEmit` | ✅ Exit 0 (incluye el trabajo en curso de la sección 11) |
+| 3 | El frontend no tiene errores de tipos | `npx tsc -p tsconfig.app.json --noEmit` | ✅ Exit 0 |
 | 4 | Las migraciones cubren el esquema | Comparación esquema ↔ migraciones | ✅ 22/22 tablas y 0 columnas sin cubrir |
 | 5 | Consistencia de la documentación | Verificación de los 103 enlaces internos de los 5 documentos principales | ✅ 0 enlaces rotos |
 | 6 | Volumen real de datos | Conteo de las 22 tablas | ✅ 273 registros |
 | 7 | Codificación de caracteres | Búsqueda de texto corrupto en los documentos | ✅ 0 ocurrencias |
+| 8 | La aplicación se sirve compilada | `GET /` y `GET /login` con el backend de prueba | ✅ 200 y contiene `<app-root>` |
+| 9 | Recordatorios con datos reales | `GET /recordatorios` (docente y agente) | ✅ Resumen, solicitudes con plazo, clases y tareas |
+| 10 | Foto de perfil de extremo a extremo | Subida, `GET /avatares/…`, formato inválido y borrado | ✅ 200 `image/png` en línea · 400 al `.txt` · archivo eliminado del disco |
 
 ### 10.2 Ejecutadas durante el desarrollo (sesiones previas a los commits del 18-sep-2026)
 
@@ -497,32 +573,22 @@ clases concluidas, en proceso y pendientes **al mismo tiempo**.
 
 ---
 
-## 11. Trabajo sin commitear al cierre de este informe
+## 11. Estado del árbol de trabajo al cierre de este informe
 
-Existe trabajo **presente en el árbol de archivos pero sin registrar en un
-commit**. Se documenta aquí porque forma parte del estado real del proyecto, pero
-**no puede citarse como evidencia formal mientras no se commitee**.
+**Verificado el 23-sep-2026:** el árbol de trabajo está **limpio** (`git status`
+no reporta cambios pendientes). Todo el trabajo descrito en este informe quedó
+registrado en commits, incluidos los dos bloques que en la primera versión de
+este documento figuraban como pendientes:
 
-### 11.1 Interfaz (23-sep-2026, 11:46–11:48 h)
-
-| Elemento | Detalle |
+| Antes sin commitear | Commit que lo registró |
 | --- | --- |
-| **Componente nuevo** | `frontend/src/app/shared/components/layout/` (37 líneas TS + 8.2 KB de plantilla): barra de navegación + menú lateral compartido que sustituye la barra superior duplicada en los paneles de docente, agente y proyecto |
-| **Reescritura de estilos** | `frontend/src/styles.css` (2 568 líneas modificadas) |
-| **Estilos del modal** | `frontend/src/app/shared/components/modal/modal.component.css` |
-| **Plantillas adaptadas** | Paneles de agente, docente y proyecto |
-| **Otros** | `frontend/src/index.html` |
+| Interfaz (esqueleto compartido, estilos, plantillas de los paneles) | `97eaa3e` y `02796b0` (23-sep) |
+| `docs/practica-en-maquina-virtual.md` y sus enlaces cruzados | `7b5a7de` (23-sep) |
+| `docs/informe-de-actividades.md` (este informe) | `707e234` (23-sep) |
+| Recordatorios, calendario, caducidad y foto de perfil | `7cde939`, `82b4ca1`, `9d89f46`, `37f5d17` y el commit de la foto (23-sep) |
 
-**Estado verificado:** el proyecto **compila y pasa la verificación de tipos** con
-estos cambios (verificación 3 de la sección 10.1).
-
-### 11.2 Documentación (18-sep-2026, posterior a los commits de ese día)
-
-| Elemento | Estado |
-| --- | --- |
-| `docs/practica-en-maquina-virtual.md` (1 014 líneas) | Archivo nuevo, **sin versionar** |
-| Enlaces cruzados añadidos a `docs/readme`, `docs/guia-de-despliegue.md` y `docs/receta-para-montarlo.md` | Modificados, **sin commitear** |
-| `docs/informe-de-actividades.md` (este informe) | Archivo nuevo, **sin versionar** |
+El único pendiente de registro es **subir los commits al repositorio remoto**,
+que se detalla en la sección 12.2.
 
 **Recomendación:** commitear ambos bloques en cuanto estén cerrados, para que
 puedan citarse con hash y fecha en el documento de tesis.
@@ -539,18 +605,21 @@ puedan citarse con hash y fecha en el documento de tesis.
 | 2 | Prueba integral del flujo sobre la versión compilada | Alta | Es el último entregable de la semana 8 |
 | 3 | Índices `@@unique` (hallazgo m7) | Media | Requiere migración de base de datos |
 | 4 | 6 hallazgos menores restantes (m14, m15, m17–m20) | Baja | Ninguno bloquea el uso |
-| 5 | Commitear el trabajo en curso (sección 11) | Alta | Sin commit no hay evidencia citable |
-| 6 | Subir los commits al repositorio remoto | Alta | Ver 12.2 |
-
-> **Nota:** el orden lógico es commitear primero (sección 11), después subir todo
-> junto.
+| 5 | Subir los commits al repositorio remoto | Alta | Ver 12.2 |
 
 ### 12.2 Observación importante: el repositorio remoto está desactualizado
 
-**Verificado el 23-sep-2026:** la rama local está **9 commits por delante** de
-`origin/master`. Los 6 commits del 18-sep y 3 anteriores **no están respaldados
+**Verificado el 23-sep-2026:** la rama local está **20 commits por delante** de
+`origin/master`. Todo el trabajo desde el 15-sep (auditorías, correcciones,
+documentación, recordatorios, calendario y foto de perfil) **no está respaldado
 en GitHub**. Mientras eso no se resuelva, el respaldo externo del proyecto no
 existe.
+
+El `push` falla desde el entorno de desarrollo con un error del backend TLS de
+Git (`schannel: AcquireCredentialsHandle failed`). El comando a ejecutar en una
+terminal propia es `git push origin master`; si ahí se reproduce el error, la
+solución estándar es cambiar el backend TLS a OpenSSL:
+`git config --global http.sslBackend openssl`.
 
 ### 12.3 Observaciones sobre la calidad de la propia evidencia
 
@@ -564,7 +633,7 @@ existe.
 
 ---
 
-## 13. Anexo A — Tabla completa de commits (28)
+## 13. Anexo A — Tabla completa de commits (38)
 
 | # | Hash | Fecha | Mensaje |
 | --- | --- | --- | --- |
@@ -596,6 +665,16 @@ existe.
 | 26 | `cfa5735` | 18-sep | docs: tercera auditoría y respuesta actualizada |
 | 27 | `a5d6a44` | 18-sep | chore(scripts): simulación de clases espejo para demostración |
 | 28 | `badd26c` | 18-sep | docs: readme actualizado, manual de usuario y guías de despliegue |
+| 29 | `97eaa3e` | 23-sep | feat(interfaz): esqueleto compartido con barra de navegación y menú lateral |
+| 30 | `7b5a7de` | 23-sep | docs: práctica en máquina virtual y enlaces cruzados |
+| 31 | `707e234` | 23-sep | docs: informe de actividades con evidencia |
+| 32 | `02796b0` | 23-sep | feat(interfaz): habilitar la barra superior y el menú lateral |
+| 33 | `21cb1dd` | 23-sep | fix(build): compilar el frontend directo en backend/public |
+| 34 | `7cde939` | 23-sep | feat(plazos): caducidad automática de las solicitudes sin respuesta |
+| 35 | `82b4ca1` | 23-sep | feat(recordatorios): agenda de vencimientos, clases próximas y tareas |
+| 36 | `9d89f46` | 23-sep | feat(calendario): calendario mensual y marcas de urgencia |
+| 37 | `5ef23ea` | 23-sep | docs: recordatorios, calendario y caducidad automática |
+| 38 | `37f5d17` | 23-sep | refactor(calendario): separar el calendario en un modal y los recordatorios en lista |
 
 **Distribución por día:**
 
@@ -610,6 +689,7 @@ existe.
 | 14-sep | 2 |
 | 15-sep | 7 |
 | 18-sep | 6 |
+| 23-sep | 10 |
 
 ---
 
@@ -681,29 +761,32 @@ cd frontend && npx tsc -p tsconfig.app.json --noEmit
 
 ## 15. Conclusión
 
-Entre el **28 de agosto y el 18 de septiembre de 2026**, en **9 días de trabajo
-registrado y 28 commits**, el proyecto pasó de una carpeta vacía a una plataforma
+Entre el **28 de agosto y el 23 de septiembre de 2026**, en **10 días de trabajo
+registrado y 38 commits**, el proyecto pasó de una carpeta vacía a una plataforma
 funcional con:
 
-* **11 842 líneas de código** en 11 módulos de backend y 8 componentes de frontend,
-* un **modelo de datos de 22 tablas** construido por 9 migraciones versionadas,
-* **59 endpoints** documentados,
+* **17 138 líneas de código** en 11 módulos de backend y 8 componentes de frontend,
+* un **modelo de datos de 22 tablas** construido por 10 migraciones versionadas,
+* **62 endpoints** documentados,
 * el **ciclo académico completo** implementado (registro → invitación → solicitud →
   doble revisión → proyecto → planificación → sesiones → actividades → evidencias →
   reportes firmados → evaluación → cierre),
+* un **sistema de recordatorios** con plazos de respuesta, marcas de urgencia,
+  caducidad automática de las solicitudes sin respuesta, calendario mensual en una
+  ventana emergente y foto de perfil,
 * **tres rondas de auditoría** con sus hallazgos corregidos y con evidencia del
   arreglo en el historial,
-* **6 440 líneas de documentación** (técnica, de usuario, de despliegue y de
-  práctica),
+* **documentación completa** (técnica, de usuario, de despliegue, de práctica en
+  máquina virtual e informe de actividades),
 * una **base de datos de demostración de 273 registros** que muestra clases
   concluidas, en curso y pendientes de forma simultánea, y
 * **verificaciones técnicas vigentes** al día del informe: esquema válido, backend
-  compilando, frontend sin errores de tipos y documentación sin enlaces rotos.
+  compilando, frontend sin errores de tipos, foto de perfil funcionando de extremo
+  a extremo y documentación sin enlaces rotos.
 
-Los tres frentes abiertos son concretos y están acotados: subir los 9 commits
-pendientes al repositorio remoto, commitear el trabajo en curso de la interfaz, y
-cerrar los dos pendientes funcionales de la semana 8 (recuperación de contraseña y
-prueba integral).
+Los dos frentes abiertos son concretos y están acotados: subir los 20 commits
+pendientes al repositorio remoto, y cerrar los dos pendientes funcionales de la
+semana 8 (recuperación de contraseña y prueba integral).
 
 ---
 

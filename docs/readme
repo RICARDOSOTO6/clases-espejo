@@ -129,7 +129,7 @@ ClasesEspejo/
 ├── backend/
 │   ├── src/
 │   │   ├── auth/            # registro, login, activación por invitación, JWT
-│   │   ├── usuarios/        # /usuarios/me (perfil y rol)
+│   │   ├── usuarios/        # /usuarios/me (perfil y foto de perfil)
 │   │   ├── agentes/         # panel del agente: invitar/gestionar docentes
 │   │   ├── instituciones/   # mi institución + catálogo para solicitudes
 │   │   ├── materias/        # CRUD de materias
@@ -582,6 +582,8 @@ Notas sobre el modelo:
   docentes (`PARTICIPACION_REPORTE`) con sus observaciones.
 * **`INVITACION`** almacena el token de activación de un docente y su consumo
   (`usadaEn`), lo que impide reutilizarlo.
+* **`USUARIO.fotoUrl`** guarda la ruta pública de la foto de perfil
+  (`/avatares/…`). Si está vacía, la interfaz muestra las iniciales del usuario.
 
 El modelo completo y sus relaciones se encuentran en:
 
@@ -735,6 +737,8 @@ DTO y servicios compartan exactamente los mismos valores.
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
 | `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No *(limitado a 10 intentos/min)* |
 | `GET` | `/usuarios/me` | Perfil del usuario autenticado (rol, institución) | JWT |
+| `POST` | `/usuarios/me/foto` | Sube la foto de perfil (PNG/JPG/WEBP, máx. 2 MB) y borra la anterior | JWT |
+| `DELETE` | `/usuarios/me/foto` | Quita la foto de perfil y borra el archivo | JWT |
 
 ## Panel del agente
 
@@ -842,6 +846,8 @@ auditorías):
 | **CORS restringido** | Solo los orígenes de `FRONTEND_URL` (lista separada por comas) más `localhost:4200` / `127.0.0.1:4200`. |
 | **Lista blanca de archivos** | Las evidencias aceptan solo PDF, imágenes, Office, texto y ZIP; **se rechazan `.html`, `.svg` y `.js`**, que servidos desde el mismo origen podrían ejecutar código. |
 | **Descarga forzada de archivos** | `/uploads` responde con `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` y `Content-Security-Policy: default-src 'none'`. |
+| **Avatares servidos en línea, pero sin SVG** | Las fotos de perfil se sirven en `/avatares` con `Content-Disposition: inline` (para poder mostrarlas con `<img>`), `nosniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación. |
+| **Sin archivos huérfanos** | Al cambiar o quitar la foto de perfil se borra la anterior del disco, y el nombre del archivo es aleatorio. |
 | **Autorización antes de escribir** | En `POST /proyectos/:id/evidencias`, el `DocenteParticipanteGuard` valida el permiso **antes** de que multer escriba el archivo en disco. |
 | **Errores de integridad legibles** | Un filtro global traduce `PrismaClientKnownRequestError`: `P2002`→409, `P2003`→400, `P2025`→404. |
 | **Validación de entrada** | `ValidationPipe` global con `whitelist` y `transform`; los DTO usan `class-validator`. |
@@ -1014,6 +1020,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Gate de "completar institución"
 * [x] Verificación de cuenta vigente en cada petición
 * [x] Rate limit en login y activación
+* [x] Foto de perfil (subida, cambio y borrado, con limpieza del archivo anterior)
 
 ### Catálogos
 
@@ -1068,6 +1075,8 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Calendario mensual **en una ventana emergente** (con el detalle del día
       elegido) y sección de recordatorios con las listas «lo próximo» y «por
       hacer», más las marcas de urgencia (crítica, próxima, vencida)
+* [x] Foto de perfil: se sube desde «Mi perfil» y se muestra en la barra
+      superior, el menú de usuario y la propia ventana; sin foto, iniciales
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado

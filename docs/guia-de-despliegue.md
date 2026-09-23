@@ -303,7 +303,7 @@ npm run build
 * `prisma generate` crea el cliente en `backend/generated/prisma`.
   ⚠️ **Windows:** si el servicio ya está corriendo, este comando falla con un
   error `EPERM` sobre una DLL. Detén el servicio antes.
-* `prisma migrate deploy` crea las 22 tablas en la base de datos (aplica las 9
+* `prisma migrate deploy` crea las 22 tablas en la base de datos (aplica las 10
   migraciones de `backend/prisma/migrations`). Es idempotente: repetirlo no
   rompe nada.
 * `npm run build` compila a `backend/dist`.
