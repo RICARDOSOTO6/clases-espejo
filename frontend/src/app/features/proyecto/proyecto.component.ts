@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  effect,
   inject,
   OnDestroy,
   OnInit,
@@ -29,6 +30,10 @@ import {
 } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import {
+  PendienteUi,
+  UiStateService,
+} from '../../core/services/ui-state.service';
 
 @Component({
   selector: 'app-proyecto',
@@ -43,6 +48,20 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly materiasService = inject(MateriasService);
   private readonly instituciones = inject(InstitucionesService);
   private readonly fb = inject(FormBuilder);
+  /** Estado compartido con el esqueleto (campana y contadores). */
+  readonly ui = inject(UiStateService);
+
+  constructor() {
+    // Cuando cambia cualquier dato del proyecto se recalcula lo que la campana
+    // de la barra superior debe avisar.
+    effect(() => {
+      this.proyecto();
+      this.sesiones();
+      this.reportesClase();
+      this.evaluaciones();
+      this.publicarEnLayout();
+    });
+  }
 
   readonly usuario = this.auth.currentUser();
   readonly esAgente = this.usuario?.rol === 'AGENTE';
@@ -211,6 +230,64 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.mensajesInterval) clearInterval(this.mensajesInterval);
+    // Al salir no se dejan avisos de esta clase espejo en la barra superior.
+    this.ui.limpiarPantalla();
+  }
+
+  /**
+   * Publica en el esqueleto lo que falta en esta clase espejo: sesiones sin
+   * reporte firmado, sesiones programadas y la evaluación final.
+   */
+  private publicarEnLayout(): void {
+    const proyecto = this.proyecto();
+    if (!proyecto || !this.proyectoAbierto()) {
+      this.ui.publicarPendientes([]);
+      this.ui.publicarChats([]);
+      this.ui.publicarContadores({});
+      return;
+    }
+
+    const confirmados = new Set(
+      this.reportesClase()
+        .filter((r) => r.estado === 'CONFIRMADO')
+        .map((r) => r.sesionId),
+    );
+    const sinReporte = this.sesiones().filter(
+      (s) => s.estado !== 'CANCELADA' && !confirmados.has(s.id),
+    ).length;
+    const programadas = this.sesiones().filter(
+      (s) => s.estado === 'PROGRAMADA',
+    ).length;
+
+    const avisos: PendienteUi[] = [];
+    if (sinReporte > 0) {
+      avisos.push({
+        titulo: `${sinReporte} sesión(es) sin reporte confirmado`,
+        detalle: 'Cada sesión necesita su reporte de clase firmado.',
+        ancla: 'sesiones',
+        tono: 'aviso',
+      });
+    }
+    if (programadas > 0) {
+      avisos.push({
+        titulo: `${programadas} sesión(es) por impartir`,
+        detalle: 'Revisa la fecha y el enlace virtual.',
+        ancla: 'sesiones',
+        tono: 'ok',
+      });
+    }
+    if (this.evaluaciones().length === 0) {
+      avisos.push({
+        titulo: 'Falta la evaluación final',
+        detalle: 'Se necesita al menos una para poder cerrar la clase espejo.',
+        ancla: 'evaluacion',
+        tono: 'aviso',
+      });
+    }
+    this.ui.publicarPendientes(avisos);
+    // El chat de esta clase se abre con el botón flotante de la pantalla.
+    this.ui.publicarChats([]);
+    this.ui.publicarContadores({});
   }
 
   cargarMensajes(): void {

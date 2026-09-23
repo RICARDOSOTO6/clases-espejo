@@ -71,7 +71,7 @@
       </div>
     </div>
 
-    <section class="card comunidad">
+    <section id="comunidad" class="card comunidad">
       <div class="card-head">
         <h2>Comunidad CACE</h2>
         <span class="comunidad-note">Uniendo mentes, corazones y proyectos</span>
@@ -97,16 +97,27 @@
       </ul>
     </section>
 
-    <section class="card">
+    <section id="solicitudes" class="card">
       <div class="card-head">
         <h2>Mis solicitudes de clase espejo</h2>
+        @if (ui.busqueda()) {
+          <span class="card-head-count">
+            {{ solicitudesFiltradas().length }} de {{ solicitudes().length }}
+          </span>
+        }
       </div>
 
-      @if (solicitudes().length === 0) {
-        <p class="muted">Aún no has creado solicitudes de clase espejo.</p>
+      @if (solicitudesFiltradas().length === 0) {
+        <p class="muted">
+          @if (solicitudes().length === 0) {
+            Aún no has creado solicitudes de clase espejo.
+          } @else {
+            Ninguna solicitud coincide con «{{ ui.busqueda() }}».
+          }
+        </p>
       } @else {
         <ul class="lista">
-          @for (s of solicitudes(); track s.id) {
+          @for (s of solicitudesFiltradas(); track s.id) {
             <li class="lista-item">
               <div>
                 <strong>{{ s.titulo }}</strong>
@@ -138,18 +149,27 @@
       }
     </section>
 
-    <section class="card">
+    <section id="proyectos" class="card">
       <div class="card-head">
         <h2>Mis proyectos de clase espejo</h2>
+        @if (ui.busqueda()) {
+          <span class="card-head-count">
+            {{ proyectosFiltrados().length }} de {{ proyectos().length }}
+          </span>
+        }
       </div>
-      @if (proyectos().length === 0) {
+      @if (proyectosFiltrados().length === 0) {
         <p class="muted">
-          Aún no participas en proyectos. Se crean cuando el agente aprueba una
-          solicitud.
+          @if (proyectos().length === 0) {
+            Aún no participas en proyectos. Se crean cuando el agente aprueba una
+            solicitud.
+          } @else {
+            Ninguna clase espejo coincide con «{{ ui.busqueda() }}».
+          }
         </p>
       } @else {
         <ul class="lista">
-          @for (pr of proyectos(); track pr.id) {
+          @for (pr of proyectosFiltrados(); track pr.id) {
             <li class="lista-item">
               <div>
                 <strong>{{ pr.solicitud.titulo }}</strong>
