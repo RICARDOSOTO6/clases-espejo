@@ -482,7 +482,7 @@ FRONTEND_URL="https://clasesespejo.miescuela.edu"
 | --- | --- | --- |
 | `DATABASE_URL` | Dónde está la despensa | No arranca / no ve datos |
 | `JWT_SECRET` | Firma las sesiones | **No arranca** si tiene menos de 16 caracteres |
-| `FRONTEND_URL` | El enlace que va dentro del correo de invitación | El docente recibe un enlace roto |
+| `FRONTEND_URL` | El enlace que va dentro del correo de invitación (primera opción) | Si es `localhost`, se usa la dirección real de la petición: con túnel funciona igual |
 | `SMTP_*` + `MAIL_FROM` | Manda los correos de invitación | No puedes dar de alta docentes |
 | `PORT` | Puerto (por defecto 3000) | Nada, es opcional |
 
@@ -826,7 +826,7 @@ Un respaldo que nunca probaste restaurar no es un respaldo, es una esperanza.
 | **Error 413** al subir una evidencia | El proxy corta en 1 MB | Nginx: `client_max_body_size 12M`. IIS: `maxAllowedContentLength` |
 | *"Tipo de archivo no permitido"* | Es a propósito | Solo PDF, imágenes, Office, texto y ZIP. `.html`, `.svg` y `.js` están bloqueados |
 | *"No se pudo enviar el correo de invitación"* | SMTP mal configurado | Gmail: **contraseña de aplicación** (no la de tu cuenta), puerto 587, `SMTP_SECURE="false"` |
-| El enlace del correo dice **`localhost:4200`** | `FRONTEND_URL` quedó en valor de desarrollo | Ponlo en la URL pública y reinicia |
+| El enlace del correo dice **`localhost`** | Con `FRONTEND_URL` en localhost se usa la dirección de la petición | Revisa que el proxy mande `X-Forwarded-Proto`/`X-Forwarded-Host`, o pon `FRONTEND_URL` con el dominio real |
 | **No puedo borrar una materia o un docente** | No es un bug, es protección del historial | El mensaje te dice qué dependencia lo impide |
 | `npm ci` truena compilando **`bcrypt`** (Linux) | Faltan herramientas de compilación | `sudo apt-get install -y build-essential python3` |
 | **Se queda sin memoria** al compilar Angular | El build pide ~2 GB | Compila en tu compu y sube `backend/public` |
@@ -861,6 +861,8 @@ Las cosas que ya nos mordieron una vez. Léelas antes de sufrir:
 
 6. **`FRONTEND_URL` es la URL del correo, no la de la API.** Con dominio va
    `https://tu-dominio`; en la laptop sirviendo por el backend, `http://localhost:3000`.
+   Si la dejas en localhost, la aplicación usa la dirección desde la que se esté
+   usando (por eso un túnel de cloudflared funciona sin cambiar nada).
 
 7. **El puerto 3000 no se expone a Internet** si tienes proxy. Solo 80 y 443.
 

@@ -267,7 +267,8 @@ PORT="3000"
 | Variable | Regla |
 | --- | --- |
 | `JWT_SECRET` | **La aplicación no arranca** si falta o tiene menos de 16 caracteres. Genera una con: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
-| `FRONTEND_URL` | Es la URL que se envía **dentro del correo de invitación**. Si dejas `localhost:4200`, los docentes recibirán un enlace que no funciona. |
+| `FRONTEND_URL` | Primera opción para la URL del **correo de invitación**. Si la dejas en `localhost`, la aplicación usa la dirección real de la petición (el dominio o el túnel desde el que se esté usando), así que un túnel funciona sin tocar nada. Con dominio propio, ponlo aquí. |
+| `URLS_PERMITIDAS` | Opcional. Hosts aceptados al deducir la URL de la petición (admite `*.dominio`). Sin esta variable se acepta cualquier host válido. |
 | `SMTP_SECURE` | `"true"` solo para el puerto `465`. Con `587` va `"false"`. |
 | `JWT_EXPIRES_IN` / `INVITATION_EXPIRES_IN` | Formato de duración: `30m`, `1d`, `7d`. |
 
@@ -745,7 +746,7 @@ Programa ambos con `cron` (Linux) o el **Programador de tareas** (Windows).
 | **Error 413 al subir una evidencia** | Límite del proxy. Nginx: `client_max_body_size 12M`. IIS: `maxAllowedContentLength`. |
 | **La subida falla con "Tipo de archivo no permitido"** | Es intencional: solo PDF, imágenes, Office, texto y ZIP. `.html`, `.svg` y `.js` están bloqueados por seguridad. |
 | **`No se pudo enviar el correo de invitación`** | SMTP mal configurado. Con Gmail usa **contraseña de aplicación** y `SMTP_SECURE="false"` en el puerto 587. Revisa que el servidor tenga salida al puerto 587. |
-| **El enlace del correo apunta a `localhost:4200`** | `FRONTEND_URL` quedó en el valor de desarrollo. Ponlo en la URL pública y reinicia. |
+| **El enlace del correo apunta a `localhost`** | La aplicación usa `FRONTEND_URL` y, si es `localhost`, la dirección de la petición. Comprueba que el proxy envía `X-Forwarded-Proto` y `X-Forwarded-Host` (el ejemplo de Nginx ya los manda) o pon `FRONTEND_URL` con el dominio real. |
 | **Error 502 del proxy** | El proceso Node no está corriendo o escucha en otro puerto. `systemctl status clasesespejo` / `Get-Service ClasesConjuntas` y revisa los logs. |
 | **No puedo eliminar una materia / docente** | No es un fallo: el sistema protege el historial. El mensaje indica la dependencia que lo impide. |
 | **`npm ci` falla al compilar `bcrypt`** | Es un módulo nativo. En Linux instala las herramientas: `sudo apt-get install -y build-essential python3`. |
