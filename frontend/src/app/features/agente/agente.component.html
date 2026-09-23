@@ -139,6 +139,40 @@
         </div>
       </div>
 
+    <section id="calendario" class="card">
+      <div class="card-head">
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </span>
+          <h2>Calendario y recordatorios</h2>
+          @if (agenda(); as datos) {
+            <span class="card-head-count">
+              {{ datos.resumen.clasesProximas }} clase(s) · {{ datos.resumen.enRevision }} por responder
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (!agenda()) {
+        <p class="muted">Cargando la agenda…</p>
+      } @else {
+        @if (agenda()!.caducadasAhora > 0) {
+          <div class="alert alert-warning" role="status">
+            <span>
+              {{ agenda()!.caducadasAhora }} solicitud(es) caducaron por falta de
+              respuesta y se cancelaron automáticamente.
+            </span>
+          </div>
+        }
+        <app-calendario
+          [clases]="agenda()!.clases"
+          [vencimientos]="agenda()!.solicitudes"
+          [tareas]="agenda()!.tareas"
+        />
+      }
+    </section>
+
     <section id="comunidad" class="card comunidad">
       <div class="card-head">
         <div class="card-head-title">
@@ -338,6 +372,11 @@
               @for (s of solicitudesPendientes(); track s.id) {
                 <div class="tarjeta">
                   <div class="tarjeta-titulo">{{ s.titulo }}</div>
+                  @if (marcaUrgencia(s); as marca) {
+                    <div class="tarjeta-marca">
+                      <span [class]="claseMarcaUrgencia(s)">{{ marca }}</span>
+                    </div>
+                  }
                   <div class="tarjeta-sub">
                     De: {{ nombreDocenteEntrante(s) }} ·
                     {{ s.asignacionOrigen.materia.nombre }}
@@ -388,15 +427,24 @@
           <div class="tablero-col tablero-col-rechazada">
             <div class="tablero-col-head">
               <span class="grupo-dot"></span>
-              <span>Rechazadas</span>
+              <span>Rechazadas y caducadas</span>
               <span class="grupo-count">{{ solicitudesRechazadas().length }}</span>
             </div>
             @if (solicitudesRechazadas().length === 0) {
-              <p class="tarjeta-vacia muted">Sin rechazadas</p>
+              <p class="tarjeta-vacia muted">Sin rechazadas ni caducadas</p>
             } @else {
               @for (s of solicitudesRechazadas(); track s.id) {
                 <div class="tarjeta">
                   <div class="tarjeta-titulo">{{ s.titulo }}</div>
+                  <div class="tarjeta-marca">
+                    <span
+                      class="estado"
+                      [class.rechazada]="s.estado === 'RECHAZADA'"
+                      [class.caducada]="s.estado === 'CADUCADA'"
+                    >
+                      {{ estadoLabelSolicitud(s) }}
+                    </span>
+                  </div>
                   <div class="tarjeta-sub">
                     De: {{ nombreDocenteEntrante(s) }} ·
                     {{ s.asignacionOrigen.materia.nombre }}

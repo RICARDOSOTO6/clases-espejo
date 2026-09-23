@@ -2478,3 +2478,251 @@ textarea.ng-invalid.ng-touched:focus {
     display: none;
   }
 }
+
+/* ----------------------------------------------------------------------------
+   21. Recordatorios: marcas de urgencia y calendario
+   ---------------------------------------------------------------------------- */
+
+.urgencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.urgencia::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.urgencia--vencida {
+  background: var(--danger-100);
+  border-color: var(--danger-border);
+  color: var(--danger-700);
+}
+
+.urgencia--critica {
+  background: var(--warning-100);
+  border-color: var(--warning-border);
+  color: var(--warning-700);
+}
+
+.urgencia--proxima {
+  background: var(--info-100);
+  border-color: var(--primary-100);
+  color: var(--info-700);
+}
+
+.urgencia--normal {
+  background: var(--neutral-100);
+  border-color: var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+/* Estado nuevo: la solicitud venció sin respuesta. */
+.estado.caducada {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+/* Marca de urgencia dentro de una tarjeta del tablero. */
+.tarjeta-marca {
+  margin-bottom: var(--space-2);
+}
+
+/* — Calendario — */
+.calendario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.calendario-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.calendario-head-text p {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+}
+
+.calendario-titulo {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.calendario-nav {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.calendario-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.calendario-dow {
+  padding-bottom: var(--space-2);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-aux);
+}
+
+.calendario-dia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 62px;
+  padding: var(--space-1) 2px;
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-family: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.calendario-dia:hover {
+  border-color: var(--border-strong);
+  background: var(--hover);
+}
+
+.calendario-dia.fuera {
+  background: var(--neutral-50);
+  color: var(--text-aux);
+}
+
+.calendario-dia.hoy .calendario-numero {
+  background: var(--primary-700);
+  color: #fff;
+}
+
+.calendario-dia.elegido {
+  border-color: var(--primary-700);
+  box-shadow: 0 0 0 2px var(--primary-100);
+}
+
+.calendario-numero {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.calendario-puntos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.punto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neutral-300);
+}
+
+.punto--clase {
+  background: var(--primary-700);
+}
+
+.punto--proxima {
+  background: var(--info-700);
+}
+
+.punto--critica {
+  background: var(--warning-700);
+}
+
+.punto--vencida {
+  background: var(--danger-700);
+}
+
+.punto-mas {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text-aux);
+}
+
+.calendario-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.calendario-leyenda li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calendario-detalle {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-lg);
+  background: var(--neutral-50);
+}
+
+.calendario-detalle-titulo {
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.calendario-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.calendario-subtitulo {
+  margin: 0 0 var(--space-2);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .calendario-columnas {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .calendario-dia {
+    min-height: 52px;
+  }
+
+  .calendario-numero {
+    font-size: 0.75rem;
+  }
+}
