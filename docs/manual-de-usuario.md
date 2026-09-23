@@ -654,11 +654,19 @@ propuesta menos 7 días**. No la rechazó nadie: la canceló el sistema. Puedes
 pulsar **Reenviar con fecha nueva** y vuelve a quedar *Pendiente*.
 
 **¿Para qué sirve el calendario?**
-Está en la sección **Calendario y recordatorios** de tu panel (y en el menú
-lateral). Muestra un mes con las **sesiones programadas** (punto azul), los
-**vencimientos de solicitudes** (punto ámbar, rojo cuando queda poco) y dos
-listas: **Lo próximo** y **Por hacer**. Las marcas de urgencia te dicen cuántos
-días quedan: *vence en 2 días*, *vence hoy*, *vencida*.
+Es una **ventana emergente** que se abre con el botón **Ver calendario** de la
+sección *Recordatorios y próximos eventos*, o con **Calendario** en el menú
+lateral. Muestra el mes con las **sesiones programadas** (punto azul) y los
+**vencimientos de solicitudes** (punto ámbar, rojo cuando queda poco). Al pulsar
+un día con eventos verás a la derecha el detalle: **el nombre de cada clase
+espejo** con su hora y las instituciones, y las **solicitudes pendientes** de ese
+día con su urgencia.
+
+**¿Qué es la lista de recordatorios?**
+Es la sección *Recordatorios y próximos eventos* de tu panel (siempre a la
+vista): **Lo próximo** reúne las sesiones y los vencimientos por fecha, y **Por
+hacer** lo que falta de tu parte. Las marcas de urgencia te dicen cuántos días
+quedan: *vence en 2 días*, *vence hoy*, *vencida*.
 
 **¿Qué significan las marcas de urgencia?**
 Se calculan solas según los días que quedan. **Crítica** (ámbar): 2 días o menos.

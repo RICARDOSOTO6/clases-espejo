@@ -2685,17 +2685,97 @@ textarea.ng-invalid.ng-touched:focus {
   gap: 6px;
 }
 
-.calendario-detalle {
-  padding: var(--space-3) var(--space-4);
+/* Cuerpo del calendario: rejilla a la izquierda y detalle del día a la derecha. */
+.calendario-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.calendario-lado {
+  padding: var(--space-4);
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-lg);
   background: var(--neutral-50);
 }
 
 .calendario-detalle-titulo {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.calendario-resumen-dia {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-800);
+}
+
+.calendario-dia.con-eventos {
+  border-color: var(--primary-100);
+  background: var(--primary-50);
+}
+
+/* Cada evento del día elegido. */
+.evento-dia {
+  padding: var(--space-3);
+  border: 1px solid var(--neutral-200);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.evento-dia + .evento-dia {
+  margin-top: var(--space-2);
+}
+
+.evento-dia-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.evento-dia-hora {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-800);
+}
+
+.evento-dia-titulo {
+  margin: 0;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
+}
+
+.evento-dia-sub {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.evento-dia-aviso {
+  margin: var(--space-2) 0 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--warning-700);
+}
+
+.evento-dia-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .calendario-cuerpo {
+    grid-template-columns: 1fr;
+  }
 }
 
 .calendario-columnas {

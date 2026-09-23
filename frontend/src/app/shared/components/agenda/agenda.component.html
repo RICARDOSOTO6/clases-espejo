@@ -1,0 +1,58 @@
+<div class="calendario-columnas">
+  <div>
+    <h4 class="calendario-subtitulo">Lo próximo</h4>
+    @if (proximos().length === 0) {
+      <p class="muted">No hay clases ni vencimientos por delante.</p>
+    } @else {
+      <ul class="lista">
+        @for (evento of proximos(); track evento.tipo + evento.titulo + evento.dias) {
+          <li class="lista-item">
+            <div>
+              <strong>{{ evento.titulo }}</strong>
+              <div class="muted">
+                {{ evento.tipo === 'CLASE' ? 'Sesión' : 'Vencimiento' }} ·
+                {{ fechaLarga(evento.fecha) }} · {{ evento.detalle }}
+              </div>
+            </div>
+            <div class="lista-acciones">
+              <span [class]="clase(evento.urgencia)">
+                {{ etiqueta(evento.urgencia, evento.dias) }}
+              </span>
+              @if (evento.proyectoId) {
+                <a class="btn btn-secondary" [routerLink]="['/proyectos', evento.proyectoId]">
+                  Abrir
+                </a>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div>
+    <h4 class="calendario-subtitulo">Por hacer</h4>
+    @if (tareasOrdenadas().length === 0) {
+      <p class="muted">Nada pendiente por tu parte.</p>
+    } @else {
+      <ul class="lista">
+        @for (tarea of tareasOrdenadas(); track tarea.tipo + tarea.titulo) {
+          <li class="lista-item">
+            <div>
+              <strong>{{ tarea.titulo }}</strong>
+              <div class="muted">{{ tarea.detalle }}</div>
+            </div>
+            <div class="lista-acciones">
+              <span [class]="clase(tarea.urgencia)">
+                {{ etiquetaTarea(tarea.urgencia) }}
+              </span>
+              <a class="btn btn-secondary" [routerLink]="['/proyectos', tarea.proyectoId]">
+                Abrir
+              </a>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

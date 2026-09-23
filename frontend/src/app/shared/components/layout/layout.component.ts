@@ -95,6 +95,8 @@ interface ItemNav {
   ruta?: string;
   /** Ancla de la sección de la pantalla a la que baja. */
   ancla?: string;
+  /** Acción especial que no es navegar ni bajar: hoy solo el calendario. */
+  accion?: 'calendario';
   /** Clave del contador que se muestra a la derecha. */
   contador?: string;
 }
@@ -152,7 +154,7 @@ export class LayoutComponent {
             id: 'calendario',
             etiqueta: 'Calendario',
             icono: 'calendario',
-            ancla: 'calendario',
+            accion: 'calendario',
             contador: 'urgencias',
           },
           {
@@ -197,7 +199,7 @@ export class LayoutComponent {
             id: 'calendario',
             etiqueta: 'Calendario',
             icono: 'calendario',
-            ancla: 'calendario',
+            accion: 'calendario',
             contador: 'urgencias',
           },
           {
@@ -304,6 +306,21 @@ export class LayoutComponent {
       void this.router.navigate([item.ruta]);
       return;
     }
+
+    // El calendario es una ventana emergente: se le pide a la pantalla que la
+    // abra, y si no estamos en el panel primero se vuelve a él.
+    if (item.accion === 'calendario') {
+      const enElPanel = this.router.url.split(/[?#]/)[0] === this.homeRoute;
+      if (enElPanel) {
+        this.ui.solicitarCalendario();
+      } else {
+        void this.router
+          .navigate([this.homeRoute])
+          .then(() => this.ui.solicitarCalendario());
+      }
+      return;
+    }
+
     const ancla = item.ancla;
     if (!ancla) return;
 

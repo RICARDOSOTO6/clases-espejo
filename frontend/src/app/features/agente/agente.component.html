@@ -139,18 +139,23 @@
         </div>
       </div>
 
-    <section id="calendario" class="card">
+    <section id="recordatorios" class="card">
       <div class="card-head">
         <div class="card-head-title">
           <span class="card-head-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
           </span>
-          <h2>Calendario y recordatorios</h2>
+          <h2>Recordatorios y próximos eventos</h2>
           @if (agenda(); as datos) {
             <span class="card-head-count">
               {{ datos.resumen.clasesProximas }} clase(s) · {{ datos.resumen.enRevision }} por responder
             </span>
           }
+        </div>
+        <div class="card-head-actions">
+          <button type="button" class="btn btn-secondary" (click)="abrirCalendario()">
+            Ver calendario
+          </button>
         </div>
       </div>
 
@@ -165,7 +170,7 @@
             </span>
           </div>
         }
-        <app-calendario
+        <app-agenda
           [clases]="agenda()!.clases"
           [vencimientos]="agenda()!.solicitudes"
           [tareas]="agenda()!.tareas"
@@ -568,6 +573,14 @@
     }
   </main>
 </app-layout>
+
+@if (calendarioAbierto()) {
+  <app-calendario
+    [clases]="agenda()?.clases ?? []"
+    [vencimientos]="agenda()?.solicitudes ?? []"
+    (cerrar)="cerrarCalendario()"
+  />
+}
 
 @if (showInviteModal) {
   <app-modal title="Invitar docente" (close)="closeInvite()">
