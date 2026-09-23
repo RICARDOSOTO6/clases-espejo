@@ -33,10 +33,23 @@ import {
   PendienteUi,
   UiStateService,
 } from '../../core/services/ui-state.service';
+import { RecordatoriosService } from '../../core/services/recordatorios.service';
+import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
+import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
+import {
+  claseUrgencia,
+  etiquetaUrgencia,
+} from '../../core/utils/urgencia.util';
 
 @Component({
   selector: 'app-docente',
-  imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
+  imports: [
+    ReactiveFormsModule,
+    ModalComponent,
+    RouterLink,
+    LayoutComponent,
+    CalendarioComponent,
+  ],
   templateUrl: './docente.component.html',
 })
 export class DocenteComponent implements OnInit, OnDestroy {
@@ -44,6 +57,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly institucionesService = inject(InstitucionesService);
   private readonly proyectosService = inject(ProyectosService);
+  private readonly recordatoriosService = inject(RecordatoriosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (buscador, campana y contadores). */
@@ -74,6 +88,9 @@ export class DocenteComponent implements OnInit, OnDestroy {
   solicitudes = signal<Solicitud[]>([]);
   proyectos = signal<Proyecto[]>([]);
   paisUsuario = signal<{ codigo: string; nombre: string } | null>(null);
+
+  /** Agenda de recordatorios: vencimientos, clases próximas y tareas. */
+  readonly agenda = signal<Agenda | null>(null);
 
   /** Solicitudes que pasan el filtro del buscador de la barra superior. */
   readonly solicitudesFiltradas = computed(() =>
@@ -134,6 +151,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
+    this.cargarAgenda();
     this.auth.getPerfil().subscribe({
       next: (perfil) => this.establecerPaisDesdePerfil(perfil),
       error: () => {},
@@ -183,6 +201,32 @@ export class DocenteComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Carga la agenda de recordatorios (vencimientos, clases y tareas). */
+  cargarAgenda(): void {
+    this.recordatoriosService.obtener().subscribe({
+      next: (agenda) => {
+        this.agenda.set(agenda);
+        // Los vencimientos urgentes también alimentan la campana.
+        this.publicarEnLayout();
+      },
+      error: () => this.agenda.set(null),
+    });
+  }
+
+  /** Marca de urgencia de una solicitud, o null si ya no espera respuesta. */
+  marcaUrgencia(s: {
+    urgencia?: Urgencia;
+    diasRestantes?: number;
+    enRevision?: boolean;
+  }): string | null {
+    if (!s.enRevision || !s.urgencia) return null;
+    return etiquetaUrgencia(s.urgencia, s.diasRestantes ?? 0);
+  }
+
+  claseMarcaUrgencia(s: { urgencia?: Urgencia }): string {
+    return claseUrgencia(s.urgencia ?? 'NORMAL');
+  }
+
   reintentarCarga(): void {
     this.cerrarAviso();
     this.cargarDatos();
@@ -203,13 +247,26 @@ export class DocenteComponent implements OnInit, OnDestroy {
     const activos = proyectos.filter(
       (p) => p.estado === 'EN_PLANIFICACION' || p.estado === 'EN_CURSO',
     );
+    const urgentes = (this.agenda()?.solicitudes ?? []).filter(
+      (s) => s.urgencia === 'CRITICA' || s.urgencia === 'VENCIDA',
+    );
 
     this.ui.publicarContadores({
       solicitudes: this.pendientes(),
       proyectos: activos.length,
+      urgencias: urgentes.length,
     });
 
     const avisos: PendienteUi[] = [];
+    // Lo más urgente primero: propuestas a punto de caducar.
+    for (const s of urgentes.slice(0, 3)) {
+      avisos.push({
+        titulo: `«${s.titulo}»: ${etiquetaUrgencia(s.urgencia, s.diasRestantes)}`,
+        detalle: 'Si nadie responde, la solicitud se cancela sola.',
+        ancla: 'solicitudes',
+        tono: s.urgencia === 'VENCIDA' ? 'error' : 'aviso',
+      });
+    }
     if (this.pendientes() > 0) {
       avisos.push({
         titulo: `${this.pendientes()} solicitud(es) sin resolver`,
@@ -455,6 +512,8 @@ export class DocenteComponent implements OnInit, OnDestroy {
         return 'Aprobada';
       case 'RECHAZADA':
         return 'Rechazada';
+      case 'CADUCADA':
+        return 'Caducada';
       default:
         return s.estado;
     }

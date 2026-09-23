@@ -1,5 +1,17 @@
 import { Institucion } from './auth.models';
 import { Materia } from './materia.models';
+import { Urgencia } from './recordatorio.models';
+
+/** Plazo de respuesta que calcula el backend para cada solicitud. */
+export interface PlazoRevision {
+  /** Último día para responder. */
+  fechaLimite?: string;
+  /** Días que quedan (negativo si ya pasó). */
+  diasRestantes?: number;
+  urgencia?: Urgencia;
+  /** Si todavía espera respuesta de alguna institución. */
+  enRevision?: boolean;
+}
 
 export interface AsignacionMia {
   id: number;
@@ -21,7 +33,7 @@ export interface RevisionSolicitud {
   revisadaEn: string;
 }
 
-export interface Solicitud {
+export interface Solicitud extends PlazoRevision {
   id: number;
   titulo: string;
   objetivo: string;
@@ -43,7 +55,7 @@ export interface Solicitud {
   revisiones: RevisionSolicitud[];
 }
 
-export interface SolicitudEntrante {
+export interface SolicitudEntrante extends PlazoRevision {
   id: number;
   titulo: string;
   objetivo: string;

@@ -77,6 +77,12 @@ const ICONOS: Record<string, string[]> = {
     'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z',
   ],
   buscar: ['M11 3a8 8 0 1 1 0 16 8 8 0 0 1 0-16z', 'm21 21-4.35-4.35'],
+  calendario: [
+    'M8 2v4',
+    'M16 2v4',
+    'M3 10h18',
+    'M21 6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z',
+  ],
   cerrar: ['M18 6 6 18', 'm6 6 12 12'],
 };
 
@@ -143,6 +149,13 @@ export class LayoutComponent {
       ? [
           { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
           {
+            id: 'calendario',
+            etiqueta: 'Calendario',
+            icono: 'calendario',
+            ancla: 'calendario',
+            contador: 'urgencias',
+          },
+          {
             id: 'institucion',
             etiqueta: 'Mi institución',
             icono: 'institucion',
@@ -180,6 +193,13 @@ export class LayoutComponent {
         ]
       : [
           { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+          {
+            id: 'calendario',
+            etiqueta: 'Calendario',
+            icono: 'calendario',
+            ancla: 'calendario',
+            contador: 'urgencias',
+          },
           {
             id: 'solicitudes',
             etiqueta: 'Mis solicitudes',

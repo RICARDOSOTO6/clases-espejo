@@ -71,6 +71,40 @@
       </div>
     </div>
 
+    <section id="calendario" class="card">
+      <div class="card-head">
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </span>
+          <h2>Calendario y recordatorios</h2>
+          @if (agenda(); as datos) {
+            <span class="card-head-count">
+              {{ datos.resumen.clasesProximas }} clase(s) · {{ datos.resumen.enRevision }} por responder
+            </span>
+          }
+        </div>
+      </div>
+
+      @if (!agenda()) {
+        <p class="muted">Cargando la agenda…</p>
+      } @else {
+        @if (agenda()!.caducadasAhora > 0) {
+          <div class="alert alert-warning" role="status">
+            <span>
+              {{ agenda()!.caducadasAhora }} solicitud(es) caducaron por falta de
+              respuesta y se cancelaron automáticamente.
+            </span>
+          </div>
+        }
+        <app-calendario
+          [clases]="agenda()!.clases"
+          [vencimientos]="agenda()!.solicitudes"
+          [tareas]="agenda()!.tareas"
+        />
+      }
+    </section>
+
     <section id="comunidad" class="card comunidad">
       <div class="card-head">
         <h2>Comunidad CACE</h2>
@@ -127,19 +161,25 @@
                 </div>
               </div>
               <div class="lista-acciones">
+                @if (marcaUrgencia(s); as marca) {
+                  <span [class]="claseMarcaUrgencia(s)">{{ marca }}</span>
+                }
                 <span
                   class="estado"
                   [class.aprobada]="s.estado === 'APROBADA'"
                   [class.pendiente]="s.estado === 'PENDIENTE' || s.estado === 'APROBADA_POR_ORIGEN'"
                   [class.rechazada]="s.estado === 'RECHAZADA'"
+                  [class.caducada]="s.estado === 'CADUCADA'"
                 >
                   {{ estadoLabel(s) }}
                 </span>
                 @if (s.estado === 'PENDIENTE') {
                   <button class="btn btn-secondary" (click)="openEditar(s)">Editar</button>
                   <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Cancelar</button>
-                } @else if (s.estado === 'RECHAZADA') {
-                  <button class="btn btn-primary" (click)="openEditar(s)">Corregir y reenviar</button>
+                } @else if (s.estado === 'RECHAZADA' || s.estado === 'CADUCADA') {
+                  <button class="btn btn-primary" (click)="openEditar(s)">
+                    {{ s.estado === 'CADUCADA' ? 'Reenviar con fecha nueva' : 'Corregir y reenviar' }}
+                  </button>
                   <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Descartar</button>
                 }
               </div>

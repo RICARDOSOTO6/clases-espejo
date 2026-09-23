@@ -43,10 +43,23 @@ import {
   PendienteUi,
   UiStateService,
 } from '../../core/services/ui-state.service';
+import { RecordatoriosService } from '../../core/services/recordatorios.service';
+import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
+import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
+import {
+  claseUrgencia,
+  etiquetaUrgencia,
+} from '../../core/utils/urgencia.util';
 
 @Component({
   selector: 'app-agente',
-  imports: [ReactiveFormsModule, ModalComponent, RouterLink, LayoutComponent],
+  imports: [
+    ReactiveFormsModule,
+    ModalComponent,
+    RouterLink,
+    LayoutComponent,
+    CalendarioComponent,
+  ],
   templateUrl: './agente.component.html',
 })
 export class AgenteComponent implements OnInit, OnDestroy {
@@ -56,6 +69,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   private readonly institucionesService = inject(InstitucionesService);
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly proyectosService = inject(ProyectosService);
+  private readonly recordatoriosService = inject(RecordatoriosService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (buscador, campana y contadores). */
@@ -148,6 +162,9 @@ export class AgenteComponent implements OnInit, OnDestroy {
   solicitudesEntrantes = signal<SolicitudEntrante[]>([]);
   proyectos = signal<Proyecto[]>([]);
 
+  /** Agenda de recordatorios: vencimientos, clases próximas y tareas. */
+  readonly agenda = signal<Agenda | null>(null);
+
   // Secciones colapsables (materias empieza plegada).
   mostrarDocentes = signal(true);
   mostrarMaterias = signal(false);
@@ -224,6 +241,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   }
 
   cargarDatos(): void {
+    this.cargarAgenda();
     this.cargarDocentes();
     this.cargarMaterias();
     this.cargarAsignaciones();
@@ -235,6 +253,32 @@ export class AgenteComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Al salir de la pantalla no se dejan pendientes ni búsqueda de otro panel.
     this.ui.limpiarPantalla();
+  }
+
+  /** Carga la agenda de recordatorios (vencimientos, clases y tareas). */
+  cargarAgenda(): void {
+    this.recordatoriosService.obtener().subscribe({
+      next: (agenda) => {
+        this.agenda.set(agenda);
+        // Los vencimientos urgentes también alimentan la campana.
+        this.publicarEnLayout();
+      },
+      error: () => this.agenda.set(null),
+    });
+  }
+
+  /** Marca de urgencia de una solicitud, o null si ya no espera respuesta. */
+  marcaUrgencia(s: {
+    urgencia?: Urgencia;
+    diasRestantes?: number;
+    enRevision?: boolean;
+  }): string | null {
+    if (!s.enRevision || !s.urgencia) return null;
+    return etiquetaUrgencia(s.urgencia, s.diasRestantes ?? 0);
+  }
+
+  claseMarcaUrgencia(s: { urgencia?: Urgencia }): string {
+    return claseUrgencia(s.urgencia ?? 'NORMAL');
   }
 
   /** Docentes a los que todavía no se les asignó ninguna materia. */
@@ -252,15 +296,30 @@ export class AgenteComponent implements OnInit, OnDestroy {
   private publicarEnLayout(): void {
     const porRevisar = this.pendientesEntrantes();
     const activos = this.proyectosActivos();
+    const urgentes = (this.agenda()?.solicitudes ?? []).filter(
+      (s) => s.urgencia === 'CRITICA' || s.urgencia === 'VENCIDA',
+    );
 
     this.ui.publicarContadores({
       docentes: this.docentes().length,
       materias: this.materias().length,
       solicitudes: porRevisar,
       proyectos: activos.length,
+      urgencias: urgentes.length,
     });
 
     const avisos: PendienteUi[] = [];
+    // Lo más urgente primero: solicitudes a punto de caducar.
+    for (const s of urgentes.slice(0, 3)) {
+      avisos.push({
+        titulo: `«${s.titulo}»: ${etiquetaUrgencia(s.urgencia, s.diasRestantes)}`,
+        detalle: s.meToca
+          ? 'Sin respuesta de tu institución, la solicitud se cancela sola.'
+          : `Espera respuesta de ${s.contraparte}.`,
+        ancla: 'solicitudes',
+        tono: s.urgencia === 'VENCIDA' ? 'error' : 'aviso',
+      });
+    }
     if (this.institucionCargada() && !this.institucionCompleta()) {
       avisos.push({
         titulo: 'Completa el registro de tu institución',
@@ -553,7 +612,9 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   solicitudesRechazadas(): SolicitudEntrante[] {
     return this.solicitudesEntrantes().filter(
-      (s) => s.estado === 'RECHAZADA' && this.coincideSolicitud(s),
+      (s) =>
+        (s.estado === 'RECHAZADA' || s.estado === 'CADUCADA') &&
+        this.coincideSolicitud(s),
     );
   }
 
@@ -899,6 +960,8 @@ export class AgenteComponent implements OnInit, OnDestroy {
         return 'Aprobada';
       case 'RECHAZADA':
         return 'Rechazada';
+      case 'CADUCADA':
+        return 'Caducada';
       default:
         return s.estado;
     }
