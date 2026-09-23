@@ -564,6 +564,7 @@ falta:
 | **Aprobada por origen** | La institución que la propone ya la aprobó. |
 | **Aprobada** | Aprobada por ambas instituciones. Se creó el proyecto. |
 | **Rechazada** | Rechazada en alguna etapa; muestra el motivo. |
+| **Caducada** | Nadie respondió dentro del plazo (7 días antes de la fecha propuesta). La cancela el **sistema**, no una institución; puedes **reenviarla con una fecha nueva**. |
 
 ### Proyecto (clase espejo)
 
@@ -646,6 +647,23 @@ así las firmas corresponden siempre al texto definitivo.
 **No puedo cerrar la clase espejo.**
 Revisa las condiciones del punto 8.10: al menos una evaluación final registrada y
 **todos** los reportes de clase de las sesiones (no canceladas) confirmados.
+
+**¿Por qué mi solicitud aparece como "Caducada"?**
+Pasó el plazo sin que ninguna institución respondiera. El plazo es la **fecha
+propuesta menos 7 días**. No la rechazó nadie: la canceló el sistema. Puedes
+pulsar **Reenviar con fecha nueva** y vuelve a quedar *Pendiente*.
+
+**¿Para qué sirve el calendario?**
+Está en la sección **Calendario y recordatorios** de tu panel (y en el menú
+lateral). Muestra un mes con las **sesiones programadas** (punto azul), los
+**vencimientos de solicitudes** (punto ámbar, rojo cuando queda poco) y dos
+listas: **Lo próximo** y **Por hacer**. Las marcas de urgencia te dicen cuántos
+días quedan: *vence en 2 días*, *vence hoy*, *vencida*.
+
+**¿Qué significan las marcas de urgencia?**
+Se calculan solas según los días que quedan. **Crítica** (ámbar): 2 días o menos.
+**Próxima** (azul): hasta 7 días. **Vencida** (rojo): el plazo ya terminó y la
+solicitud se canceló. Si no respondes a tiempo, la solicitud se cancela sola.
 
 **El proyecto se ve en solo lectura.**
 Está **Finalizado** o **Cancelado**: se conserva como historial y ya no admite

@@ -307,6 +307,7 @@ PORT="3000"
 | `DATABASE_URL` | Cadena de conexión de PostgreSQL (la usa Prisma). |
 | `JWT_SECRET` | Firma de los tokens. **La aplicación no arranca si falta o tiene menos de 16 caracteres.** |
 | `JWT_EXPIRES_IN` | Vigencia del token de sesión. |
+| `REVISION_DIAS_ANTELACION` | Días de antelación con los que debe responderse una solicitud antes de la fecha propuesta (por defecto `7`). Pasado ese plazo, la solicitud caduca sola. |
 | `INVITATION_EXPIRES_IN` | Vigencia del token de invitación a docentes. |
 | `FRONTEND_URL` | URL del frontend; se usa para armar el enlace de activación y como origen permitido en CORS (admite varias separadas por coma). |
 | `SMTP_*`, `MAIL_FROM` | Servidor de correo saliente para las invitaciones. |
@@ -670,6 +671,15 @@ PENDIENTE ──────────┤                              │
   dos revisiones simultáneas no pueden pisarse.
 * Al **cancelar** una solicitud se eliminan sus revisiones y la solicitud en una
   sola transacción.
+* **Caducidad automática:** una solicitud que sigue en *Pendiente* (nadie
+  respondió) o en *Aprobada por origen* (nadie confirmó) al cumplirse el plazo
+  pasa a **Caducada**. El plazo es la fecha propuesta menos
+  `REVISION_DIAS_ANTELACION` días (7 por defecto) y el docente puede reenviarla
+  con una fecha nueva. La revisión corre cada 30 minutos y también en cada
+  consulta, así que el estado nunca queda desactualizado.
+* **Urgencia:** mientras espera respuesta, cada solicitud lleva `fechaLimite`,
+  `diasRestantes` y `urgencia` (*crítica* hasta 2 días, *próxima* hasta 7), que
+  es lo que alimenta los recordatorios y el calendario.
 
 ## Proyecto
 
@@ -802,6 +812,18 @@ DTO y servicios compartan exactamente los mismos valores.
 | `GET` | `/proyectos/:id/evaluaciones` | Lista las evaluaciones finales | JWT |
 | `POST` | `/proyectos/:id/evaluaciones` | Registra una evaluación final | JWT (docente) |
 | `POST` | `/proyectos/:id/cerrar` | Cierra la clase espejo (pasa a *Finalizado*) | JWT (docente) |
+
+---
+
+## Recordatorios y calendario
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
+| `GET` | `/recordatorios` | Agenda del usuario: solicitudes por caducar con su urgencia, sesiones próximas y tareas pendientes. Antes de responder comprueba los vencimientos y cancela las solicitudes caducadas | JWT |
+
+La respuesta incluye `resumen` (vencidas, críticas, próximas, clases y tareas),
+`solicitudes` (con `fechaLimite`, `diasRestantes` y `urgencia`), `clases` y
+`tareas`. Los plazos también viajan en los listados de `/solicitudes`.
 
 ---
 
@@ -1016,6 +1038,9 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Reporte de clase conjunta con firmas de los docentes
 * [x] Evaluaciones finales
 * [x] Cierre del proyecto con validaciones
+* [x] Plazos de respuesta, caducidad automática de solicitudes sin respuesta
+* [x] Módulo `recordatorios`: agenda de vencimientos, clases próximas y tareas
+* [x] Planificador interno (cada 30 minutos) y revisión de plazos al consultar
 
 ### Robustez
 
@@ -1040,6 +1065,8 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Chat entre docentes del proyecto
 * [x] Clases espejo: sesiones, actividades y evidencias
 * [x] Reporte de clase conjunta, evaluación final y cierre
+* [x] Calendario mensual con sesiones y vencimientos, listas de «lo próximo» y
+      «por hacer», y marcas de urgencia (crítica, próxima, vencida)
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado
