@@ -846,7 +846,7 @@ auditorías):
 | **CORS restringido** | Solo los orígenes de `FRONTEND_URL` (lista separada por comas) más `localhost:4200` / `127.0.0.1:4200`. |
 | **Lista blanca de archivos** | Las evidencias aceptan solo PDF, imágenes, Office, texto y ZIP; **se rechazan `.html`, `.svg` y `.js`**, que servidos desde el mismo origen podrían ejecutar código. |
 | **Descarga forzada de archivos** | `/uploads` responde con `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` y `Content-Security-Policy: default-src 'none'`. |
-| **Avatares servidos en línea, pero sin SVG** | Las fotos de perfil se sirven en `/avatares` con `Content-Disposition: inline` (para poder mostrarlas con `<img>`), `nosniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación. |
+| **Avatares servidos en línea, pero sin SVG** | Las fotos de perfil se sirven en `/avatares` con `Content-Disposition: inline` (para poder mostrarlas con `<img>`), `nosniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación. La utilidad `urlDeArchivo()` completa la ruta con el host del backend cuando el frontend corre en `:4200`. |
 | **Sin archivos huérfanos** | Al cambiar o quitar la foto de perfil se borra la anterior del disco, y el nombre del archivo es aleatorio. |
 | **Autorización antes de escribir** | En `POST /proyectos/:id/evidencias`, el `DocenteParticipanteGuard` valida el permiso **antes** de que multer escriba el archivo en disco. |
 | **Errores de integridad legibles** | Un filtro global traduce `PrismaClientKnownRequestError`: `P2002`→409, `P2003`→400, `P2025`→404. |
@@ -1075,8 +1075,9 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Calendario mensual **en una ventana emergente** (con el detalle del día
       elegido) y sección de recordatorios con las listas «lo próximo» y «por
       hacer», más las marcas de urgencia (crítica, próxima, vencida)
-* [x] Foto de perfil: se sube desde «Mi perfil» y se muestra en la barra
-      superior, el menú de usuario y la propia ventana; sin foto, iniciales
+* [x] Foto de perfil: se sube desde «Mi perfil», se **recorta y se reduce en el
+      navegador** antes de enviarla y se muestra en la barra superior, el menú de
+      usuario y la propia ventana; sin foto, iniciales
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado

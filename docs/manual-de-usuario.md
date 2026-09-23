@@ -676,13 +676,16 @@ solicitud se canceló. Si no respondes a tiempo, la solicitud se cancela sola.
 **¿Cómo pongo mi foto de perfil?**
 Pulsa tu nombre (arriba a la derecha) o **Mi perfil** en el menú lateral, y en la
 ventana que se abre usa **Añadir foto** (o **Cambiar foto** si ya tienes una).
-Debe ser **PNG, JPG o WEBP** y pesar **menos de 2 MB**. Si no pones ninguna, se
-muestran tus iniciales. Con **Quitar foto** vuelves a las iniciales.
+**No hace falta prepararla**: sirve cualquier foto (del móvil, vertical,
+panorámica…) y el sistema la **recorta en cuadrado y la reduce** solo. Si no
+pones ninguna, se muestran tus iniciales. Con **Quitar foto** vuelves a las
+iniciales.
 
 **La foto no se sube.**
-Revisa el formato y el peso: solo PNG, JPG o WEBP, máximo 2 MB. Un archivo de
-otro tipo (por ejemplo un PDF o un icono `.svg`) se rechaza a propósito. Si el
-mensaje es de conexión, vuelve a intentarlo con **Reintentar**.
+Comprueba que sea una **imagen** (una foto o un dibujo): un PDF, un documento de
+Word o un icono `.svg` se rechazan a propósito por seguridad. Si es una imagen
+muy grande (más de 12 MB) también se rechaza; recórtala un poco o baja su
+resolución. Si el mensaje habla de conexión, vuelve a intentarlo.
 
 **El proyecto se ve en solo lectura.**
 Está **Finalizado** o **Cancelado**: se conserva como historial y ya no admite

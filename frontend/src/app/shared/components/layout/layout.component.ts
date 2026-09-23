@@ -14,6 +14,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { UiStateService } from '../../../core/services/ui-state.service';
 import { Perfil } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
+import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
+import { prepararFotoPerfil } from '../../../core/utils/imagen.util';
 import { ModalComponent } from '../modal/modal.component';
 
 /**
@@ -396,37 +398,60 @@ export class LayoutComponent {
 
   // --- Perfil y ayuda ---
 
-  /** Foto de perfil: manda la de la sesión y, si no, la del perfil cargado. */
-  readonly foto = computed(
-    () =>
-      this.auth.currentUser()?.fotoUrl ?? this.perfil()?.fotoUrl ?? null,
+  /**
+   * Foto de perfil: manda la de la sesión y, si no, la del perfil cargado.
+   * Se devuelve la URL completa porque en desarrollo el archivo vive en el
+   * backend y una ruta relativa la pediría el servidor del frontend.
+   */
+  readonly foto = computed(() =>
+    urlDeArchivo(this.auth.currentUser()?.fotoUrl ?? this.perfil()?.fotoUrl),
   );
 
   readonly subiendoFoto = signal(false);
   readonly errorFoto = signal<string | null>(null);
   readonly okFoto = signal<string | null>(null);
 
-  /** Valida y sube la foto elegida en el formulario. */
-  alSeleccionarFoto(evento: Event): void {
+  /** Peso máximo del archivo original; el recorte lo deja mucho más pequeño. */
+  private static readonly PESO_MAXIMO_ORIGINAL = 12 * 1024 * 1024;
+
+  /**
+   * Valida la foto elegida, la recorta en cuadrado y la sube. Cualquier foto
+   * sirve: se adapta antes de enviarla.
+   */
+  async alSeleccionarFoto(evento: Event): Promise<void> {
     const entrada = evento.target as HTMLInputElement;
     const archivo = entrada.files?.[0];
     // Permite volver a elegir el mismo archivo después de un error.
     entrada.value = '';
     if (!archivo) return;
 
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(archivo.type)) {
-      this.errorFoto.set('La foto debe ser PNG, JPG o WEBP.');
+    if (!archivo.type.startsWith('image/')) {
+      this.errorFoto.set(
+        'Elige una foto (JPG, PNG, WEBP…). Los documentos y los iconos .svg no sirven como foto de perfil.',
+      );
       return;
     }
-    if (archivo.size > 2 * 1024 * 1024) {
-      this.errorFoto.set('La foto no puede pesar más de 2 MB.');
+    if (archivo.size > LayoutComponent.PESO_MAXIMO_ORIGINAL) {
+      this.errorFoto.set('La foto es demasiado grande (máximo 12 MB).');
       return;
     }
 
     this.subiendoFoto.set(true);
     this.errorFoto.set(null);
     this.okFoto.set(null);
-    this.auth.subirFotoPerfil(archivo).subscribe({
+
+    let preparada: File;
+    try {
+      preparada = await prepararFotoPerfil(archivo);
+    } catch {
+      this.subiendoFoto.set(false);
+      this.errorFoto.set(
+        'No se pudo leer la imagen. Prueba con otra foto en JPG o PNG.',
+      );
+      return;
+    }
+
+    this.auth.subirFotoPerfil(preparada).subscribe({
       next: () => {
         this.subiendoFoto.set(false);
         this.okFoto.set('Foto de perfil actualizada');

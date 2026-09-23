@@ -80,7 +80,10 @@ async function bootstrap() {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('Content-Security-Policy', "default-src 'none'");
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    // Se permite el incrustado desde otro origen a propósito: en desarrollo el
+    // frontend corre en `:4200` y el backend en `:3000`, y con `same-origin` el
+    // navegador bloquearía la foto.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
   });
   app.useStaticAssets(avataresDir, { prefix: '/avatares/' });

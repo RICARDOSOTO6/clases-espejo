@@ -16,6 +16,7 @@ import { ProyectosService } from '../../core/services/proyectos.service';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
+import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { Asignacion } from '../../core/models/materia.models';
 import {
   Actividad,
@@ -754,10 +755,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   // En desarrollo (frontend en :4200) el archivo vive en el backend (:3000).
   urlArchivo(url: string): string {
-    if (url.startsWith('/') && window.location.port === '4200') {
-      return `http://${window.location.hostname}:3000${url}`;
-    }
-    return url;
+    return urlDeArchivo(url) ?? '';
   }
 
   nombreArchivo(url: string): string {

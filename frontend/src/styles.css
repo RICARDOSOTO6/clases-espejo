@@ -2460,10 +2460,14 @@ textarea.ng-invalid.ng-touched:focus {
 
 /* — Foto de perfil — */
 .avatar-img {
+  display: block;
   border-radius: 50%;
+  /* La foto se recorta y se centra en el círculo, sea vertical o panorámica. */
   object-fit: cover;
+  object-position: center;
   background: var(--neutral-100);
   box-shadow: 0 0 0 1px var(--neutral-200);
+  flex-shrink: 0;
 }
 
 .avatar-img--navbar {

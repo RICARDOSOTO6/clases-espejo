@@ -358,13 +358,14 @@
             #fotoInput
             type="file"
             class="archivo-oculto"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/*"
             (change)="alSeleccionarFoto($event)"
             aria-label="Elegir foto de perfil"
           />
         </div>
         <p class="muted perfil-foto-nota">
-          PNG, JPG o WEBP · máximo 2 MB. Sin foto se muestran tus iniciales.
+          Cualquier foto vale: se recorta en cuadrado y se reduce sola antes de
+          guardarla. Si no pones ninguna, se muestran tus iniciales.
         </p>
         @if (errorFoto(); as errorFotoTexto) {
           <div class="alert alert-error" role="alert">
