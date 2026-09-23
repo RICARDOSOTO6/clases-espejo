@@ -11,6 +11,7 @@ import { AsignacionesModule } from './asignaciones/asignaciones.module';
 import { InstitucionesModule } from './instituciones/instituciones.module';
 import { SolicitudesModule } from './solicitudes/solicitudes.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
+import { RecordatoriosModule } from './recordatorios/recordatorios.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ProyectosModule } from './proyectos/proyectos.module';
     InstitucionesModule,
     SolicitudesModule,
     ProyectosModule,
+    RecordatoriosModule,
   ],
   controllers: [AppController],
   providers: [AppService],
