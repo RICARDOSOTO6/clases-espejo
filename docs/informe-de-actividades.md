@@ -16,7 +16,7 @@ Fecha del informe: **23 de septiembre de 2026**
 | **Rama** | `master` |
 | **Periodo documentado** | **28 de agosto → 23 de septiembre de 2026** (evidencia en Git) |
 | **Días con actividad registrada** | 10 |
-| **Commits** | 38 |
+| **Commits** | 44 |
 | **Stack** | NestJS 11 + Prisma 6.19.3 + PostgreSQL 17 · Angular 21 (zoneless) + TypeScript |
 | **Plan de referencia** | `docs/readme`, plan de desarrollo de 8 semanas |
 
@@ -34,7 +34,7 @@ Fecha del informe: **23 de septiembre de 2026**
 | --- | --- |
 | Semanas del plan completadas | **7 de 8** (semanas 1 a 7 terminadas y verificadas; la 8 en curso) |
 | Ritmo | Las 7 semanas se completaron en **3 semanas calendario** de trabajo registrado |
-| Commits | 38 (5 en agosto, 33 en septiembre) |
+| Commits | 44 (5 en agosto, 39 en septiembre) |
 | Código fuente | **17 138 líneas** (backend 5 219 · frontend 11 919) |
 | Modelo de datos | **22 tablas**, 10 migraciones aplicables |
 | API | **62 endpoints** en 9 controladores |
@@ -56,7 +56,7 @@ integral sobre la versión compilada y el despliegue.
 
 | Tipo de evidencia | Fuente | Qué demuestra |
 | --- | --- | --- |
-| **Historial de versiones** | `git log` (38 commits, 28-ago → 23-sep) | Qué se hizo, cuándo y en qué orden |
+| **Historial de versiones** | `git log` (44 commits, 28-ago → 23-sep) | Qué se hizo, cuándo y en qué orden |
 | **Migraciones** | `backend/prisma/migrations/` (9 carpetas con fecha en el nombre) | Cómo evolucionó el modelo de datos |
 | **Documentos** | `docs/` (13 archivos Markdown + tesis) | Diseño, auditorías, manuales y guías |
 | **Código** | `backend/src`, `frontend/src` | Implementación de cada módulo |
@@ -272,6 +272,12 @@ perfil.
 | `9d89f46` · 23-sep | *feat(calendario): calendario mensual y marcas de urgencia* |
 | `5ef23ea` · 23-sep | *docs: recordatorios, calendario y caducidad automática* |
 | `37f5d17` · 23-sep | *refactor(calendario): separar el calendario en un modal y los recordatorios en lista* |
+| `46e062d` · 23-sep | *feat(perfil): foto de perfil con subida, cambio y borrado* |
+| `13c0bb2` · 23-sep | *docs: foto de perfil y cifras del proyecto al día* |
+| `4a18e17` · 23-sep | *fix(perfil): que la foto se vea y se adapte sola* |
+| `b364cc6` · 23-sep | *docs: el informe refleja que el repositorio remoto ya está al día* |
+| `ca24fe5` · 23-sep | *fix(invitaciones): el enlace del correo apunta a donde se usa la aplicación* |
+| `d19d1d6` · 23-sep | *docs: como se resuelve la URL publica del enlace de invitacion (tuneles y proxy)* |
 | Migración `20260923191140_agregar_foto_perfil_usuario` | `ALTER TABLE "USUARIO" ADD COLUMN "foto_url" TEXT;` — soporte de la foto de perfil |
 
 **1. Interfaz habilitada (evidencia: `02796b0`, `37f5d17`).** Los elementos del
@@ -317,10 +323,39 @@ sección de la pantalla.
 | Servido | `/avatares` en línea (para poder mostrarla con `<img>`), con `nosniff` y CSP restrictiva |
 | Archivos | Nombre aleatorio; al cambiar o quitar la foto se borra la anterior para no dejar huérfanos |
 
+**5. Enlaces públicos que funcionan con túnel o proxy (evidencia: `ca24fe5`).**
+El correo de invitación se armaba con `FRONTEND_URL`, que en desarrollo es
+`http://localhost:4200`: el docente recibía una dirección que solo servía en la
+computadora del agente, así que al publicar la aplicación con un túnel
+(`cloudflared`) el enlace no había forma de abrirlo. Ahora la URL pública se
+resuelve en tres pasos (`backend/src/common/url-publica.ts`):
+
+| Prioridad | Fuente | Cuándo aplica |
+| --- | --- | --- |
+| 1 | `FRONTEND_URL` si no es localhost | Dominio propio ya definido |
+| 2 | Origen real de la petición (`X-Forwarded-Proto`/`Host`, `Origin`, `Referer`, `Host`) | Túnel, proxy inverso o demo por IP de la red local |
+| 3 | `FRONTEND_URL` aunque sea localhost | Desarrollo |
+
+Los orígenes localhost y los hosts con forma inválida se descartan, y el paso 2
+se puede acotar con `URLS_PERMITIDAS` (admite comodines como
+`*.trycloudflare.com`).
+
+**6. Corrección de la foto de perfil (evidencia: `4a18e17`).** La foto se subía
+pero no se veía, por dos motivos independientes: la ruta `/avatares/…` es relativa
+(con el frontend en `:4200` el navegador la pedía al servidor de Angular y recibía
+el `index.html`) y `/avatares` enviaba `Cross-Origin-Resource-Policy: same-origin`,
+que bloquea la imagen entre orígenes distintos. Se añadió la utilidad
+`urlDeArchivo()` —que el panel de proyecto ya tenía duplicada— y la política pasó
+a `cross-origin`. Además, la foto ahora se **recorta en cuadrado y se reduce a
+512 px en el navegador** antes de subirla, así que sirve cualquier foto y el
+archivo guardado baja a decenas de KB.
+
 **Verificación de esta fase (ejecutada el 23-sep):** backend y frontend compilan,
 el servicio sirve la aplicación (`/` → SPA), `GET /recordatorios` responde con
-datos reales para los dos roles, y la foto se sube, se sirve como `image/png` en
-línea, se rechaza un `.txt` con un 400 claro y se borra del disco al quitarla.
+datos reales para los dos roles, la foto se sube, se sirve como `image/png` en
+línea, se rechaza un `.txt` con un 400 claro y se borra del disco al quitarla, y
+la resolución de la URL pública pasó **13 casos** de prueba (túnel, proxy con
+listas, IP local, dominio propio, varios orígenes y host manipulado).
 
 ---
 
@@ -351,16 +386,16 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 
 ## 6. Inventario de evidencia documental
 
-### 6.1 Documentos (14 archivos, 7 299 líneas)
+### 6.1 Documentos (14 archivos, 7 400 líneas)
 
 | Documento | Líneas | Tipo |
 | --- | --- | --- |
-| `docs/readme` | 1 286 | Técnico |
+| `docs/readme` | 1 316 | Técnico |
 | `docs/practica-en-maquina-virtual.md` | 1 014 | Operativo |
-| `docs/receta-para-montarlo.md` | 929 | Operativo |
-| `docs/guia-de-despliegue.md` | 814 | Operativo |
-| `docs/informe-de-actividades.md` (este informe) | 791 | Gestión |
-| `docs/manual-de-usuario.md` | 775 | Usuario |
+| `docs/receta-para-montarlo.md` | 931 | Operativo |
+| `docs/informe-de-actividades.md` (este informe) | 837 | Gestión |
+| `docs/guia-de-despliegue.md` | 815 | Operativo |
+| `docs/manual-de-usuario.md` | 797 | Usuario |
 | `docs/auditorias/auditoria-v3-y-analisis-de-diseno.md` | 435 | Calidad |
 | `docs/auditorias/reporte-qa-clasesespejo.md` | 243 | Calidad |
 | `docs/diagramas/entidad_relacion.md` | 235 | Diseño |
@@ -369,7 +404,7 @@ sobre la versión compilada y despliegue en el servidor definitivo.
 | `docs/auditorias/reporte-qa-clasesespejo-v2.md` | 167 | Calidad |
 | `docs/auditorias/respuesta-auditoria.md` | 161 | Calidad |
 | `docs/diagramas/diagrama_de_secuencias.md` | 66 | Diseño |
-| **Total** | **7 299** | |
+| **Total** | **7 400** | |
 
 **Otros archivos de evidencia:**
 
@@ -504,9 +539,9 @@ migraciones). Esto significa que un servidor nuevo se puede montar solo con
 
 | Elemento | Valor |
 | --- | --- |
-| Archivos versionados | 399 |
-| Tamaño del historial | 4 MB |
-| Commits | 38 |
+| Archivos versionados | 403 |
+| Tamaño del historial | 4.3 MB |
+| Commits | 44 |
 | Ramas | `master` |
 
 ---
@@ -562,6 +597,7 @@ clases concluidas, en proceso y pendientes **al mismo tiempo**.
 | 8 | La aplicación se sirve compilada | `GET /` y `GET /login` con el backend de prueba | ✅ 200 y contiene `<app-root>` |
 | 9 | Recordatorios con datos reales | `GET /recordatorios` (docente y agente) | ✅ Resumen, solicitudes con plazo, clases y tareas |
 | 10 | Foto de perfil de extremo a extremo | Subida, `GET /avatares/…`, formato inválido y borrado | ✅ 200 `image/png` en línea · `Cross-Origin-Resource-Policy: cross-origin` (se ve desde el frontend en `:4200`) · 400 al `.txt` · archivo eliminado del disco |
+| 11 | URL pública del enlace de invitación | 13 casos sobre `resolverUrlPublica()`: túnel, proxy, `Origin`, IP local, dominio propio y host manipulado | ✅ Los 13 en el valor esperado |
 
 ### 10.2 Ejecutadas durante el desarrollo (sesiones previas a los commits del 18-sep-2026)
 
@@ -606,11 +642,13 @@ puedan citarse con hash y fecha en el documento de tesis.
 | 3 | Índices `@@unique` (hallazgo m7) | Media | Requiere migración de base de datos |
 | 4 | 6 hallazgos menores restantes (m14, m15, m17–m20) | Baja | Ninguno bloquea el uso |
 
-### 12.2 Repositorio remoto al día
+### 12.2 Repositorio remoto
 
-**Verificado el 23-sep-2026:** el `push` se completó y `origin/master` contiene
-**40 commits** (el último, `13c0bb2`). Todo el trabajo —auditorías, correcciones,
-documentación, recordatorios, calendario y foto de perfil— está respaldado en
+**Verificado el 23-sep-2026:** el `push` se completó y `origin/master` llegó a
+**40 commits**; los **4 posteriores** (arreglo de la foto, corrección del informe
+y enlaces de invitación) quedan pendientes de subir. Todo lo anterior
+—auditorías, correcciones, documentación, recordatorios, calendario y foto de
+perfil— está respaldado en
 <https://github.com/RICARDOSOTO6/clases-espejo>.
 
 El `push` no se pudo hacer desde el entorno de desarrollo por un error del
@@ -629,7 +667,7 @@ ejecutándolo desde una terminal propia.
 
 ---
 
-## 13. Anexo A — Tabla completa de commits (38)
+## 13. Anexo A — Tabla completa de commits (44)
 
 | # | Hash | Fecha | Mensaje |
 | --- | --- | --- | --- |
@@ -671,6 +709,12 @@ ejecutándolo desde una terminal propia.
 | 36 | `9d89f46` | 23-sep | feat(calendario): calendario mensual y marcas de urgencia |
 | 37 | `5ef23ea` | 23-sep | docs: recordatorios, calendario y caducidad automática |
 | 38 | `37f5d17` | 23-sep | refactor(calendario): separar el calendario en un modal y los recordatorios en lista |
+| 39 | `46e062d` | 23-sep | feat(perfil): foto de perfil con subida, cambio y borrado |
+| 40 | `13c0bb2` | 23-sep | docs: foto de perfil y cifras del proyecto al día |
+| 41 | `4a18e17` | 23-sep | fix(perfil): que la foto se vea y se adapte sola |
+| 42 | `b364cc6` | 23-sep | docs: el informe refleja que el repositorio remoto ya está al día |
+| 43 | `ca24fe5` | 23-sep | fix(invitaciones): el enlace del correo apunta a donde se usa la aplicación |
+| 44 | `d19d1d6` | 23-sep | docs: como se resuelve la URL publica del enlace de invitacion (tuneles y proxy) |
 
 **Distribución por día:**
 
@@ -685,7 +729,7 @@ ejecutándolo desde una terminal propia.
 | 14-sep | 2 |
 | 15-sep | 7 |
 | 18-sep | 6 |
-| 23-sep | 10 |
+| 23-sep | 16 |
 
 ---
 
@@ -758,7 +802,7 @@ cd frontend && npx tsc -p tsconfig.app.json --noEmit
 ## 15. Conclusión
 
 Entre el **28 de agosto y el 23 de septiembre de 2026**, en **10 días de trabajo
-registrado y 38 commits**, el proyecto pasó de una carpeta vacía a una plataforma
+registrado y 44 commits**, el proyecto pasó de una carpeta vacía a una plataforma
 funcional con:
 
 * **17 138 líneas de código** en 11 módulos de backend y 8 componentes de frontend,
@@ -782,7 +826,8 @@ funcional con:
 
 Queda **un solo frente abierto**, acotado: cerrar los dos pendientes funcionales
 de la semana 8 (recuperación de contraseña y prueba integral sobre la versión
-compilada). El respaldo en GitHub está al día.
+compilada), y subir los 4 commits más recientes. Todo lo anterior está respaldado
+en GitHub.
 
 ---
 
