@@ -113,7 +113,7 @@ npm run build
 # 2. Frontend compilado dentro del backend
 cd ../frontend
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 
 # 3. Arrancar
 cd ../backend
@@ -315,7 +315,7 @@ cd ../frontend                    # Linux
 # cd ..\frontend                  # Windows
 
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 ```
 
 Al terminar, `backend/public` debe contener `index.html` más los archivos
@@ -327,7 +327,7 @@ Al terminar, `backend/public` debe contener `index.html` más los archivos
 >
 > ```bash
 > # en tu equipo
-> cd frontend && npx ng build --output-path ../backend/public --delete-output-path
+> cd frontend && npx ng build
 > # copiar al servidor (Linux)
 > scp -r backend/public usuario@servidor:/opt/clasesespejo/backend/
 > ```
@@ -645,7 +645,7 @@ npm run build
 
 cd ../frontend
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 
 cd ..
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
@@ -668,7 +668,7 @@ npm run build
 
 cd ..\frontend
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 
 C:\nssm\win64\nssm.exe start ClasesConjuntas
 ```
@@ -767,7 +767,7 @@ sudo journalctl -u clasesespejo -n 100 --no-pager
 # Aplicación
 cd /opt/clasesespejo/backend
 npx prisma migrate deploy && npm run build
-cd ../frontend && npx ng build --output-path ../backend/public --delete-output-path
+cd ../frontend && npx ng build
 
 # Base de datos
 sudo -u postgres psql clasesconjuntas
@@ -785,7 +785,7 @@ cd C:\clasesespejo\backend
 npx prisma migrate deploy
 npm run build
 cd ..\frontend
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 
 # Base de datos
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U clasesespejo clasesconjuntas
@@ -801,7 +801,7 @@ npx ng build --output-path ../backend/public --delete-output-path
 3. git clone  →  /opt/clasesespejo   (o C:\clasesespejo)
 4. backend/.env  →  DATABASE_URL, JWT_SECRET, FRONTEND_URL, SMTP_*
 5. npm ci  →  npx prisma generate  →  npx prisma migrate deploy  →  npm run build
-6. frontend: npm ci  →  ng build --output-path ../backend/public
+6. frontend: npm ci  →  ng build
 7. Servicio: systemd (Linux) / NSSM (Windows), con WorkingDirectory = backend
 8. Proxy + HTTPS: Nginx + Certbot / Caddy / IIS+ARR   (subidas: 12 MB)
 9. Cortafuegos: 80 y 443 abiertos, 3000 cerrado

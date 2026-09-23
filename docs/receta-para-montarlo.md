@@ -198,7 +198,7 @@ npm run build
 # 5. Compila la pantalla DENTRO del backend (esto es lo importante)
 cd ..\frontend
 npm ci
-npx ng build --output-path ..\backend\public --delete-output-path
+npx ng build
 
 # 6. Arranca
 cd ..\backend
@@ -544,7 +544,7 @@ cd ..\frontend                   # Windows
 # cd ../frontend                 # Linux
 
 npm ci
-npx ng build --output-path ..\backend\public --delete-output-path
+npx ng build
 ```
 
 Cuando termine, `backend\public` debe tener:
@@ -738,7 +738,7 @@ npm run build                                       # 6. backend
 
 cd ..\frontend
 npm ci
-npx ng build --output-path ..\backend\public --delete-output-path    # 7. pantalla
+npx ng build   # 7. pantalla
 
 C:\nssm\win64\nssm.exe start ClasesConjuntas        # 8. prender
 ```
@@ -758,7 +758,7 @@ npm run build
 
 cd ../frontend
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 
 cd ..
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
@@ -832,7 +832,7 @@ Un respaldo que nunca probaste restaurar no es un respaldo, es una esperanza.
 | **Se queda sin memoria** al compilar Angular | El build pide ~2 GB | Compila en tu compu y sube `backend/public` |
 | **Permisos denegados** al subir evidencias (Linux) | La carpeta no es del usuario del servicio | `sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo/backend/uploads` |
 | Cambié el `JWT_SECRET` y **todos quedaron fuera** | Comportamiento esperado | Nadie perdió nada: vuelvan a iniciar sesión |
-| La pantalla sale **en blanco** | `backend/public/index.html` no existe o está incompleto | Recompila el frontend con `--output-path` apuntando a `backend/public` |
+| La pantalla sale **en blanco** | `backend/public/index.html` no existe o está incompleto | Recompila con `npx ng build` (el destino ya está en `angular.json`) y reinicia el servicio |
 
 ---
 
@@ -915,7 +915,7 @@ Para deshacer la simulación: `node scripts\borrar-demo-clases.js`.
 3. git clone  →  C:\clasesespejo   (o /opt/clasesespejo)
 4. backend\.env  →  copia el tuyo y cambia DATABASE_URL y FRONTEND_URL
 5. npm ci  →  prisma generate  →  prisma migrate deploy  →  npm run build
-6. frontend:  npm ci  →  ng build --output-path ../backend/public
+6. frontend:  npm ci  →  ng build
 7. Que corra solo:  NSSM (Windows)  /  systemd (Linux)
 8. Opcional: dominio + HTTPS (Caddy es el más fácil)
 9. Cortafuegos: 80 y 443 sí, 3000 no

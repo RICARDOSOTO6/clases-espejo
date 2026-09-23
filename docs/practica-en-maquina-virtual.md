@@ -86,7 +86,7 @@ Y con eso decides el tamaño de la VM:
 | **16 GB** o más | 4 GB de RAM, 2 CPU, 30 GB disco | dentro de la VM, sin problema |
 
 > **Si tienes 8 GB:** no es problema, solo compila la pantalla en Windows con
-> `npx ng build --output-path ..\backend\public` y mándala a la VM con `scp`
+> `npx ng build` y mándala a la VM con `scp`
 > (el comando está en el paso 6.7).
 
 ---
@@ -370,7 +370,7 @@ npm run build
 ```bash
 cd /opt/clasesespejo/frontend
 npm ci
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 ```
 
 Tarda 2-4 minutos. Si tu VM tiene 2 GB de RAM, esto puede morir por falta de
@@ -384,7 +384,7 @@ Si le diste poca RAM a la VM, hazlo en Windows y mándalo:
 # En Windows
 cd C:\Users\ricar\Documents\ClasesEspejo\frontend
 npm ci
-npx ng build --output-path ..\backend/public --delete-output-path
+npx ng build
 scp -P 2222 -r ..\backend\public ricardo@localhost:/opt/clasesespejo/backend/
 ```
 
@@ -637,7 +637,7 @@ carga.
 
 ```bash
 cd /opt/clasesespejo/frontend
-npx ng build --output-path ../backend/public --delete-output-path
+npx ng build
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
 sudo systemctl restart clasesespejo
 ```
@@ -882,7 +882,7 @@ cd /opt/clasesespejo/backend && chmod 600 .env
 
 # 5. Compilar
 npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
-cd ../frontend && npm ci && npx ng build --output-path ../backend/public --delete-output-path
+cd ../frontend && npm ci && npx ng build
 
 # 6. Servicio
 sudo useradd --system --shell /usr/sbin/nologin --home /opt/clasesespejo clasesespejo 2>/dev/null
