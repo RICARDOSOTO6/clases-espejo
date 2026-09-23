@@ -3,6 +3,10 @@
 > **Versión casera y sin protocolo de la guía de despliegue.**
 > La formal está en `docs/guia-de-despliegue.md`. Esta es la misma cosa, pero
 > explicada como si estuviéramos cocinando y con los datos de *tu* máquina.
+>
+> 👉 **¿Primera vez y te da miedo?** Ensáyalo antes en una máquina virtual, donde
+> puedes romperlo todo y deshacerlo con un botón:
+> `docs/practica-en-maquina-virtual.md`.
 
 ```
 ⏱️  Tiempo:        45 min la primera vez, 10 min las siguientes
