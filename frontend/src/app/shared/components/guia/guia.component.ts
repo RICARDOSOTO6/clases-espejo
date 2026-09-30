@@ -49,6 +49,7 @@ export class GuiaComponent implements OnInit, OnDestroy {
 
   private readonly panel = viewChild<ElementRef<HTMLDivElement>>('panel');
   private intentos = 0;
+  private buscando = false;
   private temporizador?: ReturnType<typeof setTimeout>;
 
   readonly actual = computed<PasoGuia | null>(
@@ -94,15 +95,24 @@ export class GuiaComponent implements OnInit, OnDestroy {
     this.salir();
   }
 
-  @HostListener('document:keydown.arrowright')
-  @HostListener('document:keydown.enter')
-  alAvanzar(): void {
+  @HostListener('document:keydown.arrowright', ['$event'])
+  @HostListener('document:keydown.enter', ['$event'])
+  alAvanzar(evento?: Event): void {
+    if (this.escribiendo(evento)) return;
     this.siguiente();
   }
 
-  @HostListener('document:keydown.arrowleft')
-  alRetroceder(): void {
+  @HostListener('document:keydown.arrowleft', ['$event'])
+  alRetroceder(evento?: Event): void {
+    if (this.escribiendo(evento)) return;
     this.anterior();
+  }
+
+  /** Dentro de un campo (o de un botón) las flechas y Enter son del formulario. */
+  private escribiendo(evento?: Event): boolean {
+    const destino = evento?.target as HTMLElement | null;
+    if (!destino?.closest) return false;
+    return !!destino.closest('input, textarea, select, button, [contenteditable]');
   }
 
   // --- Medición ---
@@ -118,6 +128,7 @@ export class GuiaComponent implements OnInit, OnDestroy {
     this.intentos = 0;
     this.foco.set(null);
     if (!paso.selector) {
+      this.buscando = false;
       this.colocacion.set('centrado');
       this.enfocarPanel();
       return;
@@ -125,12 +136,17 @@ export class GuiaComponent implements OnInit, OnDestroy {
 
     // Se espera un poco a que la pantalla reaccione (abrir la ventana, cambiar
     // de sección) antes de medir.
+    this.buscando = true;
+    if (this.temporizador) clearTimeout(this.temporizador);
     this.temporizador = setTimeout(() => this.localizar(), ESPERA_MS);
   }
 
   private localizar(): void {
     const paso = this.actual();
-    if (!paso?.selector) return;
+    if (!paso?.selector) {
+      this.buscando = false;
+      return;
+    }
 
     const elemento = document.querySelector<HTMLElement>(paso.selector);
     if (!elemento) {
@@ -140,15 +156,28 @@ export class GuiaComponent implements OnInit, OnDestroy {
         this.temporizador = setTimeout(() => this.localizar(), ESPERA_MS);
         return;
       }
+      this.buscando = false;
       if (this.esUltimo()) this.salir();
       else this.entrarEn(this.indice() + 1);
       return;
     }
 
-    elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    this.buscando = false;
+    // Desplazamiento inmediato a propósito: con `smooth` la medida y el panel se
+    // calculan antes de que termine el desplazamiento y el panel puede aparecer
+    // fuera de la pantalla durante un instante.
+    elemento.scrollIntoView({ behavior: 'auto', block: 'center' });
     this.medir();
     this.medirPanel();
     this.enfocarPanel();
+  }
+
+  /** La pantalla cambió: se vuelve a buscar el objetivo del paso actual. */
+  private buscarDeNuevo(): void {
+    this.intentos = 0;
+    this.buscando = true;
+    if (this.temporizador) clearTimeout(this.temporizador);
+    this.temporizador = setTimeout(() => this.localizar(), ESPERA_MS);
   }
 
   /** Recoloca el resaltado sin mover la página (para scroll y resize). */
@@ -156,7 +185,13 @@ export class GuiaComponent implements OnInit, OnDestroy {
     const paso = this.actual();
     if (!paso?.selector) return;
     const elemento = document.querySelector<HTMLElement>(paso.selector);
-    if (!elemento) return;
+    if (!elemento) {
+      // El usuario navegó mientras la guía estaba abierta: se quita el resaltado
+      // viejo y se busca el nuevo objetivo (si de verdad no existe, se salta).
+      this.foco.set(null);
+      if (!this.buscando) this.buscarDeNuevo();
+      return;
+    }
 
     const r = elemento.getBoundingClientRect();
     this.foco.set({

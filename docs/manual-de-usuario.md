@@ -667,7 +667,8 @@ formulario y explica cada campo) y el agente **«Presiona aquí para preparar tu
 institución»** (señala docentes, materias, solicitudes y proyectos). La pantalla
 se oscurece y se ilumina la parte que toca; avanzas con **Siguiente** o con la
 **flecha derecha**, retrocedes con la flecha izquierda y sales con `Escape`. No
-modifica ningún dato.
+modifica ningún dato. Puedes **pulsar el botón que está iluminado** mientras
+lees: la guía no te bloquea la pantalla.
 
 **¿Cuánto tiempo hay para revisar una solicitud?**
 Por omisión **7 días** a partir de la fecha propuesta (el administrador puede

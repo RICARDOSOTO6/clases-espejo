@@ -2043,6 +2043,9 @@ textarea.ng-invalid.ng-touched:focus {
   position: fixed;
   inset: 0;
   z-index: 3000;
+  /* La capa no atrapa los clics: el usuario puede pulsar el botón señalado
+     mientras lee. Sólo el panel los recibe (abajo). */
+  pointer-events: none;
 }
 
 /* El resaltado se hace con una sombra enorme: el hueco queda transparente y el
@@ -2055,16 +2058,14 @@ textarea.ng-invalid.ng-touched:focus {
     0 0 0 9999px rgba(15, 23, 42, 0.6),
     0 0 0 2px var(--primary-600);
   pointer-events: none;
-  transition:
-    top 0.18s ease,
-    left 0.18s ease,
-    width 0.18s ease,
-    height 0.18s ease;
+  /* Sin transición: el paso se mide después de desplazar la pantalla, así el
+     recuadro queda siempre encima del elemento y no "vuela" hasta él. */
 }
 
 .guia-panel {
   position: fixed;
   z-index: 3002;
+  pointer-events: auto;
   max-width: 360px;
   padding: var(--space-4);
   background: var(--surface);
