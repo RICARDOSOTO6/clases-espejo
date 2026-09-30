@@ -254,7 +254,7 @@
   />
 }
 
-@if (showSolicitudModal) {
+@if (showSolicitudModal()) {
   <app-modal
     [title]="editandoSolicitud ? 'Editar solicitud' : 'Nueva solicitud'"
     (close)="closeSolicitudModal()"

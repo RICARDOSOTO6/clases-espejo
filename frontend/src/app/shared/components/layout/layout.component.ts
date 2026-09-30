@@ -16,8 +16,13 @@ import { Perfil } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
 import { prepararFotoPerfil } from '../../../core/utils/imagen.util';
+import {
+  GUIA_AGENTE,
+  GUIA_DOCENTE,
+  PasoGuia,
+} from '../../../core/constants/guia';
+import { GuiaComponent } from '../guia/guia.component';
 import { ModalComponent } from '../modal/modal.component';
-
 /**
  * Iconos del esqueleto (trazo, misma familia Lucide que ya usa la aplicación).
  * Cada entrada es la lista de `d` que se pintan dentro del mismo `<svg>`.
@@ -112,7 +117,7 @@ type PanelAbierto = 'notificaciones' | 'mensajes' | 'usuario' | null;
  */
 @Component({
   selector: 'app-layout',
-  imports: [RouterLink, ModalComponent],
+  imports: [RouterLink, ModalComponent, GuiaComponent],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent {
@@ -143,6 +148,11 @@ export class LayoutComponent {
 
   readonly perfilAbierto = signal(false);
   readonly ayudaAbierta = signal(false);
+  /** Guía interactiva de primeros pasos. */
+  readonly guiaActiva = signal(false);
+  readonly pasosGuia = computed<PasoGuia[]>(() =>
+    this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE,
+  );
   readonly perfil = signal<Perfil | null>(null);
   readonly cargandoPerfil = signal(false);
   readonly errorPerfil = signal<string | null>(null);
@@ -527,6 +537,36 @@ export class LayoutComponent {
 
   cerrarAyuda(): void {
     this.ayudaAbierta.set(false);
+  }
+
+  /** Arranca la guía de primeros pasos (desde la ventana de ayuda). */
+  iniciarGuia(): void {
+    this.ayudaAbierta.set(false);
+    this.perfilAbierto.set(false);
+    this.panelAbierto.set(null);
+    this.cerrarSidebar();
+    this.guiaActiva.set(true);
+  }
+
+  terminarGuia(): void {
+    this.guiaActiva.set(false);
+  }
+
+  /** La guía pide abrir o cerrar un formulario que vive en la pantalla. */
+  ejecutarAccionGuia(accion: NonNullable<PasoGuia['accion']>): void {
+    if (accion === 'abrir-solicitud') {
+      this.ui.solicitarFormularioSolicitud('abrir');
+      return;
+    }
+    if (accion === 'cerrar-solicitud') {
+      this.ui.solicitarFormularioSolicitud('cerrar');
+      return;
+    }
+    if (accion === 'abrir-invitacion') {
+      this.ui.solicitarFormularioInvitacion('abrir');
+      return;
+    }
+    this.ui.solicitarFormularioInvitacion('cerrar');
   }
 
   cerrarSesion(): void {

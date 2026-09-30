@@ -234,6 +234,12 @@ Al entrar verás:
 Las secciones siguientes están en tarjetas que puedes **contraer y expandir**
 pulsando su encabezado; así mantienes el panel ordenado.
 
+> **¿Primera vez?** Abre **Ayuda** (el icono `?` de la barra superior) y pulsa
+> **«Presiona aquí para preparar tu institución»**. Una guía te irá señalando,
+> paso a paso, dónde está cada cosa: tus docentes, tus materias, las solicitudes
+> por revisar y los proyectos. Es solo un recorrido: no cambia nada ni guarda
+> datos.
+
 > Si alguna sección no carga, aparecerá un **aviso de error con un botón
 > Reintentar**. Úsalo: no hace falta recargar toda la página.
 
@@ -362,6 +368,28 @@ Las secciones **Mis solicitudes de clase espejo** y
 
 > Si cambias la **institución destino** al editar, la materia destino se limpia
 > automáticamente para que elijas una válida de la nueva institución.
+
+> **¿Primera vez?** Abre **Ayuda** (el icono `?` de la barra superior) y pulsa
+> **«Presiona aquí para hacer tu primera solicitud»**. La guía abre el formulario
+> contigo y te va explicando cada campo hasta el botón de confirmar. Si te
+> pierdes, puedes cerrarla con `Escape` y volver a empezar.
+
+#### Mientras esperas la respuesta
+
+Enviar la solicitud **no** la aprueba: la solicitud entra en una **doble
+revisión**, primero tu institución (origen) y después la institución destino.
+
+1. **Pendiente** — nadie la ha revisado todavía.
+2. **Aprobada por origen** — tu agente ya dijo sí; ahora le toca a la otra
+   institución.
+3. **Aprobada** — ambas dijeron sí y **se crea el proyecto** automáticamente.
+   Aparecerá en *Mis proyectos*.
+4. **Rechazada** — alguien dijo no; verás el motivo en la solicitud.
+
+Mientras la solicitud está en revisión verás en ella una **fecha límite** y una
+marca de urgencia: si nadie la revisa antes de esa fecha, **caduca sola** y
+dejará de estorbar en la lista (podrás crear una nueva cuando quieras). No hace
+falta que persigas a nadie: los recordatorios avisan a quien le toca revisar.
 
 ### 7.3 Estados de la solicitud y qué hacer
 
@@ -630,6 +658,22 @@ Ya caducó o ya fue usado. Solicita una nueva invitación.
 **No aparece la institución que quiero como destino.**
 Solo se listan instituciones con el **registro completo**. Si la institución
 contraparte no ha completado sus datos, no aparecerá hasta que lo haga.
+
+**¿Hay una guía para no equivocarme la primera vez?**
+Sí. En **Ayuda** (el icono `?` de la barra superior) hay dos cosas: el texto
+completo de ayuda y, al final, un botón para hacer un **recorrido guiado**. El
+docente lee **«Presiona aquí para hacer tu primera solicitud»** (abre el
+formulario y explica cada campo) y el agente **«Presiona aquí para preparar tu
+institución»** (señala docentes, materias, solicitudes y proyectos). La pantalla
+se oscurece y se ilumina la parte que toca; avanzas con **Siguiente** o con la
+**flecha derecha**, retrocedes con la flecha izquierda y sales con `Escape`. No
+modifica ningún dato.
+
+**¿Cuánto tiempo hay para revisar una solicitud?**
+Por omisión **7 días** a partir de la fecha propuesta (el administrador puede
+cambiar ese plazo). En *Solicitudes* verás la **fecha límite** y una marca de
+urgencia —*próxima*, *crítica* o *vencida*—; si el plazo pasa, la solicitud
+**caduca sola** y se marca como *Caducada*. El docente puede volver a crearla.
 
 **El botón "Revisar" no aparece en una solicitud.**
 En ese momento **no te toca revisarla**: la solicitud está en la etapa de la otra

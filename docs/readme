@@ -1108,6 +1108,10 @@ en el puerto `3000` seguirá mostrando la versión anterior.
       navegador** antes de enviarla y se muestra en la barra superior, el menú de
       usuario y la propia ventana; sin foto, iniciales
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
+* [x] **Guía interactiva de primeros pasos** (`core/constants/guia.ts` +
+      `shared/components/guia/`): se lanza desde **Ayuda**; recorre con foco
+      iluminado los pasos de cada rol y puede abrir el formulario de solicitud
+      para explicarlo campo por campo
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado
 * [x] Accesibilidad y contraste revisados (foco visible, áreas táctiles)

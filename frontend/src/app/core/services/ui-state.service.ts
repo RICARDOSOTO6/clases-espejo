@@ -58,6 +58,29 @@ export class UiStateService {
     this.abrirCalendario.set(false);
   }
 
+  /**
+   * La guía interactiva necesita abrir formularios que viven en la pantalla
+   * («Nueva solicitud», «Invitar docente»), así que los pide por aquí.
+   */
+  readonly formularioSolicitud = signal<'abrir' | 'cerrar' | null>(null);
+  readonly formularioInvitacion = signal<'abrir' | 'cerrar' | null>(null);
+
+  solicitarFormularioSolicitud(accion: 'abrir' | 'cerrar'): void {
+    this.formularioSolicitud.set(accion);
+  }
+
+  atenderFormularioSolicitud(): void {
+    this.formularioSolicitud.set(null);
+  }
+
+  solicitarFormularioInvitacion(accion: 'abrir' | 'cerrar'): void {
+    this.formularioInvitacion.set(accion);
+  }
+
+  atenderFormularioInvitacion(): void {
+    this.formularioInvitacion.set(null);
+  }
+
   publicarPendientes(lista: PendienteUi[]): void {
     this.pendientes.set(lista);
   }
@@ -77,6 +100,8 @@ export class UiStateService {
     this.contadores.set({});
     this.busqueda.set('');
     this.abrirCalendario.set(false);
+    this.formularioSolicitud.set(null);
+    this.formularioInvitacion.set(null);
   }
 
   limpiarBusqueda(): void {

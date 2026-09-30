@@ -83,6 +83,16 @@ export class DocenteComponent implements OnInit, OnDestroy {
         this.ui.atenderCalendario();
       }
     });
+
+    // La guía interactiva necesita el formulario abierto para señalarlo paso a
+    // paso, así que también lo pide por el estado compartido.
+    effect(() => {
+      const accion = this.ui.formularioSolicitud();
+      if (!accion) return;
+      if (accion === 'abrir') this.openNueva();
+      else this.closeSolicitudModal();
+      this.ui.atenderFormularioSolicitud();
+    });
   }
 
   abrirCalendario(): void {
@@ -156,7 +166,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
   } | null>(null);
 
   // --- Modal solicitud ---
-  showSolicitudModal = false;
+  readonly showSolicitudModal = signal(false);
   editandoSolicitud: Solicitud | null = null;
   solicitudLoading = signal(false);
   solicitudError = signal<string | null>(null);
@@ -418,7 +428,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
     });
     this.materiasDestino.set([]);
     this.solicitudError.set(null);
-    this.showSolicitudModal = true;
+    this.showSolicitudModal.set(true);
   }
 
   openEditar(s: Solicitud): void {
@@ -432,13 +442,13 @@ export class DocenteComponent implements OnInit, OnDestroy {
       fechaPropuesta: this.formatearFecha(s.fechaPropuesta),
     });
     this.solicitudError.set(null);
-    this.showSolicitudModal = true;
+    this.showSolicitudModal.set(true);
     // Recarga las materias destino conservando la que la solicitud ya tenía.
     this.cargarMateriasDestino(s.institucionDestino.id, true);
   }
 
   closeSolicitudModal(): void {
-    this.showSolicitudModal = false;
+    this.showSolicitudModal.set(false);
   }
 
   submitSolicitud(): void {
@@ -480,7 +490,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
     req.subscribe({
       next: () => {
         this.solicitudLoading.set(false);
-        this.showSolicitudModal = false;
+        this.showSolicitudModal.set(false);
         this.cargarDatos();
       },
       error: (err: HttpErrorResponse) => {

@@ -1,0 +1,41 @@
+<div class="guia" role="dialog" aria-modal="true" aria-labelledby="guia-titulo">
+  @if (foco(); as caja) {
+    <div
+      class="guia-foco"
+      aria-hidden="true"
+      [style.top.px]="caja.top"
+      [style.left.px]="caja.left"
+      [style.width.px]="caja.width"
+      [style.height.px]="caja.height"
+    ></div>
+  }
+
+  <div
+    #panel
+    class="guia-panel"
+    [class.guia-panel--centrado]="colocacion() === 'centrado'"
+    [style]="posicionPanel()"
+  >
+    <p class="guia-contador">Paso {{ indice() + 1 }} de {{ pasos.length }}</p>
+    <h3 class="guia-titulo" id="guia-titulo">{{ actual()?.titulo }}</h3>
+    <p class="guia-texto">{{ actual()?.texto }}</p>
+
+    <div class="guia-acciones">
+      <button type="button" class="btn btn-outline" (click)="salir()">
+        Salir de la guía
+      </button>
+      @if (indice() > 0) {
+        <button type="button" class="btn btn-secondary" (click)="anterior()">
+          Anterior
+        </button>
+      }
+      <button
+        type="button"
+        class="btn btn-primary guia-siguiente"
+        (click)="siguiente()"
+      >
+        {{ esUltimo() ? 'Terminar' : 'Siguiente' }}
+      </button>
+    </div>
+  </div>
+</div>

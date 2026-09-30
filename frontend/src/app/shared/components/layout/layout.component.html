@@ -462,6 +462,28 @@
           <li>Con <kbd>Esc</kbd> se cierran los menús y las ventanas.</li>
         </ul>
       </div>
+
+      <div class="ayuda-inicio">
+        <button type="button" class="btn btn-primary" (click)="iniciarGuia()">
+          {{
+            rol === 'AGENTE'
+              ? 'Presiona aquí para preparar tu institución'
+              : 'Presiona aquí para hacer tu primera solicitud'
+          }}
+        </button>
+        <p class="muted ayuda-inicio-nota">
+          Te voy señalando los botones y los campos uno por uno, sin salir de la
+          pantalla. Puedes cortar cuando quieras con <kbd>Esc</kbd>.
+        </p>
+      </div>
     </div>
   </app-modal>
+}
+
+@if (guiaActiva()) {
+  <app-guia
+    [pasos]="pasosGuia()"
+    (cerrar)="terminarGuia()"
+    (accion)="ejecutarAccionGuia($event)"
+  />
 }
