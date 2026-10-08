@@ -98,10 +98,19 @@ async function bootstrap() {
     const express = app.getHttpAdapter().getInstance();
     const prefijos = prefijosApi(app);
     express.use((req: any, res: any, next: any) => {
+      if (req.method !== 'GET' || req.path.includes('.')) return next();
+
       const esApi = prefijos.some(
         (p) => req.path === p || req.path.startsWith(`${p}/`),
       );
-      if (req.method === 'GET' && !esApi && !req.path.includes('.')) {
+      // Una navegación del navegador (abrir el enlace o recargar con F5) pide
+      // HTML; las llamadas de la propia aplicación piden JSON. Si el navegador
+      // pide la página se le entrega la aplicación aunque la dirección coincida
+      // con una ruta de la API: `/proyectos/24` es a la vez una ruta del
+      // frontend y de la API, y sin esto quien recarga dentro de una clase
+      // espejo vería un JSON de error en lugar de la pantalla.
+      const pideHtml = String(req.headers.accept ?? '').includes('text/html');
+      if (!esApi || pideHtml) {
         return res.sendFile(indexHtml);
       }
       return next();
