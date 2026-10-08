@@ -453,6 +453,20 @@
         </ol>
       }
 
+      <!-- La guía va primero: es lo que la gente viene a buscar, y así se ve
+           sin tener que desplazar la ventana. -->
+      <div class="ayuda-inicio">
+        <button type="button" class="btn btn-primary" (click)="iniciarGuia()">
+          Presiona aquí para ver el recorrido: {{ guiaDelApartado().titulo }}
+        </button>
+        <p class="muted ayuda-inicio-nota">
+          Estás en <strong>{{ guiaDelApartado().titulo }}</strong
+          >. {{ guiaDelApartado().resumen }} Te voy señalando los botones y los
+          campos uno por uno, sin salir de la pantalla. Puedes cortar cuando
+          quieras con <kbd>Esc</kbd>.
+        </p>
+      </div>
+
       <div class="ayuda-atajos">
         <p class="ayuda-atajos-title">Atajos y detalles útiles</p>
         <ul>
@@ -463,19 +477,25 @@
         </ul>
       </div>
 
-      <div class="ayuda-inicio">
-        <button type="button" class="btn btn-primary" (click)="iniciarGuia()">
-          {{
-            rol === 'AGENTE'
-              ? 'Presiona aquí para preparar tu institución'
-              : 'Presiona aquí para hacer tu primera solicitud'
-          }}
-        </button>
-        <p class="muted ayuda-inicio-nota">
-          Te voy señalando los botones y los campos uno por uno, sin salir de la
-          pantalla. Puedes cortar cuando quieras con <kbd>Esc</kbd>.
-        </p>
-      </div>
+      @if (otrosRecorridos().length > 0) {
+        <div class="ayuda-guias">
+          <p class="ayuda-atajos-title">Recorridos de los otros apartados</p>
+          <ul>
+            @for (guia of otrosRecorridos(); track guia.id) {
+              <li>
+                <button
+                  type="button"
+                  class="ayuda-guia"
+                  (click)="iniciarGuia(guia.id)"
+                >
+                  <span class="ayuda-guia-titulo">{{ guia.titulo }}</span>
+                  <span class="ayuda-guia-resumen">{{ guia.resumen }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
     </div>
   </app-modal>
 }
@@ -483,6 +503,7 @@
 @if (guiaActiva()) {
   <app-guia
     [pasos]="pasosGuia()"
+    [apartado]="guiaEnCurso().titulo"
     (cerrar)="terminarGuia()"
     (accion)="ejecutarAccionGuia($event)"
   />

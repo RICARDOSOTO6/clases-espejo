@@ -19,7 +19,10 @@ import { prepararFotoPerfil } from '../../../core/utils/imagen.util';
 import {
   GUIA_AGENTE,
   GUIA_DOCENTE,
+  GuiaSeccion,
   PasoGuia,
+  buscarGuia,
+  guiaProyecto,
 } from '../../../core/constants/guia';
 import { GuiaComponent } from '../guia/guia.component';
 import { ModalComponent } from '../modal/modal.component';
@@ -148,11 +151,53 @@ export class LayoutComponent {
 
   readonly perfilAbierto = signal(false);
   readonly ayudaAbierta = signal(false);
-  /** Guía interactiva de primeros pasos. */
+  /** Guía interactiva: `true` mientras hay un recorrido en pantalla. */
   readonly guiaActiva = signal(false);
-  readonly pasosGuia = computed<PasoGuia[]>(() =>
-    this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE,
+  /** Apartado cuyo recorrido se está mostrando. */
+  private readonly guiaPedida = signal<string | null>(null);
+
+  /**
+   * La clase espejo es una ruta propia, así que el esqueleto se crea de nuevo al
+   * entrar: basta con mirar la URL actual una vez.
+   */
+  private readonly esDetalleDeProyecto = this.router.url.startsWith('/proyectos/');
+
+  /** Apartado en el que está el usuario (la clase espejo cuenta como apartado). */
+  readonly apartadoActual = computed(() =>
+    this.esDetalleDeProyecto ? 'proyecto' : this.seccionActiva(),
   );
+
+  /** Recorridos que existen en esta pantalla. */
+  readonly guiasDisponibles = computed<GuiaSeccion[]>(() => {
+    if (this.esDetalleDeProyecto) return [guiaProyecto(this.rol)];
+    return this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE;
+  });
+
+  /** Recorrido del apartado actual: el que ofrece el botón de la ayuda. */
+  readonly guiaDelApartado = computed<GuiaSeccion>(() => {
+    const guias = this.guiasDisponibles();
+    return (
+      buscarGuia(guias, this.apartadoActual()) ??
+      buscarGuia(guias, 'inicio') ??
+      guias[0]
+    );
+  });
+
+  /** Recorrido que se está mostrando (el pedido o, si no, el del apartado). */
+  readonly guiaEnCurso = computed<GuiaSeccion>(
+    () =>
+      buscarGuia(this.guiasDisponibles(), this.guiaPedida()) ??
+      this.guiaDelApartado(),
+  );
+
+  /** Los demás recorridos de esta pantalla, para la lista de la ventana de ayuda. */
+  readonly otrosRecorridos = computed<GuiaSeccion[]>(() =>
+    this.guiasDisponibles().filter(
+      (guia) => guia.id !== this.guiaDelApartado().id,
+    ),
+  );
+
+  readonly pasosGuia = computed<PasoGuia[]>(() => this.guiaEnCurso().pasos);
   readonly perfil = signal<Perfil | null>(null);
   readonly cargandoPerfil = signal(false);
   readonly errorPerfil = signal<string | null>(null);
@@ -313,6 +358,7 @@ export class LayoutComponent {
     this.cerrarSidebar();
     this.panelAbierto.set(null);
     this.seccionActiva.set(item.id);
+    this.cambiarRecorrido(item.id);
 
     if (item.ruta) {
       void this.router.navigate([item.ruta]);
@@ -365,6 +411,7 @@ export class LayoutComponent {
     const ancla = pendiente.ancla;
     if (!ancla) return;
     this.seccionActiva.set(ancla);
+    this.cambiarRecorrido(ancla);
 
     if (document.getElementById(ancla)) {
       this.bajarA(ancla);
@@ -539,12 +586,16 @@ export class LayoutComponent {
     this.ayudaAbierta.set(false);
   }
 
-  /** Arranca la guía de primeros pasos (desde la ventana de ayuda). */
-  iniciarGuia(): void {
+  /**
+   * Arranca el recorrido de un apartado. Sin argumento, el del apartado en el
+   * que está el usuario.
+   */
+  iniciarGuia(apartado?: string): void {
     this.ayudaAbierta.set(false);
     this.perfilAbierto.set(false);
     this.panelAbierto.set(null);
     this.cerrarSidebar();
+    this.guiaPedida.set(apartado ?? this.apartadoActual());
     this.guiaActiva.set(true);
   }
 
@@ -552,7 +603,18 @@ export class LayoutComponent {
     this.guiaActiva.set(false);
   }
 
-  /** La guía pide abrir o cerrar un formulario que vive en la pantalla. */
+  /**
+   * Si el usuario cambia de apartado con la guía abierta, la guía se pasa al
+   * recorrido de ese apartado (y si no tiene, se queda como estaba).
+   */
+  private cambiarRecorrido(apartado: string): void {
+    if (!this.guiaActiva()) return;
+    if (buscarGuia(this.guiasDisponibles(), apartado)) {
+      this.guiaPedida.set(apartado);
+    }
+  }
+
+  /** La guía pide abrir o cerrar algo que vive en la pantalla. */
   ejecutarAccionGuia(accion: NonNullable<PasoGuia['accion']>): void {
     if (accion === 'abrir-solicitud') {
       this.ui.solicitarFormularioSolicitud('abrir');
@@ -564,6 +626,10 @@ export class LayoutComponent {
     }
     if (accion === 'abrir-invitacion') {
       this.ui.solicitarFormularioInvitacion('abrir');
+      return;
+    }
+    if (accion === 'abrir-calendario') {
+      this.ui.solicitarCalendario();
       return;
     }
     this.ui.solicitarFormularioInvitacion('cerrar');

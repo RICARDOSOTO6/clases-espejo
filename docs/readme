@@ -444,6 +444,16 @@ Los prefijos de la API se derivan del router de NestJS (más una lista conocida
 como red de seguridad), así que **un módulo nuevo no queda "tapado" por el
 `index.html`**.
 
+> **Direcciones que son a la vez pantalla y API.** `GET /proyectos/:id` existe en
+> la API y `/proyectos/:id` también es una pantalla del frontend. Si alguien abre
+> esa dirección en el navegador (o recarga con F5 dentro de una clase espejo), el
+> navegador **no manda la cabecera de autenticación** y la API respondería
+> `401` en JSON: el usuario vería un texto ilegible en vez de la pantalla. Por eso
+> el fallback distingue quién pide: si la petición pide HTML (`Accept:
+> text/html`, que es lo que manda una navegación) se entrega la aplicación; si
+> pide JSON (las llamadas de la propia app, o un monitor con `*/*`) se entrega la
+> API.
+
 ## 3. URLs del sistema en producción
 
 | Recurso | URL |
@@ -1108,10 +1118,12 @@ en el puerto `3000` seguirá mostrando la versión anterior.
       navegador** antes de enviarla y se muestra en la barra superior, el menú de
       usuario y la propia ventana; sin foto, iniciales
 * [x] Componente de modal accesible (foco, `Escape`, trampa de tabulación, roles ARIA)
-* [x] **Guía interactiva de primeros pasos** (`core/constants/guia.ts` +
-      `shared/components/guia/`): se lanza desde **Ayuda**; recorre con foco
-      iluminado los pasos de cada rol y puede abrir el formulario de solicitud
-      para explicarlo campo por campo
+* [x] **Guía interactiva por apartado** (`core/constants/guia.ts` +
+      `shared/components/guia/`): se lanza desde **Ayuda** y ofrece el recorrido
+      del apartado en el que está el usuario (Inicio, Docentes, Materias, la
+      clase espejo…), con la lista de los demás; recorre con foco iluminado,
+      puede abrir el formulario de solicitud o el calendario para explicarlos, y
+      se pasa sola al recorrido del apartado nuevo si el usuario navega
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado
 * [x] Accesibilidad y contraste revisados (foco visible, áreas táctiles)

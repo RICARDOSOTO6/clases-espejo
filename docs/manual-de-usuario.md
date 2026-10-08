@@ -235,9 +235,10 @@ Las secciones siguientes están en tarjetas que puedes **contraer y expandir**
 pulsando su encabezado; así mantienes el panel ordenado.
 
 > **¿Primera vez?** Abre **Ayuda** (el icono `?` de la barra superior) y pulsa
-> **«Presiona aquí para preparar tu institución»**. Una guía te irá señalando,
-> paso a paso, dónde está cada cosa: tus docentes, tus materias, las solicitudes
-> por revisar y los proyectos. Es solo un recorrido: no cambia nada ni guarda
+> el botón del recorrido de *Mi institución* (o el de *Docentes*, *Materias*…) y
+> la lista de recorridos de los demás apartados. Una guía te irá señalando, paso
+> a paso, dónde está cada cosa: tus docentes, tus materias, las solicitudes por
+> revisar y los proyectos. Es solo un recorrido: no cambia nada ni guarda
 > datos.
 
 > Si alguna sección no carga, aparecerá un **aviso de error con un botón
@@ -369,10 +370,11 @@ Las secciones **Mis solicitudes de clase espejo** y
 > Si cambias la **institución destino** al editar, la materia destino se limpia
 > automáticamente para que elijas una válida de la nueva institución.
 
-> **¿Primera vez?** Abre **Ayuda** (el icono `?` de la barra superior) y pulsa
-> **«Presiona aquí para hacer tu primera solicitud»**. La guía abre el formulario
-> contigo y te va explicando cada campo hasta el botón de confirmar. Si te
-> pierdes, puedes cerrarla con `Escape` y volver a empezar.
+> **¿Primera vez?** Abre **Ayuda** (el icono `?` de la barra superior) y pulsa el
+> recorrido **«Tu primera solicitud»** (está en la lista, junto a los de cada
+> apartado). La guía abre el formulario contigo y te va explicando cada campo
+> hasta el botón de confirmar. Si te pierdes, puedes cerrarla con `Escape` y
+> volver a empezar.
 
 #### Mientras esperas la respuesta
 
@@ -660,15 +662,25 @@ Solo se listan instituciones con el **registro completo**. Si la institución
 contraparte no ha completado sus datos, no aparecerá hasta que lo haga.
 
 **¿Hay una guía para no equivocarme la primera vez?**
-Sí. En **Ayuda** (el icono `?` de la barra superior) hay dos cosas: el texto
-completo de ayuda y, al final, un botón para hacer un **recorrido guiado**. El
-docente lee **«Presiona aquí para hacer tu primera solicitud»** (abre el
-formulario y explica cada campo) y el agente **«Presiona aquí para preparar tu
-institución»** (señala docentes, materias, solicitudes y proyectos). La pantalla
-se oscurece y se ilumina la parte que toca; avanzas con **Siguiente** o con la
-**flecha derecha**, retrocedes con la flecha izquierda y sales con `Escape`. No
-modifica ningún dato. Puedes **pulsar el botón que está iluminado** mientras
-lees: la guía no te bloquea la pantalla.
+Sí. En **Ayuda** (el icono `?` de la barra superior) lo primero que aparece es el
+botón del **recorrido del apartado en el que estás**: si estás en *Inicio* te
+ofrece el de *Inicio*, si estás en *Docentes* el de *Docentes*, y si estás dentro
+de una clase espejo, el de esa pantalla. Debajo hay una lista con los recorridos
+de los demás apartados, por si quieres ver otro sin cambiar de sitio.
+
+La pantalla se oscurece y se ilumina la parte que toca; el panel te dice en qué
+apartado estás (*Docentes · Paso 2 de 4*). Avanzas con **Siguiente**, con
+**Enter** o con la **flecha derecha**, retrocedes con la flecha izquierda y sales
+con `Escape`. No modifica ningún dato. Puedes **pulsar el botón que está
+iluminado** mientras lees: la guía no te bloquea la pantalla. Y si cambias de
+apartado con el recorrido abierto, la guía se pasa sola al del apartado nuevo.
+
+Cada rol tiene sus recorridos: el docente ve *Inicio*, *Mis solicitudes*, *Mis
+clases espejo*, *Comunidad* y *Calendario*, más el recorrido largo **«Tu primera
+solicitud»** (que abre el formulario y explica cada campo) y el de la clase espejo
+cuando está dentro de una. El agente ve *Inicio*, *Mi institución*, *Docentes*,
+*Materias*, *Solicitudes*, *Clases espejo*, *Comunidad* y *Calendario*, más el
+recorrido largo **«Preparar tu institución»**.
 
 **¿Cuánto tiempo hay para revisar una solicitud?**
 Por omisión **7 días** a partir de la fecha propuesta (el administrador puede

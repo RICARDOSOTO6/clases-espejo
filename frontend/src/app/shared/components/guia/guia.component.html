@@ -16,7 +16,12 @@
     [class.guia-panel--centrado]="colocacion() === 'centrado'"
     [style]="posicionPanel()"
   >
-    <p class="guia-contador">Paso {{ indice() + 1 }} de {{ pasos.length }}</p>
+    <p class="guia-contador">
+      @if (apartado) {
+        <span class="guia-apartado">{{ apartado }}</span>
+      }
+      Paso {{ indice() + 1 }} de {{ pasos.length }}
+    </p>
     <h3 class="guia-titulo" id="guia-titulo">{{ actual()?.titulo }}</h3>
     <p class="guia-texto">{{ actual()?.texto }}</p>
 

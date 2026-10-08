@@ -3,11 +3,13 @@ import {
   EventEmitter,
   HostListener,
   Input,
+  OnChanges,
   OnDestroy,
   OnInit,
   Output,
   computed,
   ElementRef,
+  SimpleChanges,
   signal,
   viewChild,
 } from '@angular/core';
@@ -30,14 +32,20 @@ const ESPERA_MS = 80;
  * Guía interactiva: oscurece la pantalla, resalta el elemento de cada paso y
  * explica qué hacer. No bloquea los clics, así el usuario puede pulsar el botón
  * señalado mientras lee.
+ *
+ * Recorre un apartado cada vez: el esqueleto le pasa los pasos del apartado en
+ * el que está el usuario (`pasos`) y su nombre (`apartado`). Si cambia de
+ * apartado, los pasos cambian y la guía vuelve al primer paso.
  */
 @Component({
   selector: 'app-guia',
   templateUrl: './guia.component.html',
 })
-export class GuiaComponent implements OnInit, OnDestroy {
-  /** Pasos del recorrido, según el rol. */
+export class GuiaComponent implements OnInit, OnDestroy, OnChanges {
+  /** Pasos del recorrido del apartado actual. */
   @Input() pasos: PasoGuia[] = [];
+  /** Nombre del apartado, para que el usuario sepa dónde está. */
+  @Input() apartado = '';
   /** Se emite al terminar o al salir. */
   @Output() cerrar = new EventEmitter<void>();
   /** Petición a la pantalla: abrir o cerrar un formulario. */
@@ -69,6 +77,16 @@ export class GuiaComponent implements OnInit, OnDestroy {
     window.removeEventListener('resize', this.medir);
     window.removeEventListener('scroll', this.medir, true);
     if (this.temporizador) clearTimeout(this.temporizador);
+  }
+
+  /**
+   * Si cambia el recorrido (el usuario se movió a otro apartado con la guía
+   * abierta) se vuelve al primer paso de ese apartado.
+   */
+  ngOnChanges(cambios: SimpleChanges): void {
+    const nuevoRecorrido = cambios['pasos'];
+    if (!nuevoRecorrido || nuevoRecorrido.firstChange) return;
+    this.entrarEn(0);
   }
 
   // --- Navegación ---
@@ -127,7 +145,7 @@ export class GuiaComponent implements OnInit, OnDestroy {
 
     this.intentos = 0;
     this.foco.set(null);
-    if (!paso.selector) {
+    if (!paso.selector && !paso.boton) {
       this.buscando = false;
       this.colocacion.set('centrado');
       this.enfocarPanel();
@@ -143,12 +161,12 @@ export class GuiaComponent implements OnInit, OnDestroy {
 
   private localizar(): void {
     const paso = this.actual();
-    if (!paso?.selector) {
+    if (!paso || (!paso.selector && !paso.boton)) {
       this.buscando = false;
       return;
     }
 
-    const elemento = document.querySelector<HTMLElement>(paso.selector);
+    const elemento = this.resolver(paso);
     if (!elemento) {
       // El elemento todavía no existe: se reintenta y, si no aparece, se salta.
       if (this.intentos < INTENTOS_MAXIMOS) {
@@ -180,11 +198,36 @@ export class GuiaComponent implements OnInit, OnDestroy {
     this.temporizador = setTimeout(() => this.localizar(), ESPERA_MS);
   }
 
+  /**
+   * Localiza el elemento de un paso: primero por selector CSS y, si no aparece,
+   * por el texto visible del botón o enlace (`boton`). Así una etiqueta
+   * dinámica («Revisar (origen)») o un control sin `id` no rompen el recorrido.
+   */
+  private resolver(paso: PasoGuia): HTMLElement | null {
+    if (paso.selector) {
+      const porSelector = document.querySelector<HTMLElement>(paso.selector);
+      if (porSelector) return porSelector;
+    }
+    if (!paso.boton) return null;
+
+    const buscado = paso.boton.toLocaleLowerCase();
+    const candidatos = document.querySelectorAll<HTMLElement>(
+      'button, a, [role="button"]',
+    );
+    for (const elemento of Array.from(candidatos)) {
+      const visible =
+        elemento.offsetParent !== null || elemento.getClientRects().length > 0;
+      const etiqueta = (elemento.textContent ?? '').toLocaleLowerCase();
+      if (visible && etiqueta.includes(buscado)) return elemento;
+    }
+    return null;
+  }
+
   /** Recoloca el resaltado sin mover la página (para scroll y resize). */
   private medir = (): void => {
     const paso = this.actual();
-    if (!paso?.selector) return;
-    const elemento = document.querySelector<HTMLElement>(paso.selector);
+    if (!paso || (!paso.selector && !paso.boton)) return;
+    const elemento = this.resolver(paso);
     if (!elemento) {
       // El usuario navegó mientras la guía estaba abierta: se quita el resaltado
       // viejo y se busca el nuevo objetivo (si de verdad no existe, se salta).
