@@ -95,11 +95,38 @@
         </div>
       }
 
-      @if (error()) {
-        <div class="alert alert-error" role="alert">{{ error() }}</div>
-      }
-      @if (ok()) {
-        <div class="alert alert-success" role="status">{{ ok() }}</div>
+      <!-- Los avisos van flotando: en una pantalla tan larga, si el usuario está
+           abajo no vería un mensaje puesto arriba y creería que falló la red
+           cuando en realidad falta un reporte o una confirmación. -->
+      @if (error() || ok()) {
+        <div class="mensajes-flotantes">
+          @if (error()) {
+            <div class="alert alert-error" role="alert">
+              <span>{{ error() }}</span>
+              <button
+                type="button"
+                class="alert-cerrar"
+                (click)="cerrarMensajes()"
+                aria-label="Cerrar el aviso"
+              >
+                ✕
+              </button>
+            </div>
+          }
+          @if (ok()) {
+            <div class="alert alert-success" role="status">
+              <span>{{ ok() }}</span>
+              <button
+                type="button"
+                class="alert-cerrar"
+                (click)="cerrarMensajes()"
+                aria-label="Cerrar el aviso"
+              >
+                ✕
+              </button>
+            </div>
+          }
+        </div>
       }
 
       <div class="proyecto-cols">

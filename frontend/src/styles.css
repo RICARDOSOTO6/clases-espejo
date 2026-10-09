@@ -1024,13 +1024,24 @@ textarea.ng-invalid.ng-touched:focus {
 
 .lista-item {
   display: flex;
-  align-items: center;
+  /* `flex-start` en vez de `center`: cuando la fila lleva dentro un reporte
+     largo, centrar dejaba los botones flotando en mitad del bloque (espacio
+     muerto). */
+  align-items: flex-start;
   justify-content: space-between;
+  /* Sin esto, un contenido largo (el reporte de clase) empujaba los botones
+     fuera de la tarjeta: los hijos de un flex no bajan de su ancho mínimo. */
+  flex-wrap: wrap;
   gap: var(--space-3);
   padding: 0.65rem 0.5rem;
   border-bottom: 1px solid var(--neutral-200);
   border-radius: var(--radius-md);
   transition: background-color 0.15s ease;
+}
+
+/* Deja que el texto se encoja y parta en varias líneas en lugar de desbordar. */
+.lista-item > * {
+  min-width: 0;
 }
 
 .lista-item:last-child {
@@ -1044,7 +1055,10 @@ textarea.ng-invalid.ng-touched:focus {
 .lista-acciones {
   display: flex;
   align-items: center;
+  /* Si no caben, los botones bajan a la línea siguiente en vez de salirse. */
+  flex-wrap: wrap;
   gap: var(--space-2);
+  margin-left: auto;
 }
 
 .lista-acciones .btn-secondary {
@@ -3158,4 +3172,76 @@ textarea.ng-invalid.ng-touched:focus {
   gap: 6px;
   font-size: 0.8rem;
   cursor: pointer;
+}
+
+/* — Mensajes flotantes de la pantalla —
+   En pantallas largas (una clase espejo lo es) un aviso puesto arriba no lo ve
+   quien está abajo: cree que falló la red cuando lo que pasa es que falta un
+   reporte o una confirmación. */
+
+.mensajes-flotantes {
+  position: fixed;
+  top: calc(var(--navbar-h) + var(--space-3));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(560px, calc(100vw - var(--space-6)));
+  pointer-events: none;
+}
+
+.mensajes-flotantes .alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  box-shadow: var(--shadow-card-elevated);
+  pointer-events: auto;
+}
+
+.alert-cerrar {
+  margin-left: auto;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  line-height: 1.2;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.alert-cerrar:hover {
+  opacity: 1;
+}
+
+/* — Estado de las confirmaciones de un proceso —
+   Sin abrir cada reporte se ve si falta gente por confirmar, si te toca a ti o
+   si ya está todo. */
+
+.chip-estado {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip-estado--ok {
+  background: var(--success-100);
+  color: var(--success-700);
+}
+
+.chip-estado--aviso {
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+.chip-estado--error {
+  background: var(--danger-100);
+  color: var(--danger-700);
 }

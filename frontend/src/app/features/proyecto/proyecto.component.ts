@@ -423,6 +423,60 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     if (this.esDocente) this.cargarLista();
   }
 
+  // --- Mensajes de la pantalla ---
+
+  /** Cierra el aviso flotante que esté en pantalla. */
+  cerrarMensajes(): void {
+    this.error.set(null);
+    this.ok.set(null);
+  }
+
+  /**
+   * Cómo va un proceso de confirmaciones **desde el punto de vista del usuario**:
+   * si no ha confirmado nadie, si te toca a ti, si faltan otros o si ya está
+   * todo. Así no hay que abrir cada reporte para saber en qué punto está.
+   */
+  estadoConfirmaciones(
+    confirmadas: boolean[],
+    laMia: boolean,
+  ): { texto: string; tono: 'ok' | 'aviso' | 'error' | 'neutro' } {
+    const total = confirmadas.length;
+    const hechas = confirmadas.filter(Boolean).length;
+
+    if (total === 0) return { texto: 'Sin participantes', tono: 'neutro' };
+    if (hechas === total) return { texto: 'Confirmado por todos', tono: 'ok' };
+    if (!laMia) {
+      return {
+        texto:
+          hechas === 0
+            ? 'Nadie ha confirmado: te toca a ti'
+            : `Te toca confirmar (faltan ${total - hechas})`,
+        tono: 'error',
+      };
+    }
+    return {
+      texto:
+        hechas === 0
+          ? 'Nadie ha confirmado todavía'
+          : `Faltan ${total - hechas} por confirmar`,
+      tono: 'aviso',
+    };
+  }
+
+  /** El estado de las firmas de un reporte de clase. */
+  estadoFirmasReporte(reporte: {
+    participaciones?: { confirmadoEn: string | null }[];
+  }): { texto: string; tono: 'ok' | 'aviso' | 'error' | 'neutro' } {
+    const participaciones = reporte.participaciones ?? [];
+    const mia = this.miParticipacionReporte(
+      reporte as Parameters<typeof this.miParticipacionReporte>[0],
+    );
+    return this.estadoConfirmaciones(
+      participaciones.map((parte) => !!parte.confirmadoEn),
+      !!mia?.confirmadoEn,
+    );
+  }
+
   // --- Lista de alumnos ---
 
   /** Trae la lista guardada (o `null` si todavía no hay ninguna). */
