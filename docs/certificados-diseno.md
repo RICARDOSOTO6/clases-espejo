@@ -12,12 +12,15 @@
 | **Formato de la lista** | **Excel (`.xlsx`)** con plantilla propia que entrega la plataforma. Como respaldo se aceptarán **CSV** y **pegar la lista** en un cuadro de texto (cubre a quien solo tiene el PDF de su sistema escolar) |
 | **Plantilla del certificado** | **Universal**: una sola para toda la CACE, no una por institución |
 | **Quién firma** | El **presidente de la CACE**. Mientras ese usuario no exista, la línea de firma es un dato configurable |
-| **Datos del alumno** | **Solo el nombre** |
-| **Usuario «presidente de la CACE»** | **Más adelante**, como tercer tipo de usuario: será quien cree y firme las plantillas |
+| **Datos del alumno** | Se imprime **solo el nombre**. La matrícula se guarda (es una columna de la plantilla) porque ayuda a distinguir a dos alumnos que se llamen igual |
+| **Quién los emite** | **Los docentes**, cada uno para **sus** alumnos: sube la lista de su institución y genera los certificados |
+| **Envío por correo** | **Sí**: el certificado se le puede enviar a cada alumno por correo |
+| **Usuario «presidente de la CACE»** | **Aparcado**: se añadirá más adelante y todavía tiene cosas por definir |
 
 ### Lo que traerá el usuario presidente (cuando toque)
 
-Un tercer rol que pueda **subir la plantilla, editarla y firmarla**. Dos notas
+Un tercer rol que pueda **subir la plantilla, editarla y firmarla**. Está
+**aparcado a propósito** hasta que se defina qué más tendrá que hacer. Dos notas
 técnicas que lo dejan barato de añadir después:
 
 * En el esquema, `Usuario.rol` es un `String`, **no un enumerado**: agregar
@@ -39,6 +42,9 @@ técnicas que lo dejan barato de añadir después:
    plantilla, los certificados ya emitidos **no cambian**: la plantilla nueva solo
    se aplica a las emisiones nuevas, y reemitir uno concreto deja anotado el
    motivo y anula el anterior.
+5. Si el alumno tiene correo en la lista, se le puede **enviar su certificado**
+   desde la misma pantalla, de uno en uno o a todos de golpe. Se guarda **a quién
+   se envió y cuándo**, para no repetir el envío sin querer.
 
 ## 3. Modelo de datos propuesto
 
@@ -57,7 +63,8 @@ PlantillaCertificado        versionada
 Certificado
   id, folio (único), alumnoId, proyectoId, plantillaId (la versión usada),
   emitidoPorUsuarioId, emitidoEn, archivoPdf, hashSha256,
-  estado (EMITIDO | ANULADO), anuladoMotivo?, reemplazaAId?
+  estado (EMITIDO | ANULADO), anuladoMotivo?, reemplazaAId?,
+  enviadoEn?, enviadoA?
 ```
 
 **Por qué la lista es por institución y no por clase:** en una clase espejo hay
@@ -101,17 +108,20 @@ una fuente Unicode** (`pdfkit` lo permite con `registerFont`) y no filtrar nada.
 
 ## 6. Pendiente de decidir
 
-1. **Quién pulsa «emitir».** Con la firma en el presidente, lo más simple es que
-   cualquiera de los participantes de la clase pueda generar los certificados al
-   cierre (los docentes tienen la lista; los agentes supervisan). Alternativa:
-   solo los docentes, o solo los agentes.
-2. **¿Folio con verificación pública?** Propuesta: una página
-   `/verificar/<folio>`, con el folio y un QR impresos en el certificado, para
-   que cualquiera compruebe que es auténtico sin depender de la institución.
-3. **¿Se envían por correo a los alumnos?** Se puede reutilizar Nodemailer; haría
-   falta la columna de correo en la lista (hoy es opcional y no sale impresa).
-4. **Mientras no exista el usuario presidente, ¿quién edita la plantilla?** Opción
+1. **¿Folio con verificación pública?** Propuesta: una página `/verificar/<folio>`,
+   con el folio y un QR impresos en el certificado, para que cualquiera compruebe
+   que es auténtico sin depender de la institución.
+2. **Mientras no exista el usuario presidente, ¿quién edita la plantilla?** Opción
    provisional: el agente, o dejarla como configuración del sistema.
+3. **Qué más llevará el usuario presidente.** Aparcado hasta que se defina.
+
+### Cómo queda la columna de correo
+
+El envío por correo **no** convierte el correo en obligatorio: hay grupos donde el
+docente no tiene el correo de todos. La lista se acepta igual y la pantalla
+mostrará, por alumno, si se le puede enviar o queda «sin correo»; a esos se les
+entrega el PDF para imprimir. En la plantilla de Excel la columna va marcada como
+**opcional pero recomendada**, justo por esto.
 
 ## 7. Orden de trabajo previsto
 
@@ -119,5 +129,7 @@ una fuente Unicode** (`pdfkit` lo permite con `registerFont`) y no filtrar nada.
    y vista previa editable.
 2. **Certificados**: plantilla configurable (fondo + posiciones), emisión
    individual y por lote en ZIP.
-3. **Confianza**: folio, verificación pública con QR, inmutabilidad y reemisión.
-4. **Usuario presidente** (cuando se pida): rol nuevo que crea y firma plantillas.
+3. **Envío por correo** a los alumnos, con registro de a quién se envió.
+4. **Confianza**: folio, verificación pública con QR, inmutabilidad y reemisión.
+5. **Usuario presidente** (cuando se pida): rol nuevo que crea y firma plantillas,
+   con lo que se le vaya a agregar.
