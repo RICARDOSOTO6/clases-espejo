@@ -42,6 +42,13 @@ export class ProyectosService {
     return this.http.get<Proyecto>(`${API_URL}/proyectos/${id}`);
   }
 
+  /** Descarga el resumen de la clase en PDF (registro físico). */
+  descargarResumenPdf(id: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/proyectos/${id}/resumen-pdf`, {
+      responseType: 'blob',
+    });
+  }
+
   actualizar(id: number, dto: UpdateProyectoDto): Observable<Proyecto> {
     return this.http.patch<Proyecto>(`${API_URL}/proyectos/${id}`, dto);
   }

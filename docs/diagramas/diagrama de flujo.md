@@ -12,193 +12,105 @@
 flowchart TD
 
     %% ==========================================
-    %% FLUJO PRINCIPAL
+    %% PUESTA EN MARCHA
     %% ==========================================
 
     A([Inicio]) --> B[Agente registra su institución]
-    B --> C[Agente registra docentes]
-    C --> D[Agente registra materias]
-    D --> E[Asigna docentes a sus materias]
+    B --> C[Agente invita a sus docentes por correo]
+    C --> D[Docente activa su cuenta por el enlace recibido]
+    D --> E[Agente registra materias]
+    E --> F[Asigna cada materia a un docente]
 
-    E --> F[Docente crea solicitud de clase espejo]
-    F --> G[Selecciona materia, tema, objetivos,<br/>institución destino y fechas]
-    G --> H[Estado: Pendiente]
+    %% ==========================================
+    %% SOLICITUD
+    %% ==========================================
 
-    H --> I{Agente de institución origen<br/>revisa la solicitud}
+    F --> G[Docente crea solicitud de clase espejo]
+    G --> H[Selecciona materia, institución destino,<br/>objetivo y fecha propuesta]
+    H --> I[Estado: Pendiente]
 
-    I -->|Rechazar| J[Indica motivo]
-    J --> K[Estado: Rechazada]
-    K --> L[Notificar al docente]
+    %% ==========================================
+    %% DOBLE REVISIÓN
+    %% ==========================================
 
-    L --> M{¿Corrige y reenvía?}
-    M -->|Sí| F
+    I --> J{Agente de institución ORIGEN<br/>revisa la solicitud}
+    I -. "nadie responde a tiempo" .-> C1[Estado: Caducada]
+    C1 -. "reenviar con fecha nueva" .-> I
+
+    J -->|Rechazar| K[Indica motivo]
+    K --> L[Estado: Rechazada]
+    L --> M{¿El docente corrige y reenvía?}
+    M -->|Sí| I
     M -->|No| Z([Fin])
 
-    I -->|Aprobar| N[Estado: Aprobada por origen]
-    N --> O[Enviar a institución destino]
+    J -->|Aprobar| N[Estado: Aprobada por origen]
 
-    O --> P{Agente de institución destino<br/>revisa la solicitud}
+    N -. "nadie confirma a tiempo" .-> C1
 
-    P -->|Rechazar| Q[Estado: Rechazada por destino]
-    Q --> L
+    N --> O{Agente de institución DESTINO<br/>revisa la solicitud}
+    O -->|Rechazar| K
+    O -->|Aprobar| P[Estado: Aprobada]
 
-    P -->|Aprobar| R[Estado: Aprobada]
+    %% ==========================================
+    %% PROYECTO Y PLANIFICACIÓN
+    %% ==========================================
 
-    R --> S[Crear proyecto de clase espejo]
+    P --> Q[Se crea el proyecto de clase espejo]
+    Q --> R[Docentes de ambas instituciones<br/>hacen la planificación conjunta]
+    R --> S[Definen objetivos, temas, metodología,<br/>calendario y plataforma]
+    S --> T[Cada docente confirma su participación]
+    T --> U[Estado: En planificación]
 
-    S --> T[Docente de origen y docente de destino<br/>realizan planeación conjunta]
+    %% ==========================================
+    %% EJECUCIÓN
+    %% ==========================================
 
-    T --> U[Definen temas, objetivos, actividades,<br/>calendario, plataforma y evaluación]
+    U --> V[Estado: En curso]
+    V --> W[Realizar la clase espejo conjunta]
+    W --> X[Registrar sesiones, actividades y evidencias]
 
-    U --> V[Sistema guarda reporte de planeación conjunta]
-
-    V --> W[Estado: En planeación]
-
-    W --> X[Realizar clase espejo conjunta]
-
-    X --> Y[Ambos docentes registran asistencia,<br/>actividades y observaciones]
-
-    Y --> AA[Sistema guarda reporte de la clase conjunta<br/>y evidencias]
+    X --> AA[Firmar el reporte de clase de cada sesión]
 
     AA --> AB{¿Hay más sesiones?}
+    AB -->|Sí| W
+    AB -->|No| AC[Registrar la evaluación final]
 
-    AB -->|Sí| X
-    AB -->|No| AC[Ambos docentes registran evaluación final]
+    %% ==========================================
+    %% CIERRE
+    %% ==========================================
 
-    AC --> AD[Sistema guarda resultados]
-
+    AC --> AD[Validar: evaluación final y<br/>reportes de sesión confirmados]
     AD --> AE[Estado: Finalizada]
-
     AE --> Z
-
 
     %% ==========================================
     %% ESTILOS
     %% ==========================================
 
-    %% Inicio / Fin
     classDef inicioFin fill:#E2E8F0,stroke:#475569,color:#1E293B,stroke-width:3px
-
-    %% Agente / institución
     classDef agente fill:#DBEAFE,stroke:#2563EB,color:#1E3A8A,stroke-width:3px
-
-    %% Docente
     classDef docente fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:3px
-
-    %% Solicitud
     classDef solicitud fill:#EDE9FE,stroke:#7C3AED,color:#4C1D95,stroke-width:3px
-
-    %% Rechazo
     classDef rechazo fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D,stroke-width:3px
-
-    %% Aprobación
+    classDef caducada fill:#FFF7ED,stroke:#F59E0B,color:#7C2D12,stroke-width:3px
     classDef aprobado fill:#DCFCE7,stroke:#16A34A,color:#14532D,stroke-width:3px
-
-    %% Planeación
     classDef planeacion fill:#FFEDD5,stroke:#EA580C,color:#7C2D12,stroke-width:3px
-
-    %% Ejecución
     classDef ejecucion fill:#CCFBF1,stroke:#0D9488,color:#134E4A,stroke-width:3px
-
-    %% Sistema
     classDef sistema fill:#F1F5F9,stroke:#64748B,color:#334155,stroke-width:2px
 
-
-    %% ==========================================
-    %% APLICAR ESTILOS
-    %% ==========================================
-
     class A,Z inicioFin
-
-    class B,C,D,E,I,P agente
-
-    class F,G,M,T,U,X,Y,AC docente
-
-    class H,J,L,Q solicitud
-
-    class K,Q rechazo
-
-    class N,R,S,AE aprobado
-
-    class T,U,W planeacion
-
-    class X,Y,AB ejecucion
-
-    class V,AA,AD sistema
-
-
-    %% ==========================================
-    %% FLECHAS - AGENTE
-    %% ==========================================
-
-    linkStyle 0,1,2,3,7,8,13,14 stroke:#2563EB,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - DOCENTE
-    %% ==========================================
-
-    linkStyle 4,5,6,10,11,15,16,18,19,21,22 stroke:#D97706,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - RECHAZO
-    %% ==========================================
-
-    linkStyle 9,12 stroke:#DC2626,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - APROBACIÓN
-    %% ==========================================
-
-    linkStyle 17,20,27 stroke:#16A34A,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - PLANEACIÓN
-    %% ==========================================
-
-    linkStyle 23,24,25 stroke:#EA580C,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - EJECUCIÓN
-    %% ==========================================
-
-    linkStyle 26,28,29 stroke:#0D9488,stroke-width:3px
-
-
-    %% ==========================================
-    %% FLECHAS - SISTEMA
-    %% ==========================================
-
-    linkStyle 30,31,32 stroke:#64748B,stroke-width:3px
-
-
-    %% ==========================================
-    %% LEYENDA
-    %% ==========================================
-
-    subgraph Leyenda["Simbología"]
-
-        L1[Agente / Institución]
-        L2[Docente]
-        L3[Solicitud]
-        L4[Rechazo]
-        L5[Aprobación]
-        L6[Planeación conjunta]
-        L7[Ejecución de sesiones]
-        L8[Proceso del sistema]
-
-    end
-
-    class L1 agente
-    class L2 docente
-    class L3 solicitud
-    class L4 rechazo
-    class L5 aprobado
-    class L6 planeacion
-    class L7 ejecucion
-    class L8 sistema
+    class B,C,D,E,F,J,O agente
+    class G,H,M,R,S,T,W,X,AA,AC docente
+    class I,N,L solicitud
+    class K rechazo
+    class C1 caducada
+    class P,Q,AE aprobado
+    class R,S,U planeacion
+    class V,W,X,AB ejecucion
+    class AD sistema
 ```
+
+> **Nota sobre la caducidad.** Las solicitudes que siguen en *Pendiente* (nadie
+> respondió) o en *Aprobada por origen* (nadie confirmó) al cumplirse el plazo
+> pasan a **Caducada** automáticamente. No las rechaza una institución: las
+> cancela el sistema, y el docente puede reenviarlas con una fecha nueva.

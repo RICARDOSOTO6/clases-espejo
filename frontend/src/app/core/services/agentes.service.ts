@@ -8,6 +8,46 @@ const API_URL =
     ? `http://${window.location.hostname}:3000`
     : '';
 
+export interface HistorialClase {
+  proyectoId: number;
+  titulo: string;
+  estado: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  plataforma: string;
+  rol: string;
+  materia: string | null;
+  contraparte: string;
+  sesiones: number;
+  reportesConfirmados: number;
+  evaluaciones: {
+    instrumento: string;
+    resultado: string;
+    observaciones: string;
+  }[];
+}
+
+export interface HistorialDocente {
+  docente: {
+    id: number;
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+    correo: string;
+    gradoAcademico: string;
+    especialidad: string;
+    numeroEmpleado: string;
+  };
+  resumen: {
+    total: number;
+    finalizadas: number;
+    enCurso: number;
+    enPlanificacion: number;
+    canceladas: number;
+  };
+  clases: HistorialClase[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AgentesService {
   private readonly http = inject(HttpClient);
@@ -16,6 +56,13 @@ export class AgentesService {
     return this.http.post<InviteResponse>(
       `${API_URL}/agentes/invitar-docente`,
       dto,
+    );
+  }
+
+  /** Historial de clases espejo de un docente (archivero digital). */
+  historialDocente(id: number): Observable<HistorialDocente> {
+    return this.http.get<HistorialDocente>(
+      `${API_URL}/agentes/docentes/${id}/historial`,
     );
   }
 }

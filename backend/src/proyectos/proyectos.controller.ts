@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -16,7 +17,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import type { Response } from 'express';
 import { ProyectosService } from './proyectos.service';
+import { ResumenPdfService } from './resumen-pdf.service';
 import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { CreateProyectoDocenteDto } from './dto/create-proyecto-docente.dto';
 import { SavePlanificacionDto } from './dto/save-planificacion.dto';
@@ -82,7 +85,10 @@ const EVIDENCIAS_MULTER = {
 @Controller('proyectos')
 @UseGuards(JwtAuthGuard)
 export class ProyectosController {
-  constructor(private readonly proyectosService: ProyectosService) {}
+  constructor(
+    private readonly proyectosService: ProyectosService,
+    private readonly resumenPdf: ResumenPdfService,
+  ) {}
 
   @Get('mios')
   listarParaDocente(@CurrentUser('sub') usuarioId: number) {
@@ -100,6 +106,26 @@ export class ProyectosController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.proyectosService.obtener(usuarioId, id);
+  }
+
+  /** Descarga un PDF con el resumen de la clase (registro físico). */
+  @Get(':id/resumen-pdf')
+  async descargarResumenPdf(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const proyecto = await this.proyectosService.obtenerParaResumen(
+      usuarioId,
+      id,
+    );
+    const buffer = await this.resumenPdf.generar(proyecto);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="clase-espejo-${id}.pdf"`,
+    );
+    res.send(buffer);
   }
 
   @Get(':id/mensajes')

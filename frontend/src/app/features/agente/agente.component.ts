@@ -16,7 +16,11 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
-import { AgentesService } from '../../core/services/agentes.service';
+import {
+  AgentesService,
+  HistorialClase,
+  HistorialDocente,
+} from '../../core/services/agentes.service';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
@@ -142,6 +146,13 @@ export class AgenteComponent implements OnInit, OnDestroy {
   readonly programas = PROGRAMAS_EDUCATIVOS;
   readonly periodos = PERIODOS_ESCOLARES;
   prefijoTelefono = signal('');
+
+  // --- Historial de docentes (archivero digital) ---
+  showHistorialModal = false;
+  historialLoading = signal(false);
+  historialError = signal<string | null>(null);
+  historial = signal<HistorialDocente | null>(null);
+  historialDocenteActual: DocenteInstitucion | null = null;
 
   // --- Modal institución ---
   showInstitucionModal = false;
@@ -759,6 +770,41 @@ export class AgenteComponent implements OnInit, OnDestroy {
             ),
         }),
     );
+  }
+
+  // --- Historial de docentes (archivero digital) ---
+  abrirHistorial(d: DocenteInstitucion): void {
+    this.historialDocenteActual = d;
+    this.historial.set(null);
+    this.historialError.set(null);
+    this.showHistorialModal = true;
+    this.historialLoading.set(true);
+
+    this.agentes.historialDocente(d.id).subscribe({
+      next: (r) => {
+        this.historial.set(r);
+        this.historialLoading.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.historial.set(null);
+        this.historialLoading.set(false);
+        this.historialError.set(
+          extraerMensajeError(err, 'No se pudo cargar el historial'),
+        );
+      },
+    });
+  }
+
+  cerrarHistorial(): void {
+    this.showHistorialModal = false;
+    this.historialDocenteActual = null;
+    this.historial.set(null);
+  }
+
+  /** Cómo le fue en una clase: los resultados de las evaluaciones. */
+  resultadoClase(c: HistorialClase): string {
+    if (!c.evaluaciones.length) return 'Sin evaluación';
+    return c.evaluaciones.map((e) => e.resultado).join(' · ');
   }
 
   // --- Materias ---

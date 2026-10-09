@@ -1,15 +1,10 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class CreateReportePlanificacionDto {
-  @IsString()
-  @IsNotEmpty()
-  acuerdos: string;
+  @IsBoolean()
+  vistoBueno: boolean;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  calendario: string;
-
-  @IsString()
-  @IsNotEmpty()
-  actividadesAcordadas: string;
+  observaciones?: string;
 }

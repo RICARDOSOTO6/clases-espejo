@@ -100,6 +100,17 @@ export class ProyectosService {
     return proyecto;
   }
 
+  /** Carga un proyecto completo (para el PDF) verificando el acceso. */
+  async obtenerParaResumen(usuarioId: number, id: number) {
+    const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
+      where: { id },
+      include: this.includeProyectoCompleto(),
+    });
+    if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
+    await this.verificarAcceso(usuarioId, proyecto as any);
+    return proyecto;
+  }
+
   // --- Proyecto ---
 
   async actualizar(usuarioId: number, id: number, dto: UpdateProyectoDto) {
@@ -328,7 +339,7 @@ export class ProyectosService {
     });
   }
 
-  // --- Reporte de planificación ---
+  // --- Acta de supervisión de la planificación ---
 
   async listarReportes(usuarioId: number, id: number) {
     const proyecto = await this.obtenerConAcceso(usuarioId, id);
@@ -339,6 +350,11 @@ export class ProyectosService {
     });
   }
 
+  /**
+   * Acta de supervisión del agente sobre la planificación conjunta. Es única
+   * por planificación (se crea o actualiza) y no duplica los datos de la
+   * planificación: solo guarda el visto bueno y las observaciones del agente.
+   */
   async generarReporte(
     usuarioId: number,
     id: number,
@@ -349,18 +365,20 @@ export class ProyectosService {
 
     if (!proyecto.planificacion) {
       throw new BadRequestException(
-        'Aún no existe una planificación conjunta que reportar',
+        'Aún no existe una planificación conjunta que supervisar',
       );
     }
 
-    return this.prisma.reportePlanificacion.create({
-      data: {
-        planificacionId: proyecto.planificacion.id,
-        acuerdos: dto.acuerdos,
-        calendario: dto.calendario,
-        actividadesAcordadas: dto.actividadesAcordadas,
-        generadoEn: new Date(),
-      },
+    const datos = {
+      vistoBueno: dto.vistoBueno,
+      observaciones: dto.observaciones ?? '',
+      generadoEn: new Date(),
+    };
+
+    return this.prisma.reportePlanificacion.upsert({
+      where: { planificacionId: proyecto.planificacion.id },
+      update: datos,
+      create: { planificacionId: proyecto.planificacion.id, ...datos },
     });
   }
 
@@ -1069,6 +1087,58 @@ export class ProyectosService {
         },
       },
       planificacion: { include: this.includePlanificacion() },
+    };
+  }
+
+  /** Incluye todo lo necesario para el resumen en PDF de una clase espejo. */
+  private includeProyectoCompleto() {
+    return {
+      solicitud: {
+        include: {
+          materiaDestino: true,
+          institucionDestino: true,
+          asignacionOrigen: {
+            include: {
+              materia: true,
+              docenteInstitucion: {
+                include: {
+                  institucion: true,
+                  docente: { include: { usuario: true } },
+                },
+              },
+            },
+          },
+          revisiones: {
+            orderBy: { revisadaEn: 'asc' as const },
+            include: { agente: { include: { usuario: true } } },
+          },
+        },
+      },
+      docentes: {
+        include: {
+          asignacionDocente: {
+            include: {
+              materia: true,
+              docenteInstitucion: {
+                include: {
+                  institucion: true,
+                  docente: { include: { usuario: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+      planificacion: { include: this.includePlanificacion() },
+      sesiones: {
+        orderBy: { fechaHora: 'asc' as const },
+        include: {
+          reporte: { include: this.includeReporteClase() },
+          evidencias: true,
+        },
+      },
+      actividades: { orderBy: { fechaLimite: 'asc' as const } },
+      evaluaciones: true,
     };
   }
 }

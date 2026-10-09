@@ -108,11 +108,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   guardandoPlanificacion = signal(false);
   confirmando = signal(false);
 
-  // --- Reporte (agente) ---
+  // --- Acta de supervisión (agente) ---
   reporteForm = this.fb.group({
-    acuerdos: ['', Validators.required],
-    calendario: ['', Validators.required],
-    actividadesAcordadas: ['', Validators.required],
+    vistoBueno: [true],
+    observaciones: [''],
   });
   generandoReporte = signal(false);
 
@@ -189,6 +188,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   guardandoReporteClase = signal(false);
   confirmandoReporteClase = signal(false);
   guardandoEvaluacion = signal(false);
+  descargandoResumenPdf = signal(false);
 
   // Confirmaciones con el mismo modal que usa el resto de la aplicación.
   confirmacion = signal<{
@@ -570,7 +570,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   // --- Reporte ---
 
   generarReporte(): void {
-    if (this.generandoReporte() || this.reporteForm.invalid) return;
+    if (this.generandoReporte()) return;
     const v = this.reporteForm.value;
     this.generandoReporte.set(true);
     this.error.set(null);
@@ -578,24 +578,19 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
     this.proyectos
       .generarReporte(this.proyectoId, {
-        acuerdos: v.acuerdos ?? '',
-        calendario: v.calendario ?? '',
-        actividadesAcordadas: v.actividadesAcordadas ?? '',
+        vistoBueno: v.vistoBueno ?? true,
+        observaciones: v.observaciones ?? '',
       })
       .subscribe({
         next: () => {
           this.generandoReporte.set(false);
-          this.reporteForm.reset({
-            acuerdos: '',
-            calendario: '',
-            actividadesAcordadas: '',
-          });
-          this.ok.set('Reporte de planificación generado');
+          this.reporteForm.reset({ vistoBueno: true, observaciones: '' });
+          this.ok.set('Acta de supervisión guardada');
           this.cargar();
         },
         error: (err: HttpErrorResponse) => {
           this.generandoReporte.set(false);
-          this.error.set(extraerMensajeError(err, 'Error al generar el reporte'));
+          this.error.set(extraerMensajeError(err, 'Error al guardar el acta'));
         },
       });
   }
@@ -929,6 +924,33 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  /** Descarga el resumen de la clase en PDF para el registro físico. */
+  descargarResumenPdf(): void {
+    if (this.descargandoResumenPdf()) return;
+    this.descargandoResumenPdf.set(true);
+    this.error.set(null);
+    this.proyectos.descargarResumenPdf(this.proyectoId).subscribe({
+      next: (blob) => {
+        this.descargandoResumenPdf.set(false);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clase-espejo-${this.proyectoId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        this.ok.set('Resumen PDF descargado');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoResumenPdf.set(false);
+        this.error.set(
+          extraerMensajeError(err, 'Error al descargar el resumen PDF'),
+        );
+      },
+    });
   }
 
   cerrarProyecto(): void {

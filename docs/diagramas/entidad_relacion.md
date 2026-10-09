@@ -22,29 +22,48 @@ erDiagram
         int id PK
         string nombre
         string pais
+        string codigo_pais
+        string estado
+        string ciudad
+        string telefono
         string correo_institucional
         boolean activa
+        boolean registro_completo
     }
 
     USUARIO {
         int id PK
         string nombres
-        string apellidos
-        string correo
+        string apellido_paterno
+        string apellido_materno
+        string dni "unique"
+        string tipo_documento
+        string correo "unique"
         string password_hash "opcional"
+        string foto_url "opcional"
         boolean activo
+    }
+
+    INVITACION {
+        int id PK
+        string correo
+        string numero_empleado
+        int institucion_id FK
+        string token "unique"
+        datetime expiracion
+        datetime usada_en "opcional"
     }
 
     AGENTE_INTERNACIONALIZACION {
         int id PK
-        int usuario_id FK
+        int usuario_id FK "unique"
         int institucion_id FK
         string cargo
     }
 
     DOCENTE {
         int id PK
-        int usuario_id FK
+        int usuario_id FK "unique"
         string grado_academico
         string especialidad
     }
@@ -77,13 +96,13 @@ erDiagram
     SOLICITUD_CLASE_ESPEJO {
         int id PK
         int asignacion_origen_id FK
+        int asignacion_destino_id FK "opcional"
         int institucion_destino_id FK
         int materia_destino_id FK "opcional"
         string titulo
         string objetivo
         date fecha_propuesta
         string estado
-        datetime creada_en
     }
 
     REVISION_SOLICITUD {
@@ -98,7 +117,7 @@ erDiagram
 
     PROYECTO_CLASE_ESPEJO {
         int id PK
-        int solicitud_id FK
+        int solicitud_id FK "unique"
         string estado
         date fecha_inicio
         date fecha_fin
@@ -112,15 +131,22 @@ erDiagram
         string rol
     }
 
-    PLANIFICACION_CONJUNTA {
+    MENSAJE {
         int id PK
         int proyecto_id FK
+        int proyecto_docente_id FK
+        string contenido
+        datetime creado_en
+    }
+
+    PLANIFICACION_CONJUNTA {
+        int id PK
+        int proyecto_id FK "unique"
         string objetivos_acordados
         string temas_acordados
         string metodologia
         string plataforma
         string estado
-        datetime creada_en
     }
 
     PARTICIPACION_PLANIFICACION {
@@ -159,13 +185,12 @@ erDiagram
 
     REPORTE_CLASE_CONJUNTA {
         int id PK
-        int sesion_id FK
+        int sesion_id FK "unique"
         string desarrollo_clase
         int total_asistentes
         string incidencias
         string acuerdos_siguiente_sesion
         string estado
-        datetime creado_en
     }
 
     PARTICIPACION_REPORTE {
@@ -193,18 +218,24 @@ erDiagram
         string observaciones
     }
 
-    INSTITUCION ||--o{ AGENTE_INTERNACIONALIZACION : tiene
+    %% =========================
+    %% RELACIONES
+    %% =========================
+
     USUARIO ||--o| AGENTE_INTERNACIONALIZACION : es
     USUARIO ||--o| DOCENTE : es
 
-    DOCENTE ||--o{ DOCENTE_INSTITUCION : trabaja_en
+    INSTITUCION ||--o{ AGENTE_INTERNACIONALIZACION : tiene
+    INSTITUCION ||--o{ INVITACION : emite
     INSTITUCION ||--o{ DOCENTE_INSTITUCION : registra
-
     INSTITUCION ||--o{ MATERIA : ofrece
+
+    DOCENTE ||--o{ DOCENTE_INSTITUCION : trabaja_en
     DOCENTE_INSTITUCION ||--o{ ASIGNACION_DOCENTE : imparte
     MATERIA ||--o{ ASIGNACION_DOCENTE : se_asigna
 
     ASIGNACION_DOCENTE ||--o{ SOLICITUD_CLASE_ESPEJO : origina
+    ASIGNACION_DOCENTE o|--o{ SOLICITUD_CLASE_ESPEJO : asignada_destino
     INSTITUCION ||--o{ SOLICITUD_CLASE_ESPEJO : es_destino
     MATERIA o|--o{ SOLICITUD_CLASE_ESPEJO : materia_destino
 
@@ -215,10 +246,12 @@ erDiagram
     PROYECTO_CLASE_ESPEJO ||--o{ PROYECTO_DOCENTE : incluye
     ASIGNACION_DOCENTE ||--o{ PROYECTO_DOCENTE : participa
 
+    PROYECTO_CLASE_ESPEJO ||--o{ MENSAJE : tiene
+    PROYECTO_DOCENTE ||--o{ MENSAJE : escribe
+
     PROYECTO_CLASE_ESPEJO ||--o| PLANIFICACION_CONJUNTA : requiere
     PLANIFICACION_CONJUNTA ||--o{ PARTICIPACION_PLANIFICACION : recibe_confirmacion
     PROYECTO_DOCENTE ||--o{ PARTICIPACION_PLANIFICACION : participa
-
     PLANIFICACION_CONJUNTA ||--o{ REPORTE_PLANIFICACION : genera
 
     PROYECTO_CLASE_ESPEJO ||--o{ SESION : programa

@@ -258,15 +258,14 @@ model ParticipacionPlanificacion {
 }
 
 model ReportePlanificacion {
-  id                   Int                   @id @default(autoincrement())
-  planificacionId      Int                   @map("planificacion_id")
-  acuerdos             String
-  calendario           String
-  actividadesAcordadas String                @map("actividades_acordadas")
-  generadoEn           DateTime              @map("generado_en")
-  creadoEn             DateTime              @default(now()) @map("creado_en")
-  actualizadoEn        DateTime              @default(now()) @updatedAt @map("actualizado_en")
-  planificacion        PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
+  id              Int                   @id @default(autoincrement())
+  planificacionId Int                   @unique @map("planificacion_id")
+  vistoBueno      Boolean               @default(true) @map("visto_bueno")
+  observaciones   String                @default("") @map("observaciones")
+  generadoEn      DateTime              @map("generado_en")
+  creadoEn        DateTime              @default(now()) @map("creado_en")
+  actualizadoEn   DateTime              @default(now()) @updatedAt @map("actualizado_en")
+  planificacion   PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
 
   @@map("REPORTE_PLANIFICACION")
 }

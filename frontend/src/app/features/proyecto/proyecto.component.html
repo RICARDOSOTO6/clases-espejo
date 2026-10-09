@@ -64,6 +64,21 @@
         </div>
 
         <p class="muted">Objetivo: {{ p.solicitud.objetivo }}</p>
+
+        <p class="welcome-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="descargarResumenPdf()"
+            [disabled]="descargandoResumenPdf()"
+          >
+            {{
+              descargandoResumenPdf()
+                ? 'Generando PDF…'
+                : 'Descargar resumen (PDF)'
+            }}
+          </button>
+        </p>
       </section>
 
       @if (esAgente) {
@@ -293,42 +308,53 @@
             <span class="card-head-icon" aria-hidden="true">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </span>
-            <h2>Reporte de planificación</h2>
+            <h2>Acta de supervisión</h2>
           </div>
         </div>
 
-        @if (esAgente && proyectoAbierto()) {
-          <form [formGroup]="reporteForm" (ngSubmit)="generarReporte()" novalidate>
-            <div class="form-field">
-              <label for="r-acuerdos">Acuerdos</label>
-              <input id="r-acuerdos" type="text" formControlName="acuerdos" />
-            </div>
-            <div class="form-field">
-              <label for="r-calendario">Calendario</label>
-              <input id="r-calendario" type="text" formControlName="calendario" />
-            </div>
-            <div class="form-field">
-              <label for="r-actividades">Actividades acordadas</label>
-              <input id="r-actividades" type="text" formControlName="actividadesAcordadas" />
-            </div>
-            <button type="submit" class="btn btn-primary" [disabled]="reporteForm.invalid || generandoReporte() || !p.planificacion">
-              {{ generandoReporte() ? 'Generando...' : 'Generar reporte' }}
-            </button>
-          </form>
-        }
-
-        @if (!p.planificacion || p.planificacion.reportes.length === 0) {
-          <p class="muted">Todavía no se ha generado ningún reporte de planificación.</p>
+        @if (!p.planificacion) {
+          <p class="muted">Primero debe existir una planificación conjunta.</p>
         } @else {
-          @for (rep of p.planificacion.reportes; track rep.id) {
-            <div class="reporte">
-              <div class="reporte-head">
-                <strong>Reporte del {{ formatearFecha(rep.generadoEn) }}</strong>
+          @if (esAgente && proyectoAbierto()) {
+            <form [formGroup]="reporteForm" (ngSubmit)="generarReporte()" novalidate>
+              <div class="form-field">
+                <label for="r-vb">
+                  <input id="r-vb" type="checkbox" formControlName="vistoBueno" />
+                  <span>Doy mi visto bueno a la planificación conjunta</span>
+                </label>
               </div>
-              <p><span class="meta-label">Acuerdos:</span> {{ rep.acuerdos }}</p>
-              <p><span class="meta-label">Calendario:</span> {{ rep.calendario }}</p>
-              <p><span class="meta-label">Actividades:</span> {{ rep.actividadesAcordadas }}</p>
-            </div>
+              <div class="form-field">
+                <label for="r-observaciones">Observaciones (opcional)</label>
+                <input id="r-observaciones" type="text" formControlName="observaciones" />
+              </div>
+              <button type="submit" class="btn btn-primary" [disabled]="generandoReporte()">
+                {{ generandoReporte() ? 'Guardando...' : 'Guardar acta' }}
+              </button>
+            </form>
+          }
+
+          @if (p.planificacion.reportes.length === 0) {
+            <p class="muted">Todavía no hay acta de supervisión.</p>
+          } @else {
+            @for (rep of p.planificacion.reportes; track rep.id) {
+              <div class="reporte">
+                <div class="reporte-head">
+                  <strong>Acta del {{ formatearFecha(rep.generadoEn) }}</strong>
+                  <span
+                    class="estado"
+                    [class.aprobada]="rep.vistoBueno"
+                    [class.pendiente]="!rep.vistoBueno"
+                  >
+                    {{ rep.vistoBueno ? 'Visto bueno' : 'Con observaciones' }}
+                  </span>
+                </div>
+                @if (rep.observaciones) {
+                  <p>
+                    <span class="meta-label">Observaciones:</span> {{ rep.observaciones }}
+                  </p>
+                }
+              </div>
+            }
           }
         }
       </section>

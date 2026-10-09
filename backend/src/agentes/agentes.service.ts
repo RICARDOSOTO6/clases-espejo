@@ -201,6 +201,100 @@ export class AgentesService {
     return { mensaje: 'Docente eliminado' };
   }
 
+  /**
+   * Historial de clases espejo de un docente (archivero digital). Devuelve las
+   * clases en las que ha participado con su estado, la institución contraparte
+   * y cómo le fue (evaluaciones y reportes confirmados).
+   */
+  async historialDocente(agenteId: number, docenteInstitucionId: number) {
+    const agente = await this.getAgente(agenteId);
+
+    const di = await this.prisma.docenteInstitucion.findFirst({
+      where: { id: docenteInstitucionId, institucionId: agente.institucionId },
+      include: { docente: { include: { usuario: true } } },
+    });
+    if (!di) throw new NotFoundException('Docente no encontrado');
+
+    const participaciones = await this.prisma.proyectoDocente.findMany({
+      where: { asignacionDocente: { docenteInstitucionId: di.id } },
+      include: {
+        proyecto: {
+          include: {
+            solicitud: {
+              include: {
+                institucionDestino: true,
+                asignacionOrigen: {
+                  include: {
+                    docenteInstitucion: { include: { institucion: true } },
+                  },
+                },
+              },
+            },
+            evaluaciones: true,
+            sesiones: { include: { reporte: true } },
+          },
+        },
+        asignacionDocente: { include: { materia: true } },
+      },
+      orderBy: { proyecto: { creadoEn: 'desc' } },
+    });
+
+    const clases = participaciones.map((p) => {
+      const proyecto = p.proyecto;
+      const origenInst =
+        proyecto.solicitud.asignacionOrigen.docenteInstitucion.institucion;
+      const destinoInst = proyecto.solicitud.institucionDestino;
+      const contraparte =
+        p.rol === 'ORIGEN' ? destinoInst.nombre : origenInst.nombre;
+      const sesiones = proyecto.sesiones ?? [];
+      const confirmadas = sesiones.filter(
+        (s) => s.reporte?.estado === 'CONFIRMADO',
+      ).length;
+
+      return {
+        proyectoId: proyecto.id,
+        titulo: proyecto.solicitud.titulo,
+        estado: proyecto.estado,
+        fechaInicio: proyecto.fechaInicio,
+        fechaFin: proyecto.fechaFin,
+        plataforma: proyecto.plataforma,
+        rol: p.rol,
+        materia: p.asignacionDocente?.materia?.nombre ?? null,
+        contraparte,
+        sesiones: sesiones.length,
+        reportesConfirmados: confirmadas,
+        evaluaciones: proyecto.evaluaciones.map((e) => ({
+          instrumento: e.instrumento,
+          resultado: e.resultado,
+          observaciones: e.observaciones,
+        })),
+      };
+    });
+
+    return {
+      docente: {
+        id: di.id,
+        nombres: di.docente.usuario.nombres,
+        apellidoPaterno: di.docente.usuario.apellidoPaterno,
+        apellidoMaterno: di.docente.usuario.apellidoMaterno,
+        correo: di.docente.usuario.correo,
+        gradoAcademico: di.docente.gradoAcademico,
+        especialidad: di.docente.especialidad,
+        numeroEmpleado: di.numeroEmpleado,
+      },
+      resumen: {
+        total: clases.length,
+        finalizadas: clases.filter((c) => c.estado === 'FINALIZADO').length,
+        enCurso: clases.filter((c) => c.estado === 'EN_CURSO').length,
+        enPlanificacion: clases.filter(
+          (c) => c.estado === 'EN_PLANIFICACION',
+        ).length,
+        canceladas: clases.filter((c) => c.estado === 'CANCELADO').length,
+      },
+      clases,
+    };
+  }
+
   private async getAgente(usuarioId: number) {
     const agente = await this.prisma.agenteInternacionalizacion.findUnique({
       where: { usuarioId },

@@ -40,9 +40,8 @@ export interface ParticipacionPlanificacion {
 
 export interface ReportePlanificacion {
   id: number;
-  acuerdos: string;
-  calendario: string;
-  actividadesAcordadas: string;
+  vistoBueno: boolean;
+  observaciones: string;
   generadoEn: string;
 }
 
@@ -111,9 +110,8 @@ export interface SavePlanificacionDto {
 }
 
 export interface CreateReportePlanificacionDto {
-  acuerdos: string;
-  calendario: string;
-  actividadesAcordadas: string;
+  vistoBueno: boolean;
+  observaciones?: string;
 }
 
 export interface Mensaje {

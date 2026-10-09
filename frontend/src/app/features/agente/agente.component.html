@@ -272,6 +272,9 @@
                   <span class="estado" [class.pendiente]="!d.activo">
                     {{ d.activo ? 'Activo' : 'Desactivado' }}
                   </span>
+                  <button class="btn btn-secondary" (click)="abrirHistorial(d)">
+                    Historial
+                  </button>
                   <button class="btn btn-secondary" (click)="cambiarEstadoDocente(d)">
                     {{ d.activo ? 'Desactivar' : 'Activar' }}
                   </button>
@@ -813,6 +816,81 @@
         {{ revisionLoading() ? 'Guardando...' : 'Guardar revisión' }}
       </button>
     </form>
+  </app-modal>
+}
+
+@if (showHistorialModal) {
+  <app-modal
+    title="Historial de clases espejo"
+    size="lg"
+    (close)="cerrarHistorial()"
+  >
+    @if (historialLoading()) {
+      <p class="muted">Cargando historial…</p>
+    } @else if (historialError()) {
+      <div class="alert alert-error" role="alert">{{ historialError() }}</div>
+    } @else if (historial(); as h) {
+      <p class="muted">
+        <strong>
+          {{ h.docente.nombres }} {{ h.docente.apellidoPaterno }}
+          {{ h.docente.apellidoMaterno }}
+        </strong>
+        · {{ h.docente.gradoAcademico }} · {{ h.docente.especialidad }}
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Clases</span>
+          <span>{{ h.resumen.total }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Finalizadas</span>
+          <span>{{ h.resumen.finalizadas }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">En curso</span>
+          <span>{{ h.resumen.enCurso }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">En planificación</span>
+          <span>{{ h.resumen.enPlanificacion }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Canceladas</span>
+          <span>{{ h.resumen.canceladas }}</span>
+        </div>
+      </div>
+
+      @if (h.clases.length === 0) {
+        <p class="muted">
+          Este docente aún no ha participado en ninguna clase espejo.
+        </p>
+      } @else {
+        <ul class="lista">
+          @for (c of h.clases; track c.proyectoId) {
+            <li class="lista-item">
+              <div>
+                <strong>{{ c.titulo }}</strong>
+                <span class="muted"> · {{ c.materia ?? 'Sin materia' }}</span>
+                <div class="muted">
+                  {{ c.contraparte }} · {{ c.sesiones }} sesión(es) ·
+                  {{ c.reportesConfirmados }} reporte(s) confirmado(s)
+                </div>
+                <div class="muted">Resultado: {{ resultadoClase(c) }}</div>
+              </div>
+              <span
+                class="estado"
+                [class.pendiente]="c.estado === 'EN_PLANIFICACION'"
+                [class.aprobada]="c.estado === 'FINALIZADO'"
+                [class.cancelada]="c.estado === 'CANCELADO'"
+              >
+                {{ estadoProyectoLabel(c.estado) }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
   </app-modal>
 }
 

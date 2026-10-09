@@ -1,0 +1,6 @@
+# Perfil temporal de Chrome que dejó una verificación automatizada (7-oct-2026).
+# Pesa unos 125 MB y Windows lo mantiene bloqueado mientras Chrome siga abierto:
+# se borra con   rd /s /q .tmp-chrome   cuando cierres el navegador.
+# Se ignora para que no pueda entrar en un commit por accidente: un `git add -A`
+# lo habría subido entero.
+.tmp-chrome/

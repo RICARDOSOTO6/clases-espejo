@@ -21,6 +21,8 @@ const DELETE_ORDER = [
   'reportePlanificacion',
   'participacionPlanificacion',
   'planificacionConjunta',
+  'mensaje',
+  'sesion',
   'proyectoDocente',
   'proyectoClaseEspejo',
   'revisionSolicitud',

@@ -62,4 +62,13 @@ export class AgentesController {
   ) {
     return this.agentesService.eliminarDocente(agenteId, id);
   }
+
+  @Get('docentes/:id/historial')
+  @UseGuards(JwtAuthGuard)
+  historialDocente(
+    @CurrentUser('sub') agenteId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.agentesService.historialDocente(agenteId, id);
+  }
 }
