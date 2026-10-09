@@ -650,6 +650,237 @@
         }
       </section>
 
+      @if (esDocente) {
+        <section class="card" id="alumnos">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <h2 id="alumnos-titulo">Alumnos</h2>
+              @if (listaAlumnos(); as lista) {
+                <span class="card-head-count">
+                  {{ lista.resumen.incluidos }} de {{ lista.resumen.total }}
+                </span>
+              }
+            </div>
+            @if (listaAlumnos() && !modoReemplazo() && !vistaPrevia()) {
+              <div class="card-head-actions">
+                <button type="button" class="btn btn-secondary" (click)="reemplazarLista()">
+                  Subir otra lista
+                </button>
+              </div>
+            }
+          </div>
+
+          <p class="muted">
+            Sube la lista de <strong>tus</strong> alumnos de esta clase espejo: con
+            ella se emitirán los certificados al cerrar el curso. Puedes usar la
+            plantilla de Excel, un CSV o pegar los nombres.
+          </p>
+
+          @if (errorLista()) {
+            <div class="alert alert-error" role="alert">{{ errorLista() }}</div>
+          }
+          @if (avisoLista()) {
+            <div class="alert alert-success" role="status">{{ avisoLista() }}</div>
+          }
+
+          @if (cargandoLista()) {
+            <p class="muted">Cargando la lista…</p>
+          } @else if (vistaPrevia(); as vista) {
+            <div class="alumnos-resumen">
+              <span class="alumnos-chip alumnos-chip--ok">
+                {{ vista.filas.length }} alumno(s) listos
+              </span>
+              @if (vista.resumen.descartadas > 0) {
+                <span class="alumnos-chip alumnos-chip--aviso">
+                  {{ vista.resumen.descartadas }} descartada(s)
+                </span>
+              }
+              @if (vista.resumen.conAvisos > 0) {
+                <span class="alumnos-chip alumnos-chip--aviso">
+                  {{ vista.resumen.conAvisos }} con avisos
+                </span>
+              }
+              <span class="alumnos-chip">{{ vista.origen }}</span>
+            </div>
+
+            @if (vista.avisos.length > 0) {
+              <ul class="alumnos-avisos">
+                @for (aviso of vista.avisos; track aviso) {
+                  <li>{{ aviso }}</li>
+                }
+              </ul>
+            }
+
+            <div class="alumnos-scroll">
+              <table class="alumnos-tabla">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Matrícula</th>
+                    <th>Correo</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (fila of vista.filas; track $index) {
+                    <tr>
+                      <td>{{ $index + 1 }}</td>
+                      <td>
+                        <input
+                          class="alumnos-input"
+                          [value]="fila.nombre"
+                          (input)="editarFila($index, 'nombre', $event)"
+                          aria-label="Nombre del alumno"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          class="alumnos-input"
+                          [value]="fila.matricula"
+                          (input)="editarFila($index, 'matricula', $event)"
+                          aria-label="Matrícula"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          class="alumnos-input"
+                          [value]="fila.correo"
+                          (input)="editarFila($index, 'correo', $event)"
+                          aria-label="Correo"
+                        />
+                        @if (fila.avisos.length > 0) {
+                          <span class="alumnos-aviso">{{ fila.avisos[0] }}</span>
+                        }
+                      </td>
+                      <td>
+                        <button type="button" class="link-button" (click)="quitarFila($index)">
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="alumnos-acciones">
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="guardandoLista() || vista.filas.length === 0"
+                (click)="guardarLista()"
+              >
+                @if (guardandoLista()) {
+                  <span class="spinner" aria-hidden="true"></span>
+                }
+                {{ guardandoLista() ? 'Guardando…' : 'Guardar lista' }}
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="cancelarVistaPrevia()">
+                Cancelar
+              </button>
+              <span class="muted">Revisa y corrige lo que haga falta antes de guardar.</span>
+            </div>
+          } @else if (!listaAlumnos() || modoReemplazo()) {
+            <div class="alumnos-carga">
+              <label class="btn btn-secondary">
+                Elegir archivo (.xlsx o .csv)
+                <input
+                  type="file"
+                  accept=".xlsx,.csv"
+                  (change)="leerArchivo($event)"
+                  hidden
+                />
+              </label>
+
+              <p class="muted">
+                …o pega la lista aquí, un alumno por línea (también puedes
+                copiar y pegar directamente desde Excel):
+              </p>
+              <textarea
+                rows="4"
+                [value]="textoPegado()"
+                (input)="textoPegado.set($any($event.target).value)"
+                placeholder="Ana Lucía Ramírez Pech&#10;José Manuel Uc Dzul"
+                aria-label="Nombres de los alumnos, uno por línea"
+              ></textarea>
+
+              <div class="alumnos-acciones">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [disabled]="leyendoLista() || !textoPegado().trim()"
+                  (click)="leerTextoPegado()"
+                >
+                  Leer la lista pegada
+                </button>
+                @if (modoReemplazo()) {
+                  <button type="button" class="btn btn-outline" (click)="modoReemplazo.set(false)">
+                    Volver a la lista guardada
+                  </button>
+                }
+                @if (leyendoLista()) {
+                  <span class="muted">Leyendo…</span>
+                }
+              </div>
+            </div>
+          } @else if (listaAlumnos(); as lista) {
+            <p class="muted">
+              {{ lista.resumen.total }} alumnos · {{ lista.resumen.incluidos }} entran
+              en los certificados
+              @if (lista.resumen.sinCorreo > 0) {
+                · {{ lista.resumen.sinCorreo }} sin correo (a esos hay que
+                entregarles el certificado impreso)
+              }
+              · la subió {{ lista.subidaPor }}
+            </p>
+
+            <div class="alumnos-scroll">
+              <table class="alumnos-tabla">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Matrícula</th>
+                    <th>Correo</th>
+                    <th>Certificado</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (alumno of lista.alumnos; track alumno.id) {
+                    <tr [class.alumnos-fila--fuera]="!alumno.incluido">
+                      <td>{{ $index + 1 }}</td>
+                      <td>{{ alumno.nombre }}</td>
+                      <td>{{ alumno.matricula || '—' }}</td>
+                      <td>{{ alumno.correo || 'sin correo' }}</td>
+                      <td>
+                        <label class="alumnos-interruptor">
+                          <input
+                            type="checkbox"
+                            [checked]="alumno.incluido"
+                            (change)="alternarIncluido(alumno)"
+                          />
+                          <span>{{ alumno.incluido ? 'Sí' : 'No' }}</span>
+                        </label>
+                      </td>
+                      <td>
+                        <button type="button" class="link-button" (click)="eliminarAlumno(alumno)">
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
       <section class="card">
         <div class="card-head">
           <div class="card-head-title">

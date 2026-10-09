@@ -684,6 +684,14 @@ export function guiaProyecto(rol: 'DOCENTE' | 'AGENTE'): GuiaSeccion {
       texto:
         'Mientras no confirmes, la clase no avanza. Es tu forma de decir «cuento con ello»; el otro docente hace lo mismo desde su institución.',
     });
+
+    // La lista de alumnos solo la ve el docente: de ahí salen los certificados.
+    pasos.splice(pasos.length - 1, 0, {
+      selector: '#alumnos',
+      titulo: 'La lista de tus alumnos',
+      texto:
+        'Aquí subes a tus alumnos: con un archivo de Excel, un CSV o pegando los nombres. La plataforma los lee, te avisa de los repetidos o mal escritos y te deja corregirlos antes de guardar. Con esa lista se emitirán los certificados cuando la clase se cierre.',
+    });
   } else {
     pasos.splice(4, 0, {
       titulo: 'Tu parte: acompañar y firmar el acta',

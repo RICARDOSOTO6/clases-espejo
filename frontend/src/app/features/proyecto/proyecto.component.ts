@@ -13,6 +13,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
+import { ListasAlumnosService } from '../../core/services/listas-alumnos.service';
+import {
+  AlumnoLista,
+  ListaAlumnos,
+  PrevisualizacionLista,
+} from '../../core/models/lista-alumnos.models';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
@@ -49,6 +55,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly proyectos = inject(ProyectosService);
   private readonly materiasService = inject(MateriasService);
   private readonly instituciones = inject(InstitucionesService);
+  private readonly listasService = inject(ListasAlumnosService);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (campana y contadores). */
   readonly ui = inject(UiStateService);
@@ -69,6 +76,20 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
   readonly panelUrl = this.esAgente ? '/agente' : '/docente';
+
+  // --- Lista de alumnos (la base de los certificados) ---
+  /** La lista guardada de la institución del docente, si ya subió una. */
+  readonly listaAlumnos = signal<ListaAlumnos | null>(null);
+  /** Lo que se leyó del archivo o del texto, antes de guardarlo. */
+  readonly vistaPrevia = signal<PrevisualizacionLista | null>(null);
+  readonly textoPegado = signal('');
+  /** El docente quiere subir una lista nueva encima de la guardada. */
+  readonly modoReemplazo = signal(false);
+  readonly cargandoLista = signal(false);
+  readonly leyendoLista = signal(false);
+  readonly guardandoLista = signal(false);
+  readonly errorLista = signal<string | null>(null);
+  readonly avisoLista = signal<string | null>(null);
 
   /** Nombre completo para la navbar. */
   get nombreUsuario(): string {
@@ -396,6 +417,183 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           extraerMensajeError(err, 'No se pudo cargar el proyecto'),
         );
       },
+    });
+
+    // La lista de alumnos la lleva el docente: el agente solo acompaña.
+    if (this.esDocente) this.cargarLista();
+  }
+
+  // --- Lista de alumnos ---
+
+  /** Trae la lista guardada (o `null` si todavía no hay ninguna). */
+  cargarLista(): void {
+    this.cargandoLista.set(true);
+    this.errorLista.set(null);
+    this.listasService.obtener(this.proyectoId).subscribe({
+      next: (lista) => {
+        this.listaAlumnos.set(lista);
+        this.cargandoLista.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoLista.set(false);
+        this.errorLista.set(
+          extraerMensajeError(err, 'No se pudo cargar la lista de alumnos'),
+        );
+      },
+    });
+  }
+
+  /** Lee el archivo elegido y muestra la vista previa (todavía no guarda). */
+  leerArchivo(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    if (!archivo) return;
+
+    this.leyendoLista.set(true);
+    this.errorLista.set(null);
+    this.avisoLista.set(null);
+    this.listasService.previsualizarArchivo(this.proyectoId, archivo).subscribe({
+      next: (vista) => {
+        this.vistaPrevia.set(vista);
+        this.leyendoLista.set(false);
+        entrada.value = '';
+      },
+      error: (err: HttpErrorResponse) => {
+        this.leyendoLista.set(false);
+        entrada.value = '';
+        this.errorLista.set(
+          extraerMensajeError(err, 'No se pudo leer el archivo'),
+        );
+      },
+    });
+  }
+
+  /** Lee la lista pegada a mano. */
+  leerTextoPegado(): void {
+    const texto = this.textoPegado().trim();
+    if (!texto) return;
+
+    this.leyendoLista.set(true);
+    this.errorLista.set(null);
+    this.avisoLista.set(null);
+    this.listasService.previsualizarTexto(this.proyectoId, texto).subscribe({
+      next: (vista) => {
+        this.vistaPrevia.set(vista);
+        this.leyendoLista.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.leyendoLista.set(false);
+        this.errorLista.set(
+          extraerMensajeError(err, 'No se pudo leer la lista'),
+        );
+      },
+    });
+  }
+
+  /** Corrige una celda de la vista previa antes de guardar. */
+  editarFila(
+    indice: number,
+    campo: 'nombre' | 'matricula' | 'correo',
+    evento: Event,
+  ): void {
+    const valor = (evento.target as HTMLInputElement).value;
+    this.vistaPrevia.update((vista) => {
+      if (!vista) return vista;
+      return {
+        ...vista,
+        filas: vista.filas.map((fila, i) =>
+          i === indice ? { ...fila, [campo]: valor } : fila,
+        ),
+      };
+    });
+  }
+
+  /** Saca una fila de la vista previa (no toca lo que ya está guardado). */
+  quitarFila(indice: number): void {
+    this.vistaPrevia.update((vista) =>
+      vista
+        ? { ...vista, filas: vista.filas.filter((_, i) => i !== indice) }
+        : vista,
+    );
+  }
+
+  cancelarVistaPrevia(): void {
+    this.vistaPrevia.set(null);
+    this.textoPegado.set('');
+    this.errorLista.set(null);
+    this.avisoLista.set(null);
+    this.modoReemplazo.set(false);
+  }
+
+  /** Guarda la lista revisada, reemplazando la anterior si la había. */
+  guardarLista(): void {
+    const vista = this.vistaPrevia();
+    if (!vista || vista.filas.length === 0) return;
+
+    this.guardandoLista.set(true);
+    this.errorLista.set(null);
+    this.listasService
+      .guardar(
+        this.proyectoId,
+        vista.origen,
+        vista.filas.map((fila) => ({
+          nombre: fila.nombre,
+          matricula: fila.matricula,
+          correo: fila.correo,
+        })),
+      )
+      .subscribe({
+        next: (lista) => {
+          this.listaAlumnos.set(lista);
+          this.vistaPrevia.set(null);
+          this.textoPegado.set('');
+          this.modoReemplazo.set(false);
+          this.guardandoLista.set(false);
+          this.avisoLista.set(
+            `Lista guardada: ${lista.resumen.total} alumno(s).`,
+          );
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoLista.set(false);
+          this.errorLista.set(
+            extraerMensajeError(err, 'No se pudo guardar la lista'),
+          );
+        },
+      });
+  }
+
+  /** Muestra el área para subir o pegar una lista nueva. */
+  reemplazarLista(): void {
+    this.modoReemplazo.set(true);
+    this.vistaPrevia.set(null);
+    this.avisoLista.set(null);
+  }
+
+  /** Entra o saca a un alumno de los certificados, sin borrarlo de la lista. */
+  alternarIncluido(alumno: AlumnoLista): void {
+    this.errorLista.set(null);
+    this.listasService
+      .editarAlumno(this.proyectoId, alumno.id, { incluido: !alumno.incluido })
+      .subscribe({
+        next: (lista) => this.listaAlumnos.set(lista),
+        error: (err: HttpErrorResponse) =>
+          this.errorLista.set(
+            extraerMensajeError(err, 'No se pudo actualizar al alumno'),
+          ),
+      });
+  }
+
+  eliminarAlumno(alumno: AlumnoLista): void {
+    this.errorLista.set(null);
+    this.listasService.eliminarAlumno(this.proyectoId, alumno.id).subscribe({
+      next: (lista) => {
+        this.listaAlumnos.set(lista);
+        this.avisoLista.set(`${alumno.nombre} salió de la lista.`);
+      },
+      error: (err: HttpErrorResponse) =>
+        this.errorLista.set(
+          extraerMensajeError(err, 'No se pudo quitar al alumno'),
+        ),
     });
   }
 

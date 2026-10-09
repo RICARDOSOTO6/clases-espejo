@@ -582,6 +582,43 @@ falta:
 * *"Cada sesión necesita su reporte de clase confirmado por los docentes"*
 * *"La clase espejo ya está finalizada"*
 
+### 8.11 Alumnos (la base de los certificados)
+
+**Quién:** el **docente** de cada institución, para **sus** alumnos. El agente no
+ve esta sección: solo acompaña la clase.
+
+Sube la lista de tus alumnos de la clase espejo, y con ella se emitirán los
+certificados al cerrar el curso. Tienes tres caminos:
+
+1. **La plantilla de Excel** (`plantilla-lista-alumnos.xlsx`): solo el nombre es
+   obligatorio; la matrícula y el correo son opcionales. La matrícula ayuda a
+   distinguir a dos alumnos que se llamen igual y el correo es lo que permite
+   **enviarle** el certificado.
+2. **Un archivo CSV** con la misma idea (una fila por alumno).
+3. **Pegar los nombres** en el cuadro de texto, uno por línea. También puedes
+   copiar y pegar directamente desde Excel.
+
+La plataforma **lee la lista y te la muestra antes de guardar nada**, para que la
+revises:
+
+| Lo que hace | Detalle |
+| --- | --- |
+| Reconoce los encabezados | Aunque digan «Matrícula (opcional)» o «Correo (opcional, para enviar el certificado)» |
+| Descarta repetidos | Con el nombre y la matrícula; te dice en qué fila estaba |
+| Descarta filas sin nombre | O que no parecen un nombre («12345») |
+| Avisa de un correo mal escrito | Se guarda sin correo en vez de rechazarte toda la lista |
+| Pone un tope | 300 alumnos; si son más, divídelo en dos clases espejo |
+
+En la vista previa puedes **corregir cualquier celda** o **quitar filas** antes de
+guardar. Después:
+
+* Cada alumno tiene un interruptor **«Certificado: Sí/No»** para dejarlo fuera sin
+  borrarlo de la lista (útil si alguien no acreditó).
+* «Quitar» lo saca de la lista.
+* «Subir otra lista» reemplaza la anterior.
+* Verás cuántos alumnos entran y **cuántos se quedaron sin correo**, porque a esos
+  hay que entregarles el certificado impreso.
+
 ---
 
 ## 9. Estados del sistema

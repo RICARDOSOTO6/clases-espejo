@@ -123,13 +123,31 @@ mostrará, por alumno, si se le puede enviar o queda «sin correo»; a esos se l
 entrega el PDF para imprimir. En la plantilla de Excel la columna va marcada como
 **opcional pero recomendada**, justo por esto.
 
-## 7. Orden de trabajo previsto
+## 7. Orden de trabajo
 
-1. **Listas**: modelo, migración, subida de Excel/CSV con validación, pegar texto
-   y vista previa editable.
+1. ✅ **Listas** (hecho): tablas `LISTA_ALUMNOS` y `ALUMNO`, lectura de Excel
+   (`.xlsx`), CSV y lista pegada, con validación, vista previa editable y los
+   endpoints bajo `/proyectos/:id/listas-alumnos`. La plantilla que se entrega a
+   las instituciones vive en `docs/plantillas/plantilla-lista-alumnos.xlsx`.
 2. **Certificados**: plantilla configurable (fondo + posiciones), emisión
    individual y por lote en ZIP.
 3. **Envío por correo** a los alumnos, con registro de a quién se envió.
 4. **Confianza**: folio, verificación pública con QR, inmutabilidad y reemisión.
 5. **Usuario presidente** (cuando se pida): rol nuevo que crea y firma plantillas,
    con lo que se le vaya a agregar.
+
+### Lo que hace hoy la lista de alumnos
+
+* La sube **el docente** de cada institución (el agente no la ve: solo acompaña).
+  Una lista por (clase espejo, institución), y volver a subir reemplaza la
+  anterior.
+* Acepta **`.xlsx`, `.csv` o pegar los nombres** (incluso copiando desde Excel,
+  con tabuladores). El archivo se lee en memoria: no deja temporales.
+* Reconoce los **encabezados** aunque lleven aclaraciones («Matrícula
+  (opcional)», «Correo (opcional, para enviar el certificado)»), o la primera
+  columna como nombre si no hay encabezados.
+* **Avisa en vez de fallar en silencio**: filas repetidas, filas sin nombre o que
+  no parecen un nombre se descartan con su motivo, y un correo mal escrito se
+  guarda vacío avisando. Tope de 300 alumnos.
+* Después de guardar, el docente puede **corregir**, **quitar** a un alumno o
+  **dejarle fuera de los certificados** sin borrarlo de la lista.

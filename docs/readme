@@ -1124,6 +1124,13 @@ en el puerto `3000` seguirá mostrando la versión anterior.
       clase espejo…), con la lista de los demás; recorre con foco iluminado,
       puede abrir el formulario de solicitud o el calendario para explicarlos, y
       se pasa sola al recorrido del apartado nuevo si el usuario navega
+* [x] **Lista de alumnos por institución** (`listas-alumnos.*` +
+      `core/services/listas-alumnos.service.ts`): el docente sube la de sus
+      alumnos en Excel (`.xlsx`), CSV o pegada; se validan los encabezados, los
+      repetidos, los nombres imposibles y los correos mal escritos, se revisa en
+      una vista previa editable y se guarda con los endpoints
+      `/proyectos/:id/listas-alumnos` (base de los certificados). Plantilla para
+      las instituciones en `docs/plantillas/plantilla-lista-alumnos.xlsx`
 * [x] Mensajes de error claros y botones de reintento por sección
 * [x] Estados de carga en todos los botones de guardado
 * [x] Accesibilidad y contraste revisados (foco visible, áreas táctiles)

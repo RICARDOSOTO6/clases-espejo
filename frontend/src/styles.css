@@ -3025,3 +3025,137 @@ textarea.ng-invalid.ng-touched:focus {
   line-height: 1.4;
   color: var(--text-muted);
 }
+
+/* — Lista de alumnos de una clase espejo — */
+
+.alumnos-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.alumnos-chip {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.alumnos-chip--ok {
+  background: var(--success-100);
+  color: var(--success-700);
+}
+
+.alumnos-chip--aviso {
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+.alumnos-avisos {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--warning-700);
+}
+
+/* La tabla puede ser ancha: se desplaza sola en pantallas pequeñas. */
+.alumnos-scroll {
+  overflow-x: auto;
+}
+
+.alumnos-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.alumnos-tabla th {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--neutral-300);
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-aux);
+}
+
+.alumnos-tabla td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--neutral-100);
+  vertical-align: middle;
+}
+
+/* Campo sin marco: dentro de la tabla se lee como texto editable. */
+.alumnos-input {
+  width: 100%;
+  min-width: 120px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+.alumnos-input:hover {
+  border-color: var(--neutral-200);
+}
+
+.alumnos-input:focus {
+  border-color: var(--primary-600);
+  background: var(--surface);
+  outline: none;
+}
+
+.alumnos-aviso {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--warning-700);
+}
+
+.alumnos-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.alumnos-acciones .muted {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.alumnos-carga {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.alumnos-carga textarea {
+  width: 100%;
+  max-width: 620px;
+  padding: var(--space-2);
+  border: 1px solid var(--neutral-300);
+  border-radius: var(--radius-md);
+  font: inherit;
+  resize: vertical;
+}
+
+/* Fuera de los certificados: se ve, pero apagado. */
+.alumnos-fila--fuera {
+  opacity: 0.55;
+}
+
+.alumnos-interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
