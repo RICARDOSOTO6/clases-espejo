@@ -26,6 +26,7 @@ model Institucion {
   materias            Materia[]
   solicitudesDestino  SolicitudClaseEspejo[]
   invitaciones        Invitacion[]
+  listasAlumnos       ListaAlumnos[]
 
   @@map("INSTITUCION")
 }
@@ -46,6 +47,7 @@ model Usuario {
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
   docente         Docente?
+  listasAlumnos   ListaAlumnos[]
 
   @@map("USUARIO")
 }
@@ -194,6 +196,7 @@ model ProyectoClaseEspejo {
   docentes      ProyectoDocente[]
   sesiones      Sesion[]
   mensajes      Mensaje[]
+  listasAlumnos ListaAlumnos[]
 
   @@map("PROYECTO_CLASE_ESPEJO")
 }
@@ -355,4 +358,43 @@ model Evaluacion {
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
 
   @@map("EVALUACION")
+}
+
+/// Lista de alumnos de una clase espejo, una por institución participante.
+/// El docente sube la de su institución; con ella se emiten los certificados.
+model ListaAlumnos {
+  id                 Int                 @id @default(autoincrement())
+  proyectoId         Int                 @map("proyecto_id")
+  institucionId      Int                 @map("institucion_id")
+  subidaPorUsuarioId Int                 @map("subida_por_usuario_id")
+  /// De dónde salió la lista: EXCEL, CSV o PEGADO.
+  origen             String
+  creadoEn           DateTime            @default(now()) @map("creado_en")
+  actualizadoEn      DateTime            @default(now()) @updatedAt @map("actualizado_en")
+  alumnos            Alumno[]
+  proyecto           ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  institucion        Institucion         @relation(fields: [institucionId], references: [id])
+  subidaPor          Usuario             @relation(fields: [subidaPorUsuarioId], references: [id])
+
+  @@unique([proyectoId, institucionId])
+  @@map("LISTA_ALUMNOS")
+}
+
+/// Un alumno de la lista. Solo el nombre es obligatorio: la matrícula sirve
+/// para distinguir homónimos y el correo para enviarle su certificado.
+model Alumno {
+  id            Int         @id @default(autoincrement())
+  listaId       Int         @map("lista_id")
+  nombre        String
+  matricula     String      @default("")
+  correo        String      @default("")
+  /// Posición en la lista, para que el orden sea el que subió el docente.
+  orden         Int
+  /// Permite dejar a alguien fuera sin borrarlo de la lista.
+  incluido      Boolean     @default(true)
+  creadoEn      DateTime    @default(now()) @map("creado_en")
+  actualizadoEn DateTime    @default(now()) @updatedAt @map("actualizado_en")
+  lista         ListaAlumnos @relation(fields: [listaId], references: [id], onDelete: Cascade)
+
+  @@map("ALUMNO")
 }
