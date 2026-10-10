@@ -1,11 +1,25 @@
 import {
   IsEmail,
+  IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
 import { EsTextoValido } from '../../common/validators/es-texto-valido';
 
+/**
+ * Alta de un agente de internacionalización.
+ *
+ * Hay dos caminos, y los dos empiezan igual (los datos de la persona):
+ *
+ * - **Unirse a una institución que ya existe** (`institucionId`): los datos de
+ *   la institución no hacen falta, porque ya los tiene. Si está aprobada, el
+ *   alta queda pendiente de que la confirme un agente de esa institución; si
+ *   está pendiente, la decide el presidente al aprobarla.
+ * - **Crear una institución nueva** (sin `institucionId`): entonces sí hacen
+ *   falta sus datos, y nace **pendiente** de aprobación por la CACE.
+ */
 export class RegisterDto {
   @IsString()
   @IsNotEmpty()
@@ -37,35 +51,43 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
+  /** Institución existente a la que se une el agente (buscar antes de crear). */
+  @IsOptional()
+  @IsInt()
+  institucionId?: number;
+
+  // --- Datos de la institución: solo si se crea una nueva ---
+
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @EsTextoValido()
-  nombreInstitucion: string;
+  nombreInstitucion?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  pais: string;
+  pais?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  codigoPais: string;
+  codigoPais?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @EsTextoValido()
-  estado: string;
+  estado?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @EsTextoValido()
-  ciudad: string;
+  ciudad?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  telefono: string;
+  telefono?: string;
 
+  @IsOptional()
   @IsEmail()
-  correoInstitucional: string;
+  correoInstitucional?: string;
 
   @IsString()
   @IsNotEmpty()

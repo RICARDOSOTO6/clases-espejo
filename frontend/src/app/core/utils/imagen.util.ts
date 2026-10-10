@@ -62,3 +62,40 @@ function cargarImagen(archivo: File): Promise<HTMLImageElement> {
     imagen.src = url;
   });
 }
+
+/** Lado mayor admisible del logo, en píxeles. */
+const LADO_MAXIMO_LOGO = 512;
+
+/**
+ * Prepara el logo de la institución antes de subirlo.
+ *
+ * A diferencia de la foto de perfil, un logo **no** se recorta en cuadrado (los
+ * hay apaisados y verticales) y se guarda en PNG para no perder la
+ * transparencia. Solo se reduce si es más grande que el máximo, para que el
+ * archivo guardado pese poco.
+ */
+export async function prepararLogoInstitucion(archivo: File): Promise<File> {
+  const imagen = await cargarImagen(archivo);
+
+  const escala = Math.min(
+    1,
+    LADO_MAXIMO_LOGO / Math.max(imagen.naturalWidth, imagen.naturalHeight),
+  );
+  const ancho = Math.max(1, Math.round(imagen.naturalWidth * escala));
+  const alto = Math.max(1, Math.round(imagen.naturalHeight * escala));
+
+  const lienzo = document.createElement('canvas');
+  lienzo.width = ancho;
+  lienzo.height = alto;
+  const contexto = lienzo.getContext('2d');
+  if (!contexto) return archivo;
+
+  contexto.drawImage(imagen, 0, 0, ancho, alto);
+
+  const reducida = await new Promise<Blob | null>((resolve) =>
+    lienzo.toBlob((blob) => resolve(blob), 'image/png'),
+  );
+  if (!reducida) return archivo;
+
+  return new File([reducida], 'logo-institucion.png', { type: 'image/png' });
+}

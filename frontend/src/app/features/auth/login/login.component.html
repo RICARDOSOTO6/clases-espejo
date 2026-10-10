@@ -17,7 +17,7 @@
 
     @if (success) {
       <div class="alert alert-success" role="status">
-        Cuenta creada correctamente. Ya puedes iniciar sesión.
+        {{ avisoRegistro || 'Cuenta creada correctamente. Ya puedes iniciar sesión.' }}
       </div>
     }
 

@@ -18,6 +18,12 @@ export type Rol = (typeof ROLES)[number];
 export const CAPACIDADES = [
   /** Aprobar, rechazar y vetar instituciones. */
   'aprobarInstituciones',
+  /**
+   * Borrar definitivamente una institución rechazada (solo si no tiene
+   * historia). La secretaría **no** la tiene: su caso, «con autorización del
+   * presidente», queda fuera de esta parte.
+   */
+  'borrarInstituciones',
   /** Dar por bueno el alta de un agente nuevo en una institución ya aprobada. */
   'confirmarAgenteInstitucion',
   /** Logo, textos, banderas y tema de la CACE. */
@@ -39,6 +45,7 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
   AGENTE: ['confirmarAgenteInstitucion'],
   PRESIDENTE_CACE: [
     'aprobarInstituciones',
+    'borrarInstituciones',
     'personalizarCace',
     'publicarPremios',
     'disenarCertificados',

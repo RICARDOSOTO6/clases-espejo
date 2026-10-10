@@ -30,9 +30,13 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   success = false;
   showRecoveryHint = false;
+  /** Mensaje del registro, cuando tiene algo que explicar (alta pendiente…). */
+  avisoRegistro = '';
 
   ngOnInit(): void {
-    this.success = this.route.snapshot.queryParamMap.has('registrado');
+    const params = this.route.snapshot.queryParamMap;
+    this.success = params.has('registrado');
+    this.avisoRegistro = params.get('aviso') ?? '';
 
     const user = this.auth.currentUser();
     if (this.auth.isAuthenticated && user) {

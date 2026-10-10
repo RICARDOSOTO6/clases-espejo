@@ -2,13 +2,17 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { resolverUrlPublica } from '../common/url-publica';
+import { exigirAgenteHabilitado } from '../common/institucion-habilitada';
 import { InviteDocenteDto } from './dto/invite-docente.dto';
 
 const INVITACION_POR_DEFECTO_DIAS = 7;
@@ -37,6 +41,8 @@ function duracionEnMs(valor: string): number {
 
 @Injectable()
 export class AgentesService {
+  private readonly logger = new Logger(AgentesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -57,6 +63,9 @@ export class AgentesService {
     urlPublica: string,
   ) {
     const agente = await this.getAgente(agenteId);
+    // Invitar docentes es de las cosas que quedan bloqueadas mientras la
+    // institución no esté aprobada o el alta del agente no esté confirmada.
+    await exigirAgenteHabilitado(this.prisma, agenteId);
 
     const yaEsUsuario = await this.prisma.usuario.findUnique({
       where: { correo: dto.correo },
@@ -132,6 +141,7 @@ export class AgentesService {
    */
   async cambiarEstadoDocente(agenteId: number, id: number, activo: boolean) {
     const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
 
     const docenteInstitucion = await this.prisma.docenteInstitucion.findFirst({
       where: { id, institucionId: agente.institucionId },
@@ -150,6 +160,7 @@ export class AgentesService {
   /** Elimina un docente de la institución (y sus asignaciones). */
   async eliminarDocente(agenteId: number, id: number) {
     const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
 
     const docenteInstitucion = await this.prisma.docenteInstitucion.findFirst({
       where: { id, institucionId: agente.institucionId },
@@ -305,5 +316,181 @@ export class AgentesService {
       );
     }
     return agente;
+  }
+
+  // --- Confirmación del agente que se une (Fase 2, segunda parte) ---
+
+  /**
+   * Altas pendientes de confirmar **en mi institución**.
+   *
+   * Cuando alguien se registra eligiendo una institución ya aprobada, no lo
+   * aprueba el presidente: lo confirma un agente de esa institución. Estas son
+   * las filas que esperan esa confirmación.
+   */
+  async listarAltasPendientes(usuarioId: number) {
+    const agente = await this.getAgente(usuarioId);
+
+    const altas = await this.prisma.agenteInternacionalizacion.findMany({
+      where: {
+        institucionId: agente.institucionId,
+        confirmadoEn: null,
+        id: { not: agente.id },
+        usuario: { activo: true },
+      },
+      select: {
+        id: true,
+        cargo: true,
+        creadoEn: true,
+        usuario: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidoPaterno: true,
+            apellidoMaterno: true,
+            correo: true,
+            dni: true,
+            tipoDocumento: true,
+          },
+        },
+      },
+      orderBy: { creadoEn: 'asc' },
+    });
+
+    return altas.map((alta) => ({
+      id: alta.id,
+      cargo: alta.cargo,
+      creadoEn: alta.creadoEn,
+      usuarioId: alta.usuario.id,
+      nombre: `${alta.usuario.nombres} ${alta.usuario.apellidoPaterno} ${alta.usuario.apellidoMaterno}`.trim(),
+      correo: alta.usuario.correo,
+      documento: `${alta.usuario.tipoDocumento} ${alta.usuario.dni}`,
+    }));
+  }
+
+  /** Da por bueno el alta: desde ese momento el agente puede operar. */
+  async confirmarAlta(
+    usuarioId: number,
+    id: number,
+    peticion?: Request,
+  ) {
+    const { alta, institucion } = await this.altaDeMiInstitucion(usuarioId, id);
+    if (alta.confirmadoEn) {
+      throw new BadRequestException('Esa alta ya estaba confirmada');
+    }
+    if (!alta.usuario.activo) {
+      throw new BadRequestException(
+        'Esa cuenta está desactivada: no se puede confirmar su alta.',
+      );
+    }
+
+    const actualizada = await this.prisma.agenteInternacionalizacion.update({
+      where: { id },
+      data: {
+        confirmadoEn: new Date(),
+        confirmadoPorUsuarioId: usuarioId,
+      },
+      select: { id: true, confirmadoEn: true },
+    });
+
+    try {
+      await this.mailService.sendAltaAgenteConfirmada(
+        alta.usuario.correo,
+        institucion.nombre,
+        resolverUrlPublica(peticion),
+      );
+    } catch (error) {
+      // La confirmación ya está guardada: el correo es un aviso, no un requisito.
+      this.logger.error(
+        `No se pudo avisar a ${alta.usuario.correo} de su alta confirmada: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    return {
+      mensaje: `Alta de ${alta.usuario.nombres} ${alta.usuario.apellidoPaterno} confirmada`,
+      id: actualizada.id,
+      confirmadoEn: actualizada.confirmadoEn,
+    };
+  }
+
+  /**
+   * Rechaza el alta: la fila **se queda** (es el registro de lo ocurrido) y lo
+   * que se desactiva es el usuario, así que no puede entrar. El correo es lo
+   * único que le explica por qué.
+   */
+  async rechazarAlta(
+    usuarioId: number,
+    id: number,
+    motivo: string,
+    peticion?: Request,
+  ) {
+    const { alta, institucion } = await this.altaDeMiInstitucion(usuarioId, id);
+    if (alta.confirmadoEn) {
+      throw new BadRequestException(
+        'Esa alta ya estaba confirmada: no se puede rechazar.',
+      );
+    }
+
+    await this.prisma.usuario.update({
+      where: { id: alta.usuario.id },
+      data: { activo: false },
+    });
+
+    const texto = motivo?.trim() ?? '';
+    try {
+      await this.mailService.sendAltaAgenteRechazada(
+        alta.usuario.correo,
+        institucion.nombre,
+        texto,
+        resolverUrlPublica(peticion),
+      );
+    } catch (error) {
+      this.logger.error(
+        `No se pudo avisar a ${alta.usuario.correo} del alta rechazada: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    return {
+      mensaje: `Alta de ${alta.usuario.nombres} ${alta.usuario.apellidoPaterno} rechazada: su cuenta quedó desactivada`,
+      id: alta.id,
+      activo: false,
+    };
+  }
+
+  /** Comprueba que el alta pertenece a mi institución antes de tocarla. */
+  private async altaDeMiInstitucion(usuarioId: number, id: number) {
+    const agente = await this.getAgente(usuarioId);
+
+    const alta = await this.prisma.agenteInternacionalizacion.findFirst({
+      where: { id, institucionId: agente.institucionId },
+      select: {
+        id: true,
+        confirmadoEn: true,
+        usuario: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidoPaterno: true,
+            correo: true,
+            activo: true,
+          },
+        },
+      },
+    });
+    if (!alta) {
+      throw new NotFoundException(
+        'Esa alta no existe o no es de tu institución',
+      );
+    }
+
+    const institucion = await this.prisma.institucion.findUniqueOrThrow({
+      where: { id: agente.institucionId },
+      select: { nombre: true },
+    });
+
+    return { alta, institucion };
   }
 }

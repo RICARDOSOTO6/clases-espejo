@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -65,5 +66,16 @@ export class InstitucionesCaceController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.institucionesCaceService.reactivar(usuarioId, id);
+  }
+
+  /**
+   * Borrado definitivo. Pide su propia capacidad (`borrarInstituciones`), que
+   * **solo** tiene la presidencia: la secretaría no puede, y la anotación de
+   * método sustituye a la de la clase a propósito.
+   */
+  @Delete(':id')
+  @Requiere('borrarInstituciones')
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.institucionesCaceService.eliminar(id);
   }
 }

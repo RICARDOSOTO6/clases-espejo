@@ -173,6 +173,191 @@ export class InstitucionesCaceService {
   }
 
   /**
+   * Borrado **definitivo** de una institución rechazada.
+   *
+   * Es la excepción al «el registro se conserva»: existe justo para los casos en
+   * los que la institución nunca llegó a operar (un duplicado, una prueba, un
+   * registro basura). Por eso:
+   *
+   * - Solo se puede borrar lo que está **rechazado**. Una aprobada o una vetada
+   *   puede tener clases en curso; una pendiente está esperando decisión.
+   * - Si tiene **historia** (solicitudes, proyectos, sesiones, evidencias,
+   *   listas de alumnos o usuarios que revisaron algo) se **niega**: borrarla
+   *   haría perder ese historial, y para eso está precisamente el estado
+   *   rechazada.
+   *
+   * Sin historia, se borran también sus usuarios (agentes y docentes propios) y
+   * sus filas dependientes.
+   */
+  async eliminar(id: number) {
+    const institucion = await this.prisma.institucion.findUnique({
+      where: { id },
+      select: { id: true, nombre: true, estadoCace: true },
+    });
+    if (!institucion) {
+      throw new NotFoundException('Institución no encontrada');
+    }
+    if (institucion.estadoCace !== ESTADO_CACE_RECHAZADA) {
+      throw new BadRequestException(
+        `Solo se pueden borrar definitivamente las instituciones rechazadas: «${institucion.nombre}» está ${ETIQUETA_ESTADO[institucion.estadoCace] ?? institucion.estadoCace}. ` +
+          'Recházala primero si de verdad quieres eliminarla.',
+      );
+    }
+
+    const historia = await this.contarHistoria(id);
+    if (historia.bloqueos.length > 0) {
+      throw new BadRequestException(
+        `No se puede borrar «${institucion.nombre}»: tiene historia (${historia.bloqueos.join(', ')}). ` +
+          'Déjala como rechazada: borrarla haría perder ese historial.',
+      );
+    }
+
+    await this.borrarSinHistoria(id);
+
+    return {
+      mensaje: `Institución «${institucion.nombre}» eliminada definitivamente`,
+      id: institucion.id,
+      nombre: institucion.nombre,
+    };
+  }
+
+  /**
+   * Cuenta lo que hace que una institución tenga historia. Devuelve las frases
+   * ya redactadas para el mensaje de error (vacío = se puede borrar).
+   */
+  private async contarHistoria(
+    id: number,
+  ): Promise<{ bloqueos: string[]; usuarios: number[] }> {
+    // Los usuarios propios: sus agentes y los docentes que están en ella.
+    const [agentes, docentesInstitucion] = await Promise.all([
+      this.prisma.agenteInternacionalizacion.findMany({
+        where: { institucionId: id },
+        select: { usuarioId: true },
+      }),
+      this.prisma.docenteInstitucion.findMany({
+        where: { institucionId: id },
+        select: { docente: { select: { usuarioId: true } } },
+      }),
+    ]);
+    const usuarios = [
+      ...agentes.map((agente) => agente.usuarioId),
+      ...docentesInstitucion.map((di) => di.docente.usuarioId),
+    ];
+
+    // Todo lo que cuelga de una solicitud en la que participa la institución,
+    // sea como destino, como materia destino o por cualquiera de sus docentes.
+    const solicitudesDeLaInstitucion = {
+      OR: [
+        { institucionDestinoId: id },
+        { materiaDestino: { institucionId: id } },
+        { asignacionOrigen: { docenteInstitucion: { institucionId: id } } },
+        { asignacionDestino: { docenteInstitucion: { institucionId: id } } },
+      ],
+    };
+
+    const [solicitudes, proyectos, sesiones, evidencias, listas, revisiones] =
+      await Promise.all([
+        this.prisma.solicitudClaseEspejo.count({
+          where: solicitudesDeLaInstitucion,
+        }),
+        this.prisma.proyectoClaseEspejo.count({
+          where: { solicitud: solicitudesDeLaInstitucion },
+        }),
+        this.prisma.sesion.count({
+          where: { proyecto: { solicitud: solicitudesDeLaInstitucion } },
+        }),
+        this.prisma.evidencia.count({
+          where: { proyecto: { solicitud: solicitudesDeLaInstitucion } },
+        }),
+        this.prisma.listaAlumnos.count({
+          where: {
+            OR: [
+              { institucionId: id },
+              { subidaPorUsuarioId: { in: usuarios.length ? usuarios : [-1] } },
+            ],
+          },
+        }),
+        this.prisma.revisionSolicitud.count({
+          where: { agente: { institucionId: id } },
+        }),
+      ]);
+
+    const bloqueos: string[] = [];
+    if (solicitudes > 0) bloqueos.push(`${solicitudes} solicitud(es)`);
+    if (proyectos > 0) bloqueos.push(`${proyectos} clase(s) espejo`);
+    if (sesiones > 0) bloqueos.push(`${sesiones} sesión(es)`);
+    if (evidencias > 0) bloqueos.push(`${evidencias} evidencia(s)`);
+    if (listas > 0) bloqueos.push(`${listas} lista(s) de alumnos`);
+    if (revisiones > 0) bloqueos.push(`${revisiones} revisión(es)`);
+
+    return { bloqueos, usuarios };
+  }
+
+  /**
+   * Borra la institución sin historia: sus usuarios y sus filas dependientes.
+   * Las referencias que otros guardan a estos usuarios (`revisadaPor`,
+   * `confirmadoPor`) están en `ON DELETE SET NULL`, así que la base las deja en
+   * blanco sola.
+   */
+  private async borrarSinHistoria(id: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Asignaciones de sus materias y de sus propios docentes.
+      await tx.asignacionDocente.deleteMany({
+        where: {
+          OR: [
+            { materia: { institucionId: id } },
+            { docenteInstitucion: { institucionId: id } },
+          ],
+        },
+      });
+      await tx.materia.deleteMany({ where: { institucionId: id } });
+      await tx.invitacion.deleteMany({ where: { institucionId: id } });
+      await tx.listaAlumnos.deleteMany({ where: { institucionId: id } });
+
+      // Docentes propios: solo se borran los que no están en otra institución.
+      const vinculos = await tx.docenteInstitucion.findMany({
+        where: { institucionId: id },
+        select: { docenteId: true },
+      });
+      await tx.docenteInstitucion.deleteMany({ where: { institucionId: id } });
+      for (const docenteId of new Set(vinculos.map((v) => v.docenteId))) {
+        const restantes = await tx.docenteInstitucion.count({
+          where: { docenteId },
+        });
+        if (restantes > 0) continue;
+        const docente = await tx.docente.findUnique({
+          where: { id: docenteId },
+          select: { usuarioId: true },
+        });
+        await tx.docente.delete({ where: { id: docenteId } });
+        if (docente) {
+          await tx.usuario.delete({ where: { id: docente.usuarioId } });
+        }
+      }
+
+      // Agentes de la institución: se van con ella.
+      const agentes = await tx.agenteInternacionalizacion.findMany({
+        where: { institucionId: id },
+        select: { usuarioId: true },
+      });
+      await tx.agenteInternacionalizacion.deleteMany({
+        where: { institucionId: id },
+      });
+      for (const agente of agentes) {
+        // Un usuario con fila de docente no es solo agente: no se borra a ciegas.
+        const docente = await tx.docente.findUnique({
+          where: { usuarioId: agente.usuarioId },
+          select: { id: true },
+        });
+        if (docente) continue;
+        await tx.usuario.delete({ where: { id: agente.usuarioId } });
+      }
+
+      await tx.institucion.delete({ where: { id } });
+    });
+  }
+
+  /**
    * Cambia el estado ante la CACE dejando registrado **quién** lo decidió y
    * **cuándo**, y avisa por correo al agente de la institución.
    */
@@ -316,6 +501,7 @@ export class InstitucionesCaceService {
       id: number;
       nombre: string;
       pais: string;
+      logoUrl: string | null;
       estadoCace: string;
       motivoCace: string;
       revisadaEn: Date | null;
@@ -351,6 +537,7 @@ export class InstitucionesCaceService {
       id: institucion.id,
       nombre: institucion.nombre,
       pais: institucion.pais,
+      logoUrl: institucion.logoUrl,
       estadoCace: institucion.estadoCace,
       motivoCace: institucion.motivoCace,
       revisadaEn: institucion.revisadaEn,

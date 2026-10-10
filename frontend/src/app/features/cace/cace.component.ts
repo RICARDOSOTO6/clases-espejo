@@ -8,6 +8,7 @@ import { CaceService, DecisionCace, InstitucionCace } from '../../core/services/
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
+import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 
 /** Decisión que exige motivo: el correo al agente lo lleva escrito. */
 type DecisionConMotivo = 'rechazar' | 'vetar';
@@ -57,6 +58,8 @@ export class CaceComponent implements OnInit, OnDestroy {
     nombre: string;
     decision: DecisionConMotivo;
   } | null>(null);
+  /** Institución rechazada cuyo borrado definitivo se está confirmando. */
+  readonly pidiendoBorrado = signal<InstitucionCace | null>(null);
 
   readonly pendientes = computed(() =>
     this.instituciones().filter((i) => i.estadoCace === 'PENDIENTE'),
@@ -224,6 +227,50 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.errorInstituciones.set(extraerMensajeError(err, 'No se pudo completar la decisión'));
       },
     });
+  }
+
+  // --- Borrado definitivo (solo instituciones rechazadas y sin historia) ---
+
+  /** El borrado es irreversible: se confirma antes de enviarlo. */
+  pedirBorrado(institucion: InstitucionCace): void {
+    this.avisoInstituciones.set(null);
+    this.errorInstituciones.set(null);
+    this.pidiendoBorrado.set(institucion);
+  }
+
+  cancelarBorrado(): void {
+    this.pidiendoBorrado.set(null);
+  }
+
+  confirmarBorrado(): void {
+    const institucion = this.pidiendoBorrado();
+    if (!institucion || this.enProceso() !== null) return;
+
+    this.enProceso.set(institucion.id);
+    this.avisoInstituciones.set(null);
+    this.errorInstituciones.set(null);
+
+    this.cace.eliminarInstitucion(institucion.id).subscribe({
+      next: (res) => {
+        this.enProceso.set(null);
+        this.pidiendoBorrado.set(null);
+        this.avisoInstituciones.set(res.mensaje);
+        this.cargarInstituciones();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enProceso.set(null);
+        this.pidiendoBorrado.set(null);
+        // El servidor explica qué historia lo impide, o que no estaba rechazada.
+        this.errorInstituciones.set(
+          extraerMensajeError(err, 'No se pudo borrar la institución'),
+        );
+      },
+    });
+  }
+
+  /** URL del logo lista para un `<img>`. */
+  logoDe(institucion: InstitucionCace): string | null {
+    return urlDeArchivo(institucion.logoUrl);
   }
 
   // --- Presentación ---

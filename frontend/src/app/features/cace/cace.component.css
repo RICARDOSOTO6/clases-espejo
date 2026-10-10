@@ -22,19 +22,8 @@
 }
 
 /* Ficha de una institución: el texto ocupa el ancho disponible y los botones se
-   quedan a la derecha sin apretarlo. */
-.inst-bloque {
-  flex: 1 1 320px;
-  min-width: 0;
-}
-
-.inst-bloque p {
-  margin: 0 0 4px;
-}
-
-.inst-motivo {
-  margin: var(--space-3) 0 0;
-}
+   quedan a la derecha sin apretarlo. `.inst-bloque` y `.inst-motivo` viven en
+   `styles.css` porque el panel del agente usa los mismos. */
 
 /* El veto es la decisión más dura: se distingue del rechazo a simple vista. */
 .estado.vetada {

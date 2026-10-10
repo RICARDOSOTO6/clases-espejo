@@ -92,7 +92,8 @@
         <p class="text-sm muted">
           Las pendientes aparecen primero. Aprobar deja operar a la institución con normalidad;
           rechazar y vetar exigen un motivo, y el agente de la institución recibe el aviso por
-          correo.
+          correo. Una institución rechazada se puede borrar definitivamente, pero solo si no
+          tiene historia: si la tiene, se queda como rechazada para no perderla.
         </p>
 
         @if (errorInstituciones()) {
@@ -116,6 +117,9 @@
               <li class="lista-item">
                 <div class="inst-bloque">
                   <div class="inst-name">
+                    @if (logoDe(institucion); as logo) {
+                      <img class="logo-institucion" [src]="logo" alt="Logo de la institución" />
+                    }
                     <strong>{{ institucion.nombre }}</strong>
                     <span [class]="claseEstado(institucion.estadoCace)">
                       {{ etiquetaEstado(institucion.estadoCace) }}
@@ -176,6 +180,17 @@
                       </div>
                     }
                   }
+                  @if (pidiendoBorrado(); as borrando) {
+                    @if (borrando.id === institucion.id) {
+                      <div class="alert alert-error" role="status">
+                        Vas a borrar «{{ institucion.nombre }}» de forma
+                        definitiva. Solo se puede si no tiene historia
+                        (solicitudes, clases espejo, sesiones, evidencias,
+                        listas de alumnos o revisiones): si la tiene, el sistema
+                        lo rechazará y deberá quedarse como rechazada.
+                      </div>
+                    }
+                  }
                 </div>
 
                 <div class="lista-acciones">
@@ -224,6 +239,37 @@
                       (click)="pedirMotivo(institucion, 'vetar')"
                     >
                       Vetar
+                    </button>
+                  }
+
+                  <!-- Borrado definitivo: solo en las rechazadas y sin historia. -->
+                  @if (institucion.estadoCace === 'RECHAZADA') {
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="enProceso() !== null"
+                      (click)="pedirBorrado(institucion)"
+                    >
+                      Borrar definitivamente
+                    </button>
+                  }
+
+                  @if (pidiendoBorrado()?.id === institucion.id) {
+                    <button
+                      type="button"
+                      class="btn btn-danger"
+                      [disabled]="enProceso() !== null"
+                      (click)="confirmarBorrado()"
+                    >
+                      Confirmar borrado
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost"
+                      [disabled]="enProceso() !== null"
+                      (click)="cancelarBorrado()"
+                    >
+                      Cancelar
                     </button>
                   }
 

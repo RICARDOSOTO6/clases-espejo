@@ -1,7 +1,17 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { basename, join } from 'path';
+import { existsSync, unlinkSync } from 'fs';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateInstitucionDto } from './dto/update-institucion.dto';
 import { ESTADO_CACE_APROBADA } from '../common/estados';
+import { estadoHabilitacion } from '../common/institucion-habilitada';
+
+/** Carpeta donde se guardan los logos (dentro de `uploads`). */
+export const LOGOS_DIR = join(process.cwd(), 'uploads', 'instituciones');
 
 @Injectable()
 export class InstitucionesService {
@@ -30,22 +40,65 @@ export class InstitucionesService {
         ciudad: true,
         telefono: true,
         correoInstitucional: true,
+        logoUrl: true,
         registroCompleto: true,
       },
       orderBy: { nombre: 'asc' },
     });
   }
 
-  async obtenerMia(usuarioId: number) {
-    const agente = await this.getAgente(usuarioId);
-    return this.prisma.institucion.findUnique({
-      where: { id: agente.institucionId },
+  /**
+   * Directorio para el **registro**: quien va a darse de alta busca aquí su
+   * institución antes de crear una nueva, para no duplicarla.
+   *
+   * Es público (el registro lo es) y por eso devuelve lo mínimo para
+   * reconocerla: nombre, país y logo. Van **todos** los estados, incluidas las
+   * rechazadas y vetadas, porque el registro se conserva justo para que nadie
+   * vuelva a inscribirlas: así el formulario puede decir «esta no admite
+   * registros» en vez de dejar que se cree un duplicado.
+   */
+  async directorio(texto?: string) {
+    const q = (texto ?? '').trim();
+    return this.prisma.institucion.findMany({
+      where: q
+        ? {
+            OR: [
+              { nombre: { contains: q, mode: 'insensitive' } },
+              { pais: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
+      select: {
+        id: true,
+        nombre: true,
+        pais: true,
+        logoUrl: true,
+        estadoCace: true,
+      },
+      orderBy: { nombre: 'asc' },
+      take: 50,
     });
   }
 
+  /** La institución del agente, con lo que le falta para poder operar. */
+  async obtenerMia(usuarioId: number) {
+    const agente = await this.getAgente(usuarioId);
+    const institucion = await this.prisma.institucion.findUnique({
+      where: { id: agente.institucionId },
+    });
+    if (!institucion) {
+      throw new NotFoundException('Institución no encontrada');
+    }
+    return this.conHabilitacion(institucion, agente);
+  }
+
+  /**
+   * Completar los datos de la institución. Es lo **único** que puede hacer un
+   * agente cuyo alta no está confirmada o cuya institución no está aprobada.
+   */
   async actualizarMia(usuarioId: number, dto: UpdateInstitucionDto) {
     const agente = await this.getAgente(usuarioId);
-    return this.prisma.institucion.update({
+    const institucion = await this.prisma.institucion.update({
       where: { id: agente.institucionId },
       data: {
         nombre: dto.nombre,
@@ -58,6 +111,46 @@ export class InstitucionesService {
         registroCompleto: true,
       },
     });
+    return this.conHabilitacion(institucion, agente);
+  }
+
+  /**
+   * Guarda el logo recién subido y borra el anterior, igual que se hace con la
+   * foto de perfil, para no dejar archivos huérfanos en el disco.
+   */
+  async guardarLogo(usuarioId: number, archivo: { filename: string }) {
+    const agente = await this.getAgente(usuarioId);
+    const actual = await this.prisma.institucion.findUnique({
+      where: { id: agente.institucionId },
+      select: { logoUrl: true },
+    });
+    if (!actual) throw new NotFoundException('Institución no encontrada');
+
+    const institucion = await this.prisma.institucion.update({
+      where: { id: agente.institucionId },
+      data: { logoUrl: `/logos/${archivo.filename}` },
+    });
+
+    borrarLogo(actual.logoUrl);
+    return this.conHabilitacion(institucion, agente);
+  }
+
+  /** Quita el logo de la institución y borra el archivo del disco. */
+  async quitarLogo(usuarioId: number) {
+    const agente = await this.getAgente(usuarioId);
+    const actual = await this.prisma.institucion.findUnique({
+      where: { id: agente.institucionId },
+      select: { logoUrl: true },
+    });
+    if (!actual) throw new NotFoundException('Institución no encontrada');
+
+    await this.prisma.institucion.update({
+      where: { id: agente.institucionId },
+      data: { logoUrl: null },
+    });
+    borrarLogo(actual.logoUrl);
+
+    return { mensaje: 'Logo de la institución eliminado', logoUrl: null };
   }
 
   async listarMaterias(id: number) {
@@ -78,6 +171,20 @@ export class InstitucionesService {
       where: { institucionId: id, activa: true },
       orderBy: { nombre: 'asc' },
     });
+  }
+
+  /**
+   * Añade a la institución si su agente puede operar y, si no, **por qué**. Lo
+   * usan el aviso del panel y los mensajes de bloqueo del servidor.
+   */
+  private conHabilitacion<
+    T extends { nombre: string; estadoCace: string; motivoCace: string },
+  >(institucion: T, agente: { confirmadoEn: Date | null }) {
+    return {
+      ...institucion,
+      confirmadoEn: agente.confirmadoEn,
+      ...estadoHabilitacion(institucion, agente),
+    };
   }
 
   private async getAgente(usuarioId: number) {
@@ -105,5 +212,20 @@ export class InstitucionesService {
     if (docente) return docente.instituciones.map((di) => di.institucionId);
 
     return [];
+  }
+}
+
+/**
+ * Borra un logo del disco. `basename` evita que una ruta manipulada salga de la
+ * carpeta de logos.
+ */
+function borrarLogo(logoUrl: string | null): void {
+  if (!logoUrl) return;
+  const ruta = join(LOGOS_DIR, basename(logoUrl));
+  if (!existsSync(ruta)) return;
+  try {
+    unlinkSync(ruta);
+  } catch {
+    // Si el archivo está en uso, la petición no debe fallar por eso.
   }
 }

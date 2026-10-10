@@ -1177,6 +1177,131 @@ textarea.ng-invalid.ng-touched:focus {
 }
 
 /* ----------------------------------------------------------------------------
+   12.b Institución: logo y «buscar antes de crear»
+   ---------------------------------------------------------------------------- */
+/* Logo de la institución: se ve en el registro, en el panel del agente y en el
+   del presidente. Se limita el alto para que un logo apaisado no descuadre la
+   fila. */
+.logo-institucion {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: var(--radius-sm, 6px);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  vertical-align: middle;
+}
+
+.logo-institucion-lg {
+  width: 56px;
+  height: 56px;
+}
+
+.inst-logo-vacio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--neutral-200, #e5e7eb);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Paso «Tu institución» del formulario de registro. */
+.inst-paso {
+  margin: var(--space-4, 1rem) 0;
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+}
+
+.inst-paso legend {
+  padding: 0 var(--space-2, 0.5rem);
+  font-weight: 600;
+}
+
+/* Resultados de la búsqueda: la lista se desplaza, no empuja el formulario. */
+.inst-resultados {
+  list-style: none;
+  margin: var(--space-2, 0.5rem) 0 var(--space-3, 0.75rem);
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--neutral-200, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+}
+
+.inst-opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  border-bottom: 1px solid var(--neutral-200, #e5e7eb);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inst-opcion:hover {
+  background: var(--hover);
+}
+
+.inst-opcion.elegida {
+  background: var(--hover);
+  box-shadow: inset 3px 0 0 var(--primary-700);
+}
+
+.inst-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Ficha de una institución o de un alta: el texto ocupa el ancho disponible y
+   los botones se quedan a la derecha sin apretarlo. Lo usan el panel del
+   presidente y el del agente (altas pendientes de confirmar). */
+.inst-bloque {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.inst-bloque p {
+  margin: 0 0 4px;
+}
+
+.inst-motivo {
+  margin: var(--space-3) 0 0;
+}
+
+/* Bloque del logo: imagen a la izquierda y acciones a la derecha. */
+.logo-institucion-bloque {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: var(--space-3) 0;
+}
+
+.logo-institucion-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.logo-institucion-acciones .field-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* ----------------------------------------------------------------------------
    13. Banderas / comunidad
    ---------------------------------------------------------------------------- */
 .flag {

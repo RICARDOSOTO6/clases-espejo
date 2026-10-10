@@ -30,13 +30,71 @@
       <section class="card">
         <p class="muted">Cargando…</p>
       </section>
-    } @else if (!institucionCompleta()) {
-      <section class="card">
-        <h1>Completa el registro de tu institución</h1>
-        <div class="alert alert-warning">
-          Antes de continuar, completa los datos de tu institución. Este paso
-          desbloquea el panel de docentes y materias.
+    } @else if (!institucionCompleta() || bloqueado()) {
+      <!-- El ancla `institucion` es la misma que la del panel completo: el menú
+           y la campana siguen funcionando aunque este sea el único bloque. -->
+      <section class="card" id="institucion">
+        <h1>
+          {{
+            bloqueado()
+              ? 'Tu institución todavía no puede operar'
+              : 'Completa el registro de tu institución'
+          }}
+        </h1>
+        @if (bloqueado()) {
+          <div class="alert alert-warning" role="status">
+            <span>
+              {{ motivoBloqueo() }}
+            </span>
+          </div>
+        } @else {
+          <div class="alert alert-warning">
+            Antes de continuar, completa los datos de tu institución. Este paso
+            desbloquea el panel de docentes y materias.
+          </div>
+        }
+
+        <p class="muted">
+          Revisa los datos y añade el <strong>logo</strong> de tu institución:
+          ayuda a que otras instituciones la reconozcan.
+        </p>
+
+        <!-- Logo: mismo patrón que la foto de perfil (se reduce antes de subir). -->
+        <div class="logo-institucion-bloque">
+          @if (logoUrl(); as logo) {
+            <img class="logo-institucion logo-institucion-lg" [src]="logo" alt="Logo de la institución" />
+          } @else {
+            <span class="inst-logo-vacio" aria-hidden="true">{{ (institucion()?.nombre ?? '?').charAt(0) }}</span>
+          }
+          <div class="logo-institucion-acciones">
+            <label class="btn btn-secondary" for="logo-gate">
+              {{ logoSubiendo() ? 'Subiendo…' : (logoUrl() ? 'Cambiar logo' : 'Subir logo') }}
+            </label>
+            <input
+              id="logo-gate"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="archivo-oculto"
+              [disabled]="logoSubiendo()"
+              (change)="subirLogo($event)"
+            />
+            @if (logoUrl()) {
+              <button
+                type="button"
+                class="btn btn-ghost"
+                [disabled]="logoSubiendo()"
+                (click)="quitarLogo()"
+              >
+                Quitar logo
+              </button>
+            }
+            <p class="field-hint">PNG, JPG o WEBP · hasta 2 MB</p>
+          </div>
         </div>
+        @if (logoError()) {
+          <div class="alert alert-error" role="alert">{{ logoError() }}</div>
+        }
+
         <form [formGroup]="institucionForm" (ngSubmit)="submitInstitucion()">
           <div class="form-field">
             <label for="g-nombre">Nombre de la institución</label>
@@ -216,6 +274,9 @@
       </div>
       @if (institucion(); as inst) {
         <p class="inst-name">
+          @if (logoUrl(); as logo) {
+            <img class="logo-institucion" [src]="logo" alt="Logo de la institución" />
+          }
           <img
             class="flag"
             [src]="flagUrl(inst.codigoPais)"
@@ -231,6 +292,121 @@
         </p>
       } @else {
         <p class="muted">No se pudo cargar la información de la institución.</p>
+      }
+    </section>
+
+    <!-- Altas de personas que se registraron eligiendo esta institución. -->
+    <section class="card" id="confirmaciones">
+      <div class="card-head">
+        <div class="card-head-title">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="m17 11 2 2 4-4"/></svg>
+          </span>
+          <h2>Altas pendientes de confirmar</h2>
+          @if (altasPendientes().length > 0) {
+            <span class="card-head-count">{{ altasPendientes().length }}</span>
+          }
+        </div>
+        <div class="card-head-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="cargandoAltas()"
+            (click)="cargarAltasPendientes()"
+          >
+            {{ cargandoAltas() ? 'Actualizando...' : 'Actualizar' }}
+          </button>
+        </div>
+      </div>
+
+      <p class="text-sm muted">
+        Cuando alguien se registra eligiendo tu institución, su alta no la decide
+        la CACE: la confirmas tú (o cualquier agente de la institución). Hasta
+        entonces esa persona solo puede completar los datos de la institución.
+      </p>
+
+      @if (errorAltas()) {
+        <div class="alert alert-error" role="alert">{{ errorAltas() }}</div>
+      }
+      @if (avisoAltas()) {
+        <div class="alert alert-success" role="status">{{ avisoAltas() }}</div>
+      }
+
+      @if (cargandoAltas() && altasPendientes().length === 0) {
+        <p class="text-sm muted">Cargando altas pendientes...</p>
+      } @else if (altasPendientes().length === 0) {
+        <p class="muted">No hay ninguna alta esperando confirmación.</p>
+      } @else {
+        <ul class="lista">
+          @for (alta of altasPendientes(); track alta.id) {
+            <li class="lista-item">
+              <div class="inst-bloque">
+                <div class="inst-name">
+                  <strong>{{ alta.nombre }}</strong>
+                  <span class="estado pendiente">Sin confirmar</span>
+                </div>
+                <p class="text-sm muted">
+                  {{ alta.correo }} · {{ alta.documento }} · {{ alta.cargo }}
+                </p>
+
+                @if (altaARechazar(); as rechazando) {
+                  @if (rechazando.id === alta.id) {
+                    <div class="form-field inst-motivo">
+                      <label [for]="'motivo-alta-' + alta.id">
+                        Motivo del rechazo (opcional)
+                      </label>
+                      <textarea
+                        [id]="'motivo-alta-' + alta.id"
+                        rows="2"
+                        [value]="motivoRechazo()"
+                        (input)="motivoRechazo.set($any($event.target).value)"
+                        placeholder="Se le enviará por correo. Puedes dejarlo vacío."
+                      ></textarea>
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="lista-acciones">
+                @if (altaARechazar()?.id === alta.id) {
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    [disabled]="altaEnProceso() !== null"
+                    (click)="confirmarRechazo()"
+                  >
+                    Confirmar rechazo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    [disabled]="altaEnProceso() !== null"
+                    (click)="cancelarRechazo()"
+                  >
+                    Cancelar
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    [disabled]="altaEnProceso() !== null"
+                    (click)="confirmarAlta(alta)"
+                  >
+                    Confirmar alta
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    [disabled]="altaEnProceso() !== null"
+                    (click)="pedirRechazo(alta)"
+                  >
+                    Rechazar
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
       }
     </section>
 
@@ -741,6 +917,41 @@
         <label for="i-correo">Correo institucional</label>
         <input id="i-correo" type="email" formControlName="correoInstitucional" />
       </div>
+
+      <div class="logo-institucion-bloque">
+        @if (logoUrl(); as logo) {
+          <img class="logo-institucion logo-institucion-lg" [src]="logo" alt="Logo de la institución" />
+        } @else {
+          <span class="inst-logo-vacio" aria-hidden="true">{{ (institucion()?.nombre ?? '?').charAt(0) }}</span>
+        }
+        <div class="logo-institucion-acciones">
+          <label class="btn btn-secondary" for="logo-modal">
+            {{ logoSubiendo() ? 'Subiendo…' : (logoUrl() ? 'Cambiar logo' : 'Subir logo') }}
+          </label>
+          <input
+            id="logo-modal"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="archivo-oculto"
+            [disabled]="logoSubiendo()"
+            (change)="subirLogo($event)"
+          />
+          @if (logoUrl()) {
+            <button
+              type="button"
+              class="btn btn-ghost"
+              [disabled]="logoSubiendo()"
+              (click)="quitarLogo()"
+            >
+              Quitar logo
+            </button>
+          }
+          <p class="field-hint">PNG, JPG o WEBP · hasta 2 MB</p>
+        </div>
+      </div>
+      @if (logoError()) {
+        <div class="alert alert-error" role="alert">{{ logoError() }}</div>
+      }
 
       @if (institucionError()) {
         <div class="alert alert-error" role="alert">{{ institucionError() }}</div>

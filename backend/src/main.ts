@@ -89,6 +89,20 @@ async function bootstrap() {
   });
   app.useStaticAssets(avataresDir, { prefix: '/avatares/' });
 
+  // Logos de institución: mismos permisos que las fotos de perfil (se muestran
+  // con <img> en el catálogo y en el registro), pero en su propia carpeta. No
+  // sirven los `/uploads`: allí todo va forzado como descarga.
+  const logosDir = join(uploadsDir, 'instituciones');
+  mkdirSync(logosDir, { recursive: true });
+  app.use('/logos', (_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  });
+  app.useStaticAssets(logosDir, { prefix: '/logos/' });
+
   // Plantillas descargables (hoy, la lista de alumnos de ejemplo). Viven en
   // `backend/plantillas` y no en `public/`, porque `public/` es la salida del
   // build de Angular y se vacía en cada compilación. Se fuerzan como descarga:

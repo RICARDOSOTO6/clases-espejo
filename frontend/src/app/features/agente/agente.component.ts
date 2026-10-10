@@ -25,7 +25,7 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
-import { Institucion, InviteDocenteDto } from '../../core/models/auth.models';
+import { Institucion, InviteDocenteDto, AltaPendiente } from '../../core/models/auth.models';
 import {
   RevisarSolicitudDto,
   SolicitudEntrante,
@@ -57,6 +57,8 @@ import {
   etiquetaUrgencia,
 } from '../../core/utils/urgencia.util';
 import { fechaTexto } from '../../core/utils/fecha.util';
+import { urlDeArchivo } from '../../core/utils/url-archivo.util';
+import { prepararLogoInstitucion } from '../../core/utils/imagen.util';
 
 @Component({
   selector: 'app-agente',
@@ -140,6 +142,33 @@ export class AgenteComponent implements OnInit, OnDestroy {
   asignaciones = signal<Asignacion[]>([]);
   institucion = signal<Institucion | null>(null);
   institucionCargada = signal(false);
+
+  /**
+   * ¿Está el agente todavía sin habilitar? Pasa cuando su institución no está
+   * aprobada por la CACE o cuando su alta aún no la ha confirmado un agente de
+   * esa institución. Mientras tanto solo puede completar los datos.
+   */
+  readonly bloqueado = computed(
+    () => this.institucionCargada() && this.institucion()?.puedeOperar === false,
+  );
+  readonly motivoBloqueo = computed(
+    () => this.institucion()?.motivoBloqueo ?? null,
+  );
+
+  // --- Logo de la institución ---
+  readonly logoSubiendo = signal(false);
+  readonly logoError = signal<string | null>(null);
+
+  // --- Altas pendientes de confirmar (mi institución) ---
+  readonly altasPendientes = signal<AltaPendiente[]>([]);
+  readonly cargandoAltas = signal(false);
+  readonly errorAltas = signal<string | null>(null);
+  readonly avisoAltas = signal<string | null>(null);
+  /** Alta cuya confirmación o rechazo está en curso. */
+  readonly altaEnProceso = signal<number | null>(null);
+  /** Alta que se está rechazando (pide motivo antes de enviar). */
+  readonly altaARechazar = signal<AltaPendiente | null>(null);
+  readonly motivoRechazo = signal('');
 
   readonly paises = PAISES;
   readonly paisesComunidad = PAISES_CACE;
@@ -357,12 +386,31 @@ export class AgenteComponent implements OnInit, OnDestroy {
         tono: s.urgencia === 'VENCIDA' ? 'error' : 'aviso',
       });
     }
-    if (this.institucionCargada() && !this.institucionCompleta()) {
+    if (this.institucionCargada() && this.bloqueado()) {
+      avisos.push({
+        titulo: 'Tu institución aún no puede operar',
+        detalle:
+          this.motivoBloqueo() ??
+          'Completa los datos de tu institución para poder operar.',
+        ancla: 'institucion',
+        tono: 'error',
+      });
+    } else if (this.institucionCargada() && !this.institucionCompleta()) {
       avisos.push({
         titulo: 'Completa el registro de tu institución',
         detalle: 'Sin esos datos, otras instituciones no pueden colaborar contigo.',
         ancla: 'institucion',
         tono: 'error',
+      });
+    }
+    if (this.altasPendientes().length > 0) {
+      const cuantas = this.altasPendientes().length;
+      avisos.push({
+        titulo: `${cuantas} alta(s) esperan tu confirmación`,
+        detalle:
+          'Alguien se registró eligiendo tu institución: confírmalo o recházalo.',
+        ancla: 'confirmaciones',
+        tono: 'aviso',
       });
     }
     if (porRevisar > 0) {
@@ -481,6 +529,10 @@ export class AgenteComponent implements OnInit, OnDestroy {
         this.institucion.set(r);
         this.institucionCargada.set(true);
         this.publicarEnLayout();
+        // Solo tiene sentido pedir las altas si el agente ya puede operar.
+        if (r.puedeOperar) {
+          this.cargarAltasPendientes();
+        }
         if (!r.registroCompleto) {
           this.institucionForm.patchValue({
             nombre: r.nombre,
@@ -572,6 +624,153 @@ export class AgenteComponent implements OnInit, OnDestroy {
           );
         },
       });
+  }
+
+  // --- Logo de la institución ---
+
+  /** Prepara la imagen (reduce y conserva transparencia) y la sube. */
+  async subirLogo(evento: Event): Promise<void> {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    // Se vacía el input para que elegir el mismo archivo dos veces vuelva a
+    // disparar el evento.
+    input.value = '';
+    if (!archivo || this.logoSubiendo()) return;
+
+    this.logoError.set(null);
+    this.logoSubiendo.set(true);
+
+    let preparado: File;
+    try {
+      preparado = await prepararLogoInstitucion(archivo);
+    } catch {
+      this.logoSubiendo.set(false);
+      this.logoError.set(
+        'No se pudo leer la imagen: el logo debe ser PNG, JPG o WEBP.',
+      );
+      return;
+    }
+
+    this.institucionesService.subirLogo(preparado).subscribe({
+      next: (r) => {
+        this.logoSubiendo.set(false);
+        this.institucion.set(r);
+        this.publicarEnLayout();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.logoSubiendo.set(false);
+        this.logoError.set(
+          extraerMensajeError(err, 'No se pudo subir el logo'),
+        );
+      },
+    });
+  }
+
+  quitarLogo(): void {
+    if (this.logoSubiendo()) return;
+    this.logoError.set(null);
+    this.logoSubiendo.set(true);
+    this.institucionesService.quitarLogo().subscribe({
+      next: () => {
+        this.logoSubiendo.set(false);
+        // El endpoint devuelve el logo quitado: se recarga la institución para
+        // no quedarse con datos a medias.
+        this.cargarInstitucion();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.logoSubiendo.set(false);
+        this.logoError.set(
+          extraerMensajeError(err, 'No se pudo quitar el logo'),
+        );
+      },
+    });
+  }
+
+  /** URL del logo lista para un `<img>` (con el host del backend en desarrollo). */
+  logoUrl(): string | null {
+    return urlDeArchivo(this.institucion()?.logoUrl);
+  }
+
+  // --- Altas pendientes de confirmar ---
+
+  /**
+   * Altas de mi institución que esperan confirmación: son las personas que se
+   * registraron eligiendo una institución ya aprobada.
+   */
+  cargarAltasPendientes(): void {
+    this.cargandoAltas.set(true);
+    this.errorAltas.set(null);
+    this.agentes.listarAltasPendientes().subscribe({
+      next: (altas) => {
+        this.altasPendientes.set(altas);
+        this.cargandoAltas.set(false);
+        this.publicarEnLayout();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.altasPendientes.set([]);
+        this.cargandoAltas.set(false);
+        this.errorAltas.set(
+          extraerMensajeError(err, 'No se pudieron cargar las altas pendientes'),
+        );
+        this.publicarEnLayout();
+      },
+    });
+  }
+
+  confirmarAlta(alta: AltaPendiente): void {
+    if (this.altaEnProceso() !== null) return;
+    this.altaEnProceso.set(alta.id);
+    this.avisoAltas.set(null);
+    this.errorAltas.set(null);
+    this.agentes.confirmarAlta(alta.id).subscribe({
+      next: (r) => {
+        this.altaEnProceso.set(null);
+        this.avisoAltas.set(r.mensaje);
+        this.cargarAltasPendientes();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.altaEnProceso.set(null);
+        this.errorAltas.set(
+          extraerMensajeError(err, 'No se pudo confirmar el alta'),
+        );
+      },
+    });
+  }
+
+  /** Rechazar el alta pide motivo antes de enviar nada (es opcional). */
+  pedirRechazo(alta: AltaPendiente): void {
+    this.motivoRechazo.set('');
+    this.avisoAltas.set(null);
+    this.errorAltas.set(null);
+    this.altaARechazar.set(alta);
+  }
+
+  cancelarRechazo(): void {
+    this.altaARechazar.set(null);
+    this.motivoRechazo.set('');
+  }
+
+  confirmarRechazo(): void {
+    const alta = this.altaARechazar();
+    if (!alta || this.altaEnProceso() !== null) return;
+
+    this.altaEnProceso.set(alta.id);
+    this.errorAltas.set(null);
+    this.agentes.rechazarAlta(alta.id, this.motivoRechazo().trim()).subscribe({
+      next: (r) => {
+        this.altaEnProceso.set(null);
+        this.altaARechazar.set(null);
+        this.motivoRechazo.set('');
+        this.avisoAltas.set(r.mensaje);
+        this.cargarAltasPendientes();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.altaEnProceso.set(null);
+        this.errorAltas.set(
+          extraerMensajeError(err, 'No se pudo rechazar el alta'),
+        );
+      },
+    });
   }
 
   institucionCompleta(): boolean {

@@ -1,4 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { RegisterDto } from './dto/register.dto';
@@ -10,8 +11,10 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  register(@Body() dto: RegisterDto, @Req() peticion: Request) {
+    // La petición hace falta para los correos: el enlace debe apuntar al dominio
+    // o al túnel desde el que se está usando la aplicación.
+    return this.authService.register(dto, peticion);
   }
 
   @Post('login')

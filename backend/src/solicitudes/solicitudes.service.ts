@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { exigirAgenteHabilitado } from '../common/institucion-habilitada';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
 import { RevisarSolicitudDto } from './dto/revisar-solicitud.dto';
@@ -48,6 +49,10 @@ export class SolicitudesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async crear(usuarioId: number, dto: CreateSolicitudDto) {
+    // Un agente cuya institución no está aprobada (o cuyo alta aún no está
+    // confirmada) no opera: el mensaje se lo dice antes que nada.
+    await exigirAgenteHabilitado(this.prisma, usuarioId);
+
     const docente = await this.getDocente(usuarioId);
     this.verificarFechaPropuesta(dto.fechaPropuesta);
 

@@ -63,6 +63,7 @@ model Usuario {
   miembroCace     MiembroCace?
   listasAlumnos   ListaAlumnos[]
   institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
+  agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
 
   @@map("USUARIO")
 }
@@ -86,6 +87,13 @@ model AgenteInternacionalizacion {
   usuarioId     Int                 @unique @map("usuario_id")
   institucionId Int                 @map("institucion_id")
   cargo         String
+  /// Cuando un agente se une a una institucion **ya aprobada**, su alta la
+  /// confirma el agente de esa institucion (no el presidente): hasta entonces
+  /// queda en null. El agente fundador nace confirmado y de la institucion se
+  /// encarga el presidente.
+  confirmadoEn            DateTime? @map("confirmado_en")
+  confirmadoPorUsuarioId  Int?      @map("confirmado_por_usuario_id")
+  confirmadoPor           Usuario?  @relation("AgenteConfirmado", fields: [confirmadoPorUsuarioId], references: [id])
   institucion   Institucion         @relation(fields: [institucionId], references: [id])
   usuario       Usuario             @relation(fields: [usuarioId], references: [id])
   creadoEn      DateTime            @default(now()) @map("creado_en")

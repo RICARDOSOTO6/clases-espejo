@@ -120,85 +120,6 @@
       </div>
 
       <div class="form-field">
-        <label for="nombreInstitucion">Nombre de la institución</label>
-        <input
-          id="nombreInstitucion"
-          type="text"
-          formControlName="nombreInstitucion"
-          list="instituciones-sugeridas"
-          autocomplete="organization"
-        />
-        <p class="field-hint">Solo letras, sin números ni símbolos</p>
-        <datalist id="instituciones-sugeridas">
-          @for (i of institucionesSugeridas; track i) {
-            <option [value]="i"></option>
-          }
-        </datalist>
-        @if (mensajeDe('nombreInstitucion'); as msg) {
-          <p class="field-error">{{ msg }}</p>
-        }
-      </div>
-
-      <div class="row">
-        <div class="col form-field">
-          <label for="paisCodigo">País</label>
-          <select id="paisCodigo" formControlName="paisCodigo" (change)="onPaisChange()">
-            <option value="" disabled>Selecciona un país</option>
-            @for (p of paises; track p.codigo) {
-              <option [value]="p.codigo">{{ p.nombre }}</option>
-            }
-          </select>
-          @if (mensajeDe('paisCodigo'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-        </div>
-        <div class="col form-field">
-          <label for="estado">Estado / Provincia</label>
-          <input id="estado" type="text" formControlName="estado" />
-          <p class="field-hint">Solo letras, sin números ni símbolos</p>
-          @if (mensajeDe('estado'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col form-field">
-          <label for="ciudad">Ciudad</label>
-          <input id="ciudad" type="text" formControlName="ciudad" />
-          <p class="field-hint">Solo letras, sin números ni símbolos</p>
-          @if (mensajeDe('ciudad'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-        </div>
-        <div class="col form-field">
-          <label for="telefono">
-            Teléfono
-            @if (prefijoTelefono()) {
-              <span class="muted">({{ prefijoTelefono() }})</span>
-            }
-          </label>
-          <input id="telefono" type="tel" formControlName="telefono" />
-          @if (mensajeDe('telefono'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-        </div>
-      </div>
-
-      <div class="form-field">
-        <label for="correoInstitucional">Correo institucional</label>
-        <input
-          id="correoInstitucional"
-          type="email"
-          formControlName="correoInstitucional"
-          autocomplete="email"
-        />
-        @if (mensajeDe('correoInstitucional'); as msg) {
-          <p class="field-error">{{ msg }}</p>
-        }
-      </div>
-
-      <div class="form-field">
         <label for="cargo">Cargo</label>
         <select id="cargo" formControlName="cargo">
           <option value="" disabled>Selecciona tu cargo</option>
@@ -210,6 +131,183 @@
           <p class="field-error">{{ msg }}</p>
         }
       </div>
+
+      <!-- Buscar antes de crear: es la defensa contra las instituciones duplicadas. -->
+      <fieldset class="inst-paso">
+        <legend>Tu institución</legend>
+
+        @if (!creandoNueva()) {
+          <p class="field-hint">
+            Busca tu institución en la lista. Si ya está, elígela: te unirás a
+            ella en vez de duplicarla.
+          </p>
+
+          <div class="form-field">
+            <label for="buscarInstitucion">Buscar por nombre o país</label>
+            <input
+              id="buscarInstitucion"
+              type="search"
+              autocomplete="off"
+              placeholder="Por ejemplo: Calkiní"
+              [value]="busqueda()"
+              (input)="onBusqueda($any($event.target).value)"
+            />
+          </div>
+
+          @if (errorDirectorio()) {
+            <div class="alert alert-error" role="alert">
+              <span>{{ errorDirectorio() }}</span>
+              <button type="button" class="btn btn-secondary" (click)="cargarDirectorio()">
+                Reintentar
+              </button>
+            </div>
+          }
+
+          @if (cargandoDirectorio() && directorio().length === 0) {
+            <p class="muted">Cargando la lista de instituciones…</p>
+          } @else if (resultados().length === 0) {
+            <p class="muted">
+              Ninguna institución coincide con la búsqueda. Si la tuya no está en
+              la plataforma, créala con el botón de abajo.
+            </p>
+          } @else {
+            <ul class="inst-resultados">
+              @for (i of resultados(); track i.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="inst-opcion"
+                    [class.elegida]="elegida()?.id === i.id"
+                    [attr.aria-pressed]="elegida()?.id === i.id"
+                    (click)="elegirInstitucion(i)"
+                  >
+                    @if (logoDe(i); as logo) {
+                      <img class="inst-logo" [src]="logo" [alt]="'Logo de ' + i.nombre" />
+                    } @else {
+                      <span class="inst-logo inst-logo-vacio" aria-hidden="true">
+                        {{ i.nombre.charAt(0) }}
+                      </span>
+                    }
+                    <span class="inst-datos">
+                      <strong>{{ i.nombre }}</strong>
+                      <span class="muted text-sm">
+                        {{ i.pais }} · {{ etiquetaEstado(i.estadoCace) }}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (elegida(); as inst) {
+            @if (elegidaBloqueada()) {
+              <div class="alert alert-error" role="status">
+                «{{ inst.nombre }}» {{ etiquetaEstado(inst.estadoCace).toLowerCase() }}.
+                Elige otra institución o ponte en contacto con la CACE.
+              </div>
+            } @else {
+              <div class="alert alert-success" role="status">
+                Te unirás a «{{ inst.nombre }}» ({{ inst.pais }}).
+                @if (inst.estadoCace === 'APROBADA') {
+                  Un agente de esa institución confirmará tu alta antes de que
+                  puedas invitar docentes o proponer clases espejo.
+                } @else {
+                  La institución está pendiente de aprobación por la CACE; de
+                  momento podrás completar sus datos.
+                }
+              </div>
+            }
+          }
+
+          <button type="button" class="btn btn-secondary" (click)="crearInstitucionNueva()">
+            Mi institución no está en la lista: crearla
+          </button>
+        } @else {
+          <p class="field-hint">
+            Vas a crear una institución nueva. Nacerá <strong>pendiente</strong>
+            de aprobación por la CACE: después podrás completar sus datos y
+            subir su logo desde el panel.
+          </p>
+
+          <div class="form-field">
+            <label for="nombreInstitucion">Nombre de la institución</label>
+            <input
+              id="nombreInstitucion"
+              type="text"
+              formControlName="nombreInstitucion"
+              autocomplete="organization"
+            />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
+            @if (mensajeDe('nombreInstitucion'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="row">
+            <div class="col form-field">
+              <label for="paisCodigo">País</label>
+              <select id="paisCodigo" formControlName="paisCodigo" (change)="onPaisChange()">
+                <option value="" disabled>Selecciona un país</option>
+                @for (p of paises; track p.codigo) {
+                  <option [value]="p.codigo">{{ p.nombre }}</option>
+                }
+              </select>
+              @if (mensajeDe('paisCodigo'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+            <div class="col form-field">
+              <label for="estado">Estado / Provincia</label>
+              <input id="estado" type="text" formControlName="estado" />
+              <p class="field-hint">Solo letras, sin números ni símbolos</p>
+              @if (mensajeDe('estado'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col form-field">
+              <label for="ciudad">Ciudad</label>
+              <input id="ciudad" type="text" formControlName="ciudad" />
+              <p class="field-hint">Solo letras, sin números ni símbolos</p>
+              @if (mensajeDe('ciudad'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+            <div class="col form-field">
+              <label for="telefono">
+                Teléfono
+                @if (prefijoTelefono()) {
+                  <span class="muted">({{ prefijoTelefono() }})</span>
+                }
+              </label>
+              <input id="telefono" type="tel" formControlName="telefono" />
+              @if (mensajeDe('telefono'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="correoInstitucional">Correo institucional</label>
+            <input
+              id="correoInstitucional"
+              type="email"
+              formControlName="correoInstitucional"
+              autocomplete="email"
+            />
+            @if (mensajeDe('correoInstitucional'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <button type="button" class="btn btn-ghost" (click)="volverABuscar()">
+            Volver a buscar en la lista
+          </button>
+        }
+      </fieldset>
 
       @if (error()) {
         <div class="alert alert-error" role="alert">{{ error() }}</div>

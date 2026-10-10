@@ -16,6 +16,8 @@ export interface InstitucionCace {
   id: number;
   nombre: string;
   pais: string;
+  /** Logo de la institución (`/logos/…`), si lo tiene. */
+  logoUrl: string | null;
   /** PENDIENTE, APROBADA, RECHAZADA o VETADA. */
   estadoCace: string;
   /** Motivo del rechazo o del veto (vacío si no lo hay). */
@@ -68,5 +70,17 @@ export class CaceService {
 
   reactivar(id: number): Observable<DecisionCace> {
     return this.http.post<DecisionCace>(`${API_URL}/cace/instituciones/${id}/reactivar`, {});
+  }
+
+  /**
+   * Borrado definitivo de una institución rechazada. Falla con un mensaje claro
+   * si todavía tiene historia (solicitudes, clases espejo, listas de alumnos…).
+   */
+  eliminarInstitucion(
+    id: number,
+  ): Observable<{ mensaje: string; id: number; nombre: string }> {
+    return this.http.delete<{ mensaje: string; id: number; nombre: string }>(
+      `${API_URL}/cace/instituciones/${id}`,
+    );
   }
 }

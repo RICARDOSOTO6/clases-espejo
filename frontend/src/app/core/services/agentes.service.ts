@@ -1,7 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { InviteDocenteDto, InviteResponse } from '../models/auth.models';
+import {
+  AltaPendiente,
+  InviteDocenteDto,
+  InviteResponse,
+} from '../models/auth.models';
 
 const API_URL =
   window.location.port === '4200'
@@ -63,6 +67,32 @@ export class AgentesService {
   historialDocente(id: number): Observable<HistorialDocente> {
     return this.http.get<HistorialDocente>(
       `${API_URL}/agentes/docentes/${id}/historial`,
+    );
+  }
+
+  /**
+   * Altas pendientes de confirmar en mi institución: las personas que se
+   * registraron eligiendo una institución ya aprobada y esperan el visto bueno
+   * de un agente de esa institución.
+   */
+  listarAltasPendientes(): Observable<AltaPendiente[]> {
+    return this.http.get<AltaPendiente[]>(`${API_URL}/agentes/confirmaciones`);
+  }
+
+  confirmarAlta(id: number): Observable<{ mensaje: string; id: number }> {
+    return this.http.post<{ mensaje: string; id: number }>(
+      `${API_URL}/agentes/confirmaciones/${id}/confirmar`,
+      {},
+    );
+  }
+
+  rechazarAlta(
+    id: number,
+    motivo: string,
+  ): Observable<{ mensaje: string; id: number }> {
+    return this.http.post<{ mensaje: string; id: number }>(
+      `${API_URL}/agentes/confirmaciones/${id}/rechazar`,
+      { motivo },
     );
   }
 }

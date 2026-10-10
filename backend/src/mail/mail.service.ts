@@ -146,4 +146,76 @@ export class MailService {
       `,
     });
   }
+
+  /**
+   * Avisa a los agentes de una institución ya aprobada de que alguien se acaba
+   * de registrar queriendo unirse a ella: el alta la confirman ellos, no el
+   * presidente.
+   */
+  async sendAltaAgentePendiente(
+    to: string,
+    institucion: string,
+    agente: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/agente`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: `Clases Espejo - ${agente} quiere unirse a tu institución`,
+      text: `${agente} se registró como agente de internacionalización y eligió ${institucion}. Su alta la confirmas tú (o cualquier agente de la institución) desde: ${link}`,
+      html: `
+        <p><strong>${agente}</strong> se registró como agente de internacionalización y eligió <strong>${institucion}</strong>.</p>
+        <p>Su alta la confirma un agente de la institución, no la CACE. Hasta que la confirmes, esa persona solo puede completar los datos de la institución.</p>
+        <p>Entra en <a href="${link}">${link}</a> para confirmarla o rechazarla.</p>
+      `,
+    });
+  }
+
+  /** Avisa al agente nuevo de que su alta en la institución quedó confirmada. */
+  async sendAltaAgenteConfirmada(
+    to: string,
+    institucion: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/agente`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Tu alta como agente fue confirmada',
+      text: `Un agente de ${institucion} confirmó tu alta: ya puedes usar el panel completo. Entra en: ${link}`,
+      html: `
+        <p>Un agente de <strong>${institucion}</strong> confirmó tu alta como agente de internacionalización.</p>
+        <p>Desde ahora puedes invitar docentes, crear materias y asignaciones, y proponer clases espejo.</p>
+        <p>Entra en <a href="${link}">${link}</a> para continuar.</p>
+      `,
+    });
+  }
+
+  /**
+   * Avisa de que el alta fue rechazada. La cuenta queda desactivada, así que el
+   * correo es lo único que explica por qué no puede entrar.
+   */
+  async sendAltaAgenteRechazada(
+    to: string,
+    institucion: string,
+    motivo: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/login`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Tu alta como agente no fue aceptada',
+      text: `Un agente de ${institucion} no aceptó tu alta como agente de internacionalización.${motivo ? ` Motivo: ${motivo}.` : ''} Tu cuenta quedó desactivada.`,
+      html: `
+        <p>Un agente de <strong>${institucion}</strong> no aceptó tu alta como agente de internacionalización.</p>
+        ${motivo ? `<p><strong>Motivo:</strong> ${motivo}</p>` : ''}
+        <p>Tu cuenta quedó desactivada, así que no podrás entrar en <a href="${link}">${link}</a>. Si crees que es un error, ponte en contacto con la institución.</p>
+      `,
+    });
+  }
 }

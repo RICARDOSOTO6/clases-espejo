@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { exigirAgenteHabilitado } from '../common/institucion-habilitada';
 import { CreateAsignacionDto } from './dto/create-asignacion.dto';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AsignacionesService {
 
   async crear(agenteId: number, dto: CreateAsignacionDto) {
     const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
 
     const materia = await this.prisma.materia.findFirst({
       where: { id: dto.materiaId, institucionId: agente.institucionId },
@@ -55,6 +57,7 @@ export class AsignacionesService {
 
   async eliminar(agenteId: number, id: number) {
     const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
     const asignacion = await this.prisma.asignacionDocente.findFirst({
       where: { id, materia: { institucionId: agente.institucionId } },
     });
