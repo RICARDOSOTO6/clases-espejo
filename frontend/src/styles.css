@@ -1719,16 +1719,26 @@ textarea.ng-invalid.ng-touched:focus {
 /* ----------------------------------------------------------------------------
    19. Proyecto en dos columnas
    ---------------------------------------------------------------------------- */
+/* Dos columnas equilibradas por el navegador: en dos pilas fijas, la que tiene
+   menos contenido deja un hueco al fondo (y «Alumnos» solo existe para el
+   docente, así que al agente le quedaba ese hueco entre Evaluación y Sesiones). */
 .proyecto-cols {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-5);
-  align-items: start;
+  columns: 2;
+  column-gap: var(--space-5);
   margin-top: var(--space-5);
 }
 
-.proyecto-col {
-  min-width: 0;
+/* Ninguna tarjeta se parte entre columnas. En multicolumna no hay `gap`, así que
+   la separación vertical la da el margen de cada tarjeta. */
+.proyecto-cols > * {
+  break-inside: avoid;
+  margin: 0 0 var(--space-5);
+}
+
+@media (max-width: 900px) {
+  .proyecto-cols {
+    columns: 1;
+  }
 }
 
 /* ----------------------------------------------------------------------------
