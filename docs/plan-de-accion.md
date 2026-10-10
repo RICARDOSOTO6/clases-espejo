@@ -103,13 +103,32 @@ Las fases 5 y 6 mejoran el resultado pero no bloquean la historia.
 
 ---
 
-## 3. Lo que falta por decidir
+## 3. Decisiones cerradas el 10 de octubre (segunda ronda)
 
-1. ¿Habrá **un presidente suplente** o se queda en uno solo? (Es una línea hoy y
-   una migración mañana.)
-2. ¿Quién puede **borrar definitivamente** un registro rechazado: solo el
-   presidente o también su secretaría?
-3. ¿El **aviso de veto** es público (aparece en la comunidad con su motivo) o se
-   limita a avisar a la institución afectada?
-4. ¿Se **avisa al presidente por correo** además de la campana por cada
-   institución pendiente, o basta la campana?
+1. **Sí habrá presidente suplente**: el rol admite más de un usuario.
+2. El **borrado definitivo** lo hace solo el presidente; la secretaría puede
+   hacerlo **con una autorización del presidente** (queda como una solicitud que
+   él aprueba).
+3. El **veto se avisa solo a la institución afectada** (no es público).
+4. Para las instituciones pendientes **basta la campana** del presidente.
+
+## 4. Corrección importante del modelo de datos
+
+Al empezar la fase 0 se comprobó que **`Usuario` no tiene columna `rol`**: el rol
+es **relacional** (alguien es agente si tiene fila en `AGENTE`, docente si la
+tiene en `DOCENTE`). Lo que decía antes este documento («`Usuario.rol` es un
+String») era un error de lectura: la línea `rol String` que se citó es de
+`PROYECTO_DOCENTE`, que es el papel del docente dentro de un proyecto.
+
+Consecuencia para el diseño: el presidente **no** se añade como un texto en una
+columna, sino como una tabla propia —**`MIEMBRO_CACE`**, con un campo `cargo`
+(`PRESIDENTE`, `SUPLENTE`, `SECRETARIA`)—, igual que ya funcionan agentes y
+docentes. El rol se deduce de la fila que tenga la persona, **el suplente sale
+gratis** (dos filas) y no hay que migrar ninguna columna.
+
+La **matriz de capacidades** (`backend/src/common/capacidades.ts`) y el guardia
+`@Requiere(...)` + `CapacidadesGuard` ya están escritos y probados: resuelven el
+rol por relación y comprueban la capacidad, que era justo lo que faltaba (el
+informe decía «control por rol» y no existía ningún guardia de roles). Lo que
+falta es la tabla `MIEMBRO_CACE` para que el presidente y la secretaría existan de
+verdad.

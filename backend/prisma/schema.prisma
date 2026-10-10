@@ -43,6 +43,9 @@ model Usuario {
   /// Ruta pública de la foto de perfil (por ejemplo `/avatares/123.png`).
   fotoUrl         String?                     @map("foto_url")
   activo          Boolean                     @default(true)
+  /// Se pone en `true` al crear una cuenta con contraseña provisional (por
+  /// ejemplo el presidente de la CACE): el primer acceso obliga a cambiarla.
+  debeCambiarPassword Boolean                @default(false) @map("debe_cambiar_password")
   creadoEn        DateTime                    @default(now()) @map("creado_en")
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
