@@ -444,13 +444,18 @@
                 </span>
               }
             </div>
-            @if (listaAlumnos() && !modoReemplazo() && !vistaPrevia()) {
-              <div class="card-head-actions">
+            <!-- El botón de la plantilla va en la cabecera para que esté siempre
+                 a la vista, también cuando ya hay una lista guardada. -->
+            <div class="card-head-actions">
+              <a class="btn btn-outline" [href]="urlPlantillaAlumnos" download>
+                Descargar plantilla (.xlsx)
+              </a>
+              @if (listaAlumnos() && !modoReemplazo() && !vistaPrevia()) {
                 <button type="button" class="btn btn-secondary" (click)="reemplazarLista()">
                   Subir otra lista
                 </button>
-              </div>
-            }
+              }
+            </div>
           </div>
 
           <p class="muted">
@@ -567,12 +572,17 @@
           } @else if (!listaAlumnos() || modoReemplazo()) {
             <div class="alumnos-carga">
               <p class="muted">
-                Descarga la plantilla, escribe una fila por alumno y súbela: así
-                evitamos los errores de formato.
+                Descarga la plantilla de la cabecera, escribe una fila por alumno
+                y súbela: así evitamos los errores de formato. La columna
+                <strong>Correo</strong> es la que permite
+                <strong>enviarle el certificado</strong> al alumno.
               </p>
-              <a class="btn btn-outline" [href]="urlPlantillaAlumnos" download>
-                Descargar plantilla de ejemplo (.xlsx)
-              </a>
+              <p class="muted alumnos-nota">
+                ⚠️ Si pegas solo los nombres (la opción de abajo), el envío por
+                correo <strong>no será posible</strong>: esos certificados habrá
+                que entregarlos impresos. Para poder enviarlos, sube el archivo
+                con la columna de correo llena.
+              </p>
 
               <label class="btn btn-secondary">
                 Elegir archivo (.xlsx o .csv)

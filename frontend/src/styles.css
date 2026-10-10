@@ -3184,6 +3184,23 @@ textarea.ng-invalid.ng-touched:focus {
   cursor: pointer;
 }
 
+/* Aviso dentro de la carga de la lista: el correo es para enviar el certificado
+   y, si solo se pegan los nombres, no se podrá enviar. */
+.alumnos-nota {
+  max-width: 620px;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--warning-700);
+  border-radius: var(--radius-sm);
+  background: var(--warning-100);
+  color: var(--warning-700);
+}
+
+/* Con dos botones en la cabecera (plantilla + subir otra lista), que bajen de
+   línea antes que salirse de la tarjeta. */
+.card-head-actions {
+  flex-wrap: wrap;
+}
+
 /* — Mensajes flotantes de la pantalla —
    En pantallas largas (una clase espejo lo es) un aviso puesto arriba no lo ve
    quien está abajo: cree que falló la red cuando lo que pasa es que falta un
