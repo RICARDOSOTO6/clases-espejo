@@ -3245,3 +3245,41 @@ textarea.ng-invalid.ng-touched:focus {
   background: var(--danger-100);
   color: var(--danger-700);
 }
+
+/* — Reportes de clase plegables —
+   Cerrados dejan a la vista el estado y quién falta por confirmar; se abren
+   cuando alguien necesita leer el detalle. */
+
+.reporte > summary.reporte-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* La flecha nativa se sustituye por una que gira según el estado. */
+.reporte > summary.reporte-head::-webkit-details-marker {
+  display: none;
+}
+
+.reporte > summary.reporte-head::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--text-aux);
+  font-size: 0.9rem;
+}
+
+.reporte[open] > summary.reporte-head::after {
+  content: '▴';
+}
+
+.reporte[open] > summary.reporte-head {
+  margin-bottom: var(--space-3);
+}
+
+.reporte-cuerpo {
+  padding-top: var(--space-1);
+}

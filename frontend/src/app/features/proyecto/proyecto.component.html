@@ -387,250 +387,6 @@
       </section>
 
         </div>
-        <div class="proyecto-col">
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
-            </span>
-            <h2 id="sesiones">Sesiones</h2>
-          </div>
-        </div>
-        @if (sesiones().length === 0) {
-          <p class="muted">Aún no hay sesiones programadas.</p>
-        } @else {
-          <ul class="lista">
-            @for (s of sesiones(); track s.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ s.titulo }}</strong>
-                  <div class="muted">
-                    {{ formatearFecha(s.fechaHora) }} · {{ horaDe(s.fechaHora) }}
-                  </div>
-                  <a class="link-button" [href]="s.enlaceVirtual" target="_blank" rel="noopener">Enlace virtual</a>
-
-                  @if (reporteDeSesion(s.id); as rep) {
-                    <div class="reporte">
-                      <div class="reporte-head">
-                        <strong>Reporte de la clase</strong>
-                        <span class="estado" [class.pendiente]="rep.estado !== 'CONFIRMADO'">
-                          {{ estadoReporteLabel(rep.estado) }}
-                        </span>
-                      </div>
-                      <p><span class="meta-label">Desarrollo:</span> {{ rep.desarrolloClase }}</p>
-                      <p><span class="meta-label">Asistentes:</span> {{ rep.totalAsistentes }}</p>
-                      <p><span class="meta-label">Incidencias:</span> {{ rep.incidencias }}</p>
-                      <p><span class="meta-label">Acuerdos siguientes:</span> {{ rep.acuerdosSiguienteSesion }}</p>
-
-                      <h3 class="subtitle">Firmas de los docentes</h3>
-                      <ul class="lista">
-                        @for (part of rep.participaciones; track part.id) {
-                          <li class="lista-item">
-                            <span>{{ nombreDocente(part.proyectoDocente) }}</span>
-                            <div class="lista-acciones">
-                              <span class="estado" [class.pendiente]="!part.confirmadoEn">
-                                {{ part.confirmadoEn ? 'Confirmado' : 'Pendiente' }}
-                              </span>
-                              @if (part.observaciones) {
-                                <span class="muted">{{ part.observaciones }}</span>
-                              }
-                            </div>
-                          </li>
-                        }
-                      </ul>
-
-                      @if (esDocente && proyectoAbierto() && !miParticipacionReporte(rep)?.confirmadoEn) {
-                        @if (reporteAConfirmar() === rep.id) {
-                          <form [formGroup]="observacionesForm" (ngSubmit)="confirmarReporte(rep)" class="form-grid" novalidate>
-                            <div class="form-field">
-                              <label for="rc-obs-{{ rep.id }}">Mis observaciones</label>
-                              <input id="rc-obs-{{ rep.id }}" type="text" formControlName="observaciones" placeholder="Observaciones sobre la clase" />
-                            </div>
-                            <div class="form-grid-actions">
-                              <button type="submit" class="btn btn-primary" [disabled]="observacionesForm.invalid || confirmandoReporteClase()">
-                                {{ confirmandoReporteClase() ? 'Confirmando...' : 'Confirmar' }}
-                              </button>
-                              <button type="button" class="btn btn-secondary" (click)="cancelarConfirmacion()">Cancelar</button>
-                            </div>
-                          </form>
-                        } @else {
-                          <button class="btn btn-primary" (click)="abrirConfirmacion(rep)">Confirmar mi participación</button>
-                        }
-                      }
-                    </div>
-                  } @else {
-                    <p class="muted">Sin reporte de clase.</p>
-                  }
-
-                  @if (sesionReporteAbierta() === s.id) {
-                    <form [formGroup]="reporteClaseForm" (ngSubmit)="guardarReporteClase()" class="form-grid" novalidate>
-                      <div class="form-field">
-                        <label for="rc-desarrollo">Desarrollo de la clase</label>
-                        <input id="rc-desarrollo" type="text" formControlName="desarrolloClase" placeholder="Cómo se desarrolló la clase" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-asistentes">Total de asistentes</label>
-                        <input id="rc-asistentes" type="number" min="0" formControlName="totalAsistentes" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-incidencias">Incidencias</label>
-                        <input id="rc-incidencias" type="text" formControlName="incidencias" placeholder="Incidencias (o 'Ninguna')" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-acuerdos">Acuerdos para la siguiente sesión</label>
-                        <input id="rc-acuerdos" type="text" formControlName="acuerdosSiguienteSesion" placeholder="Qué se acordó" />
-                      </div>
-                      <div class="form-grid-actions">
-                        <button type="submit" class="btn btn-primary" [disabled]="reporteClaseForm.invalid || guardandoReporteClase()">
-                          {{ guardandoReporteClase() ? 'Guardando...' : 'Guardar reporte' }}
-                        </button>
-                        <button type="button" class="btn btn-secondary" (click)="cerrarReporte()">Cancelar</button>
-                      </div>
-                    </form>
-                  }
-                </div>
-                @if (esDocente && proyectoAbierto()) {
-                  <div class="lista-acciones">
-                    <button class="btn btn-secondary" (click)="abrirReporte(s)">Reporte de clase</button>
-                    <button class="btn btn-danger" (click)="eliminarSesion(s.id)">Eliminar</button>
-                  </div>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="sesionForm" (ngSubmit)="crearSesion()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="s-titulo">Título</label>
-              <input id="s-titulo" type="text" formControlName="titulo" placeholder="Título de la sesión" />
-            </div>
-            <div class="form-field">
-              <label for="s-fecha">Fecha y hora</label>
-              <input id="s-fecha" type="datetime-local" formControlName="fechaHora" />
-            </div>
-            <div class="form-field">
-              <label for="s-enlace">Enlace virtual (URL)</label>
-              <input id="s-enlace" type="url" formControlName="enlaceVirtual" placeholder="https://…" />
-              <small class="file-hint">Debe empezar por http:// o https://</small>
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="sesionForm.invalid || guardandoSesion()">
-                {{ guardandoSesion() ? 'Agregando...' : 'Agregar sesión' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </span>
-            <h2 id="actividades">Actividades</h2>
-          </div>
-        </div>
-        @if (actividades().length === 0) {
-          <p class="muted">Aún no hay actividades.</p>
-        } @else {
-          <ul class="lista">
-            @for (a of actividades(); track a.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ a.titulo }}</strong>
-                  <div class="muted">Entrega: {{ formatearFecha(a.fechaLimite) }}</div>
-                  <div class="muted">{{ a.instrucciones }}</div>
-                </div>
-                @if (esDocente && proyectoAbierto()) {
-                  <button class="btn btn-danger" (click)="eliminarActividad(a.id)">Eliminar</button>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="actividadForm" (ngSubmit)="crearActividad()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="a-titulo">Título</label>
-              <input id="a-titulo" type="text" formControlName="titulo" placeholder="Título de la actividad" />
-            </div>
-            <div class="form-field">
-              <label for="a-instrucciones">Instrucciones</label>
-              <input id="a-instrucciones" type="text" formControlName="instrucciones" placeholder="Qué deben hacer los docentes" />
-            </div>
-            <div class="form-field">
-              <label for="a-limite">Fecha límite</label>
-              <input id="a-limite" type="date" formControlName="fechaLimite" />
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="actividadForm.invalid || guardandoActividad()">
-                {{ guardandoActividad() ? 'Agregando...' : 'Agregar actividad' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            </span>
-            <h2 id="evidencias">Evidencias</h2>
-          </div>
-        </div>
-        @if (evidencias().length === 0) {
-          <p class="muted">Aún no hay evidencias registradas.</p>
-        } @else {
-          <ul class="lista">
-            @for (e of evidencias(); track e.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ e.tipo }}</strong>
-                  <a class="link-button" [href]="urlArchivo(e.archivoUrl)" target="_blank" rel="noopener">{{ nombreArchivo(e.archivoUrl) }}</a>
-                  <div class="muted">{{ tituloSesion(e.sesionId) }}</div>
-                </div>
-                <span class="muted">{{ formatearFecha(e.registradaEn) }}</span>
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="evidenciaForm" (ngSubmit)="crearEvidencia()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="e-tipo">Tipo (opcional)</label>
-              <input id="e-tipo" type="text" formControlName="tipo" placeholder="Ej. fotografía, acta, video…" />
-            </div>
-            <div class="form-field">
-              <label for="e-sesion">Sesión (opcional)</label>
-              <select id="e-sesion" formControlName="sesionId">
-                <option [ngValue]="null">Sin sesión</option>
-                @for (s of sesiones(); track s.id) {
-                  <option [ngValue]="s.id">
-                    {{ s.titulo }} · {{ formatearFecha(s.fechaHora) }}
-                  </option>
-                }
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="e-archivo">Archivo</label>
-              <input id="e-archivo" type="file" class="file-input" (change)="onArchivoSeleccionado($event)" />
-              <small class="file-hint">Solo archivos · máx. 10 MB</small>
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="!archivoSeleccionado() || subiendoEvidencia()">
-                {{ subiendoEvidencia() ? 'Subiendo...' : 'Registrar evidencia' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
       <section class="card">
         <div class="card-head">
           <div class="card-head-title">
@@ -676,7 +432,6 @@
           </form>
         }
       </section>
-
       @if (esDocente) {
         <section class="card" id="alumnos">
           <div class="card-head">
@@ -907,6 +662,266 @@
           }
         </section>
       }
+        <div class="proyecto-col">
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <span class="card-head-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+            </span>
+            <h2 id="sesiones">Sesiones</h2>
+          </div>
+        </div>
+        @if (sesiones().length === 0) {
+          <p class="muted">Aún no hay sesiones programadas.</p>
+        } @else {
+          <ul class="lista">
+            @for (s of sesiones(); track s.id) {
+              <li class="lista-item">
+                <div>
+                  <strong>{{ s.titulo }}</strong>
+                  <div class="muted">
+                    {{ formatearFecha(s.fechaHora) }} · {{ horaDe(s.fechaHora) }}
+                  </div>
+                  <a class="link-button" [href]="s.enlaceVirtual" target="_blank" rel="noopener">Enlace virtual</a>
+
+                  @if (reporteDeSesion(s.id); as rep) {
+                    <!-- Plegado a propósito: en una clase con varias sesiones, los
+                         reportes completos abruman. Cerrado se ve el estado y si
+                         falta gente por confirmar; se abre si hace falta leerlo. -->
+                    <details class="reporte">
+                      <summary class="reporte-head">
+                        <strong>Reporte de la clase</strong>
+                        <span class="estado" [class.pendiente]="rep.estado !== 'CONFIRMADO'">
+                          {{ estadoReporteLabel(rep.estado) }}
+                        </span>
+                        @if (estadoFirmasReporte(rep); as firma) {
+                          <span
+                            class="chip-estado"
+                            [class.chip-estado--ok]="firma.tono === 'ok'"
+                            [class.chip-estado--aviso]="firma.tono === 'aviso'"
+                            [class.chip-estado--error]="firma.tono === 'error'"
+                          >
+                            {{ firma.texto }}
+                          </span>
+                        }
+                      </summary>
+                      <div class="reporte-cuerpo">
+                      <p><span class="meta-label">Desarrollo:</span> {{ rep.desarrolloClase }}</p>
+                      <p><span class="meta-label">Asistentes:</span> {{ rep.totalAsistentes }}</p>
+                      <p><span class="meta-label">Incidencias:</span> {{ rep.incidencias }}</p>
+                      <p><span class="meta-label">Acuerdos siguientes:</span> {{ rep.acuerdosSiguienteSesion }}</p>
+
+                      <h3 class="subtitle">Firmas de los docentes</h3>
+                      <ul class="lista">
+                        @for (part of rep.participaciones; track part.id) {
+                          <li class="lista-item">
+                            <span>{{ nombreDocente(part.proyectoDocente) }}</span>
+                            <div class="lista-acciones">
+                              <span class="estado" [class.pendiente]="!part.confirmadoEn">
+                                {{ part.confirmadoEn ? 'Confirmado' : 'Pendiente' }}
+                              </span>
+                              @if (part.observaciones) {
+                                <span class="muted">{{ part.observaciones }}</span>
+                              }
+                            </div>
+                          </li>
+                        }
+                      </ul>
+
+                      @if (esDocente && proyectoAbierto() && !miParticipacionReporte(rep)?.confirmadoEn) {
+                        @if (reporteAConfirmar() === rep.id) {
+                          <form [formGroup]="observacionesForm" (ngSubmit)="confirmarReporte(rep)" class="form-grid" novalidate>
+                            <div class="form-field">
+                              <label for="rc-obs-{{ rep.id }}">Mis observaciones</label>
+                              <input id="rc-obs-{{ rep.id }}" type="text" formControlName="observaciones" placeholder="Observaciones sobre la clase" />
+                            </div>
+                            <div class="form-grid-actions">
+                              <button type="submit" class="btn btn-primary" [disabled]="observacionesForm.invalid || confirmandoReporteClase()">
+                                {{ confirmandoReporteClase() ? 'Confirmando...' : 'Confirmar' }}
+                              </button>
+                              <button type="button" class="btn btn-secondary" (click)="cancelarConfirmacion()">Cancelar</button>
+                            </div>
+                          </form>
+                        } @else {
+                          <button class="btn btn-primary" (click)="abrirConfirmacion(rep)">Confirmar mi participación</button>
+                        }
+                      }
+                      </div>
+                    </details>
+                  } @else {
+                    <p class="muted">Sin reporte de clase.</p>
+                  }
+
+                  @if (sesionReporteAbierta() === s.id) {
+                    <form [formGroup]="reporteClaseForm" (ngSubmit)="guardarReporteClase()" class="form-grid" novalidate>
+                      <div class="form-field">
+                        <label for="rc-desarrollo">Desarrollo de la clase</label>
+                        <input id="rc-desarrollo" type="text" formControlName="desarrolloClase" placeholder="Cómo se desarrolló la clase" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-asistentes">Total de asistentes</label>
+                        <input id="rc-asistentes" type="number" min="0" formControlName="totalAsistentes" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-incidencias">Incidencias</label>
+                        <input id="rc-incidencias" type="text" formControlName="incidencias" placeholder="Incidencias (o 'Ninguna')" />
+                      </div>
+                      <div class="form-field">
+                        <label for="rc-acuerdos">Acuerdos para la siguiente sesión</label>
+                        <input id="rc-acuerdos" type="text" formControlName="acuerdosSiguienteSesion" placeholder="Qué se acordó" />
+                      </div>
+                      <div class="form-grid-actions">
+                        <button type="submit" class="btn btn-primary" [disabled]="reporteClaseForm.invalid || guardandoReporteClase()">
+                          {{ guardandoReporteClase() ? 'Guardando...' : 'Guardar reporte' }}
+                        </button>
+                        <button type="button" class="btn btn-secondary" (click)="cerrarReporte()">Cancelar</button>
+                      </div>
+                    </form>
+                  }
+                </div>
+                @if (esDocente && proyectoAbierto()) {
+                  <div class="lista-acciones">
+                    <button class="btn btn-secondary" (click)="abrirReporte(s)">Reporte de clase</button>
+                    <button class="btn btn-danger" (click)="eliminarSesion(s.id)">Eliminar</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (esDocente && proyectoAbierto()) {
+          <form [formGroup]="sesionForm" (ngSubmit)="crearSesion()" class="form-grid" novalidate>
+            <div class="form-field">
+              <label for="s-titulo">Título</label>
+              <input id="s-titulo" type="text" formControlName="titulo" placeholder="Título de la sesión" />
+            </div>
+            <div class="form-field">
+              <label for="s-fecha">Fecha y hora</label>
+              <input id="s-fecha" type="datetime-local" formControlName="fechaHora" />
+            </div>
+            <div class="form-field">
+              <label for="s-enlace">Enlace virtual (URL)</label>
+              <input id="s-enlace" type="url" formControlName="enlaceVirtual" placeholder="https://…" />
+              <small class="file-hint">Debe empezar por http:// o https://</small>
+            </div>
+            <div class="form-grid-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="sesionForm.invalid || guardandoSesion()">
+                {{ guardandoSesion() ? 'Agregando...' : 'Agregar sesión' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <span class="card-head-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </span>
+            <h2 id="actividades">Actividades</h2>
+          </div>
+        </div>
+        @if (actividades().length === 0) {
+          <p class="muted">Aún no hay actividades.</p>
+        } @else {
+          <ul class="lista">
+            @for (a of actividades(); track a.id) {
+              <li class="lista-item">
+                <div>
+                  <strong>{{ a.titulo }}</strong>
+                  <div class="muted">Entrega: {{ formatearFecha(a.fechaLimite) }}</div>
+                  <div class="muted">{{ a.instrucciones }}</div>
+                </div>
+                @if (esDocente && proyectoAbierto()) {
+                  <button class="btn btn-danger" (click)="eliminarActividad(a.id)">Eliminar</button>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (esDocente && proyectoAbierto()) {
+          <form [formGroup]="actividadForm" (ngSubmit)="crearActividad()" class="form-grid" novalidate>
+            <div class="form-field">
+              <label for="a-titulo">Título</label>
+              <input id="a-titulo" type="text" formControlName="titulo" placeholder="Título de la actividad" />
+            </div>
+            <div class="form-field">
+              <label for="a-instrucciones">Instrucciones</label>
+              <input id="a-instrucciones" type="text" formControlName="instrucciones" placeholder="Qué deben hacer los docentes" />
+            </div>
+            <div class="form-field">
+              <label for="a-limite">Fecha límite</label>
+              <input id="a-limite" type="date" formControlName="fechaLimite" />
+            </div>
+            <div class="form-grid-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="actividadForm.invalid || guardandoActividad()">
+                {{ guardandoActividad() ? 'Agregando...' : 'Agregar actividad' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div class="card-head-title">
+            <span class="card-head-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </span>
+            <h2 id="evidencias">Evidencias</h2>
+          </div>
+        </div>
+        @if (evidencias().length === 0) {
+          <p class="muted">Aún no hay evidencias registradas.</p>
+        } @else {
+          <ul class="lista">
+            @for (e of evidencias(); track e.id) {
+              <li class="lista-item">
+                <div>
+                  <strong>{{ e.tipo }}</strong>
+                  <a class="link-button" [href]="urlArchivo(e.archivoUrl)" target="_blank" rel="noopener">{{ nombreArchivo(e.archivoUrl) }}</a>
+                  <div class="muted">{{ tituloSesion(e.sesionId) }}</div>
+                </div>
+                <span class="muted">{{ formatearFecha(e.registradaEn) }}</span>
+              </li>
+            }
+          </ul>
+        }
+        @if (esDocente && proyectoAbierto()) {
+          <form [formGroup]="evidenciaForm" (ngSubmit)="crearEvidencia()" class="form-grid" novalidate>
+            <div class="form-field">
+              <label for="e-tipo">Tipo (opcional)</label>
+              <input id="e-tipo" type="text" formControlName="tipo" placeholder="Ej. fotografía, acta, video…" />
+            </div>
+            <div class="form-field">
+              <label for="e-sesion">Sesión (opcional)</label>
+              <select id="e-sesion" formControlName="sesionId">
+                <option [ngValue]="null">Sin sesión</option>
+                @for (s of sesiones(); track s.id) {
+                  <option [ngValue]="s.id">
+                    {{ s.titulo }} · {{ formatearFecha(s.fechaHora) }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="e-archivo">Archivo</label>
+              <input id="e-archivo" type="file" class="file-input" (change)="onArchivoSeleccionado($event)" />
+              <small class="file-hint">Solo archivos · máx. 10 MB</small>
+            </div>
+            <div class="form-grid-actions">
+              <button type="submit" class="btn btn-primary" [disabled]="!archivoSeleccionado() || subiendoEvidencia()">
+                {{ subiendoEvidencia() ? 'Subiendo...' : 'Registrar evidencia' }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+
+
 
       <section class="card">
         <div class="card-head">
