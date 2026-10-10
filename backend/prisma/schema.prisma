@@ -50,6 +50,7 @@ model Usuario {
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
   docente         Docente?
+  miembroCace     MiembroCace?
   listasAlumnos   ListaAlumnos[]
 
   @@map("USUARIO")
@@ -400,4 +401,20 @@ model Alumno {
   lista         ListaAlumnos @relation(fields: [listaId], references: [id], onDelete: Cascade)
 
   @@map("ALUMNO")
+}
+
+/// Miembro de la CACE: presidencia, suplencia o secretaría. Los permisos salen
+/// del `cargo` (ver `common/capacidades.ts`), y el suplente es otra fila con el
+/// mismo cargo: por eso no es una columna del usuario, sino una relación.
+model MiembroCace {
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int      @unique @map("usuario_id")
+  /// PRESIDENTE, SUPLENTE o SECRETARIA.
+  cargo         String
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @default(now()) @updatedAt @map("actualizado_en")
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("MIEMBRO_CACE")
 }

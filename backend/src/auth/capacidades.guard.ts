@@ -58,19 +58,26 @@ export class CapacidadesGuard implements CanActivate {
         activo: true,
         agente: { select: { id: true } },
         docente: { select: { id: true } },
+        miembroCace: { select: { cargo: true, activo: true } },
       },
     });
     if (!usuario?.activo) {
       throw new ForbiddenException('La cuenta está desactivada.');
     }
 
-    // El rol **no** es una columna de USUARIO: se deduce de la fila que tenga
-    // (agente, docente, y las de la CACE cuando existan, que aún no existen).
-    const rol = usuario.agente
-      ? 'AGENTE'
-      : usuario.docente
-        ? 'DOCENTE'
-        : null;
+    // El rol **no** es una columna de USUARIO: se deduce de la fila que tenga.
+    // Presidencia y suplencia comparten capacidades; la secretaría tiene las
+    // suyas.
+    const miembro = usuario.miembroCace?.activo ? usuario.miembroCace : null;
+    const rol = miembro
+      ? miembro.cargo === 'SECRETARIA'
+        ? 'SECRETARIA_CACE'
+        : 'PRESIDENTE_CACE'
+      : usuario.agente
+        ? 'AGENTE'
+        : usuario.docente
+          ? 'DOCENTE'
+          : null;
 
     const faltantes = requeridas.filter(
       (capacidad) => !puede(rol, capacidad),
