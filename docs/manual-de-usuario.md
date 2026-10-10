@@ -590,6 +590,10 @@ ve esta sección: solo acompaña la clase.
 Sube la lista de tus alumnos de la clase espejo, y con ella se emitirán los
 certificados al cerrar el curso. Tienes tres caminos:
 
+> 💡 En la propia sección tienes el botón **«Descargar plantilla de ejemplo
+> (.xlsx)»**: ya trae las columnas correctas, una hoja de instrucciones y otra
+> con ejemplos. Es la forma más segura de que la lista se lea bien.
+
 1. **La plantilla de Excel** (`plantilla-lista-alumnos.xlsx`): solo el nombre es
    obligatorio; la matrícula y el correo son opcionales. La matrícula ayuda a
    distinguir a dos alumnos que se llamen igual y el correo es lo que permite

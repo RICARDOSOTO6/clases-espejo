@@ -566,6 +566,14 @@
             </div>
           } @else if (!listaAlumnos() || modoReemplazo()) {
             <div class="alumnos-carga">
+              <p class="muted">
+                Descarga la plantilla, escribe una fila por alumno y súbela: así
+                evitamos los errores de formato.
+              </p>
+              <a class="btn btn-outline" [href]="urlPlantillaAlumnos" download>
+                Descargar plantilla de ejemplo (.xlsx)
+              </a>
+
               <label class="btn btn-secondary">
                 Elegir archivo (.xlsx o .csv)
                 <input

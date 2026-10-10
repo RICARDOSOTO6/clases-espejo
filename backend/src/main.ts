@@ -88,6 +88,20 @@ async function bootstrap() {
   });
   app.useStaticAssets(avataresDir, { prefix: '/avatares/' });
 
+  // Plantillas descargables (hoy, la lista de alumnos de ejemplo). Viven en
+  // `backend/plantillas` y no en `public/`, porque `public/` es la salida del
+  // build de Angular y se vacía en cada compilación. Se fuerzan como descarga:
+  // son archivos para guardar, no contenido para mostrar.
+  const plantillasDir = join(process.cwd(), 'plantillas');
+  if (existsSync(plantillasDir)) {
+    app.use('/plantillas', (_req: any, res: any, next: any) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Disposition', 'attachment');
+      next();
+    });
+    app.useStaticAssets(plantillasDir, { prefix: '/plantillas/' });
+  }
+
   // Servir el frontend compilado (carpeta backend/public) si existe.
   const publicDir = join(process.cwd(), 'public');
   const indexHtml = join(publicDir, 'index.html');

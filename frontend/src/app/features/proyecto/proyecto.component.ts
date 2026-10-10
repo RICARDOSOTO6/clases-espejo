@@ -77,6 +77,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
   readonly panelUrl = this.esAgente ? '/agente' : '/docente';
 
+  /** Plantilla de ejemplo para subir la lista (descargable desde la sección). */
+  readonly urlPlantillaAlumnos = urlDeArchivo(
+    '/plantillas/plantilla-lista-alumnos.xlsx',
+  );
+
   // --- Lista de alumnos (la base de los certificados) ---
   /** La lista guardada de la institución del docente, si ya subió una. */
   readonly listaAlumnos = signal<ListaAlumnos | null>(null);
