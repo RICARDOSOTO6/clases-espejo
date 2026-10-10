@@ -612,15 +612,20 @@ img {
 }
 
 /* Outline — para superficies oscuras (azul) */
+/* Botón de contorno: es para fondos claros (tarjetas y paneles blancos). Antes
+   tenía el texto y el borde **blancos**, así que sobre una tarjeta blanca no se
+   veía nada hasta pasar el cursor por encima (que es cuando el hover le pinta el
+   fondo). */
 .btn-outline {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.6);
-  color: #fff;
+  border-color: var(--neutral-300);
+  color: var(--primary-800);
   padding: 0.5rem 1.15rem;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: #fff;
+  background: var(--primary-50);
+  border-color: var(--primary-600);
   color: var(--primary-800);
 }
 
