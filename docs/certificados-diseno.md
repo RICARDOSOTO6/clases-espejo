@@ -125,6 +125,10 @@ entrega el PDF para imprimir. En la plantilla de Excel la columna va marcada com
 
 ## 7. Orden de trabajo
 
+> El orden de trabajo **vive ahora en [`plan-de-accion.md`](plan-de-accion.md)**,
+> que une estos pasos con los del presidente de la CACE. Lo que sigue se conserva
+> como referencia de este documento.
+
 1. ✅ **Listas** (hecho): tablas `LISTA_ALUMNOS` y `ALUMNO`, lectura de Excel
    (`.xlsx`), CSV y lista pegada, con validación, vista previa editable y los
    endpoints bajo `/proyectos/:id/listas-alumnos`. La plantilla que se entrega a
