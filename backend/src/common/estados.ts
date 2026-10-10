@@ -73,3 +73,21 @@ export const ESTADO_SESION_CANCELADA = 'CANCELADA';
 // --- Confirmaciones ---
 export const ESTATUS_PENDIENTE = 'PENDIENTE';
 export const ESTATUS_CONFIRMADA = 'CONFIRMADA';
+
+// --- Instituciones ante la CACE ---
+/**
+ * Estado de una institución ante la CACE. Es **independiente** de `activa`, que
+ * sigue siendo el apagado operativo: una institución aprobada puede estar
+ * inactiva (sin agentes activos) y seguir aprobada. Este estado es el que
+ * explica **por qué** una institución no puede operar.
+ */
+export const ESTADOS_CACE: string[] = [
+  'PENDIENTE',
+  'APROBADA',
+  'RECHAZADA',
+  'VETADA',
+];
+export const ESTADO_CACE_PENDIENTE = 'PENDIENTE';
+export const ESTADO_CACE_APROBADA = 'APROBADA';
+export const ESTADO_CACE_RECHAZADA = 'RECHAZADA';
+export const ESTADO_CACE_VETADA = 'VETADA';

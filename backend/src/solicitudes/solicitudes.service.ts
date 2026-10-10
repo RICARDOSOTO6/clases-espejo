@@ -18,6 +18,10 @@ import {
   ESTADOS_SOLICITUD_EN_REVISION,
   ETAPA_REVISION_DESTINO,
   ETAPA_REVISION_ORIGEN,
+  ESTADO_CACE_APROBADA,
+  ESTADO_CACE_PENDIENTE,
+  ESTADO_CACE_RECHAZADA,
+  ESTADO_CACE_VETADA,
 } from '../common/estados';
 import {
   corteCaducidad,
@@ -66,10 +70,21 @@ export class SolicitudesService {
       );
     }
 
+    // Ni propone ni recibe quien no está aprobado por la CACE. Se comprueban las
+    // dos puntas para que el mensaje diga cuál es la que bloquea.
+    const origen = await this.prisma.institucion.findUnique({
+      where: { id: asignacion.docenteInstitucion.institucionId },
+      select: { nombre: true, estadoCace: true, motivoCace: true },
+    });
+    this.exigirInstitucionAprobada(origen, 'origen');
+
     const destino = await this.prisma.institucion.findFirst({
       where: { id: dto.institucionDestinoId, activa: true },
+      select: { nombre: true, estadoCace: true, motivoCace: true },
     });
-    if (!destino) throw new NotFoundException('Institución destino no encontrada');
+    if (!destino)
+      throw new NotFoundException('Institución destino no encontrada');
+    this.exigirInstitucionAprobada(destino, 'destino');
 
     if (dto.materiaDestinoId != null) {
       const materiaDestino = await this.prisma.materia.findFirst({
@@ -491,6 +506,41 @@ export class SolicitudesService {
       where: { id: solicitud.id },
       include: this.includeEntrante(),
     });
+  }
+
+  /**
+   * Una institución que no está aprobada por la CACE no opera: no puede proponer
+   * (origen) ni recibir (destino) clases espejo. El mensaje dice **por qué** está
+   * bloqueada y con qué motivo, que es lo único que le permite desbloquearse.
+   */
+  private exigirInstitucionAprobada(
+    institucion: {
+      nombre: string;
+      estadoCace: string;
+      motivoCace: string;
+    } | null,
+    papel: 'origen' | 'destino',
+  ): void {
+    if (!institucion) {
+      throw new NotFoundException('Institución no encontrada');
+    }
+    if (institucion.estadoCace === ESTADO_CACE_APROBADA) return;
+
+    const situacion =
+      institucion.estadoCace === ESTADO_CACE_PENDIENTE
+        ? 'está pendiente de aprobación por la CACE'
+        : institucion.estadoCace === ESTADO_CACE_RECHAZADA
+          ? 'fue rechazada por la CACE'
+          : institucion.estadoCace === ESTADO_CACE_VETADA
+            ? 'fue vetada por la CACE'
+            : 'no está aprobada por la CACE';
+    const accion =
+      papel === 'origen' ? 'proponer clases espejo' : 'recibir clases espejo';
+    const motivo = institucion.motivoCace?.trim();
+
+    throw new BadRequestException(
+      `La institución de ${papel} (${institucion.nombre}) ${situacion}: todavía no puede ${accion}.${motivo ? ` Motivo: ${motivo}` : ''}`,
+    );
   }
 
   private exigirMotivoSiRechaza(dto: RevisarSolicitudDto): void {

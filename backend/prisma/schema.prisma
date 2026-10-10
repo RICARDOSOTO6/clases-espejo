@@ -19,6 +19,16 @@ model Institucion {
   correoInstitucional String                       @map("correo_institucional")
   activa              Boolean
   registroCompleto    Boolean                      @default(false) @map("registro_completo")
+  /// Estado ante la CACE: PENDIENTE, APROBADA, RECHAZADA o VETADA. Las
+  /// instituciones que ya existian quedan APROBADAS para no dejarlas fuera.
+  estadoCace          String                       @default("APROBADA") @map("estado_cace")
+  /// Motivo del rechazo o del veto (obligatorio en los dos).
+  motivoCace          String                       @default("") @map("motivo_cace")
+  /// Logo de la institución, para reconocerla en el catálogo.
+  logoUrl             String?                      @map("logo_url")
+  revisadaPorUsuarioId Int?                        @map("revisada_por_usuario_id")
+  revisadaEn          DateTime?                    @map("revisada_en")
+  revisadaPor         Usuario?                     @relation("InstitucionRevisada", fields: [revisadaPorUsuarioId], references: [id])
   creadoEn            DateTime                     @default(now()) @map("creado_en")
   actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
   agentes             AgenteInternacionalizacion[]
@@ -52,6 +62,7 @@ model Usuario {
   docente         Docente?
   miembroCace     MiembroCace?
   listasAlumnos   ListaAlumnos[]
+  institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
 
   @@map("USUARIO")
 }

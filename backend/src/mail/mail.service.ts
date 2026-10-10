@@ -70,4 +70,80 @@ export class MailService {
       `,
     });
   }
+
+  /**
+   * Avisa al agente de que la CACE aprobó su institución: ya puede proponer y
+   * recibir clases espejo.
+   */
+  async sendInstitucionAprobada(
+    to: string,
+    institucion: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/agente`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Tu institución fue aprobada por la CACE',
+      text: `La CACE aprobó el registro de ${institucion}. Ya puedes proponer y recibir clases espejo. Entra en: ${link}`,
+      html: `
+        <p>La <strong>CACE</strong> aprobó el registro de <strong>${institucion}</strong>.</p>
+        <p>Desde ahora tu institución puede proponer y recibir clases espejo.</p>
+        <p>Entra en <a href="${link}">${link}</a> para continuar.</p>
+      `,
+    });
+  }
+
+  /**
+   * Avisa del rechazo con el motivo: el registro se conserva y el agente puede
+   * corregir lo que se le señala.
+   */
+  async sendInstitucionRechazada(
+    to: string,
+    institucion: string,
+    motivo: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/agente`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject:
+        'Clases Espejo - Registro de tu institución rechazado por la CACE',
+      text: `La CACE rechazó el registro de ${institucion}. Motivo: ${motivo}. Puedes corregir los datos de tu institución desde: ${link}`,
+      html: `
+        <p>La <strong>CACE</strong> rechazó el registro de <strong>${institucion}</strong>.</p>
+        <p><strong>Motivo:</strong> ${motivo}</p>
+        <p>El registro se conserva: entra en <a href="${link}">${link}</a> para corregir los datos de tu institución.</p>
+      `,
+    });
+  }
+
+  /**
+   * Avisa del veto. No es un aviso público: solo lo recibe la institución
+   * afectada, y sus clases en curso siguen vivas.
+   */
+  async sendInstitucionVetada(
+    to: string,
+    institucion: string,
+    motivo: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/login`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Tu institución fue vetada por la CACE',
+      text: `La CACE vetó a ${institucion}. Motivo: ${motivo}. No podrá proponer ni recibir clases espejo nuevas; las clases en curso siguen su curso. Entra en: ${link}`,
+      html: `
+        <p>La <strong>CACE</strong> vetó a <strong>${institucion}</strong>.</p>
+        <p><strong>Motivo:</strong> ${motivo}</p>
+        <p>No podrá proponer ni recibir clases espejo nuevas. Las clases que ya están en curso siguen su curso con normalidad.</p>
+        <p>Entra en <a href="${link}">${link}</a>.</p>
+      `,
+    });
+  }
 }

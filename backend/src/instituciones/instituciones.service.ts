@@ -1,16 +1,26 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateInstitucionDto } from './dto/update-institucion.dto';
+import { ESTADO_CACE_APROBADA } from '../common/estados';
 
 @Injectable()
 export class InstitucionesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Lista las instituciones con registro completo, excepto las del propio usuario. */
+  /**
+   * Catálogo de destinos. Solo aparecen las instituciones **aprobadas por la
+   * CACE**: una pendiente, rechazada o vetada no puede recibir clases espejo, y
+   * ofrecerla como destino sería dejar al docente proponer algo imposible.
+   */
   async listar(usuarioId: number) {
     const propias = await this.institucionesPropias(usuarioId);
     return this.prisma.institucion.findMany({
-      where: { activa: true, registroCompleto: true, id: { notIn: propias } },
+      where: {
+        activa: true,
+        registroCompleto: true,
+        estadoCace: ESTADO_CACE_APROBADA,
+        id: { notIn: propias },
+      },
       select: {
         id: true,
         nombre: true,
@@ -51,9 +61,14 @@ export class InstitucionesService {
   }
 
   async listarMaterias(id: number) {
-    // Solo instituciones publicadas: igual que el listado general.
+    // Solo instituciones publicadas y aprobadas: igual que el listado general.
     const institucion = await this.prisma.institucion.findFirst({
-      where: { id, activa: true, registroCompleto: true },
+      where: {
+        id,
+        activa: true,
+        registroCompleto: true,
+        estadoCace: ESTADO_CACE_APROBADA,
+      },
       select: { id: true },
     });
     if (!institucion) {

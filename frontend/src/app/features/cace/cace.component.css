@@ -1,5 +1,6 @@
-/* Pantalla mínima de la presidencia de la CACE: sin esqueleto, solo la tarjeta
-   centrada con el cambio de contraseña del primer acceso. */
+/* Pantalla de la presidencia de la CACE: sin esqueleto, con la tarjeta centrada
+   del cambio de contraseña del primer acceso y, debajo, la gestión de
+   instituciones. */
 .cace-pantalla {
   display: flex;
   min-height: 100dvh;
@@ -11,6 +12,32 @@
   margin: auto;
 }
 
+/* La lista de instituciones necesita más ancho que un formulario de acceso. */
+.cace-pantalla .auth-card.wide {
+  max-width: 900px;
+}
+
 .cace-pantalla .alert-info {
   margin-top: var(--space-6);
+}
+
+/* Ficha de una institución: el texto ocupa el ancho disponible y los botones se
+   quedan a la derecha sin apretarlo. */
+.inst-bloque {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.inst-bloque p {
+  margin: 0 0 4px;
+}
+
+.inst-motivo {
+  margin: var(--space-3) 0 0;
+}
+
+/* El veto es la decisión más dura: se distingue del rechazo a simple vista. */
+.estado.vetada {
+  background: var(--danger);
+  color: #fff;
 }

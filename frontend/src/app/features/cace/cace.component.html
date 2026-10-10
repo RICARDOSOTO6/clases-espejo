@@ -68,11 +68,198 @@
       @if (exito()) {
         <div class="alert alert-success" role="status">{{ exito() }}</div>
       }
+
+      <section class="card" id="instituciones">
+        <div class="card-head">
+          <div class="card-head-title">
+            <h2>Instituciones</h2>
+            @if (pendientes().length > 0) {
+              <span class="card-head-count">{{ pendientes().length }}</span>
+            }
+          </div>
+          <div class="card-head-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="cargando()"
+              (click)="cargarInstituciones()"
+            >
+              {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="text-sm muted">
+          Las pendientes aparecen primero. Aprobar deja operar a la institución con normalidad;
+          rechazar y vetar exigen un motivo, y el agente de la institución recibe el aviso por
+          correo.
+        </p>
+
+        @if (errorInstituciones()) {
+          <div class="alert alert-error" role="alert">
+            {{ errorInstituciones() }}
+          </div>
+        }
+        @if (avisoInstituciones()) {
+          <div class="alert alert-success" role="status">
+            {{ avisoInstituciones() }}
+          </div>
+        }
+
+        @if (cargando() && instituciones().length === 0) {
+          <p class="text-sm muted">Cargando instituciones...</p>
+        } @else if (instituciones().length === 0) {
+          <p class="text-sm muted">Todavía no hay instituciones registradas.</p>
+        } @else {
+          <ul class="lista">
+            @for (institucion of instituciones(); track institucion.id) {
+              <li class="lista-item">
+                <div class="inst-bloque">
+                  <div class="inst-name">
+                    <strong>{{ institucion.nombre }}</strong>
+                    <span [class]="claseEstado(institucion.estadoCace)">
+                      {{ etiquetaEstado(institucion.estadoCace) }}
+                    </span>
+                  </div>
+
+                  <p class="text-sm muted">
+                    {{ institucion.pais }}
+                    @if (institucion.revisadaPor) {
+                      · Revisada por {{ institucion.revisadaPor }}
+                      @if (institucion.revisadaEn) {
+                        el {{ fechaRevision(institucion.revisadaEn) }}
+                      }
+                    }
+                  </p>
+
+                  @if (institucion.agentes.length > 0) {
+                    <p class="text-sm muted">
+                      Agente de contacto:
+                      @for (agente of institucion.agentes; track agente.correo) {
+                        {{ agente.nombre }} ({{ agente.correo }}){{ $last ? '' : ',' }}
+                      }
+                    </p>
+                  } @else {
+                    <p class="text-sm muted">Sin agente de contacto registrado.</p>
+                  }
+
+                  @if (institucion.posibleDuplicadoDe; as duplicado) {
+                    <div class="alert alert-warning" role="status">
+                      Posible duplicado de «{{ duplicado.nombre }}» ({{ duplicado.pais }}), que ya
+                      está aprobada.
+                    </div>
+                  }
+
+                  @if (institucion.motivoCace) {
+                    <p class="text-sm"><strong>Motivo:</strong> {{ institucion.motivoCace }}</p>
+                  }
+
+                  @if (pidiendoMotivo(); as solicitud) {
+                    @if (solicitud.id === institucion.id) {
+                      <div class="form-field inst-motivo">
+                        <label [for]="'motivo-' + institucion.id">
+                          {{
+                            solicitud.decision === 'rechazar'
+                              ? 'Motivo del rechazo'
+                              : 'Motivo del veto'
+                          }}
+                        </label>
+                        <textarea
+                          [id]="'motivo-' + institucion.id"
+                          rows="3"
+                          [formControl]="motivo"
+                          placeholder="Explica el motivo: se le enviará por correo al agente de la institución."
+                        ></textarea>
+                        @if (motivo.touched && motivo.invalid) {
+                          <p class="field-error">El motivo es obligatorio.</p>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+
+                <div class="lista-acciones">
+                  @if (institucion.estadoCace === 'PENDIENTE') {
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="enProceso() !== null"
+                      (click)="aprobar(institucion)"
+                    >
+                      Aprobar
+                    </button>
+                  }
+
+                  @if (
+                    institucion.estadoCace === 'PENDIENTE' || institucion.estadoCace === 'APROBADA'
+                  ) {
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="enProceso() !== null"
+                      (click)="pedirMotivo(institucion, 'rechazar')"
+                    >
+                      Rechazar
+                    </button>
+                  }
+
+                  @if (
+                    institucion.estadoCace === 'RECHAZADA' || institucion.estadoCace === 'VETADA'
+                  ) {
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="enProceso() !== null"
+                      (click)="reactivar(institucion)"
+                    >
+                      Reactivar
+                    </button>
+                  }
+
+                  @if (institucion.estadoCace !== 'VETADA') {
+                    <button
+                      type="button"
+                      class="btn btn-danger"
+                      [disabled]="enProceso() !== null"
+                      (click)="pedirMotivo(institucion, 'vetar')"
+                    >
+                      Vetar
+                    </button>
+                  }
+
+                  @if (pidiendoMotivo(); as solicitud) {
+                    @if (solicitud.id === institucion.id) {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        [disabled]="enProceso() !== null"
+                        (click)="confirmarMotivo()"
+                      >
+                        {{
+                          solicitud.decision === 'rechazar' ? 'Confirmar rechazo' : 'Confirmar veto'
+                        }}
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost"
+                        [disabled]="enProceso() !== null"
+                        (click)="cancelarMotivo()"
+                      >
+                        Cancelar
+                      </button>
+                    }
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
     }
 
     <div class="alert alert-info" role="status">
-      El panel de presidencia (aprobación de instituciones, identidad de la CACE
-      y certificados) llega en las siguientes fases del proyecto.
+      La identidad de la CACE (logo, textos, banderas y premios) y los
+      certificados llegan en las siguientes fases del proyecto.
     </div>
 
     <p class="auth-alt">
