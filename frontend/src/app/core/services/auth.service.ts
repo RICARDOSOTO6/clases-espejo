@@ -52,6 +52,22 @@ export class AuthService {
   }
 
   /**
+   * Cambia la contraseña del usuario autenticado. Al terminar se refresca la
+   * sesión, para que la pantalla deje de pedir el cambio sin recargar.
+   */
+  cambiarPassword(
+    actual: string,
+    nueva: string,
+  ): Observable<{ mensaje: string }> {
+    return this.http
+      .post<{ mensaje: string }>(`${API_URL}/usuarios/me/password`, {
+        actual,
+        nueva,
+      })
+      .pipe(tap(() => this.guardarUsuario({ debeCambiarPassword: false })));
+  }
+
+  /**
    * Sube la foto de perfil y actualiza la sesión en memoria y en el navegador,
    * para que la barra superior muestre la imagen sin recargar.
    */
@@ -65,7 +81,7 @@ export class AuthService {
         `${API_URL}/usuarios/me/foto`,
         datos,
       )
-      .pipe(tap((res) => this.actualizarFoto(res.fotoUrl)));
+      .pipe(tap((res) => this.guardarUsuario({ fotoUrl: res.fotoUrl })));
   }
 
   /** Quita la foto de perfil y vuelve a las iniciales. */
@@ -74,7 +90,7 @@ export class AuthService {
       .delete<{ mensaje: string; fotoUrl: null }>(
         `${API_URL}/usuarios/me/foto`,
       )
-      .pipe(tap(() => this.actualizarFoto(null)));
+      .pipe(tap(() => this.guardarUsuario({ fotoUrl: null })));
   }
 
   validarTokenInvitacion(
@@ -112,11 +128,11 @@ export class AuthService {
     this.currentUserSignal.set(res.usuario);
   }
 
-  /** Refresca la foto del usuario guardado sin tocar el resto de la sesión. */
-  private actualizarFoto(fotoUrl: string | null): void {
+  /** Refresca el usuario guardado (foto, cambio de contraseña) sin recargar. */
+  private guardarUsuario(cambios: Partial<Usuario>): void {
     const usuario = this.currentUserSignal();
     if (!usuario) return;
-    const actualizado = { ...usuario, fotoUrl };
+    const actualizado = { ...usuario, ...cambios };
     if (isBrowser()) {
       localStorage.setItem(USER_KEY, JSON.stringify(actualizado));
     }

@@ -80,7 +80,15 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  /**
+   * A qué pantalla va cada rol después de entrar.
+   *
+   * La presidencia de la CACE tiene su propia ruta: si cayera en `/docente`, el
+   * guardia de esa ruta la rechazaría y volvería al login en un bucle.
+   */
   private destinoPorRol(rol: string | null): string {
-    return rol === 'DOCENTE' ? '/docente' : '/agente';
+    if (rol === 'DOCENTE') return '/docente';
+    if (rol === 'PRESIDENTE_CACE' || rol === 'SECRETARIA_CACE') return '/cace';
+    return '/agente';
   }
 }

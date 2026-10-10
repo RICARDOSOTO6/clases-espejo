@@ -46,6 +46,15 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard('DOCENTE')],
   },
   {
+    // La presidencia de la CACE tiene su propia pantalla, sin el esqueleto de
+    // agentes y docentes. Solo pide estar autenticado: su primer paso es
+    // cambiar la contraseña provisional.
+    path: 'cace',
+    loadComponent: () =>
+      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'proyectos/:id',
     loadComponent: () =>
       import('./features/proyecto/proyecto.component').then(

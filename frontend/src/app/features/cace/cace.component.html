@@ -1,0 +1,84 @@
+<div class="cace-pantalla">
+  <section class="auth-card wide">
+    <h1 class="auth-title">Presidencia de la CACE</h1>
+    <p class="auth-subtitle">Hola, {{ nombreUsuario }}.</p>
+
+    @if (debeCambiarPassword()) {
+      <div class="alert alert-warning" role="status">
+        Entraste con una contraseña provisional. Cámbiala para continuar: es el
+        primer paso obligatorio de tu cuenta.
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-field">
+          <label for="actual">Contraseña actual (la provisional)</label>
+          <input
+            id="actual"
+            type="password"
+            formControlName="actual"
+            autocomplete="current-password"
+          />
+          @if (mensajeDe('actual'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="nueva">Nueva contraseña</label>
+          <input
+            id="nueva"
+            type="password"
+            formControlName="nueva"
+            autocomplete="new-password"
+          />
+          @if (mensajeDe('nueva'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="confirmar">Repite la nueva contraseña</label>
+          <input
+            id="confirmar"
+            type="password"
+            formControlName="confirmar"
+            autocomplete="new-password"
+          />
+          @if (mensajeDe('confirmar'); as msg) {
+            <p class="field-error">{{ msg }}</p>
+          }
+        </div>
+
+        @if (error()) {
+          <div class="alert alert-error" role="alert">{{ error() }}</div>
+        }
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="form.invalid || loading()"
+        >
+          @if (loading()) {
+            <span class="spinner" aria-hidden="true"></span>
+          }
+          {{ loading() ? 'Guardando...' : 'Cambiar contraseña' }}
+        </button>
+      </form>
+    } @else {
+      @if (exito()) {
+        <div class="alert alert-success" role="status">{{ exito() }}</div>
+      }
+    }
+
+    <div class="alert alert-info" role="status">
+      El panel de presidencia (aprobación de instituciones, identidad de la CACE
+      y certificados) llega en las siguientes fases del proyecto.
+    </div>
+
+    <p class="auth-alt">
+      <button type="button" class="link-button" (click)="logout()">
+        Cerrar sesión
+      </button>
+    </p>
+  </section>
+</div>

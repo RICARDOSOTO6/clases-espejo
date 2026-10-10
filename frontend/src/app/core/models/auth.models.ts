@@ -1,4 +1,9 @@
-export type Rol = 'AGENTE' | 'DOCENTE' | null;
+export type Rol =
+  | 'AGENTE'
+  | 'DOCENTE'
+  | 'PRESIDENTE_CACE'
+  | 'SECRETARIA_CACE'
+  | null;
 
 export interface Usuario {
   id: number;
@@ -11,6 +16,11 @@ export interface Usuario {
   /** Ruta de la foto de perfil (por ejemplo `/avatares/avatar-123.png`). */
   fotoUrl?: string | null;
   activo: boolean;
+  /**
+   * Contraseña provisional pendiente de cambiar (primer acceso del presidente
+   * de la CACE). Mientras sea verdadero no se puede usar el resto del panel.
+   */
+  debeCambiarPassword: boolean;
   rol: Rol;
 }
 
@@ -63,8 +73,10 @@ export interface Perfil {
   correo: string;
   fotoUrl?: string | null;
   activo: boolean;
+  debeCambiarPassword: boolean;
   rol: Rol;
   agente: { id: number; cargo: string; institucion: Institucion } | null;
+  miembroCace: { id: number; cargo: string; activo: boolean } | null;
   docente: {
     id: number;
     gradoAcademico: string;

@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { Rol, rolDeVinculos } from '../common/capacidades';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
@@ -22,6 +23,7 @@ type UsuarioSeguro = {
   correo: string;
   fotoUrl: string | null;
   activo: boolean;
+  debeCambiarPassword: boolean;
 };
 
 @Injectable()
@@ -95,6 +97,9 @@ export class AuthService {
       include: {
         agente: true,
         docente: { include: { instituciones: true } },
+        // El rol de la CACE también es relacional: sin esta fila el presidente
+        // entraría sin rol y el frontend no sabría a qué pantalla mandarlo.
+        miembroCace: { select: { cargo: true, activo: true } },
       },
       // El cliente omite `passwordHash` por defecto: aquí hace falta para
       // comparar la contraseña (la respuesta sigue construida con campos fijos).
@@ -145,7 +150,7 @@ export class AuthService {
       correo: usuario.correo,
     });
 
-    const rol = usuario.agente ? 'AGENTE' : usuario.docente ? 'DOCENTE' : null;
+    const rol = rolDeVinculos(usuario);
 
     return {
       access_token,
@@ -252,7 +257,7 @@ export class AuthService {
     };
   }
 
-  private toUsuarioSeguro(usuario: UsuarioSeguro, rol: string | null) {
+  private toUsuarioSeguro(usuario: UsuarioSeguro, rol: Rol | null) {
     return {
       id: usuario.id,
       nombres: usuario.nombres,
@@ -263,6 +268,9 @@ export class AuthService {
       correo: usuario.correo,
       fotoUrl: usuario.fotoUrl,
       activo: usuario.activo,
+      // El frontend lo usa para no dejar pasar del primer acceso: mientras sea
+      // verdadero, la única pantalla es la de cambio de contraseña.
+      debeCambiarPassword: usuario.debeCambiarPassword,
       rol,
     };
   }

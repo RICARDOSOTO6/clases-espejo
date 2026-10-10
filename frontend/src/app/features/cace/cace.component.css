@@ -1,0 +1,16 @@
+/* Pantalla mínima de la presidencia de la CACE: sin esqueleto, solo la tarjeta
+   centrada con el cambio de contraseña del primer acceso. */
+.cace-pantalla {
+  display: flex;
+  min-height: 100dvh;
+  padding: var(--space-6) var(--space-5);
+  background: linear-gradient(180deg, var(--primary-50) 0%, var(--bg) 55%);
+}
+
+.cace-pantalla .auth-card {
+  margin: auto;
+}
+
+.cace-pantalla .alert-info {
+  margin-top: var(--space-6);
+}

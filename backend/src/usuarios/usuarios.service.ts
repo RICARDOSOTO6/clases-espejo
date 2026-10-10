@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { basename, join } from 'path';
 import { existsSync, unlinkSync } from 'fs';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { rolDeVinculos } from '../common/capacidades';
+import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 
 /** Carpeta donde se guardan las fotos de perfil (dentro de `uploads`). */
 export const AVATARES_DIR = join(process.cwd(), 'uploads', 'avatares');
@@ -20,6 +28,8 @@ export class UsuariosService {
             instituciones: { include: { institucion: true } },
           },
         },
+        // La presidencia y la secretaría de la CACE también son miembros.
+        miembroCace: { select: { id: true, cargo: true, activo: true } },
       },
     });
 
@@ -27,7 +37,7 @@ export class UsuariosService {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    const rol = usuario.agente ? 'AGENTE' : usuario.docente ? 'DOCENTE' : null;
+    const rol = rolDeVinculos(usuario);
 
     return {
       id: usuario.id,
@@ -39,6 +49,7 @@ export class UsuariosService {
       correo: usuario.correo,
       fotoUrl: usuario.fotoUrl,
       activo: usuario.activo,
+      debeCambiarPassword: usuario.debeCambiarPassword,
       rol,
       agente: usuario.agente
         ? {
@@ -60,7 +71,55 @@ export class UsuariosService {
             })),
           }
         : null,
+      miembroCace: usuario.miembroCace,
     };
+  }
+
+  /**
+   * Cambia la contraseña del propio usuario.
+   *
+   * Es la salida del primer acceso: la presidencia de la CACE entra con una
+   * contraseña provisional y `debeCambiarPassword` en verdadero, y este
+   * endpoint es lo que le devuelve el control de su cuenta.
+   */
+  async cambiarPassword(usuarioId: number, dto: CambiarPasswordDto) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      // El cliente omite `passwordHash`: aquí hace falta para comparar la actual.
+      omit: { passwordHash: false },
+    });
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (!usuario.passwordHash) {
+      throw new BadRequestException(
+        'Tu cuenta todavía no tiene contraseña: pide que te la restablezcan.',
+      );
+    }
+
+    const coincide = await bcrypt.compare(dto.actual, usuario.passwordHash);
+    if (!coincide) {
+      throw new UnauthorizedException('La contraseña actual no es correcta');
+    }
+
+    if (dto.actual === dto.nueva) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser distinta a la actual',
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(dto.nueva, 10);
+    await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        passwordHash,
+        // Cumplido el cambio, el primer acceso deja de estar pendiente.
+        debeCambiarPassword: false,
+      },
+    });
+
+    return { mensaje: 'Contraseña actualizada correctamente' };
   }
 
   /**

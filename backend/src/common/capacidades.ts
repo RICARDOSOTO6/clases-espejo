@@ -52,6 +52,30 @@ export function esRolValido(rol: string | null | undefined): rol is Rol {
   return !!rol && (ROLES as readonly string[]).includes(rol);
 }
 
+/**
+ * Rol del usuario a partir de sus filas relacionales.
+ *
+ * El rol **no** es una columna de USUARIO: alguien es agente si tiene fila en
+ * AGENTE, docente si la tiene en DOCENTE y miembro de la CACE si la tiene en
+ * MIEMBRO_CACE. Presidencia y suplencia comparten rol (las capacidades las
+ * reparte la matriz de arriba), y una fila de miembro inactiva no cuenta.
+ */
+export function rolDeVinculos(vinculos: {
+  agente?: unknown;
+  docente?: unknown;
+  miembroCace?: { cargo: string; activo: boolean } | null;
+}): Rol | null {
+  const miembro = vinculos.miembroCace?.activo ? vinculos.miembroCace : null;
+  if (miembro) {
+    return miembro.cargo === 'SECRETARIA'
+      ? 'SECRETARIA_CACE'
+      : 'PRESIDENTE_CACE';
+  }
+  if (vinculos.agente) return 'AGENTE';
+  if (vinculos.docente) return 'DOCENTE';
+  return null;
+}
+
 /** Las capacidades de un rol (vacío si el rol no se reconoce). */
 export function capacidadesDe(rol: string | null | undefined): Capacidad[] {
   return esRolValido(rol) ? [...MATRIZ[rol]] : [];

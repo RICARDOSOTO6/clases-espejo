@@ -42,4 +42,32 @@ export class MailService {
       `,
     });
   }
+
+  /**
+   * Envía al presidente de la CACE sus datos de acceso. A diferencia de la
+   * invitación, la cuenta ya existe (la crea el propio servidor al arrancar):
+   * aquí no hay token de activación, sino una contraseña provisional que el
+   * sistema obligará a cambiar en el primer acceso.
+   */
+  async sendCredencialesPresidente(
+    to: string,
+    password: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/login`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Acceso a Clases Espejo - Presidencia de la CACE',
+      text: `Se creó tu cuenta de presidencia de la CACE. Correo: ${to} · Contraseña provisional: ${password} · Entra en: ${link} · Por seguridad, el sistema te pedirá cambiar la contraseña en el primer acceso.`,
+      html: `
+        <p>Se creó tu cuenta de <strong>presidencia de la CACE</strong> en la plataforma <strong>Clases Espejo</strong>.</p>
+        <p><strong>Correo:</strong> ${to}<br />
+        <strong>Contraseña provisional:</strong> ${password}</p>
+        <p>Entra en <a href="${link}">${link}</a>.</p>
+        <p>Por seguridad, el sistema te pedirá cambiar la contraseña en el primer acceso.</p>
+      `,
+    });
+  }
 }

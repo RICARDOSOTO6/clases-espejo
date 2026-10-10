@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -13,6 +14,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { mkdirSync } from 'fs';
 import { UsuariosService, AVATARES_DIR } from './usuarios.service';
+import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
@@ -56,6 +58,15 @@ export class UsuariosController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser('sub') usuarioId: number) {
     return this.usuariosService.getPerfil(usuarioId);
+  }
+
+  @Post('me/password')
+  @UseGuards(JwtAuthGuard)
+  cambiarPassword(
+    @CurrentUser('sub') usuarioId: number,
+    @Body() dto: CambiarPasswordDto,
+  ) {
+    return this.usuariosService.cambiarPassword(usuarioId, dto);
   }
 
   @Post('me/foto')
