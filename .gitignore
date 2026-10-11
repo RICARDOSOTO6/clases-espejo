@@ -4,3 +4,6 @@
 # Se ignora para que no pueda entrar en un commit por accidente: un `git add -A`
 # lo habría subido entero.
 .tmp-chrome/
+
+# Perfiles de Chrome de las pruebas en el navegador
+.tmp-chrome*/

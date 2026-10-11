@@ -12,6 +12,8 @@ import JSZip from 'jszip';
 import { PrismaService } from '../prisma/prisma.service';
 import { ESTADO_PROYECTO_FINALIZADO } from '../common/estados';
 import {
+  CAMPOS_POR_DEFECTO,
+  TEXTOS_LEGALES_POR_DEFECTO,
   normalizarCampos,
   normalizarTextosLegales,
 } from './campos-certificado';
@@ -390,9 +392,17 @@ export class CertificadosService {
         altoPx: plantilla.altoPx,
         fondoUrl: plantilla.fondoUrl,
         // Se sanean aquí también: una fila editada a mano en la base no debe
-        // poder romper la emisión.
-        campos: normalizarCampos(plantilla.campos),
-        textosLegales: normalizarTextosLegales(plantilla.textosLegales),
+        // poder romper la emisión. El lienzo es el de la propia plantilla, así
+        // que un dato medio fuera del papel se mete dentro antes de imprimir.
+        campos: normalizarCampos(plantilla.campos, CAMPOS_POR_DEFECTO, {
+          anchoPx: plantilla.anchoPx,
+          altoPx: plantilla.altoPx,
+        }),
+        textosLegales: normalizarTextosLegales(
+          plantilla.textosLegales,
+          TEXTOS_LEGALES_POR_DEFECTO,
+          { anchoPx: plantilla.anchoPx, altoPx: plantilla.altoPx },
+        ),
         firmaNombre: plantilla.firmaNombre,
       },
     };

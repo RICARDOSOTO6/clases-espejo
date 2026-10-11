@@ -5,6 +5,8 @@ import {
   CAMPOS_POR_DEFECTO,
   CATALOGO_CAMPOS,
   CamposCertificado,
+  LIENZO_POR_DEFECTO,
+  LienzoPlantilla,
   TEXTOS_LEGALES_POR_DEFECTO,
   TextosLegales,
   normalizarCampos,
@@ -104,16 +106,23 @@ export class PlantillasService {
    */
   async crear(usuarioId: number, dto: GuardarPlantillaDto) {
     const base = await this.contenidoBase();
+    // El lienzo con el que se guarda: el que trae el formulario o el de la
+    // versión activa. Es lo que se usa para encajar cada caja dentro del papel.
+    const lienzo: LienzoPlantilla = {
+      anchoPx: dto.anchoPx ?? base.anchoPx,
+      altoPx: dto.altoPx ?? base.altoPx,
+    };
 
     return this.crearVersion(usuarioId, {
       fondoUrl:
         dto.fondoUrl !== undefined ? dto.fondoUrl || null : base.fondoUrl,
-      anchoPx: dto.anchoPx ?? base.anchoPx,
-      altoPx: dto.altoPx ?? base.altoPx,
-      campos: normalizarCampos(dto.campos, base.campos),
+      anchoPx: lienzo.anchoPx,
+      altoPx: lienzo.altoPx,
+      campos: normalizarCampos(dto.campos, base.campos, lienzo),
       textosLegales: normalizarTextosLegales(
         dto.textosLegales,
         base.textosLegales,
+        lienzo,
       ),
       firmaNombre:
         dto.firmaNombre !== undefined
@@ -217,12 +226,22 @@ export class PlantillasService {
   private async contenidoBase(): Promise<ContenidoPlantilla> {
     const activa = await this.activa();
     if (activa) {
+      const lienzo: LienzoPlantilla = {
+        anchoPx: activa.anchoPx,
+        altoPx: activa.altoPx,
+      };
       return {
         fondoUrl: activa.fondoUrl,
         anchoPx: activa.anchoPx,
         altoPx: activa.altoPx,
-        campos: normalizarCampos(activa.campos),
-        textosLegales: normalizarTextosLegales(activa.textosLegales),
+        // Se encajan al lienzo de la propia versión: una fila vieja con un dato
+        // medio fuera del papel se corrige sola al guardar la siguiente versión.
+        campos: normalizarCampos(activa.campos, CAMPOS_POR_DEFECTO, lienzo),
+        textosLegales: normalizarTextosLegales(
+          activa.textosLegales,
+          TEXTOS_LEGALES_POR_DEFECTO,
+          lienzo,
+        ),
         firmaNombre: activa.firmaNombre,
       };
     }
@@ -255,8 +274,8 @@ export class PlantillasService {
   private porDefecto(firmaNombre: string): ContenidoPlantilla {
     return {
       fondoUrl: null,
-      anchoPx: 2480,
-      altoPx: 1748,
+      anchoPx: LIENZO_POR_DEFECTO.anchoPx,
+      altoPx: LIENZO_POR_DEFECTO.altoPx,
       campos: CAMPOS_POR_DEFECTO,
       textosLegales: TEXTOS_LEGALES_POR_DEFECTO,
       firmaNombre,
@@ -278,6 +297,10 @@ export class PlantillasService {
     creadaPor?: { nombres: string; apellidoPaterno: string } | null;
     _count?: { certificados: number };
   }): PlantillaVista {
+    const lienzo: LienzoPlantilla = {
+      anchoPx: plantilla.anchoPx,
+      altoPx: plantilla.altoPx,
+    };
     return {
       id: plantilla.id,
       version: plantilla.version,
@@ -285,8 +308,12 @@ export class PlantillasService {
       fondoUrl: plantilla.fondoUrl,
       anchoPx: plantilla.anchoPx,
       altoPx: plantilla.altoPx,
-      campos: normalizarCampos(plantilla.campos),
-      textosLegales: normalizarTextosLegales(plantilla.textosLegales),
+      campos: normalizarCampos(plantilla.campos, CAMPOS_POR_DEFECTO, lienzo),
+      textosLegales: normalizarTextosLegales(
+        plantilla.textosLegales,
+        TEXTOS_LEGALES_POR_DEFECTO,
+        lienzo,
+      ),
       firmaNombre: plantilla.firmaNombre,
       creadaPor: plantilla.creadaPor
         ? `${plantilla.creadaPor.nombres} ${plantilla.creadaPor.apellidoPaterno}`.trim()

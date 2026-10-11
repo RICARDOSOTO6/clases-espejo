@@ -921,11 +921,12 @@
         </div>
 
         <p class="text-sm muted">
-          El certificado es una imagen de fondo con los datos escritos encima. Aquí
-          se sube el fondo, se coloca cada dato (con números: la posición y el
-          tamaño se escriben, no se arrastran) y se escriben los textos legales y
-          la firma. Guardar <strong>no</strong> cambia la plantilla anterior: crea
-          una versión nueva, porque los certificados ya emitidos se quedan como
+          El certificado es una imagen de fondo con los datos escritos encima. En
+          el lienzo se colocan <strong>arrastrando con el ratón</strong> (o con el
+          dedo): cada dato se mueve, se redimensiona desde las esquinas y se
+          escribe encima con doble clic, con la barra de herramientas al lado.
+          Guardar <strong>no</strong> cambia la plantilla anterior: crea una
+          versión nueva, porque los certificados ya emitidos se quedan como
           salieron.
         </p>
 
@@ -939,314 +940,45 @@
         @if (cargandoPlantilla() && !borrador()) {
           <p class="text-sm muted">Cargando la plantilla...</p>
         } @else if (borrador(); as b) {
-          <div class="personalizacion-grid">
-            <div class="certificado-form">
-              <!-- Fondo -->
-              <div class="form-field">
-                <label for="certificado-fondo">Imagen de fondo</label>
-                <p class="text-sm muted">
-                  PNG, JPG o WEBP, hasta 2 MB. Lo ideal es un A4 horizontal
-                  ({{ b.anchoPx }} × {{ b.altoPx }} px, que es lo que mide la
-                  plantilla). Subir un fondo crea también una versión nueva.
-                </p>
-                <input
-                  id="certificado-fondo"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  [disabled]="subiendoFondo()"
-                  (change)="alSeleccionarFondo($event)"
-                />
-                @if (subiendoFondo()) {
-                  <p class="text-sm muted">Subiendo el fondo...</p>
-                }
-              </div>
-
-              <!-- Firma -->
-              <div class="form-field">
-                <label for="certificado-firma">Nombre de la firma</label>
-                <input
-                  id="certificado-firma"
-                  type="text"
-                  maxlength="160"
-                  [value]="b.firmaNombre"
-                  (input)="cambiarFirma($event)"
-                  placeholder="Nombre de quien firma los certificados"
-                />
-                <p class="text-sm muted">
-                  Por omisión, el nombre del presidente de la CACE. Se imprime
-                  encima de la raya de firma.
-                </p>
-              </div>
-
-              <!-- Datos: posición y estilo -->
-              <fieldset class="campos-certificado">
-                <legend>Datos y posición</legend>
-                <p class="text-sm muted">
-                  Las posiciones van en píxeles del fondo, contando desde la
-                  esquina superior izquierda. El tamaño es en puntos del PDF.
-                </p>
-                @for (dato of camposPlantilla(); track dato.clave) {
-                  <div class="campo-certificado">
-                    <div class="campo-certificado-titulo">
-                      <strong>{{ dato.etiqueta }}</strong>
-                      <label class="campo-negrita">
-                        <input
-                          type="checkbox"
-                          [checked]="dato.campo.negrita"
-                          (change)="editarCampo(dato.clave, 'negrita', $event)"
-                        />
-                        <span>Negrita</span>
-                      </label>
-                    </div>
-                    <div class="campo-certificado-fila">
-                      <label>
-                        <span>X</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="6000"
-                          [value]="dato.campo.x"
-                          (input)="editarCampo(dato.clave, 'x', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Y</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="6000"
-                          [value]="dato.campo.y"
-                          (input)="editarCampo(dato.clave, 'y', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Ancho</span>
-                        <input
-                          type="number"
-                          min="40"
-                          max="6000"
-                          [value]="dato.campo.ancho"
-                          (input)="editarCampo(dato.clave, 'ancho', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Tamaño</span>
-                        <input
-                          type="number"
-                          min="6"
-                          max="200"
-                          [value]="dato.campo.tamano"
-                          (input)="editarCampo(dato.clave, 'tamano', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Alineación</span>
-                        <select
-                          [value]="dato.campo.alineacion"
-                          (change)="editarCampo(dato.clave, 'alineacion', $event)"
-                        >
-                          @for (opcion of alineaciones; track opcion.valor) {
-                            <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-                          }
-                        </select>
-                      </label>
-                      <label>
-                        <span>Color</span>
-                        <input
-                          type="color"
-                          [value]="dato.campo.color"
-                          (input)="editarCampo(dato.clave, 'color', $event)"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                }
-              </fieldset>
-
-              <!-- Textos legales -->
-              <fieldset class="campos-certificado">
-                <legend>Textos legales</legend>
-                <p class="text-sm muted">
-                  Párrafos sueltos que se imprimen donde se indique (la constancia,
-                  la nota de autenticidad...). Se admiten hasta 10.
-                </p>
-                @for (bloque of b.textosLegales; track bloque.id; let i = $index) {
-                  <div class="campo-certificado">
-                    <div class="campo-certificado-titulo">
-                      <strong>Párrafo {{ i + 1 }}</strong>
-                      <button
-                        type="button"
-                        class="link-button"
-                        (click)="quitarTextoLegal(i)"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                    <div class="form-field">
-                      <textarea
-                        rows="2"
-                        maxlength="1200"
-                        [value]="bloque.texto"
-                        (input)="editarTextoLegal(i, 'texto', $event)"
-                        placeholder="Texto legal del certificado"
-                      ></textarea>
-                    </div>
-                    <div class="campo-certificado-fila">
-                      <label>
-                        <span>X</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="6000"
-                          [value]="bloque.x"
-                          (input)="editarTextoLegal(i, 'x', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Y</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="6000"
-                          [value]="bloque.y"
-                          (input)="editarTextoLegal(i, 'y', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Ancho</span>
-                        <input
-                          type="number"
-                          min="40"
-                          max="6000"
-                          [value]="bloque.ancho"
-                          (input)="editarTextoLegal(i, 'ancho', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Tamaño</span>
-                        <input
-                          type="number"
-                          min="6"
-                          max="200"
-                          [value]="bloque.tamano"
-                          (input)="editarTextoLegal(i, 'tamano', $event)"
-                        />
-                      </label>
-                      <label>
-                        <span>Alineación</span>
-                        <select
-                          [value]="bloque.alineacion"
-                          (change)="editarTextoLegal(i, 'alineacion', $event)"
-                        >
-                          @for (opcion of alineaciones; track opcion.valor) {
-                            <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-                          }
-                        </select>
-                      </label>
-                      <label>
-                        <span>Color</span>
-                        <input
-                          type="color"
-                          [value]="bloque.color"
-                          (input)="editarTextoLegal(i, 'color', $event)"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                }
-                <button type="button" class="btn btn-outline" (click)="agregarTextoLegal()">
-                  Añadir párrafo legal
-                </button>
-              </fieldset>
-
-              <div class="form-grid-actions">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  [disabled]="guardandoPlantilla()"
-                  (click)="guardarPlantilla()"
-                >
-                  @if (guardandoPlantilla()) {
-                    <span class="spinner" aria-hidden="true"></span>
-                  }
-                  {{
-                    guardandoPlantilla()
-                      ? 'Guardando...'
-                      : 'Guardar como versión nueva'
-                  }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-ghost"
-                  [disabled]="guardandoPlantilla()"
-                  (click)="restablecerPlantilla()"
-                >
-                  Restablecer colocación
-                </button>
-              </div>
-            </div>
-
-            <!-- Vista previa -->
-            <div id="certificado-vista">
-              <p class="text-sm muted">
-                Vista previa
-                @if (b.version > 0) {
-                  (versión {{ b.version }})
-                }
-              </p>
-              <div
-                class="certificado-preview"
-                [class.certificado-preview--sin-fondo]="!fondoPlantilla()"
-                [style.aspectRatio]="b.anchoPx + ' / ' + b.altoPx"
-                [style.backgroundImage]="
-                  fondoPlantilla() ? 'url(' + fondoPlantilla() + ')' : null
-                "
-              >
-                @for (dato of camposPlantilla(); track dato.clave) {
-                  <span
-                    class="campo-preview"
-                    [style.left]="posicionCampo(dato.campo, 'x')"
-                    [style.top]="posicionCampo(dato.campo, 'y')"
-                    [style.width]="posicionCampo(dato.campo, 'ancho')"
-                    [style.fontSize]="tamanoCampo(dato.campo.tamano)"
-                    [style.color]="dato.campo.color"
-                    [style.fontWeight]="dato.campo.negrita ? 700 : 400"
-                    [style.textAlign]="dato.campo.alineacion"
-                  >
-                    @if (dato.clave === 'firma') {
-                      <span class="campo-preview-raya" aria-hidden="true"></span>
-                    }
-                    {{ ejemploCampo(dato.clave) }}
-                  </span>
-                }
-                @for (bloque of b.textosLegales; track bloque.id) {
-                  @if (bloque.texto) {
-                    <span
-                      class="campo-preview"
-                      [style.left]="posicionCampo(bloque, 'x')"
-                      [style.top]="posicionCampo(bloque, 'y')"
-                      [style.width]="posicionCampo(bloque, 'ancho')"
-                      [style.fontSize]="tamanoCampo(bloque.tamano)"
-                      [style.color]="bloque.color"
-                      [style.textAlign]="bloque.alineacion"
-                    >
-                      {{ bloque.texto }}
-                    </span>
-                  }
-                }
-              </div>
-              <p class="text-sm muted">
-                La previa usa la misma escala que el PDF: el tamaño de cada dato es
-                proporcional al ancho del fondo.
-              </p>
-            </div>
+          <!-- Fondo -->
+          <div class="certificado-fondo">
+            <label for="certificado-fondo">Imagen de fondo</label>
+            <p class="text-sm muted">
+              PNG, JPG o WEBP, hasta 2 MB. Lo ideal es un A4 horizontal
+              ({{ b.anchoPx }} × {{ b.altoPx }} px, que es lo que mide la
+              plantilla): si la imagen tiene otra proporción, el lienzo y el PDF
+              la recortan por el centro para tapar la hoja sin deformarla. Subir
+              un fondo crea también una versión nueva.
+            </p>
+            <input
+              id="certificado-fondo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              [disabled]="subiendoFondo()"
+              (change)="alSeleccionarFondo($event)"
+            />
+            @if (subiendoFondo()) {
+              <p class="text-sm muted">Subiendo el fondo...</p>
+            }
           </div>
 
+          <!-- El editor visual: el lienzo, la barra de herramientas y la
+               revisión de la plantilla. -->
+          <app-editor-certificado
+            [borrador]="b"
+            [fondo]="fondoPlantilla()"
+            [catalogo]="catalogoCampos()"
+            [guardando]="guardandoPlantilla()"
+            (cambio)="aplicarCambio($event)"
+            (guardar)="guardarPlantilla()"
+            (restaurar)="restablecerPlantilla()"
+          />
           <!-- Versiones -->
           <h3 class="certificado-versiones-titulo">Versiones</h3>
           <p class="text-sm muted">
             Solo una está activa, y es la que se usa al emitir. Activar una
-            anterior no toca los certificados ya emitidos.
+            anterior no toca los certificados ya emitidos: la plantilla es
+            versionada, así que un mal diseño siempre se puede deshacer.
           </p>
           @if (plantillaEstado(); as estado) {
             @if (estado.versiones.length > 0) {
@@ -1271,6 +1003,14 @@
                         · {{ version.fondoUrl ? 'con fondo' : 'sin fondo' }}
                         · {{ version.firmaNombre || 'sin firma' }}
                       </p>
+                      @if (gravesDeVersion(version).length > 0) {
+                        <p class="version-problemas" [attr.data-problemas-version]="version.id">
+                          No se puede activar:
+                          @for (problema of gravesDeVersion(version); track problema.mensaje) {
+                            {{ problema.donde }}: {{ problema.mensaje }}
+                          }
+                        </p>
+                      }
                     </div>
                     <div class="acciones-pais">
                       <button
@@ -1279,13 +1019,23 @@
                         [disabled]="cargandoPlantilla()"
                         (click)="verVersion(version)"
                       >
-                        Ver en el formulario
+                        Ver en el editor
                       </button>
                       @if (!version.activa) {
                         <button
                           type="button"
                           class="btn btn-secondary"
-                          [disabled]="activandoVersion() !== null"
+                          data-accion="activar"
+                          [attr.data-version]="version.id"
+                          [disabled]="
+                            activandoVersion() !== null ||
+                            gravesDeVersion(version).length > 0
+                          "
+                          [attr.title]="
+                            gravesDeVersion(version).length > 0
+                              ? 'Esa versión tiene un problema grave: ábrela en el editor y corrígelo'
+                              : 'Deja esta versión como la activa'
+                          "
                           (click)="activarVersion(version)"
                         >
                           {{

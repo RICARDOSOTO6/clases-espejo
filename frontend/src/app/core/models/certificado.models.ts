@@ -27,12 +27,24 @@ export interface CampoCertificado {
   y: number;
   /** Ancho de la caja: lo usan la alineación y el salto de línea. */
   ancho: number;
+  /**
+   * Alto de la caja, en píxeles de la plantilla. Es la caja de diseño: con ella
+   * el editor sabe si el texto cabe. El PDF no recorta con ella (un nombre
+   * largo se sale antes que perder letras).
+   */
+  alto: number;
   /** Tamaño de la letra, en puntos del PDF. */
   tamano: number;
   alineacion: AlineacionCertificado;
   /** Color en `#RRGGBB`. */
   color: string;
   negrita: boolean;
+  cursiva: boolean;
+  /**
+   * Texto de ejemplo con el que se diseñó la caja. No se imprime: al emitir se
+   * escribe el nombre del alumno y los datos de la clase de verdad.
+   */
+  muestra: string;
 }
 
 export type CamposCertificado = Record<ClaveCampoCertificado, CampoCertificado>;
@@ -44,9 +56,30 @@ export interface BloqueLegal {
   x: number;
   y: number;
   ancho: number;
+  alto: number;
   tamano: number;
   alineacion: AlineacionCertificado;
   color: string;
+  negrita: boolean;
+  cursiva: boolean;
+}
+
+/** Qué está seleccionado en el lienzo del editor. */
+export type SeleccionCertificado =
+  | { tipo: 'campo'; clave: ClaveCampoCertificado }
+  | { tipo: 'legal'; id: string }
+  | null;
+
+/**
+ * Un problema del diseño. `grave` es lo que impide activar la plantilla (un
+ * dato fuera del papel o un texto que no cabe); `aviso` es lo que solo hay que
+ * decir (falta el fondo, un dato pegado al canto…).
+ */
+export interface ProblemaPlantilla {
+  gravedad: 'grave' | 'aviso';
+  /** Dónde está: la etiqueta del dato o el párrafo legal. */
+  donde: string;
+  mensaje: string;
 }
 
 /** Una versión de la plantilla. Las versiones no se editan: se crean. */

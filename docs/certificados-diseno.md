@@ -98,6 +98,44 @@ PDF no sabe dibujar**. En un certificado eso significaría **mutilar el nombre d
 un alumno** sin que nadie se entere. Para los certificados hay que **incrustar
 una fuente Unicode** (`pdfkit` lo permite con `registerFont`) y no filtrar nada.
 
+### El editor visual de la plantilla (revisión posterior)
+
+La primera versión de la sección «Plantilla del certificado» colocaba los datos
+**tecleando números** (posición y tamaño). Resultó confusa, así que la sección se
+rehízo como **editor visual**: un lienzo con la proporción del A4 donde cada dato
+se arrastra con el puntero, se redimensiona desde las esquinas y se escribe
+encima con doble clic, con la barra de herramientas al lado.
+
+Lo que **no** cambió, porque es lo que hace que el certificado sirva: cada dato
+sigue siendo un **campo de texto por tipo** (el nombre del alumno, el título, el
+folio…) con su posición y su estilo guardados en la base. No se pintan píxeles:
+al emitir se escribe el dato real de cada alumno.
+
+Decisiones que conviene no deshacer:
+
+* **Un solo juego de números.** El A4 en puntos, el interlineado y los límites de
+  tamaño viven en `campos-certificado.ts` y el editor usa las mismas cuentas
+  (`certificado-medidas.ts`). Si divergen, el lienzo miente y el presidente firma
+  algo que no ha visto.
+* **Las coordenadas van en píxeles de la plantilla y el tamaño de letra en
+  puntos del PDF.** El alto de la caja (`alto`) también en píxeles: es la caja de
+  diseño que usa el editor para saber si el texto cabe. El PDF **no recorta** con
+  ella: un nombre largo se sale antes que perder letras.
+* **Cada campo lleva su `muestra`**, el texto de ejemplo con el que se colocó. No
+  se imprime; sirve para que el lienzo enseñe algo parecido a lo que va a salir y
+  para que el aviso de «no cabe» tenga sentido antes de emitir.
+* **El fondo se recorta, no se deforma.** Si la imagen no tiene la proporción del
+  A4 (la de la CACE mide 749 × 566), se escala hasta tapar la hoja y se recorta
+  por el centro, igual en el lienzo (`background-size: cover`) y en el PDF.
+* **Reglas que evitan un desastre:** nada se sale del papel (se limita al
+  arrastrar y se vuelve a encajar al guardar y al emitir); el margen seguro del
+  5 % se dibuja como guía; el tamaño de letra va de 8 a 72 pt; y una plantilla
+  con un problema grave (un dato fuera del papel o un texto que no cabe) no se
+  puede activar, con la lista de problemas a la vista. Lo demás —que falte el
+  fondo, un dato pegado al canto— son avisos.
+* **Versionado, que es la red de seguridad:** guardar crea una versión nueva;
+  ninguna versión anterior se toca y se puede volver a activar.
+
 ## 5. Tecnología
 
 | Necesidad | Qué se usa |

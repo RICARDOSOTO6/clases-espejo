@@ -10,21 +10,20 @@ import { IdentidadCaceService } from '../../core/services/identidad-cace.service
 import { PlantillaCertificadoService } from '../../core/services/plantilla-certificado.service';
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import { EditorCertificadoComponent } from './editor-certificado/editor-certificado.component';
 import {
   InstitucionOpcion,
   PaisComunidad,
   Premio,
 } from '../../core/models/cace-identidad.models';
 import {
-  AlineacionCertificado,
   BloqueLegal,
   BorradorPlantillaCertificado,
-  CampoCertificado,
   CamposCertificado,
-  ClaveCampoCertificado,
   EstadoPlantillaCertificado,
   PlantillaCertificado,
 } from '../../core/models/certificado.models';
+import { revisarPlantilla } from '../../core/utils/certificado-medidas';
 import { TEMAS_CACE, TemaCace } from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
@@ -56,7 +55,7 @@ const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
  */
 @Component({
   selector: 'app-cace',
-  imports: [ReactiveFormsModule, LayoutComponent],
+  imports: [ReactiveFormsModule, LayoutComponent, EditorCertificadoComponent],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',
 })
@@ -223,40 +222,36 @@ export class CaceComponent implements OnInit, OnDestroy {
    */
   readonly borrador = signal<BorradorPlantillaCertificado | null>(null);
 
-  /** Los datos con su etiqueta, en el orden del catálogo, para el formulario. */
-  readonly camposPlantilla = computed(() => {
-    const b = this.borrador();
-    const catalogo = this.plantillaEstado()?.catalogo ?? [];
-    if (!b) return [];
-    return catalogo.map((entrada) => ({
-      clave: entrada.clave,
-      etiqueta: entrada.etiqueta,
-      campo: b.campos[entrada.clave],
-    }));
-  });
+  /** Los datos con su etiqueta, en el orden del catálogo, para el editor. */
+  readonly catalogoCampos = computed(
+    () => this.plantillaEstado()?.catalogo ?? [],
+  );
 
   /** El fondo de la versión en edición, listo para un `<img>` o un fondo CSS. */
   readonly fondoPlantilla = computed(() => urlDeArchivo(this.borrador()?.fondoUrl));
 
-  /** Texto de ejemplo de cada dato, para que la vista previa se entienda. */
-  private readonly EJEMPLOS: Record<ClaveCampoCertificado, string> = {
-    titulo: 'Clase espejo: Calidad y Pruebas de Software',
-    nombre: 'José Ángel Muñoz Ruiz',
-    instituciones:
-      'Instituto Tecnológico Superior de Calkiní (México) y Universidad Nacional de Colombia (Colombia)',
-    fechas: 'del 04 de septiembre de 2026 al 16 de octubre de 2026',
-    docentes:
-      'Docentes: Sofía Gómez (Instituto Tecnológico Superior de Calkiní) · Isabella Cárdenas (Universidad Nacional de Colombia)',
-    firma: 'Nombre del presidente',
-    folio: 'Folio: CACE-2026-0001',
-  };
+  /**
+   * Los problemas de una versión guardada, para no dejar activar una plantilla
+   * que arrastra un dato fuera del papel o un texto que no cabe. Se calcula con
+   * las mismas reglas que el editor (y con las muestras que llevan sus campos).
+   */
+  problemasDeVersion(version: PlantillaCertificado) {
+    return revisarPlantilla({
+      campos: version.campos,
+      textosLegales: version.textosLegales,
+      lienzo: { anchoPx: version.anchoPx, altoPx: version.altoPx },
+      firmaNombre: version.firmaNombre,
+      proporcionFondo: null,
+      hayFondo: !!version.fondoUrl,
+      etiquetas: this.plantillaEstado()?.catalogo ?? [],
+    });
+  }
 
-  /** Las alineaciones que ofrece el formulario. */
-  readonly alineaciones: { valor: AlineacionCertificado; etiqueta: string }[] = [
-    { valor: 'left', etiqueta: 'Izquierda' },
-    { valor: 'center', etiqueta: 'Centrada' },
-    { valor: 'right', etiqueta: 'Derecha' },
-  ];
+  /** Lo que impide activar una versión guardada (vacío si se puede). */
+  gravesDeVersion(version: PlantillaCertificado) {
+    return this.problemasDeVersion(version).filter((p) => p.gravedad === 'grave');
+  }
+
 
   ngOnInit(): void {
     // Mientras no cambie la contraseña provisional, el panel no se usa.
@@ -1168,122 +1163,34 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Vuelve a la plantilla de arranque que propone el servidor. */
   restablecerPlantilla(): void {
     const porDefecto = this.plantillaEstado()?.porDefecto;
-    if (!porDefecto) return;
-    this.usarPlantilla({ ...porDefecto, id: 0, version: 0, activa: false });
+    const actual = this.borrador();
+    if (!porDefecto || !actual) return;
+    // El fondo y el tamaño del papel no son «colocación»: se conservan, que lo
+    // que se está restaurando es dónde va cada dato.
+    this.usarPlantilla({
+      ...porDefecto,
+      id: actual.id,
+      version: actual.version,
+      activa: actual.activa,
+      fondoUrl: actual.fondoUrl,
+      anchoPx: actual.anchoPx,
+      altoPx: actual.altoPx,
+      firmaNombre: actual.firmaNombre,
+    });
     this.avisoPlantilla.set(
-      'Formulario restablecido con la colocación de arranque. Guardar creará una versión nueva.',
+      'Posiciones restauradas a la colocación de arranque. Guardar creará una versión nueva.',
     );
   }
 
   // --- Plantilla del certificado: edición ---
 
-  /** Mueve o cambia el estilo de un dato. */
-  editarCampo(
-    clave: ClaveCampoCertificado,
-    propiedad: keyof CampoCertificado,
-    valor: Event | string | number | boolean,
-  ): void {
-    const limpio = this.valorDe(valor);
-    this.borrador.update((b) => {
-      if (!b) return b;
-      const campo = b.campos[clave];
-      return {
-        ...b,
-        campos: {
-          ...b.campos,
-          [clave]: {
-            ...campo,
-            [propiedad]:
-              typeof campo[propiedad] === 'number'
-                ? Number(limpio) || 0
-                : limpio,
-          },
-        },
-      };
-    });
-  }
-
-  editarTextoLegal(
-    indice: number,
-    propiedad: keyof BloqueLegal,
-    valor: Event | string | number,
-  ): void {
-    const limpio = this.valorDe(valor);
-    this.borrador.update((b) => {
-      if (!b) return b;
-      const bloque = b.textosLegales[indice];
-      if (!bloque) return b;
-      return {
-        ...b,
-        textosLegales: b.textosLegales.map((item, i) =>
-          i === indice
-            ? {
-                ...item,
-                [propiedad]:
-                  typeof bloque[propiedad] === 'number'
-                    ? Number(limpio) || 0
-                    : limpio,
-              }
-            : item,
-        ),
-      };
-    });
-  }
-
   /**
-   * El valor de un control del formulario: los manejadores reciben el evento
-   * entero (como en la lista de alumnos) y aquí se saca el dato, que además
-   * puede ser el de una casilla.
+   * Aplica al borrador lo que llega del editor visual. El editor no toca la
+   * plantilla: avisa de lo que cambió y aquí se guarda en el borrador, que es
+   * el único sitio del que sale lo que se manda al servidor.
    */
-  private valorDe(valor: Event | string | number | boolean) {
-    if (valor instanceof Event) {
-      const destino = valor.target as HTMLInputElement;
-      return destino.type === 'checkbox' ? destino.checked : destino.value;
-    }
-    return valor;
-  }
-
-  /** Añade un párrafo legal debajo del último. */
-  agregarTextoLegal(): void {
-    this.borrador.update((b) => {
-      if (!b) return b;
-      if (b.textosLegales.length >= 10) return b;
-      const ultimo = b.textosLegales[b.textosLegales.length - 1];
-      const y = ultimo ? ultimo.y + 60 : Math.round(b.altoPx * 0.86);
-      return {
-        ...b,
-        textosLegales: [
-          ...b.textosLegales,
-          {
-            id: `legal-${Date.now()}`,
-            texto: '',
-            x: 240,
-            y,
-            ancho: Math.max(400, b.anchoPx - 480),
-            tamano: 14,
-            alineacion: 'center' as AlineacionCertificado,
-            color: '#666666',
-          },
-        ],
-      };
-    });
-  }
-
-  quitarTextoLegal(indice: number): void {
-    this.borrador.update((b) =>
-      b
-        ? {
-            ...b,
-            textosLegales: b.textosLegales.filter((_, i) => i !== indice),
-          }
-        : b,
-    );
-  }
-
-  /** El nombre de la firma se guarda aparte: es una línea, no un dato colocado. */
-  cambiarFirma(valor: Event | string): void {
-    const limpio = String(this.valorDe(valor) ?? '');
-    this.borrador.update((b) => (b ? { ...b, firmaNombre: limpio } : b));
+  aplicarCambio(cambio: Partial<BorradorPlantillaCertificado>): void {
+    this.borrador.update((b) => (b ? { ...b, ...cambio } : b));
   }
 
   // --- Plantilla del certificado: guardado ---
@@ -1373,49 +1280,6 @@ export class CaceComponent implements OnInit, OnDestroy {
         );
       },
     });
-  }
-
-  // --- Plantilla del certificado: vista previa ---
-
-  /**
-   * Posición de un dato dentro de la vista previa, en porcentaje del fondo.
-   * Como la caja de la previa representa el ancho completo de la plantilla, los
-   * números que se ven aquí son los que saldrán en el PDF.
-   */
-  posicionCampo(
-    campo: { x: number; y: number; ancho: number },
-    lado: 'x' | 'y' | 'ancho',
-  ): string {
-    const b = this.borrador();
-    if (!b) return '0%';
-    const total = lado === 'y' ? b.altoPx : b.anchoPx;
-    return `${(campo[lado] / total) * 100}%`;
-  }
-
-  /**
-   * Tamaño de letra de la previa. Se usa `cqw` (una unidad relativa al ancho de
-   * la caja, con `container-type: inline-size` en el CSS): así el texto se ve a
-   * la misma escala que en el PDF sin saber cuántos píxeles mide la previa.
-   */
-  tamanoCampo(tamano: number): string {
-    const b = this.borrador();
-    if (!b) return '0.8rem';
-    return `${(tamano / b.anchoPx) * 100}cqw`;
-  }
-
-  /** Texto de ejemplo del dato, para que la previa se entienda. */
-  ejemploCampo(clave: ClaveCampoCertificado): string {
-    if (clave === 'firma') {
-      return this.borrador()?.firmaNombre?.trim() || 'Nombre del presidente';
-    }
-    return this.EJEMPLOS[clave];
-  }
-
-  /** Etiqueta corta de la alineación, para la ficha del dato. */
-  etiquetaAlineacion(valor: AlineacionCertificado): string {
-    return (
-      this.alineaciones.find((a) => a.valor === valor)?.etiqueta ?? valor
-    );
   }
 
   // --- Presentación ---
