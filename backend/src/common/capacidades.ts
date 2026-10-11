@@ -21,9 +21,27 @@ export const CAPACIDADES = [
   /**
    * Borrar definitivamente una institución rechazada (solo si no tiene
    * historia). La secretaría **no** la tiene: su caso, «con autorización del
-   * presidente», queda fuera de esta parte.
+   * presidente», va por `solicitarBorradoInstitucion`.
    */
   'borrarInstituciones',
+  /**
+   * Pedir el borrado definitivo de una institución rechazada. Es la capacidad
+   * de la secretaría: la petición no borra nada, la tiene que aprobar el
+   * presidente (`resolverSolicitudesBorrado`). Así el borrado queda autorizado
+   * por quien responde por él.
+   */
+  'solicitarBorradoInstitucion',
+  /**
+   * Aprobar o rechazar las solicitudes de borrado. La tiene el presidente, y al
+   * aprobar es él quien ejecuta el borrado (con las mismas reglas que el
+   * borrado directo).
+   */
+  'resolverSolicitudesBorrado',
+  /**
+   * Dar de alta y activar o desactivar a los miembros de la CACE (las
+   * secretarías). Solo la presidencia: es quien reparte el trabajo.
+   */
+  'gestionarMiembrosCace',
   /** Dar por bueno el alta de un agente nuevo en una institución ya aprobada. */
   'confirmarAgenteInstitucion',
   /** Logo, textos, banderas y tema de la CACE. */
@@ -52,14 +70,21 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
   PRESIDENTE_CACE: [
     'aprobarInstituciones',
     'borrarInstituciones',
+    'resolverSolicitudesBorrado',
+    'gestionarMiembrosCace',
     'personalizarCace',
     'publicarPremios',
     'disenarCertificados',
     'firmarCertificados',
     'anularCertificados',
   ],
-  // La secretaría ayuda con la imagen y los premios, pero no firma ni veta.
-  SECRETARIA_CACE: ['personalizarCace', 'publicarPremios'],
+  // La secretaría ayuda con la imagen y los premios, pero no firma ni veta ni
+  // borra: el borrado lo **pide** y lo autoriza el presidente.
+  SECRETARIA_CACE: [
+    'personalizarCace',
+    'publicarPremios',
+    'solicitarBorradoInstitucion',
+  ],
 };
 
 export function esRolValido(rol: string | null | undefined): rol is Rol {

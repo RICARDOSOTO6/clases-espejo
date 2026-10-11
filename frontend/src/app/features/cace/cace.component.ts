@@ -17,6 +17,11 @@ import {
   Premio,
 } from '../../core/models/cace-identidad.models';
 import {
+  InstitucionRechazadaCace,
+  MiembroCace,
+  SolicitudBorradoCace,
+} from '../../core/models/cace-miembros.models';
+import {
   BorradorPlantillaCertificado,
   CamposCertificado,
   EstadoPlantillaCertificado,
@@ -49,10 +54,17 @@ const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
  * menú lateral propios. La campana se llena con lo que publica esta pantalla
  * (`publicarEnCampana`), igual que hacen las pantallas de docente y agente.
  *
+ * La presidencia y la secretaría comparten pantalla, pero **no** ven lo mismo:
+ * al entrar se piden las capacidades (`GET /cace/capacidades`) y con ellas se
+ * esconden las secciones y los botones que el rol no puede usar. Antes se
+ * adivinaba por el rol y la secretaría se encontraba «Instituciones» para
+ * comerse un 403 al abrirla.
+ *
  * Aquí está el cambio de contraseña obligatorio del primer acceso, la gestión
- * de instituciones (aprobar, rechazar, vetar y reactivar) y la identidad de la
- * CACE: personalización (logo, textos y tema), banderas de la comunidad y
- * premios.
+ * de instituciones (aprobar, rechazar, vetar y reactivar), las secretarías
+ * (alta, activar y desactivar), el borrado con autorización (la secretaría pide
+ * y la presidencia resuelve) y la identidad de la CACE: personalización (logo,
+ * textos y tema), banderas de la comunidad y premios.
  */
 @Component({
   selector: 'app-cace',
@@ -82,7 +94,8 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /**
    * Rol con el que el esqueleto dibuja el menú. La presidencia y la secretaría
-   * comparten pantalla; el menú es el mismo para las dos.
+   * comparten pantalla; lo que las diferencia son las capacidades, que viajan al
+   * esqueleto para que no ofrezca lo que el rol no puede hacer.
    */
   readonly rolCace = computed<'PRESIDENTE_CACE' | 'SECRETARIA_CACE'>(() =>
     this.auth.currentUser()?.rol === 'SECRETARIA_CACE'
@@ -93,6 +106,27 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly exito = signal<string | null>(null);
+
+  // --- Capacidades del rol (fase 6) ---
+
+  /**
+   * Lo que puede hacer este usuario, tal cual lo dice el servidor. Es la única
+   * fuente de verdad de lo que se enseña: la misma tabla que usa el guardia, así
+   * que la interfaz no puede ofrecer algo que la API vaya a rechazar.
+   */
+  readonly capacidades = signal<string[]>([]);
+  readonly cargandoCapacidades = signal(true);
+  readonly errorCapacidades = signal<string | null>(null);
+
+  /** Las capacidades en crudo, para el `data-capacidades` del panel. */
+  readonly capacidadesTexto = computed(
+    () => this.capacidades().join(' ') || 'sin-rol',
+  );
+
+  /** ¿Este usuario puede hacer esto? (Igual que el `@Requiere(...)` del servidor.) */
+  puede(capacidad: string): boolean {
+    return this.capacidades().includes(capacidad);
+  }
 
   // --- Instituciones ---
   readonly instituciones = signal<InstitucionCace[]>([]);
@@ -122,6 +156,60 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /** Motivo del rechazo o del veto que se está escribiendo. */
   readonly motivo = this.fb.control('', Validators.required);
+
+  // --- Miembros de la CACE: las secretarías (solo la presidencia) ---
+
+  readonly miembros = signal<MiembroCace[]>([]);
+  readonly cargandoMiembros = signal(false);
+  readonly errorMiembros = signal<string | null>(null);
+  readonly avisoMiembros = signal<string | null>(null);
+  /** Alta en curso (evita el doble envío). */
+  readonly creandoMiembro = signal(false);
+  /** Miembro cuya activación o desactivación está en curso. */
+  readonly miembroEnProceso = signal<number | null>(null);
+  /** Miembro cuya desactivación se está confirmando: pierde el acceso al panel. */
+  readonly miembroADesactivar = signal<MiembroCace | null>(null);
+  /**
+   * Contraseña provisional que solo llega cuando el correo **no** pudo salir.
+   * Se muestra una vez para que la presidencia se la pueda dar a mano.
+   */
+  readonly passwordDeApoyo = signal<{ correo: string; password: string } | null>(
+    null,
+  );
+
+  formMiembro = this.fb.group({
+    correo: ['', [Validators.required, Validators.email]],
+    nombres: ['', [Validators.required, Validators.minLength(2)]],
+    apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
+    apellidoMaterno: [''],
+  });
+
+  // --- Solicitudes de borrado de instituciones (fase 6) ---
+
+  readonly solicitudes = signal<SolicitudBorradoCace[]>([]);
+  /** Instituciones rechazadas sobre las que se puede pedir el borrado. */
+  readonly institucionesRechazadas = signal<InstitucionRechazadaCace[]>([]);
+  readonly cargandoSolicitudes = signal(false);
+  readonly errorSolicitudes = signal<string | null>(null);
+  readonly avisoSolicitudes = signal<string | null>(null);
+  /** Cuántas esperan decisión (insignia del menú y de la campana). */
+  readonly solicitudesPendientes = signal(0);
+  /** Institución rechazada cuyo borrado está pidiendo la secretaría. */
+  readonly pidiendoSolicitudBorrado = signal<InstitucionRechazadaCace | null>(
+    null,
+  );
+  /** Solicitud que está resolviendo la presidencia, y qué va a hacer. */
+  readonly resolviendoSolicitud = signal<{
+    solicitud: SolicitudBorradoCace;
+    accion: 'aprobar' | 'rechazar';
+  } | null>(null);
+  /** Solicitud con una petición en curso (evita el doble clic). */
+  readonly solicitudEnProceso = signal<number | null>(null);
+
+  /** Motivo con el que la secretaría pide el borrado: es obligatorio. */
+  readonly motivoSolicitud = this.fb.control('', Validators.required);
+  /** Motivo del rechazo de una solicitud: es obligatorio. */
+  readonly motivoRechazo = this.fb.control('', Validators.required);
 
   // --- Personalización (lema, descripción, tema y logo) ---
 
@@ -266,13 +354,12 @@ export class CaceComponent implements OnInit, OnDestroy {
 
 
   ngOnInit(): void {
-    // Mientras no cambie la contraseña provisional, el panel no se usa.
+    // Mientras no cambie la contraseña provisional, el panel no se usa. Las
+    // secciones se cargan **después** de saber las capacidades: pedir datos que
+    // el rol no puede ver acabaría en 403 (era el fallo de «Instituciones» en la
+    // pantalla de la secretaría).
     if (!this.debeCambiarPassword()) {
-      this.cargarInstituciones();
-      this.cargarIdentidad();
-      this.cargarPaises();
-      this.cargarPremios();
-      this.cargarPlantilla();
+      this.cargarCapacidades();
     }
 
     // El tema se elige en el formulario y se enseña en la vista previa: aquí se
@@ -332,8 +419,9 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         this.exito.set(res.mensaje);
         this.form.reset();
-        // Ya se puede usar el panel: se carga la sección de instituciones.
-        this.cargarInstituciones();
+        // Ya se puede usar el panel: se piden las capacidades y, con ellas, las
+        // secciones que le toquen a este rol.
+        this.cargarCapacidades();
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
@@ -343,6 +431,332 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
     });
   }
+
+  // --- Capacidades: qué puede hacer este usuario ---
+
+  /**
+   * Pide las capacidades del usuario. Es lo primero que hace la pantalla: hasta
+   * que no llegan no se pide nada más, para no llenar la consola de 403 ni
+   * enseñar secciones que el rol no tiene.
+   */
+  cargarCapacidades(): void {
+    this.cargandoCapacidades.set(true);
+    this.errorCapacidades.set(null);
+    this.cace.obtenerCapacidades().subscribe({
+      next: (res) => {
+        this.capacidades.set(res.capacidades ?? []);
+        this.cargandoCapacidades.set(false);
+        this.cargarSegunCapacidades();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.capacidades.set([]);
+        this.cargandoCapacidades.set(false);
+        this.errorCapacidades.set(
+          extraerMensajeError(err, 'No se pudieron cargar tus permisos'),
+        );
+      },
+    });
+  }
+
+  /** Carga solo lo que este rol puede ver. */
+  private cargarSegunCapacidades(): void {
+    if (this.puede('aprobarInstituciones')) this.cargarInstituciones();
+    if (this.puede('gestionarMiembrosCace')) this.cargarMiembros();
+    if (
+      this.puede('solicitarBorradoInstitucion') ||
+      this.puede('resolverSolicitudesBorrado')
+    ) {
+      this.cargarSolicitudes();
+    }
+    if (this.puede('personalizarCace')) {
+      this.cargarIdentidad();
+      this.cargarPaises();
+    }
+    if (this.puede('publicarPremios')) this.cargarPremios();
+    if (this.puede('disenarCertificados') || this.puede('firmarCertificados')) {
+      this.cargarPlantilla();
+    }
+    this.publicarEnCampana();
+  }
+
+  // --- Miembros de la CACE: datos ---
+
+  cargarMiembros(): void {
+    this.cargandoMiembros.set(true);
+    this.errorMiembros.set(null);
+    this.cace.listarMiembros().subscribe({
+      next: (lista) => {
+        this.miembros.set(lista);
+        this.cargandoMiembros.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.miembros.set([]);
+        this.cargandoMiembros.set(false);
+        this.errorMiembros.set(
+          extraerMensajeError(err, 'No se pudieron cargar los miembros de la CACE'),
+        );
+      },
+    });
+  }
+
+  /**
+   * Da de alta una secretaría. El servidor crea la cuenta (con contraseña
+   * provisional y cambio obligatorio) o, si el correo ya es de un usuario, le
+   * añade el cargo sin duplicarlo.
+   */
+  crearMiembro(): void {
+    if (this.creandoMiembro()) return;
+
+    if (this.formMiembro.invalid) {
+      this.formMiembro.markAllAsTouched();
+      return;
+    }
+
+    const { correo, nombres, apellidoPaterno, apellidoMaterno } =
+      this.formMiembro.getRawValue();
+    this.creandoMiembro.set(true);
+    this.errorMiembros.set(null);
+    this.avisoMiembros.set(null);
+    this.passwordDeApoyo.set(null);
+
+    this.cace
+      .crearMiembro({
+        correo: (correo ?? '').trim(),
+        nombres: (nombres ?? '').trim(),
+        apellidoPaterno: (apellidoPaterno ?? '').trim(),
+        apellidoMaterno: (apellidoMaterno ?? '').trim(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.creandoMiembro.set(false);
+          this.avisoMiembros.set(
+            `${res.mensaje}${res.correoEnviado ? '' : ` ${res.avisoCorreo ?? ''}`}`,
+          );
+          if (res.passwordProvisional) {
+            this.passwordDeApoyo.set({
+              correo: res.miembro.correo,
+              password: res.passwordProvisional,
+            });
+          }
+          this.formMiembro.reset({
+            correo: '',
+            nombres: '',
+            apellidoPaterno: '',
+            apellidoMaterno: '',
+          });
+          this.cargarMiembros();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.creandoMiembro.set(false);
+          this.errorMiembros.set(
+            extraerMensajeError(err, 'No se pudo dar de alta la secretaría'),
+          );
+        },
+      });
+  }
+
+  /** Reactiva a un miembro de un clic (volver a dar acceso). */
+  activarMiembro(miembro: MiembroCace): void {
+    this.cambiarActivoMiembro(miembro, true);
+  }
+
+  /** Desactivar deja a la persona sin acceso: se confirma antes. */
+  pedirDesactivarMiembro(miembro: MiembroCace): void {
+    this.errorMiembros.set(null);
+    this.avisoMiembros.set(null);
+    this.miembroADesactivar.set(miembro);
+  }
+
+  cancelarDesactivarMiembro(): void {
+    this.miembroADesactivar.set(null);
+  }
+
+  confirmarDesactivarMiembro(): void {
+    const miembro = this.miembroADesactivar();
+    if (!miembro) return;
+    this.miembroADesactivar.set(null);
+    this.cambiarActivoMiembro(miembro, false);
+  }
+
+  private cambiarActivoMiembro(miembro: MiembroCace, activo: boolean): void {
+    if (this.miembroEnProceso() !== null) return;
+
+    this.miembroEnProceso.set(miembro.id);
+    this.errorMiembros.set(null);
+    this.avisoMiembros.set(null);
+
+    this.cace.cambiarActivoMiembro(miembro.id, activo).subscribe({
+      next: (res) => {
+        this.miembroEnProceso.set(null);
+        this.avisoMiembros.set(res.mensaje);
+        this.cargarMiembros();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.miembroEnProceso.set(null);
+        // El servidor explica por qué no se puede (última presidencia activa, o
+        // que nadie se desactive a sí mismo).
+        this.errorMiembros.set(
+          extraerMensajeError(err, 'No se pudo cambiar el acceso del miembro'),
+        );
+      },
+    });
+  }
+
+  /** Valida un campo del alta de secretaría, con el mismo estilo que el resto. */
+  mensajeMiembro(
+    campo: 'correo' | 'nombres' | 'apellidoPaterno',
+  ): string | null {
+    const control = this.formMiembro.get(campo);
+    if (!control || !control.touched || !control.errors) return null;
+    if (control.errors['required']) return 'Este campo es obligatorio';
+    if (control.errors['email']) {
+      return 'Escribe un correo válido, por ejemplo persona@universidad.edu';
+    }
+    if (control.errors['minlength']) return 'Escribe al menos 2 caracteres';
+    return null;
+  }
+
+  // --- Solicitudes de borrado: datos ---
+
+  cargarSolicitudes(): void {
+    this.cargandoSolicitudes.set(true);
+    this.errorSolicitudes.set(null);
+    this.cace.listarSolicitudesBorrado().subscribe({
+      next: (res) => {
+        this.solicitudes.set(res.solicitudes);
+        this.institucionesRechazadas.set(res.institucionesRechazadas);
+        this.solicitudesPendientes.set(res.pendientes);
+        this.cargandoSolicitudes.set(false);
+        this.publicarEnCampana();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.solicitudes.set([]);
+        this.solicitudesPendientes.set(0);
+        this.cargandoSolicitudes.set(false);
+        this.errorSolicitudes.set(
+          extraerMensajeError(err, 'No se pudieron cargar las solicitudes de borrado'),
+        );
+        this.publicarEnCampana();
+      },
+    });
+  }
+
+  // --- Solicitudes de borrado: la secretaría pide ---
+
+  /** El motivo es obligatorio: el presidente decide sobre él. */
+  pedirSolicitudBorrado(institucion: InstitucionRechazadaCace): void {
+    this.motivoSolicitud.reset('');
+    this.errorSolicitudes.set(null);
+    this.avisoSolicitudes.set(null);
+    this.pidiendoSolicitudBorrado.set(institucion);
+  }
+
+  cancelarSolicitudBorrado(): void {
+    this.pidiendoSolicitudBorrado.set(null);
+    this.motivoSolicitud.reset('');
+  }
+
+  confirmarSolicitudBorrado(): void {
+    const institucion = this.pidiendoSolicitudBorrado();
+    if (!institucion || this.solicitudEnProceso() !== null) return;
+
+    const motivo = (this.motivoSolicitud.value ?? '').trim();
+    if (!motivo) {
+      this.motivoSolicitud.markAsTouched();
+      return;
+    }
+
+    this.solicitudEnProceso.set(institucion.id);
+    this.errorSolicitudes.set(null);
+    this.avisoSolicitudes.set(null);
+
+    this.cace.pedirBorradoInstitucion(institucion.id, motivo).subscribe({
+      next: (res) => {
+        this.solicitudEnProceso.set(null);
+        this.pidiendoSolicitudBorrado.set(null);
+        this.motivoSolicitud.reset('');
+        this.avisoSolicitudes.set(res.mensaje);
+        this.cargarSolicitudes();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.solicitudEnProceso.set(null);
+        this.errorSolicitudes.set(
+          extraerMensajeError(err, 'No se pudo enviar la solicitud de borrado'),
+        );
+      },
+    });
+  }
+
+  // --- Solicitudes de borrado: la presidencia resuelve ---
+
+  /** Aprobar ejecuta el borrado: se confirma antes de enviarlo. */
+  pedirAprobarSolicitud(solicitud: SolicitudBorradoCace): void {
+    this.errorSolicitudes.set(null);
+    this.avisoSolicitudes.set(null);
+    this.resolviendoSolicitud.set({ solicitud, accion: 'aprobar' });
+  }
+
+  /** Rechazar exige motivo: la secretaría tiene que saber por qué. */
+  pedirRechazarSolicitud(solicitud: SolicitudBorradoCace): void {
+    this.motivoRechazo.reset('');
+    this.errorSolicitudes.set(null);
+    this.avisoSolicitudes.set(null);
+    this.resolviendoSolicitud.set({ solicitud, accion: 'rechazar' });
+  }
+
+  cancelarResolucionSolicitud(): void {
+    this.resolviendoSolicitud.set(null);
+    this.motivoRechazo.reset('');
+  }
+
+  confirmarResolucionSolicitud(): void {
+    const pendiente = this.resolviendoSolicitud();
+    if (!pendiente || this.solicitudEnProceso() !== null) return;
+
+    const aprobar = pendiente.accion === 'aprobar';
+    const motivo = (this.motivoRechazo.value ?? '').trim();
+    if (!aprobar && !motivo) {
+      this.motivoRechazo.markAsTouched();
+      return;
+    }
+
+    this.solicitudEnProceso.set(pendiente.solicitud.id);
+    this.errorSolicitudes.set(null);
+    this.avisoSolicitudes.set(null);
+
+    this.cace
+      .resolverSolicitudBorrado(
+        pendiente.solicitud.id,
+        aprobar,
+        aprobar ? undefined : motivo,
+      )
+      .subscribe({
+        next: (res) => {
+          this.solicitudEnProceso.set(null);
+          this.resolviendoSolicitud.set(null);
+          this.motivoRechazo.reset('');
+          this.avisoSolicitudes.set(res.mensaje);
+          // Al aprobar, la institución desaparece: se recargan las dos listas.
+          this.cargarSolicitudes();
+          if (this.puede('aprobarInstituciones')) this.cargarInstituciones();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.solicitudEnProceso.set(null);
+          this.resolviendoSolicitud.set(null);
+          // El servidor explica qué lo impide (por ejemplo, que la institución
+          // tiene historia). La solicitud sigue pendiente.
+          this.errorSolicitudes.set(
+            extraerMensajeError(err, 'No se pudo resolver la solicitud'),
+          );
+          this.cargarSolicitudes();
+        },
+      });
+  }
+
+  /** Cuántas solicitudes hay pendientes (para la insignia de la sección). */
+  readonly solicitudesPorResolver = computed(
+    () => this.solicitudes().filter((s) => s.estado === 'PENDIENTE').length,
+  );
 
   // --- Instituciones: datos ---
 
@@ -1338,6 +1752,33 @@ export class CaceComponent implements OnInit, OnDestroy {
     return valor ? fechaHoraLarga(valor) : '';
   }
 
+  /** Estado de una solicitud de borrado, en español. */
+  etiquetaEstadoSolicitud(estado: string): string {
+    switch (estado) {
+      case 'PENDIENTE':
+        return 'Pendiente de autorización';
+      case 'APROBADA':
+        return 'Autorizada y borrada';
+      case 'RECHAZADA':
+        return 'Rechazada';
+      default:
+        return estado;
+    }
+  }
+
+  claseEstadoSolicitud(estado: string): string {
+    switch (estado) {
+      case 'PENDIENTE':
+        return 'estado pendiente';
+      case 'APROBADA':
+        return 'estado aprobada';
+      case 'RECHAZADA':
+        return 'estado rechazada';
+      default:
+        return 'estado cancelada';
+    }
+  }
+
   /**
    * La campana avisa de lo que espera al presidente. Publicar aquí es lo que
    * hacen las pantallas de docente y agente con sus propios pendientes. Los
@@ -1346,12 +1787,26 @@ export class CaceComponent implements OnInit, OnDestroy {
   private publicarEnCampana(): void {
     const pendientes = this.pendientes().length;
     const borradores = this.borradores();
+    const solicitudes = this.solicitudesPorResolver();
     const avisos: PendienteUi[] = [];
     if (pendientes > 0) {
       avisos.push({
         titulo: `${pendientes} ${pendientes === 1 ? 'institución' : 'instituciones'} por aprobar`,
         detalle: 'Revísalas y decide si se aprueban, se rechazan o se vetan.',
         ancla: 'instituciones',
+        tono: 'aviso',
+      });
+    }
+    if (solicitudes > 0) {
+      avisos.push({
+        titulo:
+          this.puede('resolverSolicitudesBorrado')
+            ? `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado por resolver`
+            : `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado esperando al presidente`,
+        detalle: this.puede('resolverSolicitudesBorrado')
+          ? 'Al aprobarlas se borra la institución; al rechazarlas queda el motivo.'
+          : 'La presidencia tiene que autorizar el borrado antes de que se haga.',
+        ancla: 'solicitudes',
         tono: 'aviso',
       });
     }
@@ -1364,7 +1819,11 @@ export class CaceComponent implements OnInit, OnDestroy {
       });
     }
     this.ui.publicarPendientes(avisos);
-    this.ui.publicarContadores({ instituciones: pendientes, premios: borradores });
+    this.ui.publicarContadores({
+      instituciones: pendientes,
+      premios: borradores,
+      solicitudesBorrado: solicitudes,
+    });
   }
 
   logout(): void {

@@ -72,10 +72,16 @@ export class InstitucionesCaceController {
    * Borrado definitivo. Pide su propia capacidad (`borrarInstituciones`), que
    * **solo** tiene la presidencia: la secretaría no puede, y la anotación de
    * método sustituye a la de la clase a propósito.
+   *
+   * El usuario que borra se pasa al servicio porque queda escrito como quien
+   * autorizó las solicitudes de borrado pendientes que este borrado resuelve.
    */
   @Delete(':id')
   @Requiere('borrarInstituciones')
-  eliminar(@Param('id', ParseIntPipe) id: number) {
-    return this.institucionesCaceService.eliminar(id);
+  eliminar(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.institucionesCaceService.eliminar(usuarioId, id);
   }
 }

@@ -145,6 +145,13 @@ interface ItemNav {
   accion?: 'calendario' | 'perfil' | 'ayuda';
   /** Clave del contador que se muestra a la derecha. */
   contador?: string;
+  /**
+   * Capacidades con las que se enseña esta entrada: basta tener **una**. Sin
+   * lista cargada no se esconde nada (el servidor sigue mandando), pero en
+   * cuanto llegan las capacidades del usuario, el menú de la CACE deja de
+   * ofrecer lo que su rol no puede hacer.
+   */
+  capacidades?: string[];
 }
 
 /** Panel desplegable abierto en la barra superior. */
@@ -181,6 +188,23 @@ export class LayoutComponent {
   @Input() flagAlt = '';
   /** Ruta del panel, usada por el logo y por el elemento "Inicio". */
   @Input() homeRoute = '/docente';
+
+  /**
+   * Capacidades del usuario, tal como las devuelve `/cace/capacidades`. Es lo
+   * que permite que el menú de la CACE no ofrezca lo que el rol no puede hacer
+   * (la secretaría no aprueba instituciones ni firma certificados). Va en una
+   * señal porque el menú es un `computed` y tiene que reaccionar a que la lista
+   * llegue después.
+   */
+  private readonly capacidadesSenal = signal<string[] | null>(null);
+
+  @Input() set capacidades(valor: string[] | null) {
+    this.capacidadesSenal.set(valor);
+  }
+
+  get capacidades(): string[] | null {
+    return this.capacidadesSenal();
+  }
 
   /** Se emite cuando el usuario pulsa "Cerrar sesión". */
   @Output() logout = new EventEmitter<void>();
@@ -260,14 +284,38 @@ export class LayoutComponent {
   /** Elementos del menú lateral según el rol. */
   readonly items = computed<ItemNav[]>(() => {
     if (this.esCace) {
-      return [
+      const items: ItemNav[] = [
         { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+        // Aprobar instituciones es de la presidencia: la secretaría no lo ve, y
+        // así deja de abrir una sección que le respondía 403.
         {
           id: 'instituciones',
           etiqueta: 'Instituciones',
           icono: 'institucion',
           ancla: 'instituciones',
           contador: 'instituciones',
+          capacidades: ['aprobarInstituciones'],
+        },
+        // Las secretarías: solo la presidencia reparte los cargos de la CACE.
+        {
+          id: 'miembros',
+          etiqueta: 'Miembros',
+          icono: 'docentes',
+          ancla: 'miembros',
+          capacidades: ['gestionarMiembrosCace'],
+        },
+        // El borrado con autorización: la secretaría pide, la presidencia
+        // aprueba. Los dos ven la sección, cada uno con lo suyo.
+        {
+          id: 'solicitudes',
+          etiqueta: 'Solicitudes de borrado',
+          icono: 'solicitudes',
+          ancla: 'solicitudes',
+          contador: 'solicitudesBorrado',
+          capacidades: [
+            'solicitarBorradoInstitucion',
+            'resolverSolicitudesBorrado',
+          ],
         },
         // Las tres secciones de la identidad de la CACE (fase 3), en el orden en
         // que aparecen en la pantalla: primero la imagen, después la comunidad y
@@ -277,12 +325,14 @@ export class LayoutComponent {
           etiqueta: 'Personalización',
           icono: 'personalizar',
           ancla: 'personalizacion',
+          capacidades: ['personalizarCace'],
         },
         {
           id: 'comunidad',
           etiqueta: 'Comunidad',
           icono: 'comunidad',
           ancla: 'comunidad',
+          capacidades: ['personalizarCace'],
         },
         {
           id: 'premios',
@@ -290,6 +340,7 @@ export class LayoutComponent {
           icono: 'premio',
           ancla: 'premios',
           contador: 'premios',
+          capacidades: ['publicarPremios'],
         },
         // La plantilla del certificado (fase 4). Va después de los premios
         // porque es lo último de la pantalla y lo que menos se toca.
@@ -298,12 +349,15 @@ export class LayoutComponent {
           etiqueta: 'Certificado',
           icono: 'certificado',
           ancla: 'certificado',
+          capacidades: ['disenarCertificados', 'firmarCertificados'],
         },
         // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el
         // menú de la CACE es corto: así queda todo a la vista.
         { id: 'perfil', etiqueta: 'Mi perfil', icono: 'perfil', accion: 'perfil' },
         { id: 'ayuda', etiqueta: 'Ayuda', icono: 'ayuda', accion: 'ayuda' },
       ];
+
+      return items.filter((item) => this.puedeVer(item));
     }
 
     if (this.rol === 'AGENTE') {
@@ -457,6 +511,18 @@ export class LayoutComponent {
   /** Trazos del icono, para pintarlos con `@for` dentro del `<svg>`. */
   trazos(nombre: string): string[] {
     return ICONOS[nombre] ?? ICONOS['inicio'];
+  }
+
+  /**
+   * ¿Se enseña esta entrada del menú? Sin la lista de capacidades cargada
+   * todavía no se esconde nada; en cuanto llega, se queda lo que el rol puede
+   * hacer de verdad.
+   */
+  private puedeVer(item: ItemNav): boolean {
+    if (!item.capacidades || item.capacidades.length === 0) return true;
+    const capacidades = this.capacidadesSenal();
+    if (!capacidades) return true;
+    return item.capacidades.some((capacidad) => capacidades.includes(capacidad));
   }
 
   /** Contador de un elemento del menú (0 = no se muestra). */

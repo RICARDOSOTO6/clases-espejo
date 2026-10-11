@@ -38,6 +38,7 @@ model Institucion {
   invitaciones        Invitacion[]
   listasAlumnos       ListaAlumnos[]
   premios             Premio[]
+  solicitudesBorrado  SolicitudBorradoInstitucion[]
 
   @@map("INSTITUCION")
 }
@@ -68,6 +69,8 @@ model Usuario {
   configuracionCace     ConfiguracionCace[] @relation("ConfiguracionCace")
   plantillasCertificado PlantillaCertificado[] @relation("PlantillaCertificado")
   certificadosEmitidos  Certificado[] @relation("CertificadoEmitido")
+  solicitudesBorradoSolicitadas SolicitudBorradoInstitucion[] @relation("SolicitudBorradoSolicitante")
+  solicitudesBorradoResueltas   SolicitudBorradoInstitucion[] @relation("SolicitudBorradoResolutor")
 
   @@map("USUARIO")
 }
@@ -541,4 +544,25 @@ model Certificado {
   emitidoPor          Usuario?             @relation("CertificadoEmitido", fields: [emitidoPorUsuarioId], references: [id])
 
   @@map("CERTIFICADO")
+}
+
+/// Peticion de la secretaria para borrar definitivamente una institucion
+/// rechazada. La aprueba el presidente, y el borrado lo ejecuta la aprobacion:
+/// asi queda registrado quien lo autorizo, que es lo que pidio el usuario.
+model SolicitudBorradoInstitucion {
+  id                     Int         @id @default(autoincrement())
+  institucionId          Int?        @map("institucion_id")
+  solicitadaPorUsuarioId Int         @map("solicitada_por_usuario_id")
+  motivo                 String      @default("")
+  /// PENDIENTE, APROBADA o RECHAZADA.
+  estado                 String      @default("PENDIENTE")
+  resueltaPorUsuarioId   Int?        @map("resuelta_por_usuario_id")
+  resueltaEn             DateTime?   @map("resuelta_en")
+  creadoEn               DateTime    @default(now()) @map("creado_en")
+  actualizadoEn          DateTime    @default(now()) @updatedAt @map("actualizado_en")
+  institucion            Institucion? @relation(fields: [institucionId], references: [id])
+  solicitadaPor          Usuario     @relation("SolicitudBorradoSolicitante", fields: [solicitadaPorUsuarioId], references: [id])
+  resueltaPor            Usuario?    @relation("SolicitudBorradoResolutor", fields: [resueltaPorUsuarioId], references: [id])
+
+  @@map("SOLICITUD_BORRADO_INSTITUCION")
 }

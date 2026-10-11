@@ -1,14 +1,22 @@
 <app-layout
   [userName]="nombreUsuario"
   [rol]="rolCace()"
+  [capacidades]="capacidades()"
   homeRoute="/cace"
   (logout)="logout()"
 >
-  <main class="content cace-pantalla">
+  <!--
+    `data-capacidades` deja escrito en el propio panel lo que este usuario puede
+    hacer. Es lo mismo que decide qué secciones se pintan, y sirve para
+    comprobarlo desde fuera (y para la demostración).
+  -->
+  <main class="content cace-pantalla" [attr.data-capacidades]="capacidadesTexto()">
     <!-- Cabecera: quién eres y, en el primer acceso, el cambio de contraseña
          obligatorio. -->
     <section class="card cace-cabecera" id="cabecera">
-      <h1 class="auth-title">Presidencia de la CACE</h1>
+      <h1 class="auth-title">
+        {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría de la CACE' : 'Presidencia de la CACE' }}
+      </h1>
       <p class="auth-subtitle">Hola, {{ nombreUsuario }}.</p>
 
       @if (debeCambiarPassword()) {
@@ -78,7 +86,30 @@
     </section>
 
     @if (!debeCambiarPassword()) {
-      <section class="card" id="instituciones">
+      <!-- Los permisos se piden antes que nada: hasta que llegan no se pinta
+           ninguna sección, para no enseñar (ni pedir) lo que el rol no puede. -->
+      @if (cargandoCapacidades()) {
+        <section class="card" id="cargando-permisos" data-seccion="permisos">
+          <p class="text-sm muted">Comprobando tus permisos...</p>
+        </section>
+      }
+
+      @if (errorCapacidades()) {
+        <section class="card" id="error-permisos" data-seccion="permisos">
+          <div class="alert alert-error" role="alert">{{ errorCapacidades() }}</div>
+          <button type="button" class="btn btn-secondary" (click)="cargarCapacidades()">
+            Reintentar
+          </button>
+        </section>
+      }
+
+      <!--
+        Instituciones: solo la presidencia. La secretaría no entra aquí (antes
+        veía la sección y se comía un 403 al abrirla): su camino es la sección de
+        solicitudes de borrado.
+      -->
+      @if (puede('aprobarInstituciones')) {
+      <section class="card" id="instituciones" data-seccion="instituciones">
         <div class="card-head">
           <div class="card-head-title">
             <h2>Instituciones</h2>
@@ -251,11 +282,14 @@
                     </button>
                   }
 
-                  <!-- Borrado definitivo: solo en las rechazadas y sin historia. -->
-                  @if (institucion.estadoCace === 'RECHAZADA') {
+                  <!-- Borrado definitivo: solo en las rechazadas y sin historia.
+                       Es de la presidencia; la secretaría lo pide desde su
+                       sección de solicitudes. -->
+                  @if (institucion.estadoCace === 'RECHAZADA' && puede('borrarInstituciones')) {
                     <button
                       type="button"
                       class="btn btn-outline"
+                      data-accion="borrar-institucion"
                       [disabled]="enProceso() !== null"
                       (click)="pedirBorrado(institucion)"
                     >
@@ -310,10 +344,492 @@
           </ul>
         }
       </section>
+      }
+
+      <!--
+        Miembros de la CACE: solo la presidencia reparte los cargos. Aquí se dan
+        de alta las secretarías (cuenta con contraseña provisional y su fila de
+        miembro) y se las activa o desactiva.
+      -->
+      @if (puede('gestionarMiembrosCace')) {
+        <section class="card" id="miembros" data-seccion="miembros">
+          <div class="card-head">
+            <div class="card-head-title">
+              <h2>Miembros de la CACE</h2>
+              @if (miembros().length > 0) {
+                <span class="card-head-count">{{ miembros().length }}</span>
+              }
+            </div>
+            <div class="card-head-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="cargandoMiembros()"
+                (click)="cargarMiembros()"
+              >
+                {{ cargandoMiembros() ? 'Actualizando...' : 'Actualizar' }}
+              </button>
+            </div>
+          </div>
+
+          <p class="text-sm muted">
+            La presidencia da de alta <strong>secretarías</strong>: ayudan con la
+            personalización de la CACE, los premios y las peticiones de borrado,
+            pero no aprueban instituciones, no firman certificados y no borran por
+            su cuenta (lo piden y lo autoriza la presidencia). A cada secretaría
+            nueva se le manda su contraseña provisional y el sistema le pedirá
+            cambiarla al entrar.
+          </p>
+
+          @if (errorMiembros()) {
+            <div class="alert alert-error" role="alert">{{ errorMiembros() }}</div>
+          }
+          @if (avisoMiembros()) {
+            <div class="alert alert-success" role="status">{{ avisoMiembros() }}</div>
+          }
+          @if (passwordDeApoyo(); as apoyo) {
+            <div class="alert alert-warning" role="status">
+              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que
+              aquí está la contraseña provisional:
+              <strong>{{ apoyo.password }}</strong>. Dásela a mano: el sistema le
+              pedirá cambiarla al entrar.
+            </div>
+          }
+
+          <form
+            class="form-grid"
+            [formGroup]="formMiembro"
+            (ngSubmit)="crearMiembro()"
+            novalidate
+          >
+            <div class="form-field">
+              <label for="miembro-correo">Correo</label>
+              <input
+                id="miembro-correo"
+                type="email"
+                formControlName="correo"
+                autocomplete="off"
+                placeholder="secretaria.cace@universidad.edu"
+              />
+              @if (mensajeMiembro('correo'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="miembro-nombres">Nombres</label>
+              <input id="miembro-nombres" type="text" formControlName="nombres" />
+              @if (mensajeMiembro('nombres'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="miembro-apellido-paterno">Apellido paterno</label>
+              <input
+                id="miembro-apellido-paterno"
+                type="text"
+                formControlName="apellidoPaterno"
+              />
+              @if (mensajeMiembro('apellidoPaterno'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="miembro-apellido-materno">Apellido materno (opcional)</label>
+              <input
+                id="miembro-apellido-materno"
+                type="text"
+                formControlName="apellidoMaterno"
+              />
+            </div>
+
+            <div class="form-grid-actions">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                data-accion="crear-miembro"
+                [disabled]="creandoMiembro() || formMiembro.invalid"
+              >
+                @if (creandoMiembro()) {
+                  <span class="spinner" aria-hidden="true"></span>
+                }
+                {{ creandoMiembro() ? 'Creando...' : 'Dar de alta la secretaría' }}
+              </button>
+            </div>
+          </form>
+
+          @if (cargandoMiembros() && miembros().length === 0) {
+            <p class="text-sm muted">Cargando los miembros de la CACE...</p>
+          } @else if (miembros().length === 0) {
+            <p class="text-sm muted">
+              Todavía no hay miembros de la CACE. Da de alta una secretaría para
+              repartir el trabajo.
+            </p>
+          } @else {
+            <ul class="lista">
+              @for (miembro of miembros(); track miembro.id) {
+                <li class="lista-item">
+                  <div class="inst-bloque">
+                    <div class="inst-name">
+                      <strong>{{ miembro.nombre }}</strong>
+                      <span
+                        [class]="miembro.activo ? 'estado aprobada' : 'estado cancelada'"
+                      >
+                        {{ miembro.activo ? 'Activo' : 'Sin acceso' }}
+                      </span>
+                      <span class="text-sm muted">{{ miembro.etiquetaCargo }}</span>
+                    </div>
+
+                    <p class="text-sm muted">{{ miembro.correo }}</p>
+
+                    <p class="text-sm muted">
+                      @if (miembro.debeCambiarPassword) {
+                        Entra con contraseña provisional: el sistema le pedirá
+                        cambiarla.
+                      } @else {
+                        Miembro desde {{ fechaRevision(miembro.creadoEn) }}.
+                      }
+                      @if (!miembro.cuentaActiva) {
+                        Su cuenta de usuario está desactivada.
+                      }
+                    </p>
+
+                    @if (miembroADesactivar(); as bajando) {
+                      @if (bajando.id === miembro.id) {
+                        <div class="alert alert-error" role="status">
+                          ¿Quitar el acceso de {{ miembro.nombre }}? Deja de ser
+                          {{ miembro.etiquetaCargo.toLowerCase() }} de la CACE: sus
+                          secciones le responderán 403. Se puede volver a activar
+                          cuando haga falta.
+                        </div>
+                      }
+                    }
+                  </div>
+
+                  <div class="lista-acciones">
+                    @if (miembro.activo) {
+                      @if (miembroADesactivar()?.id === miembro.id) {
+                        <button
+                          type="button"
+                          class="btn btn-danger"
+                          [disabled]="miembroEnProceso() !== null"
+                          (click)="confirmarDesactivarMiembro()"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost"
+                          [disabled]="miembroEnProceso() !== null"
+                          (click)="cancelarDesactivarMiembro()"
+                        >
+                          Cancelar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn-outline"
+                          data-accion="desactivar-miembro"
+                          [disabled]="miembroEnProceso() !== null"
+                          (click)="pedirDesactivarMiembro(miembro)"
+                        >
+                          Desactivar
+                        </button>
+                      }
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-accion="activar-miembro"
+                        [disabled]="miembroEnProceso() !== null"
+                        (click)="activarMiembro(miembro)"
+                      >
+                        Activar
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      <!--
+        Borrado con autorización del presidente. La secretaría pide el borrado de
+        una institución rechazada (con motivo) y la presidencia aprueba o rechaza:
+        al aprobar se borra de verdad, con las mismas reglas que el borrado
+        directo. Cada rol ve lo suyo.
+      -->
+      @if (
+        puede('solicitarBorradoInstitucion') || puede('resolverSolicitudesBorrado')
+      ) {
+        <section class="card" id="solicitudes" data-seccion="solicitudes">
+          <div class="card-head">
+            <div class="card-head-title">
+              <h2>Solicitudes de borrado</h2>
+              @if (solicitudesPorResolver() > 0) {
+                <span class="card-head-count">{{ solicitudesPorResolver() }}</span>
+              }
+            </div>
+            <div class="card-head-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="cargandoSolicitudes()"
+                (click)="cargarSolicitudes()"
+              >
+                {{ cargandoSolicitudes() ? 'Actualizando...' : 'Actualizar' }}
+              </button>
+            </div>
+          </div>
+
+          <p class="text-sm muted">
+            @if (puede('resolverSolicitudesBorrado')) {
+              La secretaría pide el borrado definitivo de una institución
+              rechazada y aquí lo autorizas tú: al aprobar se borra (solo si no
+              tiene historia) y queda registrado quién lo autorizó y cuándo. El
+              borrado directo de la sección «Instituciones» sigue siendo tuyo.
+            } @else {
+              Puedes <strong>pedir</strong> el borrado definitivo de una
+              institución rechazada, con su motivo. No borra nada por sí sola: lo
+              tiene que autorizar la presidencia.
+            }
+          </p>
+
+          @if (errorSolicitudes()) {
+            <div class="alert alert-error" role="alert">{{ errorSolicitudes() }}</div>
+          }
+          @if (avisoSolicitudes()) {
+            <div class="alert alert-success" role="status">{{ avisoSolicitudes() }}</div>
+          }
+
+          <!-- Pedir el borrado: cada institución rechazada con su botón. -->
+          @if (puede('solicitarBorradoInstitucion')) {
+            <h3 class="text-sm">Instituciones rechazadas</h3>
+            @if (institucionesRechazadas().length === 0) {
+              <p class="text-sm muted">
+                No hay instituciones rechazadas: el borrado definitivo solo tiene
+                sentido sobre una institución que la CACE rechazó.
+              </p>
+            } @else {
+              <ul class="lista">
+                @for (institucion of institucionesRechazadas(); track institucion.id) {
+                  <li class="lista-item">
+                    <div class="inst-bloque">
+                      <div class="inst-name">
+                        <strong>{{ institucion.nombre }}</strong>
+                        <span class="text-sm muted">{{ institucion.pais }}</span>
+                        @if (institucion.solicitudPendienteId) {
+                          <span class="estado pendiente">Con solicitud pendiente</span>
+                        }
+                      </div>
+                      @if (institucion.motivoCace) {
+                        <p class="text-sm muted">
+                          <strong>Motivo del rechazo:</strong> {{ institucion.motivoCace }}
+                        </p>
+                      }
+
+                      @if (pidiendoSolicitudBorrado(); as pidiendo) {
+                        @if (pidiendo.id === institucion.id) {
+                          <div class="form-field inst-motivo">
+                            <label [for]="'motivo-borrado-' + institucion.id">
+                              Motivo de la petición de borrado
+                            </label>
+                            <textarea
+                              [id]="'motivo-borrado-' + institucion.id"
+                              rows="3"
+                              [formControl]="motivoSolicitud"
+                              placeholder="Explica por qué hay que borrarla definitivamente (duplicado, registro de prueba…)."
+                            ></textarea>
+                            @if (motivoSolicitud.touched && motivoSolicitud.invalid) {
+                              <p class="field-error">El motivo es obligatorio.</p>
+                            }
+                          </div>
+                        }
+                      }
+                    </div>
+
+                    <div class="lista-acciones">
+                      @if (pidiendoSolicitudBorrado()?.id === institucion.id) {
+                        <button
+                          type="button"
+                          class="btn btn-danger"
+                          data-accion="pedir-borrado"
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="confirmarSolicitudBorrado()"
+                        >
+                          Enviar la petición
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost"
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="cancelarSolicitudBorrado()"
+                        >
+                          Cancelar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn-outline"
+                          data-accion="pedir-borrado"
+                          [disabled]="
+                            solicitudEnProceso() !== null ||
+                            institucion.solicitudPendienteId !== null
+                          "
+                          (click)="pedirSolicitudBorrado(institucion)"
+                        >
+                          Pedir borrado
+                        </button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          }
+
+          <!-- Las solicitudes: la presidencia las resuelve, la secretaría ve las suyas. -->
+          <h3 class="text-sm">Solicitudes</h3>
+          @if (cargandoSolicitudes() && solicitudes().length === 0) {
+            <p class="text-sm muted">Cargando las solicitudes...</p>
+          } @else if (solicitudes().length === 0) {
+            <p class="text-sm muted">
+              @if (puede('resolverSolicitudesBorrado')) {
+                No hay solicitudes de borrado.
+              } @else {
+                Todavía no has pedido el borrado de ninguna institución.
+              }
+            </p>
+          } @else {
+            <ul class="lista">
+              @for (solicitud of solicitudes(); track solicitud.id) {
+                <li class="lista-item">
+                  <div class="inst-bloque">
+                    <div class="inst-name">
+                      <!-- La solicitud sobrevive al borrado de su institución: si
+                           ya no está, no hay nombre que enseñar y se dice. -->
+                      <strong>{{ solicitud.institucionNombre ?? 'Institución borrada' }}</strong>
+                      @if (solicitud.institucionPais) {
+                        <span class="text-sm muted">{{ solicitud.institucionPais }}</span>
+                      }
+                      <span [class]="claseEstadoSolicitud(solicitud.estado)">
+                        {{ etiquetaEstadoSolicitud(solicitud.estado) }}
+                      </span>
+                    </div>
+
+                    <p class="text-sm">
+                      <strong>Motivo de la petición:</strong> {{ solicitud.motivo }}
+                    </p>
+                    <p class="text-sm muted">
+                      Pedida por {{ solicitud.solicitadaPor }}
+                      ({{ solicitud.solicitadaPorCorreo }})
+                      el {{ fechaRevision(solicitud.creadoEn) }}.
+                      @if (solicitud.resueltaPor) {
+                        Resuelta por {{ solicitud.resueltaPor }}
+                        el {{ fechaRevision(solicitud.resueltaEn) }}.
+                      }
+                    </p>
+
+                    @if (resolviendoSolicitud(); as resolviendo) {
+                      @if (resolviendo.solicitud.id === solicitud.id) {
+                        @if (resolviendo.accion === 'aprobar') {
+                          <div class="alert alert-error" role="status">
+                            Vas a aprobar el borrado definitivo de
+                            «{{ solicitud.institucionNombre ?? 'una institución que ya no existe' }}». Solo se puede si
+                            está rechazada y no tiene historia (solicitudes,
+                            clases espejo, sesiones, evidencias, listas de alumnos
+                            o revisiones): si la tiene, el sistema lo rechazará y
+                            la solicitud seguirá pendiente. Queda registrado que
+                            lo autorizaste tú.
+                          </div>
+                        } @else {
+                          <div class="form-field inst-motivo">
+                            <label [for]="'motivo-rechazo-' + solicitud.id">
+                              Motivo del rechazo
+                            </label>
+                            <textarea
+                              [id]="'motivo-rechazo-' + solicitud.id"
+                              rows="3"
+                              [formControl]="motivoRechazo"
+                              placeholder="Explica por qué no se borra: la secretaría lo verá."
+                            ></textarea>
+                            @if (motivoRechazo.touched && motivoRechazo.invalid) {
+                              <p class="field-error">El motivo es obligatorio.</p>
+                            }
+                          </div>
+                        }
+                      }
+                    }
+                  </div>
+
+                  <div class="lista-acciones">
+                    @if (
+                      puede('resolverSolicitudesBorrado') &&
+                      solicitud.estado === 'PENDIENTE'
+                    ) {
+                      @if (resolviendoSolicitud()?.solicitud?.id === solicitud.id) {
+                        <button
+                          type="button"
+                          class="btn btn-danger"
+                          [attr.data-accion]="
+                            resolviendoSolicitud()?.accion === 'aprobar'
+                              ? 'aprobar-borrado'
+                              : 'rechazar-borrado'
+                          "
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="confirmarResolucionSolicitud()"
+                        >
+                          {{
+                            resolviendoSolicitud()?.accion === 'aprobar'
+                              ? 'Confirmar y borrar'
+                              : 'Confirmar rechazo'
+                          }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost"
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="cancelarResolucionSolicitud()"
+                        >
+                          Cancelar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          data-accion="aprobar-borrado"
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="pedirAprobarSolicitud(solicitud)"
+                        >
+                          Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-outline"
+                          data-accion="rechazar-borrado"
+                          [disabled]="solicitudEnProceso() !== null"
+                          (click)="pedirRechazarSolicitud(solicitud)"
+                        >
+                          Rechazar
+                        </button>
+                      }
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
 
       <!-- Personalización: logo, textos y tema. Es lo que da identidad a la
            CACE en toda la aplicación, incluida la pantalla de acceso. -->
-      <section class="card" id="personalizacion">
+      @if (puede('personalizarCace')) {
+      <section class="card" id="personalizacion" data-seccion="personalizacion">
         <div class="card-head">
           <div class="card-head-title">
             <h2>Personalización</h2>
@@ -454,10 +970,12 @@
           </div>
         </div>
       </section>
+      }
 
       <!-- Banderas de la comunidad: lo que antes era una lista fija en el
            frontend y ahora mantiene la presidencia. -->
-      <section class="card" id="comunidad">
+      @if (puede('personalizarCace')) {
+      <section class="card" id="comunidad" data-seccion="comunidad">
         <div class="card-head">
           <div class="card-head-title">
             <h2>Comunidad</h2>
@@ -633,10 +1151,12 @@
           </ul>
         }
       </section>
+      }
 
       <!-- Premios y reconocimientos: se preparan aquí y se publican (o no) desde
            la propia lista. -->
-      <section class="card" id="premios">
+      @if (puede('publicarPremios')) {
+      <section class="card" id="premios" data-seccion="premios">
         <div class="card-head">
           <div class="card-head-title">
             <h2>Premios y reconocimientos</h2>
@@ -890,14 +1410,17 @@
           </ul>
         }
       </section>
+      }
 
       <!-- Diseño del certificado. Es universal: uno solo para toda la CACE. Y es
            versionado: guardar no sobrescribe, crea una versión nueva, porque los
            certificados ya emitidos apuntan a la suya.
            El diseño se hace FUERA de la aplicación (Canva, Word, lo que sea) y se
            sube como una imagen terminada: aquí solo se marcan los tres huecos
-           (nombre, folio y QR) que la aplicación rellena al emitir. -->
-      <section class="card" id="certificado">
+           (nombre, folio y QR) que la aplicación rellena al emitir.
+           Es de la presidencia: la secretaría no diseña ni firma. -->
+      @if (puede('disenarCertificados') || puede('firmarCertificados')) {
+      <section class="card" id="certificado" data-seccion="certificado">
         <div class="card-head">
           <div class="card-head-title">
             <h2>Diseño del certificado</h2>
@@ -995,6 +1518,7 @@
           />
         }
       </section>
+      }
     }
   </main>
 </app-layout>

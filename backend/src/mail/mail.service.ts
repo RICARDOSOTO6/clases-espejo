@@ -72,6 +72,35 @@ export class MailService {
   }
 
   /**
+   * Envía a una secretaría de la CACE sus datos de acceso. Es el mismo caso que
+   * el del presidente: la cuenta la crea el presidente desde su panel, con
+   * contraseña provisional y cambio obligatorio en el primer acceso, así que no
+   * hay token de activación que mandar.
+   */
+  async sendCredencialesSecretaria(
+    to: string,
+    password: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/login`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Acceso a Clases Espejo - Secretaría de la CACE',
+      text: `Se creó tu cuenta de secretaría de la CACE. Correo: ${to} · Contraseña provisional: ${password} · Entra en: ${link} · Por seguridad, el sistema te pedirá cambiar la contraseña en el primer acceso.`,
+      html: `
+        <p>Se creó tu cuenta de <strong>secretaría de la CACE</strong> en la plataforma <strong>Clases Espejo</strong>.</p>
+        <p><strong>Correo:</strong> ${to}<br />
+        <strong>Contraseña provisional:</strong> ${password}</p>
+        <p>Entra en <a href="${link}">${link}</a>.</p>
+        <p>Desde tu panel podrás personalizar la CACE (logo, textos, tema y banderas), publicar premios y <strong>pedir</strong> el borrado definitivo de una institución rechazada; el borrado lo autoriza la presidencia.</p>
+        <p>Por seguridad, el sistema te pedirá cambiar la contraseña en el primer acceso.</p>
+      `,
+    });
+  }
+
+  /**
    * Avisa al agente de que la CACE aprobó su institución: ya puede proponer y
    * recibir clases espejo.
    */

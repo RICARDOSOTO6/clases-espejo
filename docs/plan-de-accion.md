@@ -31,6 +31,10 @@
 | Premios y reconocimientos | ✅ | ✅ | ❌ | ❌ |
 | Diseñar la plantilla del certificado | ✅ | ❌ | ❌ | ❌ |
 | Firmar y emitir certificados | ✅ | ❌ | ❌ | ❌ |
+| Dar de alta secretarías y activarlas o desactivarlas | ✅ | ❌ | ❌ | ❌ |
+| Borrar definitivamente una institución rechazada | ✅ (directo) | ❌ | ❌ | ❌ |
+| Pedir ese borrado, con motivo | ❌ | ✅ (con autorización) | ❌ | ❌ |
+| Autorizar (aprobar o rechazar) las solicitudes de borrado | ✅ | ❌ | ❌ | ❌ |
 
 ### Instituciones: registro, aprobación y veto
 
@@ -95,7 +99,7 @@ Ordenado por dependencia y por valor para la demo. Lo hecho se marca ✅.
 | **3. Identidad de la CACE** | Personalización (logo, textos, banderas y temas), premios y reconocimientos con su sección pública | Tablas `ConfiguracionCace`, `PaisComunidad` y `Premio`, pantallas de edición, sección pública | Fase 0 |
 | **4. Emisión de certificados** | Plantilla configurable por el presidente (fondo + posiciones), emisión individual y por lote en ZIP, con **fuente Unicode incrustada** para no mutilar nombres | Tablas `PlantillaCertificado` y `Certificado`, servicio de PDF, pantalla de emisión | Fases 0, 2 y 3 (la plantilla lleva el logo y la firma) |
 | **5. Confianza y entrega** ✅ | Folio único con **verificación pública y QR**, inmutabilidad del PDF emitido y reemisión, y **envío por correo** a los alumnos | Hecho: página `/verificar/:folio?c=<código>` sin sesión, código derivado del folio con HMAC (sin columnas nuevas), QR con el código, anulación con motivo (docente y presidencia) y envío del PDF por correo con registro de envíos | Fase 4 |
-| **6. Secretarías** | Rol `SECRETARIA_CACE` con permisos fijos | Migración, pantalla de alta, ajuste de la matriz | Fase 0 |
+| **6. Secretarías** ✅ | Rol `SECRETARIA_CACE` con permisos fijos | Hecho: `GET /cace/capacidades` (la interfaz **esconde** lo que el rol no puede hacer, que era el 403 de «Instituciones»), alta de secretarías por el presidente (`/cace/miembros`, con correo de credenciales), activar y desactivar con las reglas de la última presidencia activa, y el borrado **con autorización** de la presidencia (`/cace/solicitudes-borrado`) | Fase 0 |
 
 **Ruta corta para una demo** (si hay prisa): 0 → 2 → 3 → 4. Con eso el presidente
 existe, controla quién entra, personaliza la CACE y emite certificados firmados.
@@ -111,6 +115,21 @@ Las fases 5 y 6 mejoran el resultado pero no bloquean la historia.
    él aprueba).
 3. El **veto se avisa solo a la institución afectada** (no es público).
 4. Para las instituciones pendientes **basta la campana** del presidente.
+
+### Nota de la fase 6: el historial de una solicitud aprobada
+
+Al implementar el borrado con autorización se comprobó que
+`SOLICITUD_BORRADO_INSTITUCION.institucion_id` es `ON DELETE RESTRICT`: mientras
+la solicitud exista, **la institución no se puede borrar**, y al borrarla hay que
+borrar también sus solicitudes. Consecuencia: de una solicitud **rechazada**
+queda todo el rastro (`estado`, `motivo`, `resueltaPorUsuarioId`, `resueltaEn`),
+pero la **aprobada** se va con la institución a la que se refería. La resolución
+sigue quedando en la respuesta de la API y en el log del servidor.
+
+Si se quiere conservar el historial de las aprobadas, el arreglo es de una línea
+en el esquema —`institucionId Int?` con `onDelete: SetNull`— o llevar ese
+historial a su propia tabla; mientras la relación siga en `RESTRICT`, no hay
+forma de que las dos cosas convivan.
 
 ## 4. Corrección importante del modelo de datos
 

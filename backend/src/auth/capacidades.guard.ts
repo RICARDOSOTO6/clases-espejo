@@ -6,7 +6,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Capacidad, puede } from '../common/capacidades';
+import { Capacidad, Rol, puede, rolDeVinculos } from '../common/capacidades';
 import { PrismaService } from '../prisma/prisma.service';
 
 const CAPACIDADES_CLAVE = 'capacidades';
@@ -21,6 +21,33 @@ const CAPACIDADES_CLAVE = 'capacidades';
  */
 export const Requiere = (...capacidades: Capacidad[]) =>
   SetMetadata(CAPACIDADES_CLAVE, capacidades);
+
+/**
+ * Rol de un usuario a partir de sus filas relacionales, y si su cuenta está
+ * activa.
+ *
+ * Vive fuera del guardia porque hay servicios que también necesitan saber el
+ * rol: el listado de solicitudes de borrado muestra una cosa al presidente y
+ * otra a la secretaría, y esa decisión se toma con el mismo criterio que aquí
+ * (el rol **no** viaja en el token: se deduce de `MIEMBRO_CACE`, `AGENTE` y
+ * `DOCENTE`).
+ */
+export async function rolDeUsuario(
+  prisma: PrismaService,
+  usuarioId: number,
+): Promise<{ rol: Rol | null; activo: boolean } | null> {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: usuarioId },
+    select: {
+      activo: true,
+      agente: { select: { id: true } },
+      docente: { select: { id: true } },
+      miembroCace: { select: { cargo: true, activo: true } },
+    },
+  });
+  if (!usuario) return null;
+  return { rol: rolDeVinculos(usuario), activo: usuario.activo };
+}
 
 /**
  * Comprueba que el usuario autenticado tenga las capacidades que pide la ruta.
@@ -52,35 +79,13 @@ export class CapacidadesGuard implements CanActivate {
       throw new ForbiddenException('No se pudo identificar al usuario.');
     }
 
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      select: {
-        activo: true,
-        agente: { select: { id: true } },
-        docente: { select: { id: true } },
-        miembroCace: { select: { cargo: true, activo: true } },
-      },
-    });
-    if (!usuario?.activo) {
+    const cuenta = await rolDeUsuario(this.prisma, usuarioId);
+    if (!cuenta?.activo) {
       throw new ForbiddenException('La cuenta está desactivada.');
     }
 
-    // El rol **no** es una columna de USUARIO: se deduce de la fila que tenga.
-    // Presidencia y suplencia comparten capacidades; la secretaría tiene las
-    // suyas.
-    const miembro = usuario.miembroCace?.activo ? usuario.miembroCace : null;
-    const rol = miembro
-      ? miembro.cargo === 'SECRETARIA'
-        ? 'SECRETARIA_CACE'
-        : 'PRESIDENTE_CACE'
-      : usuario.agente
-        ? 'AGENTE'
-        : usuario.docente
-          ? 'DOCENTE'
-          : null;
-
     const faltantes = requeridas.filter(
-      (capacidad) => !puede(rol, capacidad),
+      (capacidad) => !puede(cuenta.rol, capacidad),
     );
     if (faltantes.length > 0) {
       throw new ForbiddenException(

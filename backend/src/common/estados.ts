@@ -91,3 +91,33 @@ export const ESTADO_CACE_PENDIENTE = 'PENDIENTE';
 export const ESTADO_CACE_APROBADA = 'APROBADA';
 export const ESTADO_CACE_RECHAZADA = 'RECHAZADA';
 export const ESTADO_CACE_VETADA = 'VETADA';
+
+// --- Solicitudes de borrado de una institución (fase 6) ---
+/**
+ * La secretaría pide el borrado definitivo de una institución rechazada y el
+ * presidente lo autoriza. La solicitud nace PENDIENTE y solo se resuelve una
+ * vez: aprobada (y entonces se borra) o rechazada (con su motivo).
+ */
+export const ESTADOS_SOLICITUD_BORRADO: string[] = [
+  'PENDIENTE',
+  'APROBADA',
+  'RECHAZADA',
+];
+export const ESTADO_BORRADO_PENDIENTE = 'PENDIENTE';
+export const ESTADO_BORRADO_APROBADA = 'APROBADA';
+export const ESTADO_BORRADO_RECHAZADA = 'RECHAZADA';
+
+// --- Cargos de los miembros de la CACE ---
+/**
+ * Cargos de `MIEMBRO_CACE`. La secretaría es la única que no manda en la CACE:
+ * presidencia y suplencia comparten capacidades (`common/capacidades.ts`), por
+ * eso el rol se resuelve con una sola comparación.
+ */
+export const CARGOS_MIEMBRO_CACE: string[] = [
+  'PRESIDENTE',
+  'SUPLENTE',
+  'SECRETARIA',
+];
+export const CARGO_PRESIDENTE = 'PRESIDENTE';
+export const CARGO_SUPLENTE = 'SUPLENTE';
+export const CARGO_SECRETARIA = 'SECRETARIA';

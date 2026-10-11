@@ -11,6 +11,13 @@ import {
   PremioDto,
   PremiosCace,
 } from '../models/cace-identidad.models';
+import {
+  AltaMiembroCace,
+  CapacidadesCace,
+  MiembroCace,
+  RespuestaSolicitudBorrado,
+  SolicitudesBorradoCace,
+} from '../models/cace-miembros.models';
 
 const API_URL = window.location.port === '4200' ? `http://${window.location.hostname}:3000` : '';
 
@@ -196,12 +203,97 @@ export class CaceService {
   /**
    * Borrado definitivo de una institución rechazada. Falla con un mensaje claro
    * si todavía tiene historia (solicitudes, clases espejo, listas de alumnos…).
+   *
+   * La tiene la presidencia. La secretaría pide el borrado con
+   * `pedirBorradoInstitucion`, y quien lo autoriza y lo ejecuta es el
+   * presidente.
    */
   eliminarInstitucion(
     id: number,
   ): Observable<{ mensaje: string; id: number; nombre: string }> {
     return this.http.delete<{ mensaje: string; id: number; nombre: string }>(
       `${API_URL}/cace/instituciones/${id}`,
+    );
+  }
+
+  // --- Capacidades del usuario que está dentro (fase 6) ---
+
+  /**
+   * Qué puede hacer el usuario de la sesión. Es lo que permite esconder en la
+   * interfaz lo que el servidor va a rechazar con un 403.
+   */
+  obtenerCapacidades(): Observable<CapacidadesCace> {
+    return this.http.get<CapacidadesCace>(`${API_URL}/cace/capacidades`);
+  }
+
+  // --- Miembros de la CACE: las secretarías (solo la presidencia) ---
+
+  listarMiembros(): Observable<MiembroCace[]> {
+    return this.http.get<MiembroCace[]>(`${API_URL}/cace/miembros`);
+  }
+
+  /**
+   * Da de alta una secretaría. Si el correo ya es de un usuario de la
+   * plataforma, el servidor le **añade** el cargo en vez de duplicarlo (y lo
+   * dice en `cuentaExistente`).
+   */
+  crearMiembro(dto: {
+    correo: string;
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
+  }): Observable<AltaMiembroCace> {
+    return this.http.post<AltaMiembroCace>(`${API_URL}/cace/miembros`, dto);
+  }
+
+  /** Activa o desactiva a un miembro: `id` es el de su fila de miembro. */
+  cambiarActivoMiembro(id: number, activo: boolean): Observable<{
+    mensaje: string;
+    miembro: MiembroCace;
+  }> {
+    return this.http.patch<{ mensaje: string; miembro: MiembroCace }>(
+      `${API_URL}/cace/miembros/${id}`,
+      { activo },
+    );
+  }
+
+  // --- Borrado de instituciones con autorización (fase 6) ---
+
+  /**
+   * Listado de solicitudes de borrado. La presidencia recibe las pendientes y el
+   * historial; la secretaría, las suyas y las instituciones rechazadas sobre las
+   * que puede pedir el borrado (no entra al panel de instituciones, que no le
+   * corresponde).
+   */
+  listarSolicitudesBorrado(): Observable<SolicitudesBorradoCace> {
+    return this.http.get<SolicitudesBorradoCace>(
+      `${API_URL}/cace/solicitudes-borrado`,
+    );
+  }
+
+  /** La secretaría pide el borrado de una institución rechazada, con motivo. */
+  pedirBorradoInstitucion(
+    id: number,
+    motivo: string,
+  ): Observable<RespuestaSolicitudBorrado> {
+    return this.http.post<RespuestaSolicitudBorrado>(
+      `${API_URL}/cace/instituciones/${id}/solicitud-borrado`,
+      { motivo },
+    );
+  }
+
+  /**
+   * La presidencia aprueba (y entonces se borra la institución) o rechaza la
+   * solicitud. Al rechazar el motivo es obligatorio.
+   */
+  resolverSolicitudBorrado(
+    id: number,
+    aprobar: boolean,
+    motivo?: string,
+  ): Observable<RespuestaSolicitudBorrado> {
+    return this.http.patch<RespuestaSolicitudBorrado>(
+      `${API_URL}/cace/solicitudes-borrado/${id}`,
+      { aprobar, motivo },
     );
   }
 }

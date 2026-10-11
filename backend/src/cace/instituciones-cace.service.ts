@@ -8,6 +8,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { resolverUrlPublica } from '../common/url-publica';
 import {
+  ESTADO_BORRADO_APROBADA,
+  ESTADO_BORRADO_PENDIENTE,
   ESTADO_CACE_APROBADA,
   ESTADO_CACE_RECHAZADA,
   ESTADO_CACE_VETADA,
@@ -187,9 +189,13 @@ export class InstitucionesCaceService {
    *   rechazada.
    *
    * Sin historia, se borran también sus usuarios (agentes y docentes propios) y
-   * sus filas dependientes.
+   * sus filas dependientes. Las **solicitudes de borrado no se borran**: la
+   * relación está en `ON DELETE SET NULL` y sobreviven justo para conservar quién
+   * autorizó el borrado y cuándo. Las que seguían pendientes se dan por
+   * aprobadas: lo que pedían (que la institución desaparezca) acaba de ocurrir
+   * con la firma de quien borra.
    */
-  async eliminar(id: number) {
+  async eliminar(usuarioId: number, id: number) {
     const institucion = await this.prisma.institucion.findUnique({
       where: { id },
       select: { id: true, nombre: true, estadoCace: true },
@@ -212,7 +218,7 @@ export class InstitucionesCaceService {
       );
     }
 
-    await this.borrarSinHistoria(id);
+    await this.borrarSinHistoria(usuarioId, id);
 
     return {
       mensaje: `Institución «${institucion.nombre}» eliminada definitivamente`,
@@ -298,8 +304,14 @@ export class InstitucionesCaceService {
    * Las referencias que otros guardan a estos usuarios (`revisadaPor`,
    * `confirmadoPor`) están en `ON DELETE SET NULL`, así que la base las deja en
    * blanco sola.
+   *
+   * `usuarioId` es quien borra (la presidencia): queda escrito en las
+   * solicitudes de borrado pendientes que esta eliminación resuelve.
    */
-  private async borrarSinHistoria(id: number): Promise<void> {
+  private async borrarSinHistoria(
+    usuarioId: number,
+    id: number,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       // Asignaciones de sus materias y de sus propios docentes.
       await tx.asignacionDocente.deleteMany({
@@ -313,6 +325,20 @@ export class InstitucionesCaceService {
       await tx.materia.deleteMany({ where: { institucionId: id } });
       await tx.invitacion.deleteMany({ where: { institucionId: id } });
       await tx.listaAlumnos.deleteMany({ where: { institucionId: id } });
+
+      // Las solicitudes de borrado **no** se borran: sobreviven a la institución
+      // (`ON DELETE SET NULL`) con quién las pidió, el motivo y —en las ya
+      // resueltas— quién autorizó y cuándo. Las que seguían pendientes se dan por
+      // aprobadas aquí: pedían justo esto, y la firma es la de quien borra. Si no
+      // se cerraran, quedarían pendientes para siempre apuntando a nada.
+      await tx.solicitudBorradoInstitucion.updateMany({
+        where: { institucionId: id, estado: ESTADO_BORRADO_PENDIENTE },
+        data: {
+          estado: ESTADO_BORRADO_APROBADA,
+          resueltaPorUsuarioId: usuarioId,
+          resueltaEn: new Date(),
+        },
+      });
 
       // Docentes propios: solo se borran los que no están en otra institución.
       const vinculos = await tx.docenteInstitucion.findMany({
