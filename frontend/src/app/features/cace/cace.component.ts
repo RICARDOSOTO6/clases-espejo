@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CaceService, DecisionCace, InstitucionCace } from '../../core/services/cace.service';
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
+import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
@@ -16,14 +17,17 @@ type DecisionConMotivo = 'rechazar' | 'vetar';
 /**
  * Primera pantalla del presidente de la CACE.
  *
- * Va **sin** el esqueleto `<app-layout>`: ese esqueleto es el de agentes y
- * docentes (menús, contadores y campana de sus pendientes) y la CACE todavía no
- * tiene nada de eso. Aquí está el cambio de contraseña obligatorio del primer
- * acceso y la gestión de instituciones (aprobar, rechazar, vetar y reactivar).
+ * Usa el esqueleto `<app-layout>` con el rol de la CACE (`PRESIDENTE_CACE` o
+ * `SECRETARIA_CACE`), así que tiene barra superior, campana de pendientes y
+ * menú lateral propios. La campana se llena con lo que publica esta pantalla
+ * (`publicarEnCampana`), igual que hacen las pantallas de docente y agente.
+ *
+ * Aquí está el cambio de contraseña obligatorio del primer acceso y la gestión
+ * de instituciones (aprobar, rechazar, vetar y reactivar).
  */
 @Component({
   selector: 'app-cace',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, LayoutComponent],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',
 })
@@ -39,6 +43,16 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly usuario = this.auth.currentUser;
   readonly debeCambiarPassword = computed(
     () => this.auth.currentUser()?.debeCambiarPassword === true,
+  );
+
+  /**
+   * Rol con el que el esqueleto dibuja el menú. La presidencia y la secretaría
+   * comparten pantalla; el menú es el mismo para las dos.
+   */
+  readonly rolCace = computed<'PRESIDENTE_CACE' | 'SECRETARIA_CACE'>(() =>
+    this.auth.currentUser()?.rol === 'SECRETARIA_CACE'
+      ? 'SECRETARIA_CACE'
+      : 'PRESIDENTE_CACE',
   );
 
   readonly loading = signal(false);
@@ -311,7 +325,8 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /**
    * La campana avisa de lo que espera al presidente. Publicar aquí es lo que
-   * hacen las pantallas de docente y agente con sus propios pendientes.
+   * hacen las pantallas de docente y agente con sus propios pendientes. El
+   * contador alimenta la insignia del menú lateral («Instituciones»).
    */
   private publicarEnCampana(): void {
     const pendientes = this.pendientes().length;
@@ -325,6 +340,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       });
     }
     this.ui.publicarPendientes(avisos);
+    this.ui.publicarContadores({ instituciones: pendientes });
   }
 
   logout(): void {

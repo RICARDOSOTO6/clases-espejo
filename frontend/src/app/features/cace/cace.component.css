@@ -1,24 +1,20 @@
-/* Pantalla de la presidencia de la CACE: sin esqueleto, con la tarjeta centrada
-   del cambio de contraseña del primer acceso y, debajo, la gestión de
-   instituciones. */
+/* Pantalla de la presidencia de la CACE: vive dentro del esqueleto común
+   (`app-layout`), así que aquí solo se coloca el contenido —la cabecera con el
+   cambio de contraseña del primer acceso y, debajo, la gestión de
+   instituciones— con el aire que ya da `.content`. */
 .cace-pantalla {
   display: flex;
-  min-height: 100dvh;
-  padding: var(--space-6) var(--space-5);
-  background: linear-gradient(180deg, var(--primary-50) 0%, var(--bg) 55%);
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
-.cace-pantalla .auth-card {
-  margin: auto;
-}
-
-/* La lista de instituciones necesita más ancho que un formulario de acceso. */
-.cace-pantalla .auth-card.wide {
-  max-width: 900px;
+/* La cabecera es corta: no necesita el ancho completo de la lista. */
+.cace-cabecera {
+  max-width: 720px;
 }
 
 .cace-pantalla .alert-info {
-  margin-top: var(--space-6);
+  margin: 0;
 }
 
 /* Ficha de una institución: el texto ocupa el ancho disponible y los botones se

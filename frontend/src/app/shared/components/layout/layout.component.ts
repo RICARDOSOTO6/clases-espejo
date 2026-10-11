@@ -18,6 +18,7 @@ import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
 import { prepararFotoPerfil } from '../../../core/utils/imagen.util';
 import {
   GUIA_AGENTE,
+  GUIA_CACE,
   GUIA_DOCENTE,
   GuiaSeccion,
   PasoGuia,
@@ -96,6 +97,16 @@ const ICONOS: Record<string, string[]> = {
   cerrar: ['M18 6 6 18', 'm6 6 12 12'],
 };
 
+/**
+ * Roles que usan este esqueleto. La presidencia y la secretaría de la CACE
+ * comparten la misma pantalla, así que comparten también su menú.
+ */
+export type RolLayout =
+  | 'DOCENTE'
+  | 'AGENTE'
+  | 'PRESIDENTE_CACE'
+  | 'SECRETARIA_CACE';
+
 /** Un elemento del menú lateral. */
 interface ItemNav {
   id: string;
@@ -105,8 +116,8 @@ interface ItemNav {
   ruta?: string;
   /** Ancla de la sección de la pantalla a la que baja. */
   ancla?: string;
-  /** Acción especial que no es navegar ni bajar: hoy solo el calendario. */
-  accion?: 'calendario';
+  /** Acción especial que no es navegar ni bajar: calendario, perfil o ayuda. */
+  accion?: 'calendario' | 'perfil' | 'ayuda';
   /** Clave del contador que se muestra a la derecha. */
   contador?: string;
 }
@@ -130,8 +141,8 @@ export class LayoutComponent {
 
   /** Nombre completo del usuario mostrado en la barra superior. */
   @Input() userName = '';
-  /** Rol del usuario: condiciona el menú lateral. */
-  @Input() rol: 'DOCENTE' | 'AGENTE' = 'DOCENTE';
+  /** Rol del usuario: condiciona el menú lateral y los recorridos de la ayuda. */
+  @Input() rol: RolLayout = 'DOCENTE';
   /** URL opcional de la bandera del país del usuario. */
   @Input() flagUrl: string | null = null;
   /** Texto alternativo de la bandera. */
@@ -169,7 +180,11 @@ export class LayoutComponent {
 
   /** Recorridos que existen en esta pantalla. */
   readonly guiasDisponibles = computed<GuiaSeccion[]>(() => {
-    if (this.esDetalleDeProyecto) return [guiaProyecto(this.rol)];
+    if (this.esDetalleDeProyecto) {
+      // La clase espejo solo la abren docentes y agentes.
+      return [guiaProyecto(this.rol === 'AGENTE' ? 'AGENTE' : 'DOCENTE')];
+    }
+    if (this.esCace) return GUIA_CACE;
     return this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE;
   });
 
@@ -202,80 +217,107 @@ export class LayoutComponent {
   readonly cargandoPerfil = signal(false);
   readonly errorPerfil = signal<string | null>(null);
 
+  /**
+   * La presidencia y la secretaría de la CACE usan la misma pantalla, así que
+   * comparten menú, textos de ayuda y recorridos de la guía.
+   */
+  get esCace(): boolean {
+    return this.rol === 'PRESIDENTE_CACE' || this.rol === 'SECRETARIA_CACE';
+  }
+
   /** Elementos del menú lateral según el rol. */
-  readonly items = computed<ItemNav[]>(() =>
-    this.rol === 'AGENTE'
-      ? [
-          { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
-          {
-            id: 'calendario',
-            etiqueta: 'Calendario',
-            icono: 'calendario',
-            accion: 'calendario',
-            contador: 'urgencias',
-          },
-          {
-            id: 'institucion',
-            etiqueta: 'Mi institución',
-            icono: 'institucion',
-            ancla: 'institucion',
-          },
-          {
-            id: 'docentes',
-            etiqueta: 'Docentes',
-            icono: 'docentes',
-            ancla: 'docentes',
-            contador: 'docentes',
-          },
-          {
-            id: 'materias',
-            etiqueta: 'Materias',
-            icono: 'materias',
-            ancla: 'materias',
-            contador: 'materias',
-          },
-          {
-            id: 'solicitudes',
-            etiqueta: 'Solicitudes',
-            icono: 'solicitudes',
-            ancla: 'solicitudes',
-            contador: 'solicitudes',
-          },
-          {
-            id: 'proyectos',
-            etiqueta: 'Clases espejo',
-            icono: 'clases',
-            ancla: 'proyectos',
-            contador: 'proyectos',
-          },
-          { id: 'comunidad', etiqueta: 'Comunidad', icono: 'comunidad', ancla: 'comunidad' },
-        ]
-      : [
-          { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
-          {
-            id: 'calendario',
-            etiqueta: 'Calendario',
-            icono: 'calendario',
-            accion: 'calendario',
-            contador: 'urgencias',
-          },
-          {
-            id: 'solicitudes',
-            etiqueta: 'Mis solicitudes',
-            icono: 'solicitudes',
-            ancla: 'solicitudes',
-            contador: 'solicitudes',
-          },
-          {
-            id: 'proyectos',
-            etiqueta: 'Mis clases espejo',
-            icono: 'clases',
-            ancla: 'proyectos',
-            contador: 'proyectos',
-          },
-          { id: 'comunidad', etiqueta: 'Comunidad', icono: 'comunidad', ancla: 'comunidad' },
-        ],
-  );
+  readonly items = computed<ItemNav[]>(() => {
+    if (this.esCace) {
+      return [
+        { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+        {
+          id: 'instituciones',
+          etiqueta: 'Instituciones',
+          icono: 'institucion',
+          ancla: 'instituciones',
+          contador: 'instituciones',
+        },
+        // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el
+        // menú de la CACE es corto: así queda todo a la vista.
+        { id: 'perfil', etiqueta: 'Mi perfil', icono: 'perfil', accion: 'perfil' },
+        { id: 'ayuda', etiqueta: 'Ayuda', icono: 'ayuda', accion: 'ayuda' },
+      ];
+    }
+
+    if (this.rol === 'AGENTE') {
+      return [
+        { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+        {
+          id: 'calendario',
+          etiqueta: 'Calendario',
+          icono: 'calendario',
+          accion: 'calendario',
+          contador: 'urgencias',
+        },
+        {
+          id: 'institucion',
+          etiqueta: 'Mi institución',
+          icono: 'institucion',
+          ancla: 'institucion',
+        },
+        {
+          id: 'docentes',
+          etiqueta: 'Docentes',
+          icono: 'docentes',
+          ancla: 'docentes',
+          contador: 'docentes',
+        },
+        {
+          id: 'materias',
+          etiqueta: 'Materias',
+          icono: 'materias',
+          ancla: 'materias',
+          contador: 'materias',
+        },
+        {
+          id: 'solicitudes',
+          etiqueta: 'Solicitudes',
+          icono: 'solicitudes',
+          ancla: 'solicitudes',
+          contador: 'solicitudes',
+        },
+        {
+          id: 'proyectos',
+          etiqueta: 'Clases espejo',
+          icono: 'clases',
+          ancla: 'proyectos',
+          contador: 'proyectos',
+        },
+        { id: 'comunidad', etiqueta: 'Comunidad', icono: 'comunidad', ancla: 'comunidad' },
+      ];
+    }
+
+    return [
+      { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+      {
+        id: 'calendario',
+        etiqueta: 'Calendario',
+        icono: 'calendario',
+        accion: 'calendario',
+        contador: 'urgencias',
+      },
+      {
+        id: 'solicitudes',
+        etiqueta: 'Mis solicitudes',
+        icono: 'solicitudes',
+        ancla: 'solicitudes',
+        contador: 'solicitudes',
+      },
+      {
+        id: 'proyectos',
+        etiqueta: 'Mis clases espejo',
+        icono: 'clases',
+        ancla: 'proyectos',
+        contador: 'proyectos',
+      },
+      { id: 'comunidad', etiqueta: 'Comunidad', icono: 'comunidad', ancla: 'comunidad' },
+    ];
+  });
 
   readonly iniciales = computed(() => {
     const partes = this.userName.trim().split(/\s+/).filter(Boolean);
@@ -284,9 +326,18 @@ export class LayoutComponent {
     return (nombre + apellido).toUpperCase();
   });
 
-  readonly rolEtiqueta = computed(() =>
-    this.rol === 'AGENTE' ? 'Agente de internacionalización' : 'Docente',
-  );
+  readonly rolEtiqueta = computed(() => {
+    switch (this.rol) {
+      case 'AGENTE':
+        return 'Agente de internacionalización';
+      case 'PRESIDENTE_CACE':
+        return 'Presidencia de la CACE';
+      case 'SECRETARIA_CACE':
+        return 'Secretaría de la CACE';
+      default:
+        return 'Docente';
+    }
+  });
 
   /** Cuántos pendientes hay: se muestra como insignia en la campana. */
   readonly totalPendientes = computed(() => this.ui.pendientes().length);
@@ -302,6 +353,11 @@ export class LayoutComponent {
     );
   });
 
+  /**
+   * Filas del perfil. Cada rol trae lo suyo: un miembro de la CACE no es agente
+   * ni docente, así que solo tiene su cargo en la CACE (y el correo, el
+   * documento y el estado, que pinta la propia ventana).
+   */
   readonly detallePerfil = computed<{ etiqueta: string; valor: string }[]>(() => {
     const p = this.perfil();
     if (!p) return [];
@@ -314,6 +370,13 @@ export class LayoutComponent {
         valor: [p.agente.institucion.ciudad, p.agente.institucion.pais]
           .filter(Boolean)
           .join(', '),
+      });
+    }
+    if (p.miembroCace) {
+      filas.push({ etiqueta: 'Cargo en la CACE', valor: p.miembroCace.cargo });
+      filas.push({
+        etiqueta: 'Membresía',
+        valor: p.miembroCace.activo ? 'Activa' : 'Desactivada',
       });
     }
     if (p.docente) {
@@ -357,6 +420,18 @@ export class LayoutComponent {
   irA(item: ItemNav): void {
     this.cerrarSidebar();
     this.panelAbierto.set(null);
+
+    // Perfil y ayuda abren una ventana: no son apartados, así que no cambian la
+    // sección activa (la guía debe seguir ofreciendo el recorrido de donde está).
+    if (item.accion === 'perfil') {
+      this.abrirPerfil();
+      return;
+    }
+    if (item.accion === 'ayuda') {
+      this.abrirAyuda();
+      return;
+    }
+
     this.seccionActiva.set(item.id);
     this.cambiarRecorrido(item.id);
 

@@ -606,6 +606,87 @@ export const GUIA_AGENTE: GuiaSeccion[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// PRESIDENCIA DE LA CACE
+// ---------------------------------------------------------------------------
+
+/**
+ * Recorridos de la pantalla de la presidencia de la CACE.
+ *
+ * Son dos, como el menú lateral: el panel (Inicio) y la lista de instituciones,
+ * que es donde está todo el trabajo. No se reutilizan los recorridos de docente
+ * ni de agente porque hablan de solicitudes, materias y clases espejo, que la
+ * CACE no toca.
+ */
+export const GUIA_CACE: GuiaSeccion[] = [
+  {
+    id: 'inicio',
+    titulo: 'Inicio',
+    resumen: 'Tu panel: qué instituciones esperan tu decisión y por dónde empezar.',
+    pasos: [
+      {
+        selector: '#cabecera',
+        titulo: 'Este es tu panel',
+        texto:
+          'Aquí tienes tu nombre y, si entraste con la contraseña provisional, el formulario para cambiarla: hasta que lo hagas no se abre el resto del panel.',
+      },
+      {
+        selector: CAMPANA,
+        titulo: 'Tu aviso diario',
+        texto:
+          'La campana reúne lo que espera tu decisión en esta pantalla y te baja a la sección al pulsarlo.',
+      },
+      {
+        selector: '#instituciones',
+        titulo: 'Instituciones',
+        texto:
+          'La lista completa: primero las pendientes, y después las aprobadas, rechazadas y vetadas.',
+      },
+      {
+        titulo: 'Cuando quieras seguir',
+        texto:
+          'En el menú lateral, «Instituciones» te baja a la lista y «Ayuda» vuelve a abrir esta ventana cuando la necesites.',
+      },
+    ],
+  },
+  {
+    id: 'instituciones',
+    titulo: 'Instituciones',
+    resumen: 'Aprobar, rechazar, vetar y reactivar las instituciones que se registran.',
+    pasos: [
+      {
+        selector: '#instituciones',
+        titulo: 'Las instituciones',
+        texto:
+          'Cada ficha trae el país, el agente de contacto y su estado ante la CACE. Las pendientes aparecen siempre primero.',
+      },
+      {
+        boton: 'Aprobar',
+        titulo: 'Aprobar',
+        texto:
+          'Deja operar a la institución con normalidad: sus agentes ya pueden invitar docentes y proponer clases espejo.',
+      },
+      {
+        boton: 'Rechazar',
+        titulo: 'Rechazar y vetar',
+        texto:
+          'Las dos decisiones duras exigen un motivo, y el agente de la institución lo recibe por correo. El veto es más grave: esa institución no puede volver a proponer clases.',
+      },
+      {
+        boton: 'Reactivar',
+        titulo: 'Rectificar',
+        texto:
+          'Si una institución rechazada o vetada lo arregla, «Reactivar» la devuelve al juego. Una rechazada sin historia también se puede borrar definitivamente.',
+      },
+      {
+        titulo: 'Cada decisión queda firmada',
+        texto:
+          'La ficha guarda quién la revisó y cuándo («Revisada por …»): así la CACE puede responder por sus decisiones.',
+      },
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // CLASE ESPEJO (la pantalla de un proyecto, para los dos roles)
 // ---------------------------------------------------------------------------
 

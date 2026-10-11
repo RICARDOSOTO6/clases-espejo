@@ -266,22 +266,26 @@
       </nav>
 
       <nav class="sidebar-nav sidebar-nav--bottom" aria-label="Cuenta">
-        <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirPerfil()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            @for (d of trazos('perfil'); track d) {
-              <path [attr.d]="d" />
-            }
-          </svg>
-          <span class="sidebar-label">Mi perfil</span>
-        </button>
-        <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirAyuda()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            @for (d of trazos('ayuda'); track d) {
-              <path [attr.d]="d" />
-            }
-          </svg>
-          <span class="sidebar-label">Ayuda</span>
-        </button>
+        <!-- La CACE ya tiene «Mi perfil» y «Ayuda» en el menú de la plataforma:
+             aquí solo queda cerrar sesión, para no repetir entradas. -->
+        @if (!esCace) {
+          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirPerfil()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @for (d of trazos('perfil'); track d) {
+                <path [attr.d]="d" />
+              }
+            </svg>
+            <span class="sidebar-label">Mi perfil</span>
+          </button>
+          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirAyuda()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              @for (d of trazos('ayuda'); track d) {
+                <path [attr.d]="d" />
+              }
+            </svg>
+            <span class="sidebar-label">Ayuda</span>
+          </button>
+        }
         <button type="button" class="sidebar-link sidebar-link--button sidebar-link--danger" (click)="cerrarSesion()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             @for (d of trazos('salir'); track d) {
@@ -437,6 +441,19 @@
           <li><strong>Revisa las solicitudes</strong> en la sección <em>Solicitudes</em>: primero las revisa la institución de origen y después la de destino.</li>
           <li>Al <strong>aprobar como destino</strong>, la clase espejo se crea automáticamente.</li>
           <li>Puedes <strong>ver cualquier clase espejo</strong> de tu institución y sumar docentes de tu institución (no puedes tocarla: la organizan los docentes).</li>
+        </ol>
+      } @else if (esCace) {
+        <p class="ayuda-intro">
+          Como presidencia de la CACE revisas las instituciones que se registran en la
+          plataforma: las apruebas, las rechazas o las vetas, y queda constancia de
+          quién lo decidió y por qué.
+        </p>
+        <ol class="ayuda-pasos">
+          <li><strong>Revisa las pendientes</strong> en <em>Instituciones</em>: aparecen siempre primero, con su país y su agente de contacto.</li>
+          <li><strong>Aprobar</strong> deja operar a la institución con normalidad: sus agentes ya pueden invitar docentes y proponer clases espejo.</li>
+          <li><strong>Rechazar y vetar</strong> exigen un motivo, y el agente de la institución lo recibe por correo. El veto es la decisión más dura.</li>
+          <li><strong>Reactivar</strong> una institución rechazada o vetada la devuelve al juego si lo arregla; una rechazada sin historia también se puede borrar definitivamente.</li>
+          <li>La <strong>campana</strong> te dice cuántas instituciones esperan tu decisión y te baja a la sección.</li>
         </ol>
       } @else {
         <p class="ayuda-intro">
