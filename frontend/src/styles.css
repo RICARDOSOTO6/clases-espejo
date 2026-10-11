@@ -67,6 +67,12 @@
   --neutral-bg: var(--neutral-200);
   --neutral-text: var(--neutral-700);
 
+  /* Mesa de trabajo del editor de la plantilla: el gris claro sobre el que se
+     apoya la hoja del certificado, que va blanca y con sombra (el papel no
+     cambia de tema). Cada tema lo reescribe: en el oscuro, un gris claro sería
+     un bloque de luz dentro de una pantalla oscura. */
+  --lienzo-fondo: #f3f4f6;
+
   --success: var(--success-700);
   --success-bg: var(--success-100);
   --success-border: #b6e4c6;
@@ -3566,6 +3572,339 @@ textarea.ng-invalid.ng-touched:focus {
 }
 
 /* ----------------------------------------------------------------------------
+   21. Editor de la plantilla del certificado (fase 4)
+   ----------------------------------------------------------------------------
+   El editor es de tres columnas y cada columna es una pila de **tarjetas
+   compactas**: aquí están las piezas que se repiten (la tarjeta, las viñetas
+   cortas, la nota al pie, los campos, el semáforo de la revisión y la tabla de
+   versiones). Lo que es solo del lienzo (la hoja, los huecos y el zoom) vive en
+   el CSS del componente.
+
+   Todos los colores salen de los tokens del tema: el semáforo usa los mismos
+   pares fondo/texto que `.alert-*` (verde, ámbar y rojo ya comprobados en los
+   cuatro temas).
+   ---------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-aux);
+}
+
+/* El nombre del hueco que se está ajustando: es el título de su tarjeta. */
+.panel-titulo--campo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+.panel-cuenta {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-100);
+  color: var(--accent-texto);
+  font-size: 0.68rem;
+}
+
+/* Panel plegable: la misma idea que los reportes de la clase. */
+.panel--plegable > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.panel--plegable > summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel--plegable > summary::after {
+  content: '▾';
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--text-aux);
+}
+
+.panel--plegable[open] > summary::after {
+  content: '▴';
+}
+
+.panel-nota {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* Instrucciones en viñetas cortas: dentro del editor, nada de párrafos. */
+.vinetas {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding-left: 1.05rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.vinetas li::marker {
+  color: var(--accent-texto);
+}
+
+/* La letra pequeña: el tamaño del lienzo, las medidas de un hueco. */
+.nota-pie {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--text-aux);
+}
+
+.texto-grave {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.panel-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.panel-fila--campos {
+  align-items: flex-end;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.campo--corto {
+  flex: 0 0 auto;
+}
+
+.campo--corto input {
+  width: 68px;
+  text-align: center;
+}
+
+.campo--color {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.campo--color input[type='color'] {
+  width: 46px;
+  height: 32px;
+  padding: 2px;
+}
+
+.campo-unidad {
+  padding-bottom: 10px;
+  font-size: 0.72rem;
+  color: var(--text-aux);
+}
+
+.btn-mini {
+  padding: 6px 9px;
+  font-size: 0.75rem;
+  width: auto;
+}
+
+.btn-ancho {
+  width: 100%;
+}
+
+/* El botón puesto: alineación elegida, hueco que se está marcando. */
+.btn.activo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* — Salud del diseño: checks verdes, avisos y cruces rojas — */
+
+.salud-resumen {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.salud-resumen--ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.salud-resumen--aviso {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.salud-resumen--grave {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.salud-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.salud-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.salud-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.salud-bien {
+  color: var(--text-aux);
+}
+
+.salud-mensaje--grave {
+  color: var(--danger);
+}
+
+.salud-mensaje--aviso {
+  color: var(--warning);
+}
+
+/* El símbolo del estado, en su círculo: ✓ verde, ⚠ ámbar, ✕ rojo. */
+.icono {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.icono--ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.icono--aviso {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.icono--grave {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* — Versiones: tabla compacta — */
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-versiones {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.tabla-versiones th {
+  padding: 4px 3px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-aux);
+}
+
+.tabla-versiones td {
+  padding: 5px 3px;
+  border-bottom: 1px solid var(--neutral-200);
+  vertical-align: top;
+  color: var(--text);
+}
+
+.tabla-versiones tr:last-child td {
+  border-bottom: none;
+}
+
+.version-fondo {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--text-aux);
+}
+
+.version-certificados {
+  text-align: center;
+  font-weight: 600;
+}
+
+.version-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.version-grave {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 0;
+  font-size: 0.66rem;
+  line-height: 1.3;
+  color: var(--danger);
+}
+
+/* ----------------------------------------------------------------------------
    Temas de la CACE (fase 3)
    ----------------------------------------------------------------------------
    El presidente elige entre cuatro temas **cerrados** (nada de color libre, que
@@ -3695,6 +4034,9 @@ textarea.ng-invalid.ng-touched:focus {
   --hover: var(--neutral-100);
   --neutral-bg: var(--neutral-200);
   --neutral-text: var(--neutral-700);
+  /* La mesa del editor en oscuro: el gris del tema claro sería un bloque de luz
+     dentro de una pantalla oscura. La hoja sigue siendo blanca (es papel). */
+  --lienzo-fondo: #0b1220;
 
   --success-700: #4ade80;
   --success-100: #10331f;

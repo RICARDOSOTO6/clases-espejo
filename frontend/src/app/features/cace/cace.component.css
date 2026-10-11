@@ -276,47 +276,50 @@
 }
 
 /* --- Plantilla del certificado (fase 4) ---
-   El editor visual (lienzo, tiradores y barra de herramientas) vive en su
-   propio componente, con sus estilos: aquí queda solo lo de la pantalla que lo
-   envuelve (el fondo y la lista de versiones). */
+   El editor visual (las tres columnas, el lienzo, los huecos, la salud y la
+   tabla de versiones) vive en su propio componente, con sus estilos: aquí queda
+   solo la explicación plegada del título, que es de la pantalla que lo envuelve. */
 
-.certificado-fondo {
-  margin-bottom: var(--space-4);
-}
-
-.certificado-fondo label {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.certificado-fondo input[type='file'] {
+.ayuda-boton {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent-texto);
   font: inherit;
   font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.certificado-versiones-titulo {
-  margin: var(--space-5) 0 var(--space-1);
-  font-size: 1rem;
+.ayuda-boton:hover,
+.ayuda-boton--abierta {
+  border-color: var(--accent);
+  background: var(--primary-50);
 }
 
-/* Una versión con un problema grave: el motivo, a la vista, junto a su botón. */
-.version-problemas {
-  margin: 4px 0 0;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  color: #b3261e;
+/* La explicación del panel, cerrada por defecto: ocupa lo que un icono. */
+.ayuda {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--primary-50);
 }
 
-.version-bloque {
-  min-width: 0;
+.ayuda[hidden] {
+  display: none;
 }
 
-.version-cabecera {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+.ayuda-titulo {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9rem;
+}
+
+.ayuda .vinetas {
+  font-size: 0.8rem;
 }

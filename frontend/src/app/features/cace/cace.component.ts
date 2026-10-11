@@ -24,7 +24,6 @@ import {
 } from '../../core/models/certificado.models';
 import {
   LIENZO_POR_DEFECTO,
-  revisarPlantilla,
 } from '../../core/utils/certificado-medidas';
 import { TEMAS_CACE, TemaCace } from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
@@ -229,6 +228,17 @@ export class CaceComponent implements OnInit, OnDestroy {
     () => this.plantillaEstado()?.catalogo ?? [],
   );
 
+  /** Las versiones guardadas, tal cual, para la tabla del panel de diseño. */
+  readonly versionesPlantilla = computed(
+    () => this.plantillaEstado()?.versiones ?? [],
+  );
+
+  /**
+   * La explicación del panel (la que antes era un párrafo de arriba), plegada.
+   * Nace cerrada: el que ya sabe cómo funciona no la necesita.
+   */
+  readonly ayudaAbierta = signal(false);
+
   /** La imagen del diseño de la versión en edición, lista para un `<img>`. */
   readonly fondoPlantilla = computed(() => urlDeArchivo(this.borrador()?.fondoUrl));
 
@@ -249,30 +259,9 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly urlPlantillaZonas = urlDeArchivo('/plantillas/certificado-zonas.png');
   readonly urlGuiaDiseno = urlDeArchivo('/plantillas/guia-diseno-certificado.docx');
 
-  /** El A4 a 300 ppp que pide la guía, para poder decirlo en pantalla. */
-  readonly lienzoGuia = LIENZO_POR_DEFECTO;
-
-  /**
-   * Los problemas de una versión guardada, para no dejar activar una plantilla
-   * que arrastra un hueco fuera del papel o un folio que no cabe. Se calcula con
-   * las mismas reglas que el panel (y con la muestra que lleva su nombre).
-   */
-  problemasDeVersion(version: PlantillaCertificado) {
-    return revisarPlantilla({
-      campos: version.campos,
-      lienzo: { anchoPx: version.anchoPx, altoPx: version.altoPx },
-      proporcionFondo: null,
-      resolucionFondo: null,
-      hayFondo: !!version.fondoUrl,
-      nombrePrueba: version.campos.nombre?.muestra ?? '',
-      fondosMuestreados: {},
-      etiquetas: this.plantillaEstado()?.catalogo ?? [],
-    });
-  }
-
-  /** Lo que impide activar una versión guardada (vacío si se puede). */
-  gravesDeVersion(version: PlantillaCertificado) {
-    return this.problemasDeVersion(version).filter((p) => p.gravedad === 'grave');
+  /** Abre o cierra la explicación del panel (el botón «?» del título). */
+  alternarAyuda(): void {
+    this.ayudaAbierta.update((abierta) => !abierta);
   }
 
 
@@ -1263,18 +1252,14 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /**
    * Sube el fondo. El servidor crea con él una versión nueva (así el fondo de
-   * una versión no cambia nunca) y la devuelve ya activa.
+   * una versión no cambia nunca) y la devuelve ya activa. El archivo lo elige el
+   * panel de diseño, que es quien tiene el campo de subida; aquí solo se manda.
    */
-  alSeleccionarFondo(evento: Event): void {
-    const entrada = evento.target as HTMLInputElement;
-    const archivo = entrada.files?.[0];
-    if (!archivo) return;
-
+  alSeleccionarFondo(archivo: File): void {
     if (archivo.size > PESO_MAXIMO_IMAGEN) {
       this.errorPlantilla.set(
         'La imagen pesa demasiado (máximo 12 MB). Reduce su tamaño y vuelve a intentarlo.',
       );
-      entrada.value = '';
       return;
     }
 
@@ -1284,13 +1269,11 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.plantillaService.subirFondo(archivo).subscribe({
       next: (respuesta) => {
         this.subiendoFondo.set(false);
-        entrada.value = '';
         this.avisoPlantilla.set(`${respuesta.mensaje} Fondo actualizado.`);
         this.cargarPlantilla();
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoFondo.set(false);
-        entrada.value = '';
         this.errorPlantilla.set(
           extraerMensajeError(err, 'No se pudo subir el fondo'),
         );

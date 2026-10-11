@@ -17,8 +17,11 @@ import {
   CampoCertificado,
   CatalogoCampoCertificado,
   ClaveCampoCertificado,
+  PlantillaCertificado,
+  ProblemaPlantilla,
 } from '../../../core/models/certificado.models';
 import { PlantillaCertificadoService } from '../../../core/services/plantilla-certificado.service';
+import { fechaHoraLarga } from '../../../core/utils/fecha.util';
 import {
   ALINEACIONES,
   ANCHO_PT,
@@ -72,6 +75,30 @@ interface Rectangulo {
   alto: number;
 }
 
+/** Cómo de sano está un dato del diseño: verde, amarillo o rojo. */
+type EstadoSalud = 'ok' | 'aviso' | 'grave';
+
+/** Una línea del panel «Salud del diseño»: un dato y lo que arrastra. */
+interface SaludDiseno {
+  clave: string;
+  etiqueta: string;
+  estado: EstadoSalud;
+  problemas: ProblemaPlantilla[];
+}
+
+/**
+ * El nombre con el que la revisión llama al conjunto del diseño (falta la
+ * imagen, la proporción no es la del A4, sale pixelada…). Tiene que coincidir
+ * con el que usa `revisarPlantilla`.
+ */
+const DISENO = 'Diseño';
+
+/** El peor estado de una lista de problemas: manda lo grave. */
+function estadoDe(problemas: ProblemaPlantilla[]): EstadoSalud {
+  if (problemas.some((p) => p.gravedad === 'grave')) return 'grave';
+  return problemas.length > 0 ? 'aviso' : 'ok';
+}
+
 /**
  * El panel de diseño del certificado: se sube la **imagen terminada** y se
  * marcan encima los **tres huecos** que rellena la aplicación.
@@ -90,7 +117,15 @@ interface Rectangulo {
  *
  * El componente no habla con el servidor para guardar: recibe el borrador y
  * avisa de los cambios, para que la pantalla que lo usa siga siendo la dueña
- * del guardado.
+ * del guardado. Lo mismo con las versiones: se pintan aquí (es donde se miran),
+ * pero las pide y las activa la pantalla, que las recibe por `input` y las pide
+ * por `output`.
+ *
+ * Se presenta en **tres columnas**: herramientas y versiones a la izquierda, la
+ * hoja en el centro y las propiedades (con la vista previa y la salud del
+ * diseño) a la derecha. Eso es solo la presentación: los huecos se siguen
+ * marcando arrastrando, el nombre se sigue ajustando solo y guardar sigue
+ * creando una versión nueva.
  */
 @Component({
   selector: 'app-diseno-certificado',
@@ -112,11 +147,34 @@ export class DisenoCertificadoComponent {
    * que llega vacío y se usa un nombre largo de ejemplo.
    */
   readonly nombresDeClase = input<string[]>([]);
+  /**
+   * Las versiones guardadas. Se enseñan (y se activan) desde esta misma
+   * columna de herramientas; quien las pide y las activa sigue siendo la
+   * pantalla, que es la dueña de los datos.
+   */
+  readonly versiones = input<PlantillaCertificado[]>([]);
+  /** Los dos archivos de apoyo del diseño, ya resueltos a URL. */
+  readonly urlZonas = input<string | null>(null);
+  readonly urlGuia = input<string | null>(null);
+  /** Mientras el servidor relee la plantilla, «Actualizar» se queda quieto. */
+  readonly actualizando = input(false);
+  /** Versión cuyo «Activar» está en curso (`null` si ninguna). */
+  readonly activando = input<number | null>(null);
+  /** Mientras se sube la imagen del diseño. */
+  readonly subiendoFondo = input(false);
 
   readonly cambio = output<Partial<BorradorPlantillaCertificado>>();
   readonly guardar = output<void>();
   /** «Restaurar los huecos de la guía»: lo aplica la pantalla. */
   readonly restaurar = output<void>();
+  /** «Actualizar»: vuelve a pedir la plantilla al servidor. */
+  readonly actualizar = output<void>();
+  /** «Ver» una versión guardada en el panel. */
+  readonly verVersion = output<PlantillaCertificado>();
+  /** «Activar» una versión guardada. */
+  readonly activarVersion = output<PlantillaCertificado>();
+  /** La imagen del diseño elegida: la sube la pantalla. */
+  readonly subirFondo = output<File>();
 
   private readonly plantilla = inject(PlantillaCertificadoService);
   private readonly destroyRef = inject(DestroyRef);
@@ -134,6 +192,16 @@ export class DisenoCertificadoComponent {
   /** Datos de la vista previa: no se guardan, solo sirven para ver y medir. */
   readonly nombrePrueba = signal(NOMBRE_LARGO_EJEMPLO);
   readonly folioPrueba = signal(FOLIO_EJEMPLO);
+
+  /**
+   * El zoom del lienzo: `1` es el ancho de la columna. Se queda entre el 50 %
+   * (para ver el diseño entero de un vistazo) y el 200 % (para colocar un hueco
+   * fino sin pelearse con el ratón).
+   */
+  readonly zoom = signal(1);
+  readonly zoomMinimo = 0.5;
+  readonly zoomMaximo = 2;
+  readonly pasoZoom = 0.25;
 
   /** La imagen del QR del folio de prueba, ya generada por el servidor. */
   readonly qrUrl = signal<string | null>(null);
@@ -290,6 +358,105 @@ export class DisenoCertificadoComponent {
   readonly graves = computed(() => this.problemas().filter((p) => p.gravedad === 'grave'));
   readonly avisos = computed(() => this.problemas().filter((p) => p.gravedad === 'aviso'));
   readonly puedeGuardar = computed(() => !this.guardando() && this.graves().length === 0);
+
+  /**
+   * La salud del diseño, dato a dato: un check verde, un aviso amarillo o una
+   * cruz roja por cada hueco, más el conjunto del diseño. Es la revisión
+   * contada como se mira un semáforo, no como se lee un párrafo.
+   */
+  readonly salud = computed<SaludDiseno[]>(() => {
+    const problemas = this.problemas();
+    const salida: SaludDiseno[] = [];
+    for (const { clave, etiqueta } of this.catalogo()) {
+      const suyos = problemas.filter((p) => p.donde === etiqueta);
+      salida.push({ clave, etiqueta, estado: estadoDe(suyos), problemas: suyos });
+    }
+    const delDiseno = problemas.filter((p) => p.donde === DISENO);
+    salida.push({
+      clave: 'diseno',
+      etiqueta: DISENO,
+      estado: estadoDe(delDiseno),
+      problemas: delDiseno,
+    });
+    return salida;
+  });
+
+  /** El estado de un hueco concreto, para el aviso que va a su lado. */
+  estadoDeCampo(clave: ClaveCampoCertificado): EstadoSalud {
+    const etiqueta = this.catalogo().find((c) => c.clave === clave)?.etiqueta;
+    if (!etiqueta) return 'ok';
+    return estadoDe(this.problemas().filter((p) => p.donde === etiqueta));
+  }
+
+  /** El estado del conjunto: manda lo grave, después los avisos. */
+  readonly estadoGeneral = computed<EstadoSalud>(() => {
+    if (this.graves().length > 0) return 'grave';
+    return this.avisos().length > 0 ? 'aviso' : 'ok';
+  });
+
+  /** El zoom en porcentaje, tal como se enseña al lado de los botones. */
+  readonly zoomEnPorcentaje = computed(() => Math.round(this.zoom() * 100));
+  readonly puedeAcercar = computed(() => this.zoom() < this.zoomMaximo);
+  readonly puedeAlejar = computed(() => this.zoom() > this.zoomMinimo);
+
+  /**
+   * El símbolo de un estado: check verde, aviso amarillo o cruz roja. Es
+   * decorativo (el texto del aviso va al lado), pero es lo que hace que la
+   * revisión se lea de un vistazo.
+   */
+  iconoDe(estado: EstadoSalud): string {
+    if (estado === 'grave') return '✕';
+    return estado === 'aviso' ? '⚠' : '✓';
+  }
+
+  // --- La versión guardada ---
+
+  /**
+   * Los problemas graves de cada versión guardada, calculados **una vez** por
+   * lista: la tabla los pregunta tres veces por fila (el aviso, el `title` del
+   * botón y si se puede activar) y medir el nombre no es gratis.
+   */
+  private readonly gravesPorVersion = computed(() => {
+    const salida = new Map<number, ProblemaPlantilla[]>();
+    for (const version of this.versiones()) {
+      salida.set(
+        version.id,
+        revisarPlantilla({
+          campos: version.campos,
+          lienzo: { anchoPx: version.anchoPx, altoPx: version.altoPx },
+          proporcionFondo: null,
+          resolucionFondo: null,
+          hayFondo: !!version.fondoUrl,
+          nombrePrueba: version.campos.nombre?.muestra ?? '',
+          fondosMuestreados: {},
+          etiquetas: this.catalogo(),
+        }).filter((p) => p.gravedad === 'grave'),
+      );
+    }
+    return salida;
+  });
+
+  /** Lo que impide activar una versión guardada (vacío si se puede). */
+  gravesDeVersion(version: PlantillaCertificado): ProblemaPlantilla[] {
+    return this.gravesPorVersion().get(version.id) ?? [];
+  }
+
+  /** Por qué no se puede activar esa versión, en una línea. */
+  motivoGraveDeVersion(version: PlantillaCertificado): string {
+    return this.gravesDeVersion(version)
+      .map((p) => `${p.donde}: ${p.mensaje}`)
+      .join(' ');
+  }
+
+  /**
+   * Quién creó la versión y cuándo, para el `title` de la fila: es lo que hace
+   * falta para auditar sin repetir esa línea en todas las versiones de la tabla.
+   */
+  auditoriaDe(version: PlantillaCertificado): string {
+    const quien = version.creadaPor ? `Creada por ${version.creadaPor}` : 'Creada';
+    const cuando = version.creadoEn ? ` el ${fechaHoraLarga(version.creadoEn)}` : '';
+    return `${quien}${cuando} · ${version.anchoPx} × ${version.altoPx} px`;
+  }
 
   // --- Posiciones en el DOM ---
 
@@ -508,6 +675,33 @@ export class DisenoCertificadoComponent {
   /** Vuelve a los tres huecos que manda la guía de diseño. */
   restaurarHuecos(): void {
     this.restaurar.emit();
+  }
+
+  // --- Zoom ---
+
+  /** Acerca o aleja el lienzo. El paso va en tanto por uno (`-0.25`, `+0.25`). */
+  cambiarZoom(paso: number): void {
+    const siguiente = Math.round((this.zoom() + paso) * 100) / 100;
+    this.zoom.set(Math.min(this.zoomMaximo, Math.max(this.zoomMinimo, siguiente)));
+  }
+
+  /** Vuelve al 100 %: el lienzo, ajustado al ancho de la columna. */
+  ajustarZoom(): void {
+    this.zoom.set(1);
+  }
+
+  // --- La imagen del diseño ---
+
+  /**
+   * El archivo elegido. La subida la hace la pantalla (es la dueña de la
+   * petición); aquí solo se avisa y se deja el campo listo para volver a elegir
+   * el mismo archivo después de un error.
+   */
+  alElegirFondo(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    entrada.value = '';
+    if (archivo) this.subirFondo.emit(archivo);
   }
 
   // --- La imagen del diseño ---

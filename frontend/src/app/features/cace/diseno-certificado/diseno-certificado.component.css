@@ -1,45 +1,63 @@
 /* --- Panel de diseño del certificado ---
-   El lienzo (la imagen del diseño con los tres huecos) a la izquierda y los
-   controles a la derecha. El lienzo es la hoja: todo lo que se ve dentro está en
-   la misma proporción y a la misma escala que el PDF. */
+   Tres columnas: herramientas y versiones (izquierda), la hoja (centro) y las
+   propiedades (derecha). El lienzo se queda con ~65 % del ancho (la hoja, con
+   ~61 %): es lo que se mira; las otras dos columnas son raíles de herramientas,
+   y por eso van en tarjetas compactas.
+
+   Las piezas reutilizables (tarjetas, viñetas, campos, semáforo de la salud y
+   tabla de versiones) viven en `styles.css`, con el resto del sistema. Aquí
+   queda solo lo que es del editor: las columnas, la hoja con su sombra, los
+   huecos y el zoom. */
 
 .diseno {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
-  gap: var(--space-4);
+  /* El lienzo se queda con el ~65 % del ancho (y la hoja, con el ~61 %): las
+     laterales son raíles de herramientas, no columnas de contenido. */
+  grid-template-columns: minmax(140px, 14%) minmax(0, 1fr) minmax(190px, 19%);
+  gap: var(--space-3);
   align-items: start;
-  margin-bottom: var(--space-4);
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
   .diseno {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 
-/* --- El lienzo --- */
-
-.diseno-lienzo {
-  min-width: 0;
+.columna {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.lienzo-marco {
   min-width: 0;
-  overflow: hidden;
 }
 
+.columna--editor {
+  position: relative;
+}
+
+/* --- La mesa de trabajo y la hoja --- */
+
+.lienzo-mesa {
+  position: relative;
+  padding: var(--space-5) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--lienzo-fondo);
+  overflow: auto;
+}
+
+.lienzo-mesa--marcando {
+  cursor: crosshair;
+}
+
+/* La hoja: sin borde, con sombra. Es lo que le da el aire de papel. */
 .lienzo {
   position: relative;
   container-type: inline-size;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   background-color: #fff;
-  /* Recorta en vez de deformar: es exactamente lo que hace el PDF con la imagen
-     cuando no tiene la proporción del A4. */
+  border-radius: 3px;
+  box-shadow: var(--shadow-card-elevated), 0 1px 2px rgba(15, 23, 42, 0.18);
   touch-action: none;
 }
 
@@ -49,6 +67,16 @@
 
 .lienzo--marcando {
   cursor: crosshair;
+}
+
+/* En modo edición la cruz manda, también encima de los huecos: el arrastre
+   dibuja uno nuevo en vez de mover el que ya está. */
+.lienzo--marcando .caja {
+  cursor: crosshair;
+}
+
+.lienzo-papel {
+  margin: 0 auto;
 }
 
 .lienzo-diseno {
@@ -64,10 +92,21 @@
   user-select: none;
 }
 
+/* El velo del modo edición: oscurece el diseño para que se note que el
+   siguiente arrastre dibuja un hueco. Las cajas se pintan por encima. */
+.lienzo-velo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.28);
+  pointer-events: none;
+}
+
 /* Guía del margen seguro (el 5 % por lado, unos 1,5 cm). */
 .lienzo-margen {
   position: absolute;
   inset: 5%;
+  z-index: 1;
   border: 1px dashed rgba(31, 58, 95, 0.45);
   border-radius: 2px;
   pointer-events: none;
@@ -76,38 +115,44 @@
 /* El rectángulo que se está dibujando ahora mismo. */
 .rectangulo {
   position: absolute;
-  border: 1px dashed var(--primary, #1f3a5f);
-  background: rgba(31, 58, 95, 0.12);
-  border-radius: 2px;
+  z-index: 4;
+  border: 2px dashed #3b82f6;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
   pointer-events: none;
-  z-index: 3;
 }
 
 /* --- Cada hueco --- */
 
 .caja {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  z-index: 2;
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
   cursor: grab;
   user-select: none;
-  border: 1px dashed rgba(31, 58, 95, 0.35);
-  border-radius: 2px;
+  border: 2px solid rgba(59, 130, 246, 0.55);
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.1);
 }
 
-.caja:hover {
-  border-color: rgba(31, 58, 95, 0.65);
+.caja:hover,
+.caja--seleccionada {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.2);
 }
 
 .caja--seleccionada {
-  border: 1px solid var(--primary, #1f3a5f);
-  box-shadow: 0 0 0 2px rgba(31, 58, 95, 0.15);
-  z-index: 2;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* El contenido va en su propia capa: la caja deja salir los tiradores. */
+.caja-contenido {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .caja-texto {
@@ -133,187 +178,138 @@
   width: 100%;
   text-align: center;
   font-size: 0.9rem;
-  color: var(--neutral-600);
+  color: var(--text-aux);
+}
+
+/* El aviso del dato, justo encima de su hueco. */
+.caja-aviso {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--warning-border);
+  border-radius: 50%;
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.caja-aviso--grave {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Puntos de las esquinas: asoman al pasar el ratón, para indicar que el hueco
+   se puede redimensionar. */
+.caja-esquinas {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.caja:hover .caja-esquinas,
+.caja--seleccionada .caja-esquinas {
+  opacity: 1;
+}
+
+.caja-esquinas i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+}
+
+.caja-esquinas i:nth-child(1) {
+  top: -5px;
+  left: -5px;
+}
+
+.caja-esquinas i:nth-child(2) {
+  top: -5px;
+  right: -5px;
+}
+
+.caja-esquinas i:nth-child(3) {
+  bottom: -5px;
+  left: -5px;
+}
+
+.caja-esquinas i:nth-child(4) {
+  right: -5px;
+  bottom: -5px;
 }
 
 /* Tirador de la esquina inferior derecha: agranda el hueco. */
 .tirador {
   position: absolute;
-  right: -7px;
-  bottom: -7px;
+  right: -6px;
+  bottom: -6px;
+  z-index: 5;
   width: 14px;
   height: 14px;
+  border: 2px solid #3b82f6;
+  border-radius: 3px;
   background: #ffffff;
-  border: 1.5px solid var(--primary, #1f3a5f);
-  border-radius: 2px;
   cursor: nwse-resize;
-  z-index: 4;
 }
 
-/* --- Los controles --- */
+/* --- El zoom, flotando en la esquina de la mesa --- */
 
-.diseno-controles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.barra-grupo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
-}
-
-.barra-grupo:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.barra-marcar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.barra-titulo {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--neutral-600);
-}
-
-.barra-subtitulo {
-  font-size: 0.78rem;
-  color: var(--neutral-600);
-}
-
-.barra-nombre {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.barra-fila {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.barra-tamano {
-  align-items: flex-end;
-}
-
-.barra-pista {
-  margin: 0;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--neutral-600);
-}
-
-.pista-alerta {
-  color: #b3261e;
-  font-weight: 600;
-}
-
-.btn-mini {
-  padding: 4px 8px;
-  font-size: 0.78rem;
-  width: auto;
-}
-
-.btn-ancho {
-  width: 100%;
-}
-
-.btn-mini.activo {
-  border-color: var(--primary, #1f3a5f);
-  background: var(--primary, #1f3a5f);
-  color: #fff;
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 0.78rem;
-  color: var(--neutral-600);
-  flex: 1 1 auto;
-}
-
-.campo--corto {
-  flex: 0 0 auto;
-}
-
-.campo input[type='text'],
-.campo input[type='number'],
-.campo select {
-  width: 100%;
-  padding: 5px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: 0.82rem;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.campo--corto input {
-  width: 64px;
-  text-align: center;
-}
-
-.barra-color {
+.zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: var(--neutral-600);
-}
-
-.barra-color input[type='color'] {
-  width: 38px;
-  height: 28px;
-  padding: 2px;
+  gap: 2px;
+  padding: 3px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-card-elevated);
 }
 
-/* --- La revisión: avisos y problemas graves --- */
-
-.barra-problemas ul {
-  margin: 0;
-  padding-left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.zoom-boton,
+.zoom-nivel {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--accent-texto);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.problema {
-  font-size: 0.76rem;
-  line-height: 1.35;
-  color: #8a5a00;
+.zoom-nivel {
+  min-width: 46px;
+  font-size: 0.72rem;
 }
 
-.problema-grave {
-  color: #b3261e;
+.zoom-boton:hover:not(:disabled),
+.zoom-nivel:hover {
+  background: var(--primary-50);
 }
 
-.problema-ok {
-  margin: 0;
-  font-size: 0.76rem;
-  color: #1b7f3b;
+.zoom-boton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

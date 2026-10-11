@@ -910,53 +910,54 @@
                 }
               </span>
             }
-          </div>
-          <div class="card-head-actions">
-            <!-- Los dos archivos de apoyo del diseño, siempre a mano. -->
-            @if (urlPlantillaZonas; as urlZonas) {
-              <a
-                class="btn btn-outline"
-                data-accion="descargar-zonas"
-                [href]="urlZonas"
-                download="certificado-zonas.png"
-                title="La capa con las tres zonas y el margen seguro, para superponerla al diseño"
-              >
-                Descargar la imagen de zonas
-              </a>
-            }
-            @if (urlGuiaDiseno; as urlGuia) {
-              <a
-                class="btn btn-outline"
-                data-accion="descargar-guia"
-                [href]="urlGuia"
-                download="guia-diseno-certificado.docx"
-                title="La guía de diseño del certificado, en Word"
-              >
-                Descargar la guía de diseño
-              </a>
-            }
+            <!-- La explicación larga vive plegada: el «?» la abre. Junto al
+                 título ocupa una línea en lugar de un párrafo entero. -->
             <button
               type="button"
-              class="btn btn-secondary"
-              [disabled]="cargandoPlantilla()"
-              (click)="cargarPlantilla()"
+              class="ayuda-boton"
+              data-accion="ayuda"
+              data-peso="terciario"
+              [class.ayuda-boton--abierta]="ayudaAbierta()"
+              [attr.aria-expanded]="ayudaAbierta()"
+              aria-controls="certificado-ayuda"
+              [attr.title]="
+                ayudaAbierta() ? 'Ocultar la explicación' : '¿Cómo funciona?'
+              "
+              (click)="alternarAyuda()"
             >
-              {{ cargandoPlantilla() ? 'Actualizando...' : 'Actualizar' }}
+              ?
             </button>
           </div>
         </div>
 
-        <p class="text-sm muted">
-          El certificado se diseña <strong>fuera</strong> de la aplicación (Canva,
-          Word, el programa que prefieras) y se sube aquí como una
-          <strong>imagen terminada</strong>: el título, los logos, los textos
-          legales y la línea de firma van dibujados dentro de esa imagen. La
-          aplicación solo estampa <strong>tres datos</strong> encima —el nombre del
-          alumno, el folio y el QR de verificación—, así que el diseño deja tres
-          huecos vacíos y aquí se marcan. Guardar <strong>no</strong> cambia la
-          versión anterior: crea una nueva, porque los certificados ya emitidos se
-          quedan como salieron.
-        </p>
+        <div
+          class="ayuda"
+          id="certificado-ayuda"
+          data-ayuda
+          [attr.data-abierto]="ayudaAbierta()"
+          [hidden]="!ayudaAbierta()"
+        >
+          <h3 class="ayuda-titulo">¿Cómo funciona?</h3>
+          <ul class="vinetas">
+            <li>
+              El certificado se diseña <strong>fuera</strong> de la aplicación
+              (Canva, Word, el programa que prefieras) y aquí se sube como una
+              <strong>imagen terminada</strong>.
+            </li>
+            <li>
+              El título, los logos, los textos legales y la línea de firma van
+              dibujados <strong>dentro</strong> de esa imagen.
+            </li>
+            <li>
+              La aplicación solo estampa <strong>tres datos</strong> encima: el
+              nombre del alumno, el folio y el QR de verificación.
+            </li>
+            <li>
+              Guardar <strong>no</strong> cambia la versión anterior: crea una
+              nueva, porque los certificados ya emitidos se quedan como salieron.
+            </li>
+          </ul>
+        </div>
 
         @if (errorPlantilla()) {
           <div class="alert alert-error" role="alert">{{ errorPlantilla() }}</div>
@@ -968,120 +969,30 @@
         @if (cargandoPlantilla() && !borrador()) {
           <p class="text-sm muted">Cargando el diseño del certificado...</p>
         } @else if (borrador(); as b) {
-          <!-- La imagen del diseño -->
-          <div class="certificado-fondo">
-            <label for="certificado-fondo">Imagen del diseño</label>
-            <p class="text-sm muted">
-              PNG, JPG o WEBP, hasta 2 MB. Lo ideal es un A4 horizontal a 300 ppp
-              ({{ lienzoGuia.anchoPx }} × {{ lienzoGuia.altoPx }} px): con menos
-              resolución el certificado sale pixelado al imprimir. La imagen se
-              <strong>recorta</strong> para tapar la hoja, nunca se deforma. Subir
-              una imagen crea también una versión nueva.
-            </p>
-            <input
-              id="certificado-fondo"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              [disabled]="subiendoFondo()"
-              (change)="alSeleccionarFondo($event)"
-            />
-            @if (subiendoFondo()) {
-              <p class="text-sm muted">Subiendo la imagen...</p>
-            }
-          </div>
-
-          <!-- El panel de diseño: los tres huecos, los ajustes y la vista previa. -->
+          <!-- El editor: a la izquierda las herramientas y las versiones, en el
+               centro la hoja y a la derecha las propiedades, la vista previa y
+               la salud del diseño. La imagen del diseño se sube desde su
+               columna de herramientas. -->
           <app-diseno-certificado
             [borrador]="b"
             [fondo]="fondoPlantilla()"
             [catalogo]="catalogoCampos()"
             [guardando]="guardandoPlantilla()"
             [nombresDeClase]="nombresDeLaClase()"
+            [versiones]="versionesPlantilla()"
+            [urlZonas]="urlPlantillaZonas"
+            [urlGuia]="urlGuiaDiseno"
+            [actualizando]="cargandoPlantilla()"
+            [activando]="activandoVersion()"
+            [subiendoFondo]="subiendoFondo()"
             (cambio)="aplicarCambio($event)"
             (guardar)="guardarPlantilla()"
             (restaurar)="restablecerPlantilla()"
+            (actualizar)="cargarPlantilla()"
+            (verVersion)="verVersion($event)"
+            (activarVersion)="activarVersion($event)"
+            (subirFondo)="alSeleccionarFondo($event)"
           />
-          <!-- Versiones -->
-          <h3 class="certificado-versiones-titulo">Versiones</h3>
-          <p class="text-sm muted">
-            Solo una está activa, y es la que se usa al emitir. Activar una
-            anterior no toca los certificados ya emitidos: la plantilla es
-            versionada, así que un mal diseño siempre se puede deshacer.
-          </p>
-          @if (plantillaEstado(); as estado) {
-            @if (estado.versiones.length > 0) {
-              <ul class="lista">
-                @for (version of estado.versiones; track version.id) {
-                  <li class="lista-item">
-                    <div class="version-bloque">
-                      <div class="version-cabecera">
-                        <strong>Versión {{ version.version }}</strong>
-                        @if (version.activa) {
-                          <span class="estado aprobada">Activa</span>
-                        } @else {
-                          <span class="estado pendiente">Inactiva</span>
-                        }
-                        <span class="text-sm muted">
-                          {{ version.certificados }}
-                          certificado(s) emitido(s) con esta versión
-                        </span>
-                      </div>
-                      <p class="text-sm muted">
-                        {{ version.creadaPor ? 'Creada por ' + version.creadaPor : 'Creada' }}
-                        · {{ version.fondoUrl ? 'con diseño' : 'sin diseño' }}
-                        · {{ version.anchoPx }} × {{ version.altoPx }} px
-                      </p>
-                      @if (gravesDeVersion(version).length > 0) {
-                        <p class="version-problemas" [attr.data-problemas-version]="version.id">
-                          No se puede activar:
-                          @for (problema of gravesDeVersion(version); track problema.mensaje) {
-                            {{ problema.donde }}: {{ problema.mensaje }}
-                          }
-                        </p>
-                      }
-                    </div>
-                    <div class="acciones-pais">
-                      <button
-                        type="button"
-                        class="btn btn-outline"
-                        [disabled]="cargandoPlantilla()"
-                        (click)="verVersion(version)"
-                      >
-                        Ver en el panel
-                      </button>
-                      @if (!version.activa) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          data-accion="activar"
-                          [attr.data-version]="version.id"
-                          [disabled]="
-                            activandoVersion() !== null ||
-                            gravesDeVersion(version).length > 0
-                          "
-                          [attr.title]="
-                            gravesDeVersion(version).length > 0
-                              ? 'Esa versión tiene un problema grave: ábrela en el panel y corrígelo'
-                              : 'Deja esta versión como la activa'
-                          "
-                          (click)="activarVersion(version)"
-                        >
-                          {{
-                            activandoVersion() === version.id ? 'Activando...' : 'Activar'
-                          }}
-                        </button>
-                      }
-                    </div>
-                  </li>
-                }
-              </ul>
-            } @else {
-              <p class="text-sm muted">
-                Todavía no hay ninguna versión guardada. Lo que ves arriba son los
-                tres huecos de la guía de diseño: guárdalos para tener la primera.
-              </p>
-            }
-          }
         }
       </section>
     }
