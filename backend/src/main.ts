@@ -103,6 +103,34 @@ async function bootstrap() {
   });
   app.useStaticAssets(logosDir, { prefix: '/logos/' });
 
+  // Logo de la CACE: misma idea que el logo de institución (se pinta con
+  // <img> en la pantalla de acceso y en el panel), pero en su propia carpeta y
+  // con su propia ruta. No se reutiliza `/logos` para que borrar la carpeta de
+  // una institución no se lleve por delante la identidad de la CACE.
+  const caceLogoDir = join(uploadsDir, 'cace');
+  mkdirSync(caceLogoDir, { recursive: true });
+  app.use('/cace-logo', (_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  });
+  app.useStaticAssets(caceLogoDir, { prefix: '/cace-logo/' });
+
+  // Imágenes de los premios y reconocimientos: también se muestran en la web
+  // (sección «Comunidad» y portada), así que van en línea y en su carpeta.
+  const premiosDir = join(uploadsDir, 'premios');
+  mkdirSync(premiosDir, { recursive: true });
+  app.use('/premios', (_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  });
+  app.useStaticAssets(premiosDir, { prefix: '/premios/' });
+
   // Plantillas descargables (hoy, la lista de alumnos de ejemplo). Viven en
   // `backend/plantillas` y no en `public/`, porque `public/` es la salida del
   // build de Angular y se vacía en cada compilación. Se fuerzan como descarga:

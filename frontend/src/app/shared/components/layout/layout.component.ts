@@ -11,6 +11,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { IdentidadCaceService } from '../../../core/services/identidad-cace.service';
 import { UiStateService } from '../../../core/services/ui-state.service';
 import { Perfil } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
@@ -49,6 +50,25 @@ const ICONOS: Record<string, string[]> = {
     'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
     'M2 12h20',
     'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z',
+  ],
+  personalizar: [
+    'M21 4h-7',
+    'M10 4H3',
+    'M21 12h-9',
+    'M8 12H3',
+    'M21 20h-5',
+    'M12 20H3',
+    'M14 2v4',
+    'M8 10v4',
+    'M16 18v4',
+  ],
+  premio: [
+    'M6 9H4.5a2.5 2.5 0 0 1 0-5H6',
+    'M18 9h1.5a2.5 2.5 0 0 0 0-5H18',
+    'M4 22h16',
+    'M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22',
+    'M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22',
+    'M18 2H6v7a6 6 0 0 0 12 0V2z',
   ],
   institucion: [
     'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z',
@@ -138,6 +158,13 @@ export class LayoutComponent {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   readonly ui = inject(UiStateService);
+
+  /**
+   * Identidad de la CACE: de aquí sale el logo de la barra superior, que es el
+   * que configura la presidencia (con el logo del proyecto como respaldo).
+   */
+  private readonly identidad = inject(IdentidadCaceService);
+  readonly logo = this.identidad.logo;
 
   /** Nombre completo del usuario mostrado en la barra superior. */
   @Input() userName = '';
@@ -236,6 +263,28 @@ export class LayoutComponent {
           icono: 'institucion',
           ancla: 'instituciones',
           contador: 'instituciones',
+        },
+        // Las tres secciones de la identidad de la CACE (fase 3), en el orden en
+        // que aparecen en la pantalla: primero la imagen, después la comunidad y
+        // al final los premios.
+        {
+          id: 'personalizacion',
+          etiqueta: 'Personalización',
+          icono: 'personalizar',
+          ancla: 'personalizacion',
+        },
+        {
+          id: 'comunidad',
+          etiqueta: 'Comunidad',
+          icono: 'comunidad',
+          ancla: 'comunidad',
+        },
+        {
+          id: 'premios',
+          etiqueta: 'Premios',
+          icono: 'premio',
+          ancla: 'premios',
+          contador: 'premios',
         },
         // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el
         // menú de la CACE es corto: así queda todo a la vista.

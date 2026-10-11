@@ -26,3 +26,251 @@
   background: var(--danger);
   color: #fff;
 }
+
+/* --- Personalización (fase 3) --- */
+
+/* Formulario a la izquierda y vista previa a la derecha; en pantallas estrechas
+   la vista previa baja debajo. */
+.personalizacion-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .personalizacion-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Los temas se eligen con un circulito de color además del nombre: así se ve de
+   un vistazo qué se está eligiendo. */
+.temas {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: none;
+}
+
+.temas legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.tema-opcion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: 6px;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.tema-opcion:hover {
+  background: var(--hover);
+}
+
+.tema-muestra {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tema-texto {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.logo-vista {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.logo-controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.logo-controles .btn {
+  width: auto;
+  margin-top: 0;
+}
+
+/* Vista previa: la caja tiene su propio `data-tema`, así que los tokens de color
+   de dentro son los del tema elegido y no los de la pantalla. */
+.vista-previa-caja {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.vista-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: linear-gradient(140deg, var(--hero-a) 0%, var(--hero-b) 100%);
+  color: #fff;
+  text-align: center;
+}
+
+.vista-hero img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 4px;
+}
+
+.vista-lema {
+  margin: 0;
+  font-weight: 600;
+}
+
+.vista-tag {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.vista-cuerpo {
+  padding: var(--space-4);
+}
+
+.vista-titulo {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+  color: var(--accent-texto);
+}
+
+.vista-botones {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.vista-btn {
+  width: auto;
+  margin-top: 0;
+}
+
+/* --- Comunidad: banderas --- */
+
+.form-pais {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 100px auto auto;
+  gap: var(--space-3);
+  align-items: end;
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 800px) {
+  .form-pais {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.form-pais .form-field,
+.form-premio .form-field {
+  margin-bottom: 0;
+}
+
+.acciones-pais {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.acciones-pais .btn {
+  width: auto;
+  margin-top: 0;
+}
+
+.pais-bloque {
+  min-width: 0;
+}
+
+.pais-nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.pais-codigo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-100);
+  color: var(--accent-texto);
+}
+
+/* --- Premios --- */
+
+.form-premio {
+  margin-bottom: var(--space-4);
+}
+
+.form-premio .form-grid {
+  margin-top: 0;
+}
+
+.premio-bloque {
+  min-width: 0;
+}
+
+.premio-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.premio-imagen {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--neutral-100);
+}
+
+.premio-imagen-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  font-size: 0.85rem;
+}
+
+.premio-imagen-control .btn {
+  width: auto;
+  margin-top: 0;
+}

@@ -1,6 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {
+  CacePublico,
+  ConfiguracionCace,
+  ConfiguracionCaceDto,
+  PaisComunidad,
+  PaisComunidadDto,
+  Premio,
+  PremioDto,
+  PremiosCace,
+} from '../models/cace-identidad.models';
 
 const API_URL = window.location.port === '4200' ? `http://${window.location.hostname}:3000` : '';
 
@@ -46,10 +56,121 @@ export interface DecisionCace {
 /**
  * Instituciones vistas desde la presidencia de la CACE. Va aparte de
  * `InstitucionesService`, que es el catálogo de agentes y docentes.
+ *
+ * Incluye también la identidad de la CACE (fase 3): los textos, el logo, el
+ * tema, las banderas de la comunidad y los premios. Van en el mismo servicio
+ * porque son el mismo panel y las mismas dos capacidades
+ * (`personalizarCace` y `publicarPremios`).
  */
 @Injectable({ providedIn: 'root' })
 export class CaceService {
   private readonly http = inject(HttpClient);
+
+  // --- Lectura pública (sin token) ---
+
+  /**
+   * Textos, logo, tema y banderas activas. La usa la portada del acceso, que
+   * tiene que verse antes de que nadie inicie sesión.
+   */
+  obtenerPublico(): Observable<CacePublico> {
+    return this.http.get<CacePublico>(`${API_URL}/cace/publico`);
+  }
+
+  /** Premios publicados, para la sección «Comunidad». */
+  premiosPublicos(): Observable<Premio[]> {
+    return this.http.get<Premio[]>(`${API_URL}/cace/premios-publicos`);
+  }
+
+  // --- Configuración: textos, tema y logo ---
+
+  obtenerConfiguracion(): Observable<ConfiguracionCace> {
+    return this.http.get<ConfiguracionCace>(`${API_URL}/cace/configuracion`);
+  }
+
+  actualizarConfiguracion(
+    dto: ConfiguracionCaceDto,
+  ): Observable<ConfiguracionCace> {
+    return this.http.patch<ConfiguracionCace>(
+      `${API_URL}/cace/configuracion`,
+      dto,
+    );
+  }
+
+  /** Sube el logo de la CACE (PNG, JPG o WEBP, hasta 2 MB). */
+  subirLogo(archivo: File): Observable<ConfiguracionCace> {
+    const datos = new FormData();
+    datos.append('logo', archivo);
+    return this.http.post<ConfiguracionCace>(
+      `${API_URL}/cace/configuracion/logo`,
+      datos,
+    );
+  }
+
+  /** Quita el logo: la aplicación vuelve al logo de respaldo. */
+  quitarLogo(): Observable<{ mensaje: string; logoUrl: null }> {
+    return this.http.delete<{ mensaje: string; logoUrl: null }>(
+      `${API_URL}/cace/configuracion/logo`,
+    );
+  }
+
+  // --- Banderas de la comunidad ---
+
+  /** Todos los países (incluidos los desactivados): es la lista del panel. */
+  listarPaises(): Observable<PaisComunidad[]> {
+    return this.http.get<PaisComunidad[]>(`${API_URL}/cace/paises`);
+  }
+
+  crearPais(dto: PaisComunidadDto): Observable<PaisComunidad> {
+    return this.http.post<PaisComunidad>(`${API_URL}/cace/paises`, dto);
+  }
+
+  actualizarPais(
+    id: number,
+    dto: PaisComunidadDto,
+  ): Observable<PaisComunidad> {
+    return this.http.patch<PaisComunidad>(`${API_URL}/cace/paises/${id}`, dto);
+  }
+
+  eliminarPais(id: number): Observable<{ mensaje: string; id: number }> {
+    return this.http.delete<{ mensaje: string; id: number }>(
+      `${API_URL}/cace/paises/${id}`,
+    );
+  }
+
+  // --- Premios y reconocimientos ---
+
+  /** Todos los premios (publicados y no) y las instituciones del formulario. */
+  listarPremios(): Observable<PremiosCace> {
+    return this.http.get<PremiosCace>(`${API_URL}/cace/premios`);
+  }
+
+  crearPremio(dto: PremioDto): Observable<Premio> {
+    return this.http.post<Premio>(`${API_URL}/cace/premios`, dto);
+  }
+
+  actualizarPremio(id: number, dto: PremioDto): Observable<Premio> {
+    return this.http.patch<Premio>(`${API_URL}/cace/premios/${id}`, dto);
+  }
+
+  eliminarPremio(id: number): Observable<{ mensaje: string; id: number }> {
+    return this.http.delete<{ mensaje: string; id: number }>(
+      `${API_URL}/cace/premios/${id}`,
+    );
+  }
+
+  /** Imagen del premio. Solo se puede subir cuando el premio ya está creado. */
+  subirImagenPremio(id: number, archivo: File): Observable<Premio> {
+    const datos = new FormData();
+    datos.append('imagen', archivo);
+    return this.http.post<Premio>(
+      `${API_URL}/cace/premios/${id}/imagen`,
+      datos,
+    );
+  }
+
+  quitarImagenPremio(id: number): Observable<Premio> {
+    return this.http.delete<Premio>(`${API_URL}/cace/premios/${id}/imagen`);
+  }
 
   /** Todas las instituciones, con las pendientes primero. */
   listarInstituciones(): Observable<InstitucionCace[]> {

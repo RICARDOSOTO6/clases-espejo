@@ -28,7 +28,9 @@
   /* — Estados — */
   --success-700: #15803d;
   --success-100: #dcfce7;
-  --warning-700: #a16207;
+  /* Ámbar oscurecido (era #a16207): sobre el fondo del aviso de atención daba
+     4.42:1, por debajo del 4.5:1 que pide WCAG AA para texto normal. */
+  --warning-700: #8a5306;
   --warning-100: #fef3c7;
   --danger-700: #b91c1c;
   --danger-100: #fee2e2;
@@ -41,6 +43,11 @@
   --accent-deep: var(--primary-800);
   --accent-soft: var(--primary-100);
   --accent-50: var(--primary-50);
+  /* Color del texto «de marca» (enlaces, botones fantasma y títulos de tarjeta).
+     Va aparte de `--accent` porque no siempre pueden ser el mismo color: en un
+     tema oscuro el fondo del botón tiene que ser oscuro (lleva texto blanco) y
+     el texto del enlace tiene que ser claro. Cada tema fija los dos. */
+  --accent-texto: var(--primary-800);
   --hero-a: var(--primary-900);
   --hero-b: var(--primary-700);
 
@@ -176,7 +183,7 @@ p {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-texto);
   text-decoration: none;
 }
 
@@ -331,7 +338,7 @@ img {
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: -0.01em;
-  color: var(--primary-900);
+  color: var(--accent-texto);
 }
 
 .navbar-search {
@@ -504,12 +511,12 @@ img {
 
 .sidebar-link.is-active {
   background: var(--primary-100);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   font-weight: 600;
 }
 
 .sidebar-link.is-active svg {
-  color: var(--primary-700);
+  color: var(--accent-texto);
 }
 
 .sidebar-link.is-muted {
@@ -581,13 +588,13 @@ img {
 .btn-secondary {
   background: var(--surface);
   border-color: var(--accent);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   padding: 0.55rem 1.15rem;
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--primary-50);
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 /* Danger — rojo */
@@ -604,7 +611,7 @@ img {
 /* Ghost — sin fondo */
 .btn-ghost {
   background: transparent;
-  color: var(--accent);
+  color: var(--accent-texto);
 }
 
 .btn-ghost:hover:not(:disabled) {
@@ -619,14 +626,14 @@ img {
 .btn-outline {
   background: transparent;
   border-color: var(--neutral-300);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   padding: 0.5rem 1.15rem;
 }
 
 .btn-outline:hover:not(:disabled) {
   background: var(--primary-50);
   border-color: var(--primary-600);
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 /* Enlace con aspecto de botón */
@@ -634,7 +641,7 @@ img {
   background: none;
   border: none;
   padding: 0.25rem 0.35rem;
-  color: var(--accent);
+  color: var(--accent-texto);
   cursor: pointer;
   font: inherit;
   font-size: 0.875rem;
@@ -925,7 +932,7 @@ textarea.ng-invalid.ng-touched:focus {
   height: 30px;
   border-radius: var(--radius-sm);
   background: var(--primary-100);
-  color: var(--primary-700);
+  color: var(--accent-texto);
   flex-shrink: 0;
 }
 
@@ -945,7 +952,7 @@ textarea.ng-invalid.ng-touched:focus {
   padding: 0.1rem 0.5rem;
   border-radius: var(--radius-pill);
   background: var(--primary-100);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -1015,7 +1022,7 @@ textarea.ng-invalid.ng-touched:focus {
 
 .role-badge.agente {
   background: var(--primary-100);
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 /* ----------------------------------------------------------------------------
@@ -1096,7 +1103,7 @@ textarea.ng-invalid.ng-touched:focus {
   font-size: 2rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 .stat-label {
@@ -1352,6 +1359,52 @@ textarea.ng-invalid.ng-touched:focus {
   box-shadow: var(--ring);
 }
 
+/* Premios y reconocimientos dentro de la sección «Comunidad» de docente y
+   agente. Solo se pintan los publicados. */
+.premios-comunidad {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--neutral-200);
+}
+
+.premios-comunidad-titulo {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  color: var(--accent-texto);
+}
+
+.premios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.premio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.premio-item-imagen {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--neutral-100);
+  flex-shrink: 0;
+}
+
+.premio-item-texto {
+  min-width: 0;
+}
+
+.premio-item-texto p {
+  margin: 0;
+}
+
 /* ----------------------------------------------------------------------------
    14. Meta-información y reportes
    ---------------------------------------------------------------------------- */
@@ -1584,7 +1637,7 @@ textarea.ng-invalid.ng-touched:focus {
 
 .tablero-col-activo .tablero-col-head {
   background: var(--primary-100);
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 .tablero-col-finalizado .tablero-col-head {
@@ -1730,7 +1783,7 @@ textarea.ng-invalid.ng-touched:focus {
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--primary-100);
-  color: var(--primary-700);
+  color: var(--accent-texto);
   font-size: 0.68rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -1775,7 +1828,7 @@ textarea.ng-invalid.ng-touched:focus {
 }
 
 .chat-msg-meta strong {
-  color: var(--primary-800);
+  color: var(--accent-texto);
   font-weight: 700;
 }
 
@@ -1842,7 +1895,7 @@ textarea.ng-invalid.ng-touched:focus {
   padding: 0.5rem 0.8rem;
   border-radius: var(--radius-md);
   background: var(--primary-50);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   font-size: 0.78rem;
 }
 
@@ -1977,6 +2030,61 @@ textarea.ng-invalid.ng-touched:focus {
 
 .auth-main .auth-card.wide {
   max-width: 580px;
+}
+
+/* Columna de la portada: la tarjeta de acceso y, debajo, el resumen de premios.
+   La tarjeta se centra ella sola dentro de la columna. */
+.auth-columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 430px;
+  margin: auto;
+}
+
+.auth-main .auth-columna .auth-card {
+  max-width: none;
+  margin: 0;
+}
+
+/* Resumen de premios de la portada (solo los publicados). */
+.auth-premios {
+  padding: var(--space-5);
+}
+
+.auth-premios-titulo {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  color: var(--accent-texto);
+}
+
+.auth-premios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth-premio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.auth-premio-imagen {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--neutral-100);
+  flex-shrink: 0;
+}
+
+.auth-premio-texto p {
+  margin: 0;
 }
 
 .auth-card {
@@ -2540,7 +2648,7 @@ textarea.ng-invalid.ng-touched:focus {
   place-items: center;
   border-radius: var(--radius-pill);
   background: var(--primary-100);
-  color: var(--primary-800);
+  color: var(--accent-texto);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -3026,7 +3134,7 @@ textarea.ng-invalid.ng-touched:focus {
   margin: 0 0 var(--space-3);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 .calendario-dia.con-eventos {
@@ -3057,7 +3165,7 @@ textarea.ng-invalid.ng-touched:focus {
 .evento-dia-hora {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--primary-800);
+  color: var(--accent-texto);
 }
 
 .evento-dia-titulo {
@@ -3439,4 +3547,186 @@ textarea.ng-invalid.ng-touched:focus {
 
 .reporte-cuerpo {
   padding-top: var(--space-1);
+}
+
+/* ----------------------------------------------------------------------------
+   Temas de la CACE (fase 3)
+   ----------------------------------------------------------------------------
+   El presidente elige entre cuatro temas **cerrados** (nada de color libre, que
+   es lo que rompe el contraste) y el frontend los aplica poniendo
+   `data-tema="…"` en el elemento raíz. El mismo atributo sirve en la vista
+   previa del panel, que es un bloque normal con su propio `data-tema`: así se
+   ve el tema elegido antes de guardarlo.
+
+   Cada bloque reescribe **todos** los tokens que dependen del color, incluidos
+   los alias semánticos (`--accent`, `--text`, `--surface`…): los alias se
+   resuelven donde se declaran, así que dejarlos heredar del `:root` haría que un
+   tema oscuro siguiera con los colores claros.
+
+   Contrastes comprobados (WCAG 2.1, mínimo 4.5:1 para texto normal):
+   texto principal sobre el fondo, texto de botón sobre el fondo del botón y
+   texto de enlace sobre la superficie.
+   ---------------------------------------------------------------------------- */
+
+/* Azul institucional: el tema de siempre, ahora explícito para que la vista
+   previa pueda volver a él desde otro tema. */
+[data-tema='AZUL'] {
+  --primary-900: #063b63;
+  --primary-800: #075985;
+  --primary-700: #0069aa;
+  --primary-600: #0878bd;
+  --primary-100: #e0f2fe;
+  --primary-50: #f0f9ff;
+
+  --accent: var(--primary-700);
+  --accent-hover: var(--primary-600);
+  --accent-deep: var(--primary-800);
+  --accent-soft: var(--primary-100);
+  --accent-50: var(--primary-50);
+  --accent-texto: #075985;
+  --hero-a: var(--primary-900);
+  --hero-b: var(--primary-700);
+  --focus: var(--primary-800);
+  --ring: 0 0 0 3px rgba(0, 105, 170, 0.2);
+}
+
+/* Verde: el mismo diseño con una gama vegetal. */
+[data-tema='VERDE'] {
+  --primary-900: #0b3d24;
+  --primary-800: #12633a;
+  --primary-700: #1a7f4b;
+  /* El hover es más oscuro, no más claro: aclararlo bajaba el texto blanco a
+     4.3:1 y el mínimo es 4.5:1. */
+  --primary-600: #187447;
+  --primary-100: #dcf5e7;
+  --primary-50: #f1fbf5;
+
+  --accent: var(--primary-700);
+  --accent-hover: var(--primary-600);
+  --accent-deep: var(--primary-800);
+  --accent-soft: var(--primary-100);
+  --accent-50: var(--primary-50);
+  --accent-texto: #12633a;
+  --hero-a: var(--primary-900);
+  --hero-b: var(--primary-700);
+  --focus: var(--primary-800);
+  --ring: 0 0 0 3px rgba(26, 127, 75, 0.25);
+}
+
+/* Vino: la gama granate de las universidades. */
+[data-tema='VINO'] {
+  --primary-900: #5b1026;
+  --primary-800: #7a1a33;
+  --primary-700: #9d1f3f;
+  --primary-600: #85192f;
+  --primary-100: #fbe4ea;
+  --primary-50: #fdf2f5;
+
+  --accent: var(--primary-700);
+  --accent-hover: var(--primary-600);
+  --accent-deep: var(--primary-800);
+  --accent-soft: var(--primary-100);
+  --accent-50: var(--primary-50);
+  --accent-texto: #7a1a33;
+  --hero-a: var(--primary-900);
+  --hero-b: var(--primary-700);
+  --focus: var(--primary-800);
+  --ring: 0 0 0 3px rgba(157, 31, 63, 0.22);
+}
+
+/* Oscuro: superficies oscuras y texto claro. No es «invertir el azul»: los
+   fondos de los avisos (verde, ámbar, rojo) también cambian, porque un chip
+   claro con texto claro no se lee. */
+[data-tema='OSCURO'] {
+  color-scheme: dark;
+
+  --primary-900: #1e3a8a;
+  --primary-800: #1e40af;
+  --primary-700: #2563eb;
+  --primary-600: #1d4ed8;
+  --primary-100: #1c2b4a;
+  --primary-50: #16233c;
+
+  --neutral-950: #e8eef8;
+  --neutral-700: #c3cee0;
+  --neutral-500: #97a5bd;
+  --neutral-300: #3a4a63;
+  --neutral-200: #2b3a52;
+  --neutral-100: #22314a;
+  --neutral-50: #0f172a;
+
+  --accent: var(--primary-700);
+  --accent-hover: var(--primary-600);
+  --accent-deep: var(--primary-800);
+  --accent-soft: var(--primary-100);
+  --accent-50: var(--primary-50);
+  /* Claro, para que un enlace se lea sobre la tarjeta oscura. */
+  --accent-texto: #93c5fd;
+  --hero-a: var(--primary-900);
+  --hero-b: var(--primary-700);
+  --focus: #93c5fd;
+  --ring: 0 0 0 3px rgba(147, 197, 253, 0.35);
+
+  --text: var(--neutral-950);
+  --text-muted: var(--neutral-700);
+  --text-aux: var(--neutral-500);
+  --border: var(--neutral-300);
+  --border-strong: var(--neutral-500);
+  --border-hover: var(--neutral-500);
+  --bg: var(--neutral-50);
+  --surface: #1e293b;
+  --input-bg: #16233c;
+  --hover: var(--neutral-100);
+  --neutral-bg: var(--neutral-200);
+  --neutral-text: var(--neutral-700);
+
+  --success-700: #4ade80;
+  --success-100: #10331f;
+  --success-border: #2b6b45;
+  --warning-700: #fbbf24;
+  --warning-100: #3a2c0c;
+  --warning-border: #6d5416;
+  --danger-700: #f87171;
+  --danger-100: #3b1620;
+  --danger-hover: #dc2626;
+  --danger-border: #7f2b32;
+  --info-700: #7dd3fc;
+  --info-100: #12314a;
+
+  --success: var(--success-700);
+  --success-bg: var(--success-100);
+  --warning: var(--warning-700);
+  --warning-bg: var(--warning-100);
+  --warning-text: var(--warning-700);
+  --danger: var(--danger-700);
+  --danger-bg: var(--danger-100);
+  --info: var(--info-700);
+  --info-bg: var(--info-100);
+  --secondary: var(--info-700);
+  --secondary-soft: var(--info-100);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-card-elevated: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* El rojo se aclara para que se lea como texto sobre fondo oscuro, y eso deja
+   con poco contraste los dos sitios donde el rojo es **fondo** con texto
+   blanco: ahí se vuelve al rojo oscuro a mano. */
+[data-tema='OSCURO'] .btn-danger,
+[data-tema='OSCURO'] .navbar-badge {
+  background: #b91c1c;
+}
+
+[data-tema='OSCURO'] .btn-danger:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+/* Dos chips translúcidos blancos que, sobre fondo oscuro, quedarían claros con
+   texto claro dentro. */
+[data-tema='OSCURO'] .tablero-col-head .grupo-count {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+[data-tema='OSCURO'] .chat-vacio {
+  background: rgba(255, 255, 255, 0.06);
 }

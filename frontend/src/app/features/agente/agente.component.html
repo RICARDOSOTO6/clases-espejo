@@ -245,12 +245,12 @@
           <h2>Comunidad CACE</h2>
         </div>
       </div>
-      <p class="comunidad-note">Uniendo mentes, corazones y proyectos</p>
+      <p class="comunidad-note">{{ lemaComunidad() }}</p>
       <p class="muted">
         Países que conforman la Comunidad de Apoyo a Clases Espejo:
       </p>
       <ul class="flags-comunidad">
-        @for (p of paisesComunidad; track p.codigo) {
+        @for (p of paisesComunidad(); track p.codigo) {
           <li class="flag-pais">
             <img
               class="flag"
@@ -265,6 +265,39 @@
           </li>
         }
       </ul>
+
+      <!-- Premios y reconocimientos publicados por la presidencia de la CACE. -->
+      @if (premiosComunidad().length > 0) {
+        <div class="premios-comunidad">
+          <h3 class="premios-comunidad-titulo">Premios y reconocimientos</h3>
+          <ul class="premios-lista">
+            @for (premio of premiosComunidad(); track premio.id) {
+              <li class="premio-item">
+                @if (imagenDe(premio); as imagen) {
+                  <img
+                    class="premio-item-imagen"
+                    [src]="imagen"
+                    [alt]="premio.titulo"
+                    loading="lazy"
+                  />
+                }
+                <div class="premio-item-texto">
+                  <strong>{{ premio.titulo }}</strong>
+                  <p class="text-sm muted">
+                    {{ premio.anio }} · Otorgado a {{ premio.otorgadoA }}
+                    @if (premio.institucionNombre) {
+                      · {{ premio.institucionNombre }}
+                    }
+                  </p>
+                  @if (premio.descripcion) {
+                    <p class="text-sm">{{ premio.descripcion }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      }
     </section>
 
     <section class="card">

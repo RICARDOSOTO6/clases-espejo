@@ -67,14 +67,15 @@ function cargarImagen(archivo: File): Promise<HTMLImageElement> {
 const LADO_MAXIMO_LOGO = 512;
 
 /**
- * Prepara el logo de la institución antes de subirlo.
+ * Prepara un logo antes de subirlo (el de la institución y el de la CACE: los
+ * dos se guardan en PNG y ninguno se recorta).
  *
  * A diferencia de la foto de perfil, un logo **no** se recorta en cuadrado (los
  * hay apaisados y verticales) y se guarda en PNG para no perder la
  * transparencia. Solo se reduce si es más grande que el máximo, para que el
  * archivo guardado pese poco.
  */
-export async function prepararLogoInstitucion(archivo: File): Promise<File> {
+export async function prepararLogo(archivo: File): Promise<File> {
   const imagen = await cargarImagen(archivo);
 
   const escala = Math.min(

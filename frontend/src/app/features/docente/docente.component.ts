@@ -18,9 +18,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
+import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
+import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { Institucion, Perfil } from '../../core/models/auth.models';
-import { PAISES, PAISES_CACE } from '../../core/constants/catalogos';
+import { Premio } from '../../core/models/cace-identidad.models';
+import { PAISES } from '../../core/constants/catalogos';
 import { Materia } from '../../core/models/materia.models';
 import {
   AsignacionMia,
@@ -66,6 +69,12 @@ export class DocenteComponent implements OnInit, OnDestroy {
   private readonly institucionesService = inject(InstitucionesService);
   private readonly proyectosService = inject(ProyectosService);
   private readonly recordatoriosService = inject(RecordatoriosService);
+  /**
+   * Identidad de la CACE: de aquí salen las banderas de la comunidad y los
+   * premios publicados de la sección «Comunidad». El tema ya lo aplica el
+   * componente raíz.
+   */
+  private readonly identidad = inject(IdentidadCaceService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (buscador, campana y contadores). */
@@ -104,7 +113,17 @@ export class DocenteComponent implements OnInit, OnDestroy {
   }
 
   usuario = this.auth.currentUser();
-  readonly paisesComunidad = PAISES_CACE;
+
+  /**
+   * Banderas de la comunidad: las mantiene la presidencia de la CACE y salen del
+   * API, ya ordenadas y solo las activas. Si la tabla estuviera vacía, el
+   * servicio devuelve la lista que antes estaba fija aquí.
+   */
+  readonly paisesComunidad = this.identidad.paises;
+  /** Premios publicados, para la sección «Comunidad». */
+  readonly premiosComunidad = this.identidad.premios;
+  /** Lema de la CACE, con el de siempre como respaldo. */
+  readonly lemaComunidad = this.identidad.lema;
 
   /** Nombre completo para la navbar. */
   get nombreUsuario(): string {
@@ -192,6 +211,9 @@ export class DocenteComponent implements OnInit, OnDestroy {
 
   cargarDatos(): void {
     this.cargarAgenda();
+    // Los premios de la sección «Comunidad». Si fallan, la sección se queda sin
+    // esa lista pero las banderas y el resto de la pantalla siguen funcionando.
+    this.identidad.cargarPremios().subscribe({ error: () => {} });
     this.auth.getPerfil().subscribe({
       next: (perfil) => this.establecerPaisDesdePerfil(perfil),
       error: () => {},
@@ -359,6 +381,11 @@ export class DocenteComponent implements OnInit, OnDestroy {
 
   flagUrl(codigo: string): string {
     return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
+  }
+
+  /** Imagen de un premio lista para un `<img>` (la sirve el backend). */
+  imagenDe(premio: Premio): string | null {
+    return urlDeArchivo(premio.imagenUrl);
   }
 
   pendientes(): number {

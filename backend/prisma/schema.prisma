@@ -37,6 +37,7 @@ model Institucion {
   solicitudesDestino  SolicitudClaseEspejo[]
   invitaciones        Invitacion[]
   listasAlumnos       ListaAlumnos[]
+  premios             Premio[]
 
   @@map("INSTITUCION")
 }
@@ -64,6 +65,7 @@ model Usuario {
   listasAlumnos   ListaAlumnos[]
   institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
   agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
+  configuracionCace     ConfiguracionCace[] @relation("ConfiguracionCace")
 
   @@map("USUARIO")
 }
@@ -436,4 +438,53 @@ model MiembroCace {
   usuario       Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@map("MIEMBRO_CACE")
+}
+
+/// Datos de identidad de la CACE (una sola fila): textos, logo y tema visual.
+/// El presidente los edita; se leen para pintar la aplicación.
+model ConfiguracionCace {
+  id                      Int      @id @default(autoincrement())
+  lema                    String   @default("")
+  descripcion             String   @default("")
+  logoUrl                 String?  @map("logo_url")
+  /// Tema visual de una lista corta (no color libre, para no romper el contraste).
+  tema                    String   @default("AZUL")
+  actualizadoPorUsuarioId Int?     @map("actualizado_por_usuario_id")
+  actualizadoEn           DateTime @default(now()) @updatedAt @map("actualizado_en")
+  actualizadoPor          Usuario? @relation("ConfiguracionCace", fields: [actualizadoPorUsuarioId], references: [id])
+
+  @@map("CONFIGURACION_CACE")
+}
+
+/// Paises que forman la comunidad CACE. Antes eran una lista fija en el frontend;
+/// ahora los mantiene el presidente.
+model PaisComunidad {
+  id            Int      @id @default(autoincrement())
+  /// Codigo ISO de dos letras, que es lo que arma la bandera.
+  codigo        String   @unique
+  nombre        String
+  orden         Int      @default(0)
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+  actualizadoEn DateTime @default(now()) @updatedAt @map("actualizado_en")
+
+  @@map("PAIS_COMUNIDAD")
+}
+
+/// Premios y reconocimientos de la CACE, que el presidente publica.
+model Premio {
+  id            Int          @id @default(autoincrement())
+  titulo        String
+  descripcion   String       @default("")
+  anio          Int          @map("anio")
+  otorgadoA     String       @map("otorgado_a")
+  institucionId Int?         @map("institucion_id")
+  imagenUrl     String?      @map("imagen_url")
+  orden         Int          @default(0)
+  publicado     Boolean      @default(false)
+  creadoEn      DateTime     @default(now()) @map("creado_en")
+  actualizadoEn DateTime     @default(now()) @updatedAt @map("actualizado_en")
+  institucion   Institucion? @relation(fields: [institucionId], references: [id])
+
+  @@map("PREMIO")
 }

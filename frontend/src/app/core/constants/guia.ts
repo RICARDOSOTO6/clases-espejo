@@ -642,9 +642,15 @@ export const GUIA_CACE: GuiaSeccion[] = [
           'La lista completa: primero las pendientes, y después las aprobadas, rechazadas y vetadas.',
       },
       {
+        selector: '#personalizacion',
+        titulo: 'Personalización',
+        texto:
+          'Aquí cambias el logo, los textos y el tema de la CACE. Lo que guardes se ve en toda la aplicación, incluida la pantalla de acceso.',
+      },
+      {
         titulo: 'Cuando quieras seguir',
         texto:
-          'En el menú lateral, «Instituciones» te baja a la lista y «Ayuda» vuelve a abrir esta ventana cuando la necesites.',
+          'En el menú lateral tienes «Instituciones», «Personalización», «Comunidad» y «Premios», y «Ayuda» vuelve a abrir esta ventana cuando la necesites.',
       },
     ],
   },
@@ -681,6 +687,79 @@ export const GUIA_CACE: GuiaSeccion[] = [
         titulo: 'Cada decisión queda firmada',
         texto:
           'La ficha guarda quién la revisó y cuándo («Revisada por …»): así la CACE puede responder por sus decisiones.',
+      },
+    ],
+  },
+  {
+    id: 'personalizacion',
+    titulo: 'Personalización',
+    resumen: 'Lema, descripción, tema de color y logo de la CACE.',
+    pasos: [
+      {
+        selector: '#personalizacion',
+        titulo: 'La identidad de la CACE',
+        texto:
+          'El lema y la descripción salen en la portada del acceso y en la sección «Comunidad» de docentes y agentes. El logo se usa en la barra superior y en el acceso.',
+      },
+      {
+        selector: '#personalizacion-temas',
+        titulo: 'Temas, no color libre',
+        texto:
+          'Eliges entre cuatro temas ya probados. Un color libre rompería el contraste y dejaría texto ilegible sobre el fondo; con temas cerrados eso no puede pasar.',
+      },
+      {
+        selector: '#personalizacion-vista',
+        titulo: 'Vista previa',
+        texto:
+          'Antes de guardar ves cómo queda el tema elegido, con sus botones y sus tarjetas, sin cambiar el resto de la aplicación.',
+      },
+    ],
+  },
+  {
+    id: 'comunidad',
+    titulo: 'Comunidad',
+    resumen: 'Las banderas de los países que forman la comunidad CACE.',
+    pasos: [
+      {
+        selector: '#comunidad',
+        titulo: 'Los países de la comunidad',
+        texto:
+          'Son los que aparecen como banderas en la sección «Comunidad» de docentes y agentes. El orden de esta lista es el que se ve allí.',
+      },
+      {
+        boton: 'Añadir país',
+        titulo: 'Añadir un país',
+        texto:
+          'Basta el código ISO de dos letras (por ejemplo PT) y el nombre: la bandera se arma sola con el código.',
+      },
+      {
+        titulo: 'Desactivar antes que borrar',
+        texto:
+          'Si un país deja la comunidad, desactívalo: desaparece de la web pero se queda en la lista, y volver a activarlo es un clic. Borrar solo hace falta si fue un error.',
+      },
+    ],
+  },
+  {
+    id: 'premios',
+    titulo: 'Premios',
+    resumen: 'Premios y reconocimientos: se preparan aquí y se publican cuando toca.',
+    pasos: [
+      {
+        selector: '#premios',
+        titulo: 'Premios y reconocimientos',
+        texto:
+          'Cada premio guarda el título, el año, a quién se le otorgó y, si quieres, la institución y una imagen.',
+      },
+      {
+        boton: 'Guardar premio',
+        titulo: 'Borrador o publicado',
+        texto:
+          'Mientras no lo marques como publicado, el premio solo lo ves tú aquí: no sale ni en la sección «Comunidad» ni en la portada del acceso.',
+      },
+      {
+        titulo: 'La imagen es opcional',
+        texto:
+          'Para subir la imagen primero hay que guardar el premio: se añade desde su ficha, en la lista. Una imagen se ve mejor en la sección pública.',
       },
     ],
   },

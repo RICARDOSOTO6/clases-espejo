@@ -311,9 +311,589 @@
         }
       </section>
 
+      <!-- Personalización: logo, textos y tema. Es lo que da identidad a la
+           CACE en toda la aplicación, incluida la pantalla de acceso. -->
+      <section class="card" id="personalizacion">
+        <div class="card-head">
+          <div class="card-head-title">
+            <h2>Personalización</h2>
+          </div>
+          <div class="card-head-actions">
+            <span class="text-sm muted">Tema actual: {{ etiquetaTemaElegido }}</span>
+          </div>
+        </div>
+
+        <p class="text-sm muted">
+          El lema, la descripción y el logo salen en la portada del acceso y en la
+          sección «Comunidad» de docentes y agentes. El tema cambia los colores de
+          toda la aplicación; son cuatro temas ya probados, con el contraste
+          comprobado, porque un color libre dejaría texto ilegible sobre el fondo.
+        </p>
+
+        @if (errorPersonalizacion()) {
+          <div class="alert alert-error" role="alert">{{ errorPersonalizacion() }}</div>
+        }
+        @if (avisoPersonalizacion()) {
+          <div class="alert alert-success" role="status">{{ avisoPersonalizacion() }}</div>
+        }
+
+        <div class="personalizacion-grid">
+          <form [formGroup]="formPersonalizacion" (ngSubmit)="guardarPersonalizacion()" novalidate>
+            <div class="form-field">
+              <label for="lema">Lema</label>
+              <input
+                id="lema"
+                type="text"
+                formControlName="lema"
+                maxlength="160"
+                placeholder="Uniendo mentes, corazones y proyectos"
+              />
+              @if (mensajePersonalizacion('lema'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="descripcion">Descripción</label>
+              <textarea
+                id="descripcion"
+                rows="3"
+                formControlName="descripcion"
+                maxlength="600"
+                placeholder="Comunidad de Apoyo a Clases Espejo"
+              ></textarea>
+              @if (mensajePersonalizacion('descripcion'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <fieldset class="form-field temas" id="personalizacion-temas">
+              <legend>Tema</legend>
+              @for (tema of temas; track tema.valor) {
+                <label class="tema-opcion">
+                  <input
+                    type="radio"
+                    [value]="tema.valor"
+                    formControlName="tema"
+                  />
+                  <span class="tema-muestra" [style.background]="tema.muestra"></span>
+                  <span class="tema-texto">
+                    <strong>{{ tema.etiqueta }}</strong>
+                    <span class="text-sm muted">{{ tema.descripcion }}</span>
+                  </span>
+                </label>
+              }
+            </fieldset>
+
+            <div class="form-field">
+              <label for="logo-cace">Logo</label>
+              <div class="logo-fila">
+                <img class="logo-vista" [src]="logoActual()" alt="Logo de la CACE" />
+                <div class="logo-controles">
+                  <input
+                    id="logo-cace"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    (change)="alSeleccionarLogo($event)"
+                  />
+                  @if (subiendoLogo()) {
+                    <p class="text-sm muted">Subiendo el logo…</p>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    [disabled]="subiendoLogo()"
+                    (click)="quitarLogo()"
+                  >
+                    Quitar logo
+                  </button>
+                  <p class="text-sm muted">
+                    PNG, JPG o WEBP. Si no hay logo propio, se usa el del proyecto.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="guardandoPersonalizacion() || formPersonalizacion.invalid"
+            >
+              @if (guardandoPersonalizacion()) {
+                <span class="spinner" aria-hidden="true"></span>
+              }
+              {{ guardandoPersonalizacion() ? 'Guardando...' : 'Guardar personalización' }}
+            </button>
+          </form>
+
+          <!-- Vista previa: un bloque normal con su propio `data-tema`, así se ve
+               el tema elegido sin cambiar el resto de la aplicación. -->
+          <div id="personalizacion-vista">
+            <p class="text-sm muted">Vista previa ({{ etiquetaTemaElegido }})</p>
+            <div class="vista-previa-caja" [attr.data-tema]="temaElegido()">
+              <div class="vista-hero">
+                <img [src]="logoActual()" alt="" />
+                <p class="vista-lema">{{ lemaVistaPreviaTexto }}</p>
+                <p class="vista-tag">{{ descripcionVistaPrevia }}</p>
+              </div>
+              <div class="vista-cuerpo">
+                <p class="vista-titulo">Tarjeta de ejemplo</p>
+                <p class="text-sm">
+                  Así se lee el texto principal y el secundario sobre las tarjetas
+                  de este tema.
+                </p>
+                <div class="vista-botones">
+                  <button type="button" class="btn btn-primary vista-btn">Botón principal</button>
+                  <button type="button" class="btn btn-secondary vista-btn">Secundario</button>
+                </div>
+                <div class="alert alert-info" role="status">
+                  Este es el aspecto de un aviso informativo.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banderas de la comunidad: lo que antes era una lista fija en el
+           frontend y ahora mantiene la presidencia. -->
+      <section class="card" id="comunidad">
+        <div class="card-head">
+          <div class="card-head-title">
+            <h2>Comunidad</h2>
+            <span class="card-head-count">{{ paises().length }}</span>
+          </div>
+          <div class="card-head-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="cargandoPaises()"
+              (click)="cargarPaises()"
+            >
+              {{ cargandoPaises() ? 'Actualizando...' : 'Actualizar' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="text-sm muted">
+          Estos son los países que aparecen como banderas en la sección «Comunidad»
+          de docentes y agentes, en este mismo orden. Si un país deja la comunidad,
+          desactívalo: desaparece de la web sin perder la fila.
+        </p>
+
+        @if (errorPaises()) {
+          <div class="alert alert-error" role="alert">{{ errorPaises() }}</div>
+        }
+        @if (avisoPaises()) {
+          <div class="alert alert-success" role="status">{{ avisoPaises() }}</div>
+        }
+
+        <form class="form-pais" [formGroup]="formPais" (ngSubmit)="guardarPais()" novalidate>
+          <div class="form-field">
+            <label for="pais-codigo">Código (ISO)</label>
+            <input
+              id="pais-codigo"
+              type="text"
+              maxlength="2"
+              formControlName="codigo"
+              placeholder="MX"
+            />
+            @if (mensajePais('codigo'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="pais-nombre">País</label>
+            <input id="pais-nombre" type="text" formControlName="nombre" placeholder="México" />
+            @if (mensajePais('nombre'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="pais-orden">Orden</label>
+            <input id="pais-orden" type="number" min="0" max="999" formControlName="orden" />
+            @if (mensajePais('orden'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="pais-activo">
+              <input id="pais-activo" type="checkbox" formControlName="activo" />
+              <span>Visible en la web</span>
+            </label>
+          </div>
+
+          <div class="form-field acciones-pais">
+            <button type="submit" class="btn btn-primary" [disabled]="cargandoPaises()">
+              {{ paisEnEdicion() ? 'Guardar país' : 'Añadir país' }}
+            </button>
+            @if (paisEnEdicion()) {
+              <button
+                type="button"
+                class="btn btn-ghost"
+                [disabled]="cargandoPaises()"
+                (click)="cancelarEdicionPais()"
+              >
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+
+        @if (cargandoPaises() && paises().length === 0) {
+          <p class="text-sm muted">Cargando los países de la comunidad...</p>
+        } @else if (paises().length === 0) {
+          <p class="text-sm muted">
+            Todavía no hay países cargados. Mientras no haya ninguno, la web muestra
+            la lista de banderas que traía de antes.
+          </p>
+        } @else {
+          <ul class="lista">
+            @for (pais of paises(); track pais.id) {
+              <li class="lista-item">
+                <div class="pais-bloque">
+                  <div class="pais-nombre">
+                    <img
+                      class="flag"
+                      [src]="banderaUrl(pais.codigo)"
+                      [alt]="'Bandera de ' + pais.nombre"
+                      width="28"
+                      height="20"
+                      loading="lazy"
+                    />
+                    <strong>{{ pais.nombre }}</strong>
+                    <span class="pais-codigo">{{ pais.codigo }}</span>
+                    <span class="text-sm muted">Orden {{ pais.orden }}</span>
+                    @if (pais.activo) {
+                      <span class="estado aprobada">Visible</span>
+                    } @else {
+                      <span class="estado cancelada">Oculto</span>
+                    }
+                  </div>
+                  @if (paisAEliminar(); as eliminando) {
+                    @if (eliminando.id === pais.id) {
+                      <div class="alert alert-error" role="status">
+                        ¿Quitar «{{ pais.nombre }}» de la comunidad? Se pierde la fila.
+                        Para retirarlo de la web basta con desactivarlo.
+                      </div>
+                    }
+                  }
+                </div>
+
+                <div class="lista-acciones">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [disabled]="cargandoPaises()"
+                    (click)="editarPais(pais)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    [disabled]="cargandoPaises()"
+                    (click)="alternarActivoPais(pais)"
+                  >
+                    {{ pais.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                  @if (paisAEliminar()?.id === pais.id) {
+                    <button
+                      type="button"
+                      class="btn btn-danger"
+                      [disabled]="cargandoPaises()"
+                      (click)="confirmarEliminarPais()"
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost"
+                      [disabled]="cargandoPaises()"
+                      (click)="cancelarEliminarPais()"
+                    >
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="cargandoPaises()"
+                      (click)="pedirEliminarPais(pais)"
+                    >
+                      Quitar
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <!-- Premios y reconocimientos: se preparan aquí y se publican (o no) desde
+           la propia lista. -->
+      <section class="card" id="premios">
+        <div class="card-head">
+          <div class="card-head-title">
+            <h2>Premios y reconocimientos</h2>
+            @if (borradores() > 0) {
+              <span class="card-head-count">{{ borradores() }} sin publicar</span>
+            }
+          </div>
+          <div class="card-head-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              [disabled]="cargandoPremios()"
+              (click)="cargarPremios()"
+            >
+              {{ cargandoPremios() ? 'Actualizando...' : 'Actualizar' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="text-sm muted">
+          Los premios publicados salen en la sección «Comunidad» de docentes y
+          agentes y en la portada del acceso. Un premio sin publicar es un
+          borrador: solo lo ves aquí. La imagen es opcional y se añade desde la
+          ficha del premio, una vez guardado.
+        </p>
+
+        @if (errorPremios()) {
+          <div class="alert alert-error" role="alert">{{ errorPremios() }}</div>
+        }
+        @if (avisoPremios()) {
+          <div class="alert alert-success" role="status">{{ avisoPremios() }}</div>
+        }
+
+        <form class="form-premio" [formGroup]="formPremio" (ngSubmit)="guardarPremio()" novalidate>
+          <div class="form-field">
+            <label for="premio-titulo">Título</label>
+            <input
+              id="premio-titulo"
+              type="text"
+              formControlName="titulo"
+              maxlength="160"
+              placeholder="Reconocimiento a la colaboración internacional"
+            />
+            @if (mensajePremio('titulo'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="premio-anio">Año</label>
+              <input id="premio-anio" type="number" formControlName="anio" min="1900" max="2100" />
+              @if (mensajePremio('anio'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="premio-orden">Orden</label>
+              <input id="premio-orden" type="number" formControlName="orden" min="0" max="999" />
+              @if (mensajePremio('orden'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="premio-otorgado">Otorgado a</label>
+            <input
+              id="premio-otorgado"
+              type="text"
+              formControlName="otorgadoA"
+              maxlength="200"
+              placeholder="Nombre de la persona o institución premiada"
+            />
+            @if (mensajePremio('otorgadoA'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="premio-institucion">Institución (opcional)</label>
+            <select id="premio-institucion" formControlName="institucionId">
+              <option [ngValue]="null">Sin institución</option>
+              @for (institucion of institucionesOpcion(); track institucion.id) {
+                <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="premio-descripcion">Descripción</label>
+            <textarea
+              id="premio-descripcion"
+              rows="3"
+              formControlName="descripcion"
+              maxlength="1500"
+              placeholder="En qué consiste el reconocimiento y por qué se otorgó."
+            ></textarea>
+            @if (mensajePremio('descripcion'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="premio-publicado">
+              <input id="premio-publicado" type="checkbox" formControlName="publicado" />
+              <span>Publicado (visible en la web)</span>
+            </label>
+          </div>
+
+          <div class="form-grid-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="cargandoPremios()">
+              {{ premioEnEdicion() ? 'Guardar cambios' : 'Guardar premio' }}
+            </button>
+            @if (premioEnEdicion()) {
+              <button
+                type="button"
+                class="btn btn-ghost"
+                [disabled]="cargandoPremios()"
+                (click)="cancelarEdicionPremio()"
+              >
+                Cancelar
+              </button>
+            }
+          </div>
+        </form>
+
+        @if (cargandoPremios() && premios().length === 0) {
+          <p class="text-sm muted">Cargando los premios...</p>
+        } @else if (premios().length === 0) {
+          <p class="text-sm muted">
+            Todavía no hay premios ni reconocimientos. Cuando los haya, los
+            publicados aparecerán en la web.
+          </p>
+        } @else {
+          <ul class="lista">
+            @for (premio of premios(); track premio.id) {
+              <li class="lista-item">
+                <div class="premio-bloque">
+                  <div class="premio-cabecera">
+                    @if (imagenDe(premio); as imagen) {
+                      <img class="premio-imagen" [src]="imagen" [alt]="premio.titulo" />
+                    }
+                    <strong>{{ premio.titulo }}</strong>
+                    <span class="text-sm muted">{{ premio.anio }}</span>
+                    @if (premio.publicado) {
+                      <span class="estado aprobada">Publicado</span>
+                    } @else {
+                      <span class="estado pendiente">Borrador</span>
+                    }
+                    <span class="text-sm muted">Orden {{ premio.orden }}</span>
+                  </div>
+
+                  <p class="text-sm muted">
+                    Otorgado a {{ premio.otorgadoA }}
+                    @if (premio.institucionNombre) {
+                      · {{ premio.institucionNombre }}
+                    }
+                  </p>
+
+                  @if (premio.descripcion) {
+                    <p class="text-sm">{{ premio.descripcion }}</p>
+                  }
+
+                  @if (premioAEliminar(); as eliminando) {
+                    @if (eliminando.id === premio.id) {
+                      <div class="alert alert-error" role="status">
+                        ¿Eliminar «{{ premio.titulo }}»? Se borra también su imagen y
+                        no se puede deshacer.
+                      </div>
+                    }
+                  }
+
+                  <!-- La imagen necesita el premio ya guardado: por eso el
+                       control vive aquí y no en el formulario. -->
+                  <div class="premio-imagen-control">
+                    <label class="text-sm" [for]="'premio-imagen-' + premio.id">
+                      Imagen del premio
+                    </label>
+                    <input
+                      [id]="'premio-imagen-' + premio.id"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      [disabled]="subiendoImagen() !== null"
+                      (change)="alSeleccionarImagen(premio, $event)"
+                    />
+                    @if (premio.imagenUrl) {
+                      <button
+                        type="button"
+                        class="btn btn-outline"
+                        [disabled]="subiendoImagen() !== null"
+                        (click)="quitarImagen(premio)"
+                      >
+                        Quitar imagen
+                      </button>
+                    }
+                    @if (subiendoImagen() === premio.id) {
+                      <span class="text-sm muted">Subiendo la imagen…</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="lista-acciones">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [disabled]="cargandoPremios()"
+                    (click)="editarPremio(premio)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    [disabled]="cargandoPremios()"
+                    (click)="alternarPublicado(premio)"
+                  >
+                    {{ premio.publicado ? 'Despublicar' : 'Publicar' }}
+                  </button>
+                  @if (premioAEliminar()?.id === premio.id) {
+                    <button
+                      type="button"
+                      class="btn btn-danger"
+                      [disabled]="cargandoPremios()"
+                      (click)="confirmarEliminarPremio()"
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost"
+                      [disabled]="cargandoPremios()"
+                      (click)="cancelarEliminarPremio()"
+                    >
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="cargandoPremios()"
+                      (click)="pedirEliminarPremio(premio)"
+                    >
+                      Eliminar
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
       <div class="alert alert-info" role="status">
-        La identidad de la CACE (logo, textos, banderas y premios) y los
-        certificados llegan en las siguientes fases del proyecto.
+        La plantilla y la emisión de certificados llegan en la siguiente fase del
+        proyecto.
       </div>
     }
   </main>

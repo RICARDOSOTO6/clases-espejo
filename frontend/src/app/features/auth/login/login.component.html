@@ -2,15 +2,18 @@
   <aside class="auth-hero">
     <div class="auth-hero-inner">
       <div class="auth-logo-chip">
-        <img src="logo-cace.png" alt="Logo de Clases Espejo" />
+        <img [src]="logo()" alt="Logo de Clases Espejo" />
       </div>
       
-      <p class="auth-hero-lema">Uniendo mentes, corazones y proyectos</p>
-      <p class="auth-hero-tag">Comunidad de Apoyo a Clases Espejo</p>
+      <p class="auth-hero-lema">{{ lema() }}</p>
+      <p class="auth-hero-tag">{{ descripcion() }}</p>
     </div>
   </aside>
 
   <main class="auth-main">
+    <!-- La tarjeta de acceso y, debajo, el resumen de premios: van en una
+         columna para que el resumen no se ponga al lado del formulario. -->
+    <div class="auth-columna">
     <section class="auth-card">
       <h1 class="auth-title">Iniciar sesión</h1>
       <p class="auth-subtitle">Accede con tu cuenta institucional</p>
@@ -101,5 +104,33 @@
       </div>
     }
     </section>
+
+    <!-- Resumen de premios: solo los publicados. La presidencia los gestiona en
+         su panel; aquí se ven antes de entrar, para que la portada enseñe algo
+         de la comunidad y no sea solo un formulario. -->
+    @if (premios().length > 0) {
+      <section class="card auth-premios">
+        <h2 class="auth-premios-titulo">Reconocimientos de la CACE</h2>
+        <ul class="auth-premios-lista">
+          @for (premio of premios().slice(0, 3); track premio.id) {
+            <li class="auth-premio">
+              @if (imagenDe(premio); as imagen) {
+                <img class="auth-premio-imagen" [src]="imagen" [alt]="premio.titulo" />
+              }
+              <div class="auth-premio-texto">
+                <strong>{{ premio.titulo }}</strong>
+                <p class="text-sm muted">
+                  {{ premio.anio }} · {{ premio.otorgadoA }}
+                  @if (premio.institucionNombre) {
+                    · {{ premio.institucionNombre }}
+                  }
+                </p>
+              </div>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    </div>
   </main>
 </div>

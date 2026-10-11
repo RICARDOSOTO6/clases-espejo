@@ -25,14 +25,15 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
+import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { Institucion, InviteDocenteDto, AltaPendiente } from '../../core/models/auth.models';
+import { Premio } from '../../core/models/cace-identidad.models';
 import {
   RevisarSolicitudDto,
   SolicitudEntrante,
 } from '../../core/models/solicitud.models';
 import {
   PAISES,
-  PAISES_CACE,
   PERIODOS_ESCOLARES,
   PROGRAMAS_EDUCATIVOS,
 } from '../../core/constants/catalogos';
@@ -58,7 +59,7 @@ import {
 } from '../../core/utils/urgencia.util';
 import { fechaTexto } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
-import { prepararLogoInstitucion } from '../../core/utils/imagen.util';
+import { prepararLogo } from '../../core/utils/imagen.util';
 
 @Component({
   selector: 'app-agente',
@@ -80,6 +81,12 @@ export class AgenteComponent implements OnInit, OnDestroy {
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly proyectosService = inject(ProyectosService);
   private readonly recordatoriosService = inject(RecordatoriosService);
+  /**
+   * Identidad de la CACE: de aquí salen las banderas de la comunidad y los
+   * premios publicados de la sección «Comunidad». El tema ya lo aplica el
+   * componente raíz.
+   */
+  private readonly identidad = inject(IdentidadCaceService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (buscador, campana y contadores). */
@@ -171,7 +178,17 @@ export class AgenteComponent implements OnInit, OnDestroy {
   readonly motivoRechazo = signal('');
 
   readonly paises = PAISES;
-  readonly paisesComunidad = PAISES_CACE;
+
+  /**
+   * Banderas de la comunidad: las mantiene la presidencia de la CACE y salen del
+   * API, ya ordenadas y solo las activas. Si la tabla estuviera vacía, el
+   * servicio devuelve la lista que antes estaba fija aquí.
+   */
+  readonly paisesComunidad = this.identidad.paises;
+  /** Premios publicados, para la sección «Comunidad». */
+  readonly premiosComunidad = this.identidad.premios;
+  /** Lema de la CACE, con el de siempre como respaldo. */
+  readonly lemaComunidad = this.identidad.lema;
   readonly programas = PROGRAMAS_EDUCATIVOS;
   readonly periodos = PERIODOS_ESCOLARES;
   prefijoTelefono = signal('');
@@ -314,6 +331,9 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.cargarSolicitudes();
     this.cargarProyectos();
     this.cargarInstitucion();
+    // Los premios de la sección «Comunidad». Si fallan, la sección se queda sin
+    // esa lista pero las banderas y el resto de la pantalla siguen funcionando.
+    this.identidad.cargarPremios().subscribe({ error: () => {} });
   }
 
   ngOnDestroy(): void {
@@ -642,7 +662,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
     let preparado: File;
     try {
-      preparado = await prepararLogoInstitucion(archivo);
+      preparado = await prepararLogo(archivo);
     } catch {
       this.logoSubiendo.set(false);
       this.logoError.set(
@@ -786,6 +806,11 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   flagUrl(codigo: string): string {
     return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
+  }
+
+  /** Imagen de un premio lista para un `<img>` (la sirve el backend). */
+  imagenDe(premio: Premio): string | null {
+    return urlDeArchivo(premio.imagenUrl);
   }
 
   // --- Doble revisión ---
