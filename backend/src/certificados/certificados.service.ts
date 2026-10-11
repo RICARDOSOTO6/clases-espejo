@@ -13,9 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ESTADO_PROYECTO_FINALIZADO } from '../common/estados';
 import {
   CAMPOS_POR_DEFECTO,
-  TEXTOS_LEGALES_POR_DEFECTO,
   normalizarCampos,
-  normalizarTextosLegales,
 } from './campos-certificado';
 import {
   CertificadoPdfService,
@@ -145,7 +143,6 @@ export class CertificadosService {
         ? {
             id: plantilla.id,
             version: plantilla.version,
-            firmaNombre: plantilla.firmaNombre,
             fondoUrl: plantilla.fondoUrl,
           }
         : null,
@@ -362,30 +359,9 @@ export class CertificadosService {
     const { alumno, proyecto, plantilla, usuarioId, avisos } = entrada;
     if (!proyecto) throw new NotFoundException('Esa clase espejo no existe.');
 
-    const s = proyecto.solicitud;
-    const origen = s?.asignacionOrigen?.docenteInstitucion?.institucion;
-    const destino = s?.institucionDestino;
-
     const datos: DatosCertificado = {
       folio: '',
       alumno: { nombre: alumno.nombre, matricula: alumno.matricula },
-      clase: {
-        titulo: s?.titulo ?? `Clase espejo #${proyecto.id}`,
-        plataforma: proyecto.plataforma,
-        fechaInicio: proyecto.fechaInicio,
-        fechaFin: proyecto.fechaFin,
-      },
-      instituciones: {
-        origen: {
-          nombre: origen?.nombre ?? 'Institución de origen',
-          pais: origen?.pais ?? '',
-        },
-        destino: {
-          nombre: destino?.nombre ?? 'Institución de destino',
-          pais: destino?.pais ?? '',
-        },
-      },
-      docentes: this.docentesDe(proyecto),
       plantilla: {
         version: plantilla.version,
         anchoPx: plantilla.anchoPx,
@@ -393,17 +369,11 @@ export class CertificadosService {
         fondoUrl: plantilla.fondoUrl,
         // Se sanean aquí también: una fila editada a mano en la base no debe
         // poder romper la emisión. El lienzo es el de la propia plantilla, así
-        // que un dato medio fuera del papel se mete dentro antes de imprimir.
+        // que un hueco medio fuera del papel se mete dentro antes de imprimir.
         campos: normalizarCampos(plantilla.campos, CAMPOS_POR_DEFECTO, {
           anchoPx: plantilla.anchoPx,
           altoPx: plantilla.altoPx,
         }),
-        textosLegales: normalizarTextosLegales(
-          plantilla.textosLegales,
-          TEXTOS_LEGALES_POR_DEFECTO,
-          { anchoPx: plantilla.anchoPx, altoPx: plantilla.altoPx },
-        ),
-        firmaNombre: plantilla.firmaNombre,
       },
     };
 
@@ -545,99 +515,18 @@ export class CertificadosService {
     return certificado;
   }
 
-  /** Todo lo que hace falta para imprimir un certificado de esta clase. */
+  /**
+   * Lo que hace falta para imprimir un certificado de esta clase: el estado
+   * (que decide si se puede emitir) y su identificador, que es lo que se guarda
+   * en la fila del certificado. Los datos de la clase (título, instituciones,
+   * fechas, docentes) van **dibujados dentro del diseño**, así que ya no hay
+   * que traerlos de la base.
+   */
   private async proyectoParaCertificado(proyectoId: number) {
     return this.prisma.proyectoClaseEspejo.findUnique({
       where: { id: proyectoId },
-      include: {
-        solicitud: {
-          include: {
-            asignacionOrigen: {
-              include: {
-                materia: true,
-                docenteInstitucion: {
-                  include: {
-                    institucion: true,
-                    docente: { include: { usuario: true } },
-                  },
-                },
-              },
-            },
-            asignacionDestino: {
-              include: {
-                materia: true,
-                docenteInstitucion: {
-                  include: {
-                    institucion: true,
-                    docente: { include: { usuario: true } },
-                  },
-                },
-              },
-            },
-            institucionDestino: true,
-          },
-        },
-        docentes: {
-          include: {
-            asignacionDocente: {
-              include: {
-                docenteInstitucion: {
-                  include: {
-                    institucion: true,
-                    docente: { include: { usuario: true } },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      select: { id: true, estado: true },
     });
-  }
-
-  /** Los docentes participantes, sin repetir a quien ya salió. */
-  private docentesDe(proyecto: {
-    docentes: {
-      rol: string;
-      asignacionDocente: {
-        docenteInstitucion: {
-          institucion: { nombre: string; pais: string };
-          docente: {
-            usuario: {
-              nombres: string;
-              apellidoPaterno: string;
-              apellidoMaterno: string | null;
-            };
-          };
-        };
-      };
-    }[];
-  }) {
-    const vistos = new Set<string>();
-    const salida: {
-      nombre: string;
-      institucion: string;
-      pais: string;
-      rol: string;
-    }[] = [];
-
-    for (const pd of proyecto.docentes ?? []) {
-      const di = pd.asignacionDocente?.docenteInstitucion;
-      const u = di?.docente?.usuario;
-      if (!u) continue;
-      const nombre = `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno ?? ''}`
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (vistos.has(nombre)) continue;
-      vistos.add(nombre);
-      salida.push({
-        nombre,
-        institucion: di.institucion?.nombre ?? '',
-        pais: di.institucion?.pais ?? '',
-        rol: pd.rol,
-      });
-    }
-    return salida;
   }
 
   /** La explicación que acompaña al botón deshabilitado. */

@@ -2,7 +2,6 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  BloqueLegal,
   CamposCertificado,
   EstadoPlantillaCertificado,
   PlantillaCertificado,
@@ -13,7 +12,7 @@ const API_URL =
     ? `http://${window.location.hostname}:3000`
     : '';
 
-/** Lo que responde guardar o subir el fondo: la versión nueva ya activa. */
+/** Lo que responde guardar o subir el diseño: la versión nueva ya activa. */
 export interface RespuestaPlantilla {
   mensaje: string;
   plantilla: PlantillaCertificado;
@@ -31,7 +30,7 @@ export interface RespuestaPlantilla {
 export class PlantillaCertificadoService {
   private readonly http = inject(HttpClient);
 
-  /** Catálogo de datos, firma sugerida y todas las versiones. */
+  /** Catálogo de datos y todas las versiones. */
   obtener(): Observable<EstadoPlantillaCertificado> {
     return this.http.get<EstadoPlantillaCertificado>(
       `${API_URL}/cace/certificados/plantilla`,
@@ -41,8 +40,8 @@ export class PlantillaCertificadoService {
   /** Guarda los cambios como versión nueva (y la deja activa). */
   guardar(dto: {
     campos?: CamposCertificado;
-    textosLegales?: BloqueLegal[];
-    firmaNombre?: string;
+    anchoPx?: number;
+    altoPx?: number;
   }): Observable<RespuestaPlantilla> {
     return this.http.post<RespuestaPlantilla>(
       `${API_URL}/cace/certificados/plantilla`,
@@ -50,7 +49,7 @@ export class PlantillaCertificadoService {
     );
   }
 
-  /** Sube el fondo; también crea una versión nueva. */
+  /** Sube la imagen del diseño; también crea una versión nueva. */
   subirFondo(archivo: File): Observable<RespuestaPlantilla> {
     const datos = new FormData();
     datos.append('fondo', archivo, archivo.name);
@@ -65,6 +64,19 @@ export class PlantillaCertificadoService {
     return this.http.patch<RespuestaPlantilla>(
       `${API_URL}/cace/certificados/plantilla/${id}/activar`,
       {},
+    );
+  }
+
+  /**
+   * El QR de un folio, ya generado por el servidor, para la vista previa: así
+   * lo que se ve en el panel es exactamente el código que va a salir impreso. Se
+   * pide como `blob` porque lleva la sesión en la cabecera (una etiqueta `<img>`
+   * no la mandaría).
+   */
+  qrDeFolio(folio: string): Observable<Blob> {
+    return this.http.get(
+      `${API_URL}/cace/certificados/plantilla/qr?folio=${encodeURIComponent(folio)}`,
+      { responseType: 'blob' },
     );
   }
 }

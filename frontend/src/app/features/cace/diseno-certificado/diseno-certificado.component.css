@@ -1,0 +1,319 @@
+/* --- Panel de diseño del certificado ---
+   El lienzo (la imagen del diseño con los tres huecos) a la izquierda y los
+   controles a la derecha. El lienzo es la hoja: todo lo que se ve dentro está en
+   la misma proporción y a la misma escala que el PDF. */
+
+.diseno {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
+  gap: var(--space-4);
+  align-items: start;
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 1000px) {
+  .diseno {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- El lienzo --- */
+
+.diseno-lienzo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.lienzo-marco {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lienzo {
+  position: relative;
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: #fff;
+  /* Recorta en vez de deformar: es exactamente lo que hace el PDF con la imagen
+     cuando no tiene la proporción del A4. */
+  touch-action: none;
+}
+
+.lienzo--sin-diseno {
+  background-image: linear-gradient(135deg, #ffffff 0%, #f1f3f7 100%);
+}
+
+.lienzo--marcando {
+  cursor: crosshair;
+}
+
+.lienzo-diseno {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Recorta, nunca deforma. */
+  object-fit: cover;
+  object-position: center;
+  /* El diseño es el fondo: los gestos los recoge el lienzo. */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Guía del margen seguro (el 5 % por lado, unos 1,5 cm). */
+.lienzo-margen {
+  position: absolute;
+  inset: 5%;
+  border: 1px dashed rgba(31, 58, 95, 0.45);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* El rectángulo que se está dibujando ahora mismo. */
+.rectangulo {
+  position: absolute;
+  border: 1px dashed var(--primary, #1f3a5f);
+  background: rgba(31, 58, 95, 0.12);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* --- Cada hueco --- */
+
+.caja {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  border: 1px dashed rgba(31, 58, 95, 0.35);
+  border-radius: 2px;
+}
+
+.caja:hover {
+  border-color: rgba(31, 58, 95, 0.65);
+}
+
+.caja--seleccionada {
+  border: 1px solid var(--primary, #1f3a5f);
+  box-shadow: 0 0 0 2px rgba(31, 58, 95, 0.15);
+  z-index: 2;
+}
+
+.caja-texto {
+  display: block;
+  width: 100%;
+  line-height: 1.15;
+  /* El nombre puede venir partido en dos líneas: se respeta el salto. */
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+.caja-qr {
+  width: 100%;
+  height: 100%;
+  /* El QR se dibuja cuadrado, inscrito en el hueco (igual que en el PDF): un
+     hueco con otra proporción no lo deforma. */
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.caja-qr-vacia {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--neutral-600);
+}
+
+/* Tirador de la esquina inferior derecha: agranda el hueco. */
+.tirador {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 1.5px solid var(--primary, #1f3a5f);
+  border-radius: 2px;
+  cursor: nwse-resize;
+  z-index: 4;
+}
+
+/* --- Los controles --- */
+
+.diseno-controles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.barra-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.barra-grupo:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.barra-marcar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.barra-titulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neutral-600);
+}
+
+.barra-subtitulo {
+  font-size: 0.78rem;
+  color: var(--neutral-600);
+}
+
+.barra-nombre {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.barra-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.barra-tamano {
+  align-items: flex-end;
+}
+
+.barra-pista {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--neutral-600);
+}
+
+.pista-alerta {
+  color: #b3261e;
+  font-weight: 600;
+}
+
+.btn-mini {
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  width: auto;
+}
+
+.btn-ancho {
+  width: 100%;
+}
+
+.btn-mini.activo {
+  border-color: var(--primary, #1f3a5f);
+  background: var(--primary, #1f3a5f);
+  color: #fff;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  color: var(--neutral-600);
+  flex: 1 1 auto;
+}
+
+.campo--corto {
+  flex: 0 0 auto;
+}
+
+.campo input[type='text'],
+.campo input[type='number'],
+.campo select {
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.82rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.campo--corto input {
+  width: 64px;
+  text-align: center;
+}
+
+.barra-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--neutral-600);
+}
+
+.barra-color input[type='color'] {
+  width: 38px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+/* --- La revisión: avisos y problemas graves --- */
+
+.barra-problemas ul {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.problema {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #8a5a00;
+}
+
+.problema-grave {
+  color: #b3261e;
+}
+
+.problema-ok {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #1b7f3b;
+}

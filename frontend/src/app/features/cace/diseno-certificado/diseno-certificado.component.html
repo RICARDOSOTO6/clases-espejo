@@ -1,0 +1,367 @@
+<!--
+  Panel de diseño del certificado.
+
+  A la izquierda, el lienzo con la imagen del diseño y los tres huecos (nombre,
+  folio y QR); a la derecha, los controles del hueco seleccionado y la vista
+  previa con datos reales. Los huecos se marcan arrastrando el ratón sobre el
+  lienzo, como cuando se recorta una foto.
+-->
+<div class="diseno">
+  <!-- --- El lienzo --- -->
+  <div class="diseno-lienzo">
+    <div class="barra-marcar">
+      <span class="barra-titulo">1. Marca los huecos</span>
+      <div class="barra-fila">
+        @for (entrada of catalogo(); track entrada.clave) {
+          <button
+            type="button"
+            class="btn btn-outline btn-mini"
+            [attr.data-accion]="'marcar-' + entrada.clave"
+            [class.activo]="marcando() === entrada.clave"
+            [attr.aria-pressed]="marcando() === entrada.clave"
+            (click)="marcar(entrada.clave)"
+          >
+            {{ marcando() === entrada.clave ? 'Dibuja el rectángulo…' : 'Marcar ' + entrada.etiqueta }}
+          </button>
+        }
+        @if (marcando()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-mini"
+            data-accion="cancelar-marcado"
+            (click)="cancelarMarcado()"
+          >
+            Cancelar
+          </button>
+        }
+      </div>
+      <p class="barra-pista">
+        Elige un hueco y <strong>arrastra el ratón</strong> sobre la imagen para
+        dibujar su rectángulo. Después puedes moverlo y cambiarle el tamaño
+        tirando de la esquina.
+      </p>
+    </div>
+
+    <div class="lienzo-marco">
+      <div
+        #marco
+        class="lienzo"
+        data-lienzo
+        [attr.data-ancho-px]="lienzo().anchoPx"
+        [attr.data-alto-px]="lienzo().altoPx"
+        [class.lienzo--sin-diseno]="!fondo()"
+        [class.lienzo--marcando]="!!marcando()"
+        [style.aspect-ratio]="lienzo().anchoPx + ' / ' + lienzo().altoPx"
+        (pointerdown)="alPulsarLienzo($event)"
+      >
+        @if (fondo(); as url) {
+          <img
+            class="lienzo-diseno"
+            [src]="url"
+            crossorigin="anonymous"
+            alt="Diseño del certificado"
+            (load)="alCargarDiseno($event)"
+          />
+        }
+
+        <!-- El margen seguro del 5 % (unos 1,5 cm): nada importante fuera. -->
+        <div class="lienzo-margen" aria-hidden="true"></div>
+
+        @for (item of cajas(); track item.clave) {
+          <div
+            class="caja"
+            [class.caja--seleccionada]="esSeleccionada(item.clave)"
+            [class.caja--qr]="item.clave === 'qr'"
+            [attr.data-campo]="item.clave"
+            [attr.data-x]="item.caja.x"
+            [attr.data-y]="item.caja.y"
+            [attr.data-ancho]="item.caja.ancho"
+            [attr.data-alto]="item.caja.alto"
+            [attr.title]="item.etiqueta + ' — arrastra para mover, tira de la esquina para agrandar'"
+            [style.left]="porcentaje(item.caja.x, 'x')"
+            [style.top]="porcentaje(item.caja.y, 'y')"
+            [style.width]="porcentaje(item.caja.ancho, 'x')"
+            [style.height]="porcentaje(item.caja.alto, 'y')"
+            (pointerdown)="arrastrar($event, item.clave)"
+          >
+            @if (item.clave === 'qr') {
+              @if (qrUrl(); as url) {
+                <img class="caja-qr" [src]="url" alt="" />
+              } @else {
+                <span class="caja-qr-vacia">QR</span>
+              }
+            } @else {
+              <span
+                class="caja-texto"
+                [style.font-size]="tamanoEnCqw(item.tamano)"
+                [style.font-weight]="item.caja.negrita ? 700 : 400"
+                [style.font-style]="item.caja.cursiva ? 'italic' : 'normal'"
+                [style.color]="item.caja.color"
+                [style.text-align]="item.caja.alineacion"
+                >{{ item.texto }}</span
+              >
+            }
+
+            @if (esSeleccionada(item.clave)) {
+              <span
+                class="tirador"
+                data-tirador="se"
+                (pointerdown)="redimensionar($event, item.clave)"
+              ></span>
+            }
+          </div>
+        }
+
+        @if (rectangulo(); as r) {
+          <div
+            class="rectangulo"
+            [style.left]="porcentaje(r.x, 'x')"
+            [style.top]="porcentaje(r.y, 'y')"
+            [style.width]="porcentaje(r.ancho, 'x')"
+            [style.height]="porcentaje(r.alto, 'y')"
+          ></div>
+        }
+      </div>
+    </div>
+
+    <p class="text-sm muted">
+      El lienzo mide {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px, la misma
+      proporción y la misma escala que la hoja A4 del PDF: lo que se ve aquí es
+      lo que sale impreso. Si la imagen no tiene esa proporción se
+      <strong>recorta por el centro</strong>, nunca se deforma.
+    </p>
+  </div>
+
+  <!-- --- Los controles --- -->
+  <aside class="diseno-controles" aria-label="Ajustes del certificado">
+    <!-- Vista previa con datos de verdad -->
+    <div class="barra-grupo">
+      <span class="barra-titulo">2. Vista previa con datos de verdad</span>
+      <label class="campo">
+        <span>Nombre del alumno</span>
+        <input
+          type="text"
+          data-accion="nombre-prueba"
+          maxlength="200"
+          [value]="nombrePrueba()"
+          (input)="cambiarNombrePrueba($any($event.target).value)"
+        />
+      </label>
+      <button
+        type="button"
+        class="btn btn-outline btn-mini btn-ancho"
+        data-accion="probar-nombre-largo"
+        (click)="probarNombreLargo()"
+      >
+        Probar con el nombre más largo
+        {{ nombreLargoEsDeLaClase() ? 'de la clase' : '(ejemplo)' }}
+      </button>
+      <label class="campo">
+        <span>Folio</span>
+        <input
+          type="text"
+          data-accion="folio-prueba"
+          maxlength="40"
+          [value]="folioPrueba()"
+          (input)="cambiarFolioPrueba($any($event.target).value)"
+        />
+      </label>
+      <p class="barra-pista">
+        El nombre se mide con la tipografía elegida y <strong>se ajusta solo</strong>:
+        @if (ajusteNombre().desborda) {
+          <span class="pista-alerta">
+            no cabe ni con el mínimo ({{ minimoLegible }} pt) en dos líneas.
+          </span>
+        } @else if (ajusteNombre().lineas.length > 1) {
+          sale en <strong>dos líneas</strong> a {{ ajusteNombre().tamano }} pt.
+        } @else {
+          sale en una línea a <strong>{{ ajusteNombre().tamano }} pt</strong>.
+        }
+        El QR apunta a la verificación pública del folio.
+      </p>
+    </div>
+
+    <!-- Ajustes del hueco seleccionado -->
+    <div class="barra-grupo">
+      <span class="barra-titulo">3. Ajustes del hueco</span>
+      @if (seleccionada(); as sel) {
+        <p class="barra-nombre" [attr.data-seleccion]="sel.clave">{{ sel.etiqueta }}</p>
+
+        @if (sel.esTexto) {
+          <label class="campo">
+            <span>Tipografía</span>
+            <select
+              data-accion="tipografia"
+              [value]="tipografiaSeleccionada()"
+              (change)="cambiarTipografia($event)"
+            >
+              @for (opcion of tipografias; track opcion.valor) {
+                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="barra-fila">
+            <span class="barra-subtitulo">Alineación</span>
+            @for (opcion of alineaciones; track opcion.valor) {
+              <button
+                type="button"
+                class="btn btn-outline btn-mini"
+                [attr.data-accion]="'alinear-' + opcion.valor"
+                [class.activo]="sel.caja.alineacion === opcion.valor"
+                [attr.aria-pressed]="sel.caja.alineacion === opcion.valor"
+                (click)="cambiarAlineacion(opcion.valor)"
+              >
+                {{ opcion.etiqueta }}
+              </button>
+            }
+          </div>
+
+          <div class="barra-fila">
+            <label class="barra-color">
+              <span>Color</span>
+              <input
+                type="color"
+                data-accion="color"
+                [value]="sel.caja.color"
+                (input)="cambiarColor($event)"
+              />
+            </label>
+          </div>
+
+          @if (sel.clave === 'nombre') {
+            <div class="barra-fila barra-tamano">
+              <label class="campo campo--corto">
+                <span>Mínimo</span>
+                <input
+                  type="number"
+                  data-accion="tamano-minimo"
+                  [min]="tamanoMinimo"
+                  [max]="sel.caja.tamano"
+                  [value]="sel.caja.tamanoMinimo"
+                  (change)="cambiarTamano($event, 'minimo')"
+                />
+              </label>
+              <label class="campo campo--corto">
+                <span>Máximo</span>
+                <input
+                  type="number"
+                  data-accion="tamano-maximo"
+                  [min]="tamanoMinimo"
+                  [max]="tamanoMaximo"
+                  [value]="sel.caja.tamano"
+                  (change)="cambiarTamano($event, 'maximo')"
+                />
+              </label>
+              <span class="barra-pista">pt</span>
+            </div>
+            <p class="barra-pista">
+              El nombre se escribe con el tamaño más grande del rango que quepa;
+              si no cabe, baja hasta el mínimo y, si aún no cabe, se parte en dos
+              líneas. {{ minimoLegible }} pt es el mínimo legible recomendado.
+            </p>
+          } @else {
+            <div class="barra-fila barra-tamano">
+              <label class="campo campo--corto">
+                <span>Tamaño</span>
+                <input
+                  type="number"
+                  data-accion="tamano"
+                  [min]="tamanoMinimo"
+                  [max]="tamanoMaximo"
+                  [value]="sel.caja.tamano"
+                  (change)="cambiarTamano($event, 'maximo')"
+                />
+              </label>
+              <span class="barra-pista">pt (el folio no se ajusta solo)</span>
+            </div>
+          }
+        } @else {
+          <p class="barra-pista">
+            El hueco del QR <strong>no lleva tipografía</strong>: la aplicación lo
+            dibuja siempre en negro sobre blanco y con su margen, para que un
+            teléfono lo lea. Solo hay que dejarle el hueco cuadrado y limpio.
+          </p>
+        }
+
+        <button
+          type="button"
+          class="btn btn-ghost btn-mini btn-ancho"
+          [attr.data-accion]="'marcar-' + sel.clave"
+          (click)="marcar(sel.clave)"
+        >
+          Volver a marcar este hueco
+        </button>
+
+        <p class="barra-pista">
+          x {{ sel.caja.x }} · y {{ sel.caja.y }} · {{ sel.caja.ancho }} ×
+          {{ sel.caja.alto }} px de la imagen
+        </p>
+      } @else {
+        <p class="text-sm muted">
+          Haz clic en un hueco del lienzo para ajustarlo.
+        </p>
+      }
+    </div>
+
+    <!-- Revisión y guardado -->
+    <div class="barra-grupo">
+      <span class="barra-titulo">4. Revisión</span>
+      <div
+        class="barra-problemas"
+        data-problemas
+        [attr.data-graves]="graves().length"
+        [attr.data-avisos]="avisos().length"
+        role="status"
+      >
+        @if (problemas().length === 0) {
+          <p class="problema-ok">Sin problemas: la plantilla se puede activar.</p>
+        } @else {
+          <ul>
+            @for (problema of problemas(); track problema.donde + problema.mensaje) {
+              <li
+                class="problema"
+                [class.problema-grave]="problema.gravedad === 'grave'"
+                [attr.data-gravedad]="problema.gravedad"
+              >
+                <strong>{{ problema.donde }}:</strong> {{ problema.mensaje }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-mini btn-ancho"
+        data-accion="restaurar"
+        (click)="restaurarHuecos()"
+      >
+        Restaurar los huecos de la guía
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary btn-ancho"
+        data-accion="guardar"
+        [disabled]="!puedeGuardar()"
+        [attr.data-bloqueado]="graves().length > 0"
+        [attr.title]="
+          graves().length > 0
+            ? 'Corrige los problemas graves para poder guardar'
+            : 'Guarda los cambios como versión nueva y la deja activa'
+        "
+        (click)="guardarPlantilla()"
+      >
+        @if (guardando()) {
+          <span class="spinner" aria-hidden="true"></span>
+        }
+        {{ guardando() ? 'Guardando...' : 'Guardar como versión nueva' }}
+      </button>
+      <p class="barra-pista">
+        Guardar no sobrescribe nada: crea una versión nueva y la deja activa. Las
+        anteriores se conservan y se pueden reactivar.
+      </p>
+    </div>
+  </aside>
+</div>

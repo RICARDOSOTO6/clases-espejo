@@ -741,8 +741,7 @@
               </button>
               @if (estado.plantilla; as plantilla) {
                 <span class="text-sm muted">
-                  Plantilla versión {{ plantilla.version }} ·
-                  firma: {{ plantilla.firmaNombre || 'pendiente de configurar' }}
+                  Plantilla versión {{ plantilla.version }}
                 </span>
               }
               @if (estado.resumen.pendientes > 0) {

@@ -1,83 +1,59 @@
 /**
- * Certificados de la clase espejo (fase 4).
+ * Certificados de la clase espejo.
  *
- * Dos pantallas comparten estos tipos: el panel del presidente, que diseña la
- * **plantilla** (fondo, posiciones, textos legales y firma), y la clase espejo
+ * Dos pantallas comparten estos tipos: el panel de la presidencia, que diseña
+ * la **plantilla** (la imagen del diseño y los tres huecos), y la clase espejo
  * del docente, que **emite** los certificados de sus alumnos a partir de ella.
+ *
+ * El diseño se hace **fuera** de la aplicación (Canva, Word, el programa que
+ * sea) y se sube como una imagen terminada: los logos, el título, los textos
+ * legales y la línea de firma van dibujados dentro de esa imagen. La plataforma
+ * solo estampa los **tres datos que cambian**: el nombre del alumno, el folio y
+ * el QR de verificación.
  */
 
-/** Dónde va el texto dentro de su caja. */
+/** Dónde va el texto dentro de su hueco. */
 export type AlineacionCertificado = 'left' | 'center' | 'right';
 
-/** Los datos que lleva el certificado. */
-export type ClaveCampoCertificado =
-  | 'titulo'
-  | 'nombre'
-  | 'instituciones'
-  | 'fechas'
-  | 'docentes'
-  | 'firma'
-  | 'folio';
+/** Los datos que estampa la aplicación. */
+export type ClaveCampoCertificado = 'nombre' | 'folio' | 'qr';
 
-/** Posición y estilo de un dato sobre el fondo. */
+/** Posición y estilo de un hueco sobre el diseño. */
 export interface CampoCertificado {
   /** Esquina izquierda, en píxeles de la plantilla. */
   x: number;
   /** Borde superior, en píxeles de la plantilla. */
   y: number;
-  /** Ancho de la caja: lo usan la alineación y el salto de línea. */
+  /** Ancho del hueco: lo usan la alineación y el salto de línea. */
   ancho: number;
   /**
-   * Alto de la caja, en píxeles de la plantilla. Es la caja de diseño: con ella
-   * el editor sabe si el texto cabe. El PDF no recorta con ella (un nombre
-   * largo se sale antes que perder letras).
+   * Alto del hueco, en píxeles de la plantilla. Es la caja de diseño: con ella
+   * se sabe si el nombre cabe (y en ella caben sus dos líneas).
    */
   alto: number;
-  /** Tamaño de la letra, en puntos del PDF. */
+  /** Tamaño de la letra, en puntos del PDF (el máximo del autoajuste). */
   tamano: number;
+  /** Suelo del autoajuste de este hueco, en puntos del PDF. */
+  tamanoMinimo: number;
   alineacion: AlineacionCertificado;
-  /** Color en `#RRGGBB`. */
+  /** Color en `#RRGGBB`. El QR lo ignora: siempre va en negro. */
   color: string;
   negrita: boolean;
   cursiva: boolean;
-  /**
-   * Texto de ejemplo con el que se diseñó la caja. No se imprime: al emitir se
-   * escribe el nombre del alumno y los datos de la clase de verdad.
-   */
+  /** Texto de ejemplo del diseño. No se imprime. */
   muestra: string;
 }
 
 export type CamposCertificado = Record<ClaveCampoCertificado, CampoCertificado>;
 
-/** Un párrafo legal suelto, con su sitio. */
-export interface BloqueLegal {
-  id: string;
-  texto: string;
-  x: number;
-  y: number;
-  ancho: number;
-  alto: number;
-  tamano: number;
-  alineacion: AlineacionCertificado;
-  color: string;
-  negrita: boolean;
-  cursiva: boolean;
-}
-
-/** Qué está seleccionado en el lienzo del editor. */
-export type SeleccionCertificado =
-  | { tipo: 'campo'; clave: ClaveCampoCertificado }
-  | { tipo: 'legal'; id: string }
-  | null;
-
 /**
  * Un problema del diseño. `grave` es lo que impide activar la plantilla (un
- * dato fuera del papel o un texto que no cabe); `aviso` es lo que solo hay que
- * decir (falta el fondo, un dato pegado al canto…).
+ * hueco fuera del papel o un nombre que no cabe); `aviso` es lo que solo hay
+ * que decir (falta el diseño, la imagen sale pixelada, poco contraste…).
  */
 export interface ProblemaPlantilla {
   gravedad: 'grave' | 'aviso';
-  /** Dónde está: la etiqueta del dato o el párrafo legal. */
+  /** Dónde está: la etiqueta del dato. */
   donde: string;
   mensaje: string;
 }
@@ -91,8 +67,6 @@ export interface PlantillaCertificado {
   anchoPx: number;
   altoPx: number;
   campos: CamposCertificado;
-  textosLegales: BloqueLegal[];
-  firmaNombre: string;
   creadaPor: string | null;
   creadoEn: string;
   /** Cuántos certificados salieron ya con esta versión. */
@@ -107,8 +81,8 @@ export interface CatalogoCampoCertificado {
 
 /**
  * Lo que se está editando en el panel antes de guardar. Es la versión activa
- * (o la de arranque, con `version: 0`) con los retoques del formulario encima;
- * guardar crea una versión nueva a partir de esto.
+ * (o la de arranque, con `version: 0`); guardar crea una versión nueva a partir
+ * de esto.
  */
 export interface BorradorPlantillaCertificado {
   /** `null` mientras no exista ninguna versión guardada. */
@@ -119,17 +93,16 @@ export interface BorradorPlantillaCertificado {
   anchoPx: number;
   altoPx: number;
   campos: CamposCertificado;
-  textosLegales: BloqueLegal[];
-  firmaNombre: string;
 }
 
 /** Todo lo que devuelve la pantalla de la plantilla. */
 export interface EstadoPlantillaCertificado {
   catalogo: CatalogoCampoCertificado[];
-  /** Nombre del presidente, para proponerlo como firma. */
-  firmaSugerida: string;
   /** Plantilla de arranque, para poder previsualizar antes de guardar nada. */
-  porDefecto: Omit<PlantillaCertificado, 'id' | 'version' | 'activa' | 'creadaPor' | 'creadoEn' | 'certificados'>;
+  porDefecto: Omit<
+    PlantillaCertificado,
+    'id' | 'version' | 'activa' | 'creadaPor' | 'creadoEn' | 'certificados'
+  >;
   versiones: PlantillaCertificado[];
   activa: PlantillaCertificado | null;
 }
@@ -162,7 +135,6 @@ export interface EstadoCertificados {
   plantilla: {
     id: number;
     version: number;
-    firmaNombre: string;
     fondoUrl: string | null;
   } | null;
   lista: {
@@ -186,6 +158,6 @@ export interface ResultadoEmision {
   emitidos: CertificadoEmitido[];
   reemitidos: CertificadoEmitido[];
   omitidos: { alumnoId: number; alumno: string; motivo: string }[];
-  /** Cosas que hay que decir sin haber fallado (por ejemplo, un fondo WEBP). */
+  /** Cosas que hay que decir sin haber fallado (por ejemplo, un diseño WEBP). */
   avisos: string[];
 }

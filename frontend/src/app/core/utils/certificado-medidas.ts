@@ -1,18 +1,20 @@
 /**
  * Las cuentas del certificado, del lado del navegador: cuánto ocupa un texto,
- * si cabe en su caja y qué problemas tiene una plantilla.
+ * qué tamaño le queda al nombre, si un color se va a leer sobre el diseño y qué
+ * problemas tiene una plantilla.
  *
- * Existe para que **el lienzo y el PDF midan lo mismo**. Los números (el A4 en
- * puntos, el interlineado, los límites de tamaño y el margen seguro) son los
- * mismos que usa el backend en `campos-certificado.ts`; si allí cambian, aquí
- * hay que cambiarlos también, y por eso están juntos y comentados.
+ * Existe para que **la vista previa y el PDF midan lo mismo**. Los números (el
+ * A4 en puntos, el interlineado, los límites de tamaño, el mínimo legible y el
+ * margen seguro) son los mismos que usa el backend en `campos-certificado.ts`;
+ * si allí cambian, aquí hay que cambiarlos también, y por eso están juntos y
+ * comentados.
  *
  * El texto se mide con un `canvas` de verdad, con la misma familia de fuente
- * que incrusta el PDF (Arial en Windows), así que el aviso de «no cabe» salta
- * en el mismo sitio en el que el papel se desbordaría.
+ * que incrusta el PDF (Arial en Windows), así que lo que se ve en la pantalla
+ * es lo que sale impreso.
  */
 import {
-  BloqueLegal,
+  CampoCertificado,
   CamposCertificado,
   ClaveCampoCertificado,
   ProblemaPlantilla,
@@ -29,12 +31,31 @@ export const INTERLINEADO = 1.15;
 export const TAMANO_MINIMO = 8;
 export const TAMANO_MAXIMO = 72;
 
-/** Caja mínima de un dato, en píxeles de la plantilla. */
+/**
+ * **Mínimo legible del nombre**, en puntos, y valor con el que nace un hueco.
+ * El autoajuste no baja de aquí salvo que el hueco pida otra cosa, y nunca por
+ * debajo de `TAMANO_MINIMO`.
+ */
+export const TAMANO_MINIMO_NOMBRE = 18;
+
+/** Cuánto baja el tamaño en cada paso del autoajuste, en puntos. */
+export const PASO_AJUSTE = 0.5;
+
+/** Hueco mínimo de un dato, en píxeles de la plantilla. */
 export const ANCHO_MINIMO = 120;
 export const ALTO_MINIMO = 48;
 
-/** Margen seguro: un 5 % por cada lado, dibujado como guía en el lienzo. */
+/** Margen seguro: un 5 % por cada lado (el 1,5 cm que pide la guía). */
 export const MARGEN_SEGURO = 0.05;
+
+/**
+ * El A4 horizontal a 300 ppp (3508 × 2480 px) que pide la guía de diseño. Por
+ * debajo de esto la imagen sale pixelada al imprimir.
+ */
+export const LIENZO_POR_DEFECTO: LienzoPlantilla = {
+  anchoPx: 3508,
+  altoPx: 2480,
+};
 
 /** El lienzo de la plantilla, en píxeles (el tamaño de la imagen de fondo). */
 export interface LienzoPlantilla {
@@ -68,14 +89,12 @@ export function altoDeLineas(
 }
 
 /**
- * Mete una caja dentro del lienzo: ni se sale del papel ni se queda por debajo
- * del mínimo. Es la regla que el usuario pidió («los campos no se pueden sacar
- * del lienzo»), y se aplica igual al arrastrar que al redimensionar.
+ * Mete un hueco dentro del lienzo: ni se sale del papel ni se queda por debajo
+ * del mínimo. Se aplica igual al dibujar el rectángulo que al moverlo.
  */
-export function encajarCaja<T extends { x: number; y: number; ancho: number; alto: number }>(
-  caja: T,
-  lienzo: LienzoPlantilla,
-): T {
+export function encajarCaja<
+  T extends { x: number; y: number; ancho: number; alto: number },
+>(caja: T, lienzo: LienzoPlantilla): T {
   const ancho = Math.min(lienzo.anchoPx, Math.max(ANCHO_MINIMO, Math.round(caja.ancho)));
   const alto = Math.min(lienzo.altoPx, Math.max(ALTO_MINIMO, Math.round(caja.alto)));
   return {
@@ -115,14 +134,7 @@ export function tocaMargenSeguro(
   );
 }
 
-/** El resultado de medir un texto dentro de una caja. */
-export interface MedidaTexto {
-  lineas: number;
-  /** Lo que ocupa de alto, en píxeles de la plantilla. */
-  altoPx: number;
-  /** ¿Se sale de la caja? */
-  desborda: boolean;
-}
+// --- Medir texto ---
 
 /** Un contexto de medición reutilizado: crear uno por texto sería un derroche. */
 let contextoMedicion: CanvasRenderingContext2D | null | undefined;
@@ -137,189 +149,287 @@ function contexto(): CanvasRenderingContext2D | null {
   return contextoMedicion;
 }
 
-/**
- * Mide un texto como lo va a partir el PDF: por palabras y, si una palabra sola
- * no cabe, por caracteres. Se mide **en píxeles de la plantilla**, que es la
- * unidad del lienzo, y así el resultado se compara directamente con el alto de
- * la caja.
- */
-export function medirTexto(
+/** La fuente de CSS que corresponde al estilo guardado (Arial y sus variantes). */
+export function fuenteCss(negrita: boolean, cursiva: boolean, tamanoPx: number): string {
+  return `${cursiva ? 'italic ' : ''}${negrita ? '700' : '400'} ${tamanoPx}px Arial, Helvetica, sans-serif`;
+}
+
+/** Lo que mide de ancho un texto, en píxeles de la plantilla. */
+export function medirAncho(
   texto: string,
-  caja: Pick<CajaCertificado, 'ancho' | 'alto' | 'tamano' | 'negrita' | 'cursiva'>,
-  lienzo: LienzoPlantilla,
-): MedidaTexto {
-  const tamanoPx = caja.tamano * pxPorPunto(lienzo);
-  const ctx = contexto();
-  const ancho = caja.ancho;
-
-  if (!ctx || !texto.trim()) {
-    const lineas = texto.trim() ? 1 : 0;
-    return {
-      lineas,
-      altoPx: lineas * tamanoPx * INTERLINEADO,
-      desborda: false,
-    };
-  }
-
-  ctx.font = `${caja.cursiva ? 'italic ' : ''}${caja.negrita ? '700' : '400'} ${tamanoPx}px Arial, Helvetica, sans-serif`;
-  const mide = (t: string) => ctx.measureText(t).width;
-
-  let lineas = 0;
-  for (const parrafo of texto.split('\n')) {
-    const palabras = parrafo.split(/\s+/).filter(Boolean);
-    if (palabras.length === 0) {
-      lineas += 1;
-      continue;
-    }
-    lineas += envolver(palabras, mide, ancho);
-  }
-
-  const altoPx = lineas * tamanoPx * INTERLINEADO;
-  // Medio píxel de tolerancia: por debajo de eso es redondeo, no un desborde.
-  return { lineas, altoPx, desborda: altoPx > caja.alto + 0.5 };
-}
-
-/** Cuenta las líneas que ocupan unas palabras en un ancho dado. */
-function envolver(
-  palabras: string[],
-  mide: (texto: string) => number,
-  ancho: number,
-): number {
-  let lineas = 1;
-  let actual = '';
-
-  for (const palabra of palabras) {
-    const prueba = actual ? `${actual} ${palabra}` : palabra;
-    if (mide(prueba) <= ancho) {
-      actual = prueba;
-      continue;
-    }
-    if (actual) {
-      lineas += 1;
-      actual = '';
-    }
-    // La palabra sola tampoco cabe: el PDF la parte, así que aquí también.
-    let trozo = '';
-    for (const caracter of palabra) {
-      if (trozo && mide(trozo + caracter) > ancho) {
-        lineas += 1;
-        trozo = caracter;
-      } else {
-        trozo += caracter;
-      }
-    }
-    actual = trozo;
-  }
-  return lineas;
-}
-
-/**
- * Lo que necesita la firma: la raya, el nombre y el cargo. El nombre va a
- * `tamano` y el cargo a 0.6 de ese tamaño, con los mismos huecos que dibuja el
- * PDF (`certificado-pdf.service.ts`).
- */
-export function altoNecesarioFirma(
+  estilo: { negrita: boolean; cursiva: boolean },
   tamano: number,
   lienzo: LienzoPlantilla,
 ): number {
-  return Math.round((10 + tamano + Math.max(8, tamano * 0.6)) * pxPorPunto(lienzo));
+  const ctx = contexto();
+  const tamanoPx = tamano * pxPorPunto(lienzo);
+  if (!ctx) return texto.length * tamanoPx * 0.5;
+  ctx.font = fuenteCss(estilo.negrita, estilo.cursiva, tamanoPx);
+  return ctx.measureText(texto).width;
 }
+
+/** Cómo queda el nombre después del autoajuste. */
+export interface NombreAjustado {
+  lineas: string[];
+  tamano: number;
+  /** `true` cuando ni con el mínimo y dos líneas cabe en el hueco. */
+  desborda: boolean;
+}
+
+/**
+ * El autoajuste del nombre, con **el mismo criterio que el PDF**: se busca la
+ * línea más grande que quepa bajando de medio punto en medio punto hasta el
+ * mínimo del hueco; si no cabe en una línea, se parte en dos por los espacios
+ * (nunca cortando una palabra) y, si aun así no cabe, se avisa.
+ *
+ * Sirve para que la vista previa enseñe el nombre al tamaño que va a salir de
+ * verdad, no al tamaño de partida.
+ */
+export function ajustarNombre(
+  texto: string,
+  caja: Pick<CajaCertificado, 'ancho' | 'alto' | 'tamano' | 'negrita' | 'cursiva'> & {
+    tamanoMinimo?: number;
+  },
+  lienzo: LienzoPlantilla,
+): NombreAjustado {
+  const nombre = (texto ?? '').trim();
+  if (!nombre) return { lineas: [], tamano: caja.tamano, desborda: false };
+
+  const suelo = Math.max(
+    TAMANO_MINIMO,
+    Math.min(caja.tamanoMinimo ?? TAMANO_MINIMO_NOMBRE, caja.tamano),
+  );
+  const altoEnPx = (tamano: number, lineas: number) =>
+    tamano * pxPorPunto(lienzo) * INTERLINEADO * lineas;
+
+  const cabeAncho = (t: string, tamano: number) =>
+    medirAncho(t, caja, tamano, lienzo) <= caja.ancho + 0.5;
+
+  const inicio = Math.max(suelo, Math.round(caja.tamano / PASO_AJUSTE) * PASO_AJUSTE);
+  for (let tamano = inicio; tamano >= suelo; tamano -= PASO_AJUSTE) {
+    if (cabeAncho(nombre, tamano) && altoEnPx(tamano, 1) <= caja.alto + 0.5) {
+      return { lineas: [nombre], tamano: redondear(tamano), desborda: false };
+    }
+  }
+
+  const partes = partirEnDos(nombre);
+  if (
+    partes &&
+    partes.every((parte) => cabeAncho(parte, suelo)) &&
+    altoEnPx(suelo, 2) <= caja.alto + 0.5
+  ) {
+    return { lineas: partes, tamano: suelo, desborda: false };
+  }
+
+  return { lineas: [nombre], tamano: suelo, desborda: true };
+}
+
+/**
+ * Parte el nombre en dos líneas **por los espacios**, buscando el corte que
+ * deja las dos mitades más parecidas. Devuelve `null` si no hay ningún hueco
+ * donde cortar (un nombre de una sola palabra): partir una palabra por la mitad
+ * es mutilar el nombre de una persona.
+ */
+export function partirEnDos(texto: string): [string, string] | null {
+  const palabras = texto.split(/\s+/).filter(Boolean);
+  if (palabras.length < 2) return null;
+
+  let mejor: [string, string] | null = null;
+  let mejorDiferencia = Infinity;
+  for (let corte = 1; corte < palabras.length; corte += 1) {
+    const primera = palabras.slice(0, corte).join(' ');
+    const segunda = palabras.slice(corte).join(' ');
+    const diferencia = Math.abs(primera.length - segunda.length);
+    if (diferencia < mejorDiferencia) {
+      mejorDiferencia = diferencia;
+      mejor = [primera, segunda];
+    }
+  }
+  return mejor;
+}
+
+/** Un tamaño con medio punto de precisión, sin colas de coma flotante. */
+function redondear(valor: number): number {
+  return Math.round(valor * 100) / 100;
+}
+
+// --- Contraste ---
+
+/**
+ * Luminancia relativa de un color `#RRGGBB`, con la fórmula de la WCAG 2.1 que
+ * ya se usó para dar por buenos los cuatro temas de la CACE (ver
+ * `styles.css`): cada canal se normaliza y se le aplica la curva de la
+ * percepción, porque el ojo no ve igual de brillante un verde que un azul.
+ */
+export function luminancia(color: string): number {
+  const canales = aRgb(color);
+  if (!canales) return 0;
+  const [r, g, b] = canales.map((canal) => {
+    const c = canal / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Contraste entre dos colores, de 1 (nada) a 21 (negro sobre blanco). La WCAG
+ * pide **4,5:1** para el texto normal y 3:1 para el texto grande: por debajo de
+ * 4,5 el nombre y el folio no se leen bien en papel.
+ */
+export function contraste(colorA: string, colorB: string): number {
+  const a = luminancia(colorA);
+  const b = luminancia(colorB);
+  const claro = Math.max(a, b);
+  const oscuro = Math.min(a, b);
+  return (claro + 0.05) / (oscuro + 0.05);
+}
+
+/** El mínimo de la WCAG para texto normal, que es el que se avisa. */
+export const CONTRASTE_MINIMO = 4.5;
+
+/** `#RRGGBB` → `[r, g, b]`, o `null` si el color no tiene esa forma. */
+function aRgb(color: string): [number, number, number] | null {
+  const limpio = (color ?? '').trim().replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(limpio)) return null;
+  return [
+    parseInt(limpio.slice(0, 2), 16),
+    parseInt(limpio.slice(2, 4), 16),
+    parseInt(limpio.slice(4, 6), 16),
+  ];
+}
+
+/** `[r, g, b]` → `#rrggbb`. */
+export function aHex(r: number, g: number, b: number): string {
+  const dos = (valor: number) =>
+    Math.max(0, Math.min(255, Math.round(valor))).toString(16).padStart(2, '0');
+  return `#${dos(r)}${dos(g)}${dos(b)}`;
+}
+
+// --- La revisión de la plantilla ---
 
 /** Todo lo que hace falta para revisar una plantilla. */
 export interface RevisionPlantilla {
   campos: CamposCertificado;
-  textosLegales: BloqueLegal[];
   lienzo: LienzoPlantilla;
-  firmaNombre: string;
-  /** Proporción (ancho/alto) de la imagen de fondo, si se pudo leer. */
+  /** Proporción (ancho/alto) de la imagen del diseño, si se pudo leer. */
   proporcionFondo: number | null;
+  /** Tamaño real de la imagen del diseño, si se pudo leer. */
+  resolucionFondo: { anchoPx: number; altoPx: number } | null;
   hayFondo: boolean;
+  /** El nombre con el que se está probando la vista previa. */
+  nombrePrueba: string;
+  /** Color medio del diseño debajo de cada hueco, si se pudo muestrear. */
+  fondosMuestreados: Partial<Record<ClaveCampoCertificado, string>>;
   /** Etiquetas del catálogo, para nombrar cada dato en los mensajes. */
   etiquetas: { clave: ClaveCampoCertificado; etiqueta: string }[];
 }
 
 /**
- * La revisión completa: los problemas **graves** (que bloquean activar) y los
- * avisos. Se calcula con los textos de ejemplo de cada caja, que son los que el
- * presidente tiene a la vista: si el ejemplo no cabe, se bloquea; y si el
- * nombre real de un alumno es más largo, el aviso sale al emitir.
+ * La revisión completa: los problemas **graves** (los que impiden guardar) y
+ * los avisos (lo que solo hay que decir). Se calcula con el nombre de prueba que
+ * está a la vista, que es el caso que se quiere comprobar.
  */
 export function revisarPlantilla(revision: RevisionPlantilla): ProblemaPlantilla[] {
-  const { campos, textosLegales, lienzo, firmaNombre, proporcionFondo, hayFondo, etiquetas } =
-    revision;
+  const {
+    campos,
+    lienzo,
+    proporcionFondo,
+    resolucionFondo,
+    hayFondo,
+    nombrePrueba,
+    fondosMuestreados,
+    etiquetas,
+  } = revision;
   const problemas: ProblemaPlantilla[] = [];
 
   for (const { clave, etiqueta } of etiquetas) {
     const campo = campos[clave];
     if (!campo) continue;
 
-    if (clave === 'firma') {
-      // La firma no imprime la muestra: imprime el nombre real de quien firma
-      // más el cargo. Se mide eso, que es lo que va a salir.
-      const necesario = altoNecesarioFirma(campo.tamano, lienzo);
-      revisarCaja(problemas, campo, etiqueta, lienzo, Math.min(campo.alto, necesario));
-      if (necesario > campo.alto + 0.5) {
-        problemas.push({
-          gravedad: 'grave',
-          donde: etiqueta,
-          mensaje: `La caja es más baja que la firma (necesita unos ${necesario} px de alto y tiene ${campo.alto}): agrándala o baja el tamaño de letra.`,
-        });
-      }
-      if (firmaNombre.trim()) {
-        const medida = medirTexto(firmaNombre, campo, lienzo);
-        if (medida.desborda) {
-          problemas.push({
-            gravedad: 'grave',
-            donde: etiqueta,
-            mensaje: `El nombre de la firma no cabe en su caja (${medida.lineas} línea(s)): agrándala o baja el tamaño de letra.`,
-          });
-        }
-      }
-      continue;
-    }
-
-    const muestra = campo.muestra;
-    const medida = muestra?.trim() ? medirTexto(muestra, campo, lienzo) : null;
-    revisarCaja(problemas, campo, etiqueta, lienzo, medida?.altoPx);
-    if (medida?.desborda) {
+    if (!dentroDelLienzo(campo, lienzo)) {
       problemas.push({
         gravedad: 'grave',
         donde: etiqueta,
-        mensaje: `El texto de ejemplo no cabe en su caja (ocupa ${medida.lineas} línea(s)): agranda la caja o baja el tamaño de letra.`,
+        mensaje:
+          'Se sale del certificado. Vuelve a marcar el hueco hacia dentro: nada puede quedar fuera del papel.',
+      });
+      continue;
+    }
+
+    if (tocaMargenSeguro(campo, lienzo)) {
+      problemas.push({
+        gravedad: 'aviso',
+        donde: etiqueta,
+        mensaje:
+          'Está dentro del margen seguro (el 5 % del borde, unos 1,5 cm): al imprimir puede quedar demasiado cerca del canto.',
       });
     }
-  }
 
-  for (const bloque of textosLegales) {
-    const nombre = `Párrafo legal ${bloque.id}`;
-    const medida = bloque.texto.trim()
-      ? medirTexto(bloque.texto, bloque, lienzo)
-      : null;
-    revisarCaja(problemas, bloque, nombre, lienzo, medida?.altoPx);
-    if (medida?.desborda) {
-      problemas.push({
-        gravedad: 'grave',
-        donde: nombre,
-        mensaje: `El texto no cabe en su caja (ocupa ${medida.lineas} línea(s)): agranda la caja o baja el tamaño de letra.`,
-      });
+    // El QR no lleva texto: solo se comprueba que quepa (ya hecho arriba).
+    if (clave === 'qr') continue;
+
+    if (clave === 'nombre') {
+      const ajuste = ajustarNombre(nombrePrueba, campo, lienzo);
+      if (ajuste.desborda) {
+        problemas.push({
+          gravedad: 'grave',
+          donde: etiqueta,
+          mensaje: `El nombre de prueba («${nombrePrueba}») no cabe ni con el mínimo (${campo.tamanoMinimo} pt) en dos líneas: agranda el hueco del nombre o baja el mínimo.`,
+        });
+      }
+    } else if (campo.muestra?.trim()) {
+      const ancho = medirAncho(campo.muestra, campo, campo.tamano, lienzo);
+      if (ancho > campo.ancho + 0.5) {
+        problemas.push({
+          gravedad: 'grave',
+          donde: etiqueta,
+          mensaje: `El texto de ejemplo («${campo.muestra}») no cabe en su hueco: agrándalo o baja el tamaño de letra.`,
+        });
+      }
+    }
+
+    // ¿Se va a leer el texto sobre lo que hay detrás del hueco?
+    const fondo = fondosMuestreados[clave];
+    if (fondo) {
+      const ratio = contraste(campo.color, fondo);
+      if (ratio < CONTRASTE_MINIMO) {
+        problemas.push({
+          gravedad: 'aviso',
+          donde: etiqueta,
+          mensaje: `Poco contraste: el color elegido (${campo.color}) sobre el diseño (${fondo}) da ${ratio.toFixed(1)}:1 y hacen falta ${CONTRASTE_MINIMO}:1 para leerlo bien. Elige un tono más claro u oscuro, o deja el fondo del hueco más liso.`,
+        });
+      }
     }
   }
 
   if (!hayFondo) {
     problemas.push({
       gravedad: 'aviso',
-      donde: 'Fondo',
+      donde: 'Diseño',
       mensaje:
-        'La plantilla no tiene imagen de fondo: el certificado saldrá con los datos sobre un fondo liso.',
+        'La plantilla no tiene imagen de diseño: el certificado saldrá con los datos sobre un fondo liso.',
     });
-  } else if (proporcionFondo !== null) {
-    const esperada = lienzo.anchoPx / lienzo.altoPx;
-    if (Math.abs(proporcionFondo - esperada) / esperada > 0.01) {
+  } else {
+    if (proporcionFondo !== null) {
+      const esperada = lienzo.anchoPx / lienzo.altoPx;
+      if (Math.abs(proporcionFondo - esperada) / esperada > 0.01) {
+        problemas.push({
+          gravedad: 'aviso',
+          donde: 'Diseño',
+          mensaje:
+            'La imagen no tiene la proporción del certificado: se recorta por el centro para tapar la hoja sin deformarla (nunca se estira). Lo ideal es subirla en A4 horizontal.',
+        });
+      }
+    }
+    if (
+      resolucionFondo &&
+      (resolucionFondo.anchoPx < LIENZO_POR_DEFECTO.anchoPx ||
+        resolucionFondo.altoPx < LIENZO_POR_DEFECTO.altoPx)
+    ) {
       problemas.push({
         gravedad: 'aviso',
-        donde: 'Fondo',
-        mensaje:
-          'La imagen de fondo no tiene la proporción del certificado: se recorta por el centro para tapar la hoja sin deformarla. Lo ideal es subirla en A4 horizontal.',
+        donde: 'Diseño',
+        mensaje: `La imagen mide ${resolucionFondo.anchoPx} × ${resolucionFondo.altoPx} px y el A4 a 300 ppp son ${LIENZO_POR_DEFECTO.anchoPx} × ${LIENZO_POR_DEFECTO.altoPx}: se agrandará para tapar la hoja y en papel saldrá pixelada.`,
       });
     }
   }
@@ -327,38 +437,40 @@ export function revisarPlantilla(revision: RevisionPlantilla): ProblemaPlantilla
   return problemas;
 }
 
-/** Las dos comprobaciones que valen para cualquier caja. */
-function revisarCaja(
-  problemas: ProblemaPlantilla[],
-  caja: { x: number; y: number; ancho: number; alto: number },
-  donde: string,
-  lienzo: LienzoPlantilla,
-  /** Lo que ocupa el texto de verdad, si se pudo medir. */
-  altoTexto?: number,
-): void {
-  if (!dentroDelLienzo(caja, lienzo)) {
-    problemas.push({
-      gravedad: 'grave',
-      donde,
-      mensaje:
-        'Se sale del certificado. Muévelo hacia dentro: nada puede quedar fuera del papel.',
-    });
-    return;
-  }
-  // El margen se mide con la **tinta**, no con la caja: una caja alta con una
-  // sola línea de texto puede llegar abajo sin que nada quede pegado al canto.
-  const tinta = {
-    x: caja.x,
-    y: caja.y,
-    ancho: caja.ancho,
-    alto: Math.min(caja.alto, altoTexto ?? caja.alto),
-  };
-  if (tocaMargenSeguro(tinta, lienzo)) {
-    problemas.push({
-      gravedad: 'aviso',
-      donde,
-      mensaje:
-        'Está dentro del margen seguro (el 5 % del borde): al imprimir puede quedar demasiado cerca del canto.',
-    });
-  }
+/** ¿El color es un `#RRGGBB` de verdad? */
+export function esColor(valor: unknown): valor is string {
+  return typeof valor === 'string' && /^#[0-9a-fA-F]{6}$/.test(valor.trim());
 }
+
+/** Los tres estilos de tipografía de la lista corta del panel. */
+export type TipografiaCertificado = 'normal' | 'negrita' | 'cursiva';
+
+export const TIPOGRAFIAS: { valor: TipografiaCertificado; etiqueta: string }[] = [
+  { valor: 'normal', etiqueta: 'Arial' },
+  { valor: 'negrita', etiqueta: 'Arial negrita' },
+  { valor: 'cursiva', etiqueta: 'Arial cursiva' },
+];
+
+/** El estilo guardado (`negrita`/`cursiva`) como valor de la lista corta. */
+export function tipografiaDe(campo: Pick<CampoCertificado, 'negrita' | 'cursiva'>): TipografiaCertificado {
+  if (campo.negrita) return 'negrita';
+  if (campo.cursiva) return 'cursiva';
+  return 'normal';
+}
+
+/** El valor de la lista corta como estilo guardado. */
+export function estiloDeTipografia(
+  tipografia: TipografiaCertificado,
+): { negrita: boolean; cursiva: boolean } {
+  return {
+    negrita: tipografia === 'negrita',
+    cursiva: tipografia === 'cursiva',
+  };
+}
+
+/** Las alineaciones que ofrece el panel, con su etiqueta. */
+export const ALINEACIONES: { valor: 'left' | 'center' | 'right'; etiqueta: string }[] = [
+  { valor: 'left', etiqueta: 'Izquierda' },
+  { valor: 'center', etiqueta: 'Centrada' },
+  { valor: 'right', etiqueta: 'Derecha' },
+];

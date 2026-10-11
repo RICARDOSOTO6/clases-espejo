@@ -891,13 +891,16 @@
         }
       </section>
 
-      <!-- Plantilla del certificado (fase 4). Es universal: una sola para toda
-           la CACE. Y es versionada: guardar no sobrescribe, crea una versión
-           nueva, porque los certificados ya emitidos apuntan a la suya. -->
+      <!-- Diseño del certificado. Es universal: uno solo para toda la CACE. Y es
+           versionado: guardar no sobrescribe, crea una versión nueva, porque los
+           certificados ya emitidos apuntan a la suya.
+           El diseño se hace FUERA de la aplicación (Canva, Word, lo que sea) y se
+           sube como una imagen terminada: aquí solo se marcan los tres huecos
+           (nombre, folio y QR) que la aplicación rellena al emitir. -->
       <section class="card" id="certificado">
         <div class="card-head">
           <div class="card-head-title">
-            <h2>Plantilla del certificado</h2>
+            <h2>Diseño del certificado</h2>
             @if (borrador(); as b) {
               <span class="card-head-count">
                 @if (b.version === 0) {
@@ -909,6 +912,29 @@
             }
           </div>
           <div class="card-head-actions">
+            <!-- Los dos archivos de apoyo del diseño, siempre a mano. -->
+            @if (urlPlantillaZonas; as urlZonas) {
+              <a
+                class="btn btn-outline"
+                data-accion="descargar-zonas"
+                [href]="urlZonas"
+                download="certificado-zonas.png"
+                title="La capa con las tres zonas y el margen seguro, para superponerla al diseño"
+              >
+                Descargar la imagen de zonas
+              </a>
+            }
+            @if (urlGuiaDiseno; as urlGuia) {
+              <a
+                class="btn btn-outline"
+                data-accion="descargar-guia"
+                [href]="urlGuia"
+                download="guia-diseno-certificado.docx"
+                title="La guía de diseño del certificado, en Word"
+              >
+                Descargar la guía de diseño
+              </a>
+            }
             <button
               type="button"
               class="btn btn-secondary"
@@ -921,13 +947,15 @@
         </div>
 
         <p class="text-sm muted">
-          El certificado es una imagen de fondo con los datos escritos encima. En
-          el lienzo se colocan <strong>arrastrando con el ratón</strong> (o con el
-          dedo): cada dato se mueve, se redimensiona desde las esquinas y se
-          escribe encima con doble clic, con la barra de herramientas al lado.
-          Guardar <strong>no</strong> cambia la plantilla anterior: crea una
-          versión nueva, porque los certificados ya emitidos se quedan como
-          salieron.
+          El certificado se diseña <strong>fuera</strong> de la aplicación (Canva,
+          Word, el programa que prefieras) y se sube aquí como una
+          <strong>imagen terminada</strong>: el título, los logos, los textos
+          legales y la línea de firma van dibujados dentro de esa imagen. La
+          aplicación solo estampa <strong>tres datos</strong> encima —el nombre del
+          alumno, el folio y el QR de verificación—, así que el diseño deja tres
+          huecos vacíos y aquí se marcan. Guardar <strong>no</strong> cambia la
+          versión anterior: crea una nueva, porque los certificados ya emitidos se
+          quedan como salieron.
         </p>
 
         @if (errorPlantilla()) {
@@ -938,17 +966,17 @@
         }
 
         @if (cargandoPlantilla() && !borrador()) {
-          <p class="text-sm muted">Cargando la plantilla...</p>
+          <p class="text-sm muted">Cargando el diseño del certificado...</p>
         } @else if (borrador(); as b) {
-          <!-- Fondo -->
+          <!-- La imagen del diseño -->
           <div class="certificado-fondo">
-            <label for="certificado-fondo">Imagen de fondo</label>
+            <label for="certificado-fondo">Imagen del diseño</label>
             <p class="text-sm muted">
-              PNG, JPG o WEBP, hasta 2 MB. Lo ideal es un A4 horizontal
-              ({{ b.anchoPx }} × {{ b.altoPx }} px, que es lo que mide la
-              plantilla): si la imagen tiene otra proporción, el lienzo y el PDF
-              la recortan por el centro para tapar la hoja sin deformarla. Subir
-              un fondo crea también una versión nueva.
+              PNG, JPG o WEBP, hasta 2 MB. Lo ideal es un A4 horizontal a 300 ppp
+              ({{ lienzoGuia.anchoPx }} × {{ lienzoGuia.altoPx }} px): con menos
+              resolución el certificado sale pixelado al imprimir. La imagen se
+              <strong>recorta</strong> para tapar la hoja, nunca se deforma. Subir
+              una imagen crea también una versión nueva.
             </p>
             <input
               id="certificado-fondo"
@@ -958,17 +986,17 @@
               (change)="alSeleccionarFondo($event)"
             />
             @if (subiendoFondo()) {
-              <p class="text-sm muted">Subiendo el fondo...</p>
+              <p class="text-sm muted">Subiendo la imagen...</p>
             }
           </div>
 
-          <!-- El editor visual: el lienzo, la barra de herramientas y la
-               revisión de la plantilla. -->
-          <app-editor-certificado
+          <!-- El panel de diseño: los tres huecos, los ajustes y la vista previa. -->
+          <app-diseno-certificado
             [borrador]="b"
             [fondo]="fondoPlantilla()"
             [catalogo]="catalogoCampos()"
             [guardando]="guardandoPlantilla()"
+            [nombresDeClase]="nombresDeLaClase()"
             (cambio)="aplicarCambio($event)"
             (guardar)="guardarPlantilla()"
             (restaurar)="restablecerPlantilla()"
@@ -1000,8 +1028,8 @@
                       </div>
                       <p class="text-sm muted">
                         {{ version.creadaPor ? 'Creada por ' + version.creadaPor : 'Creada' }}
-                        · {{ version.fondoUrl ? 'con fondo' : 'sin fondo' }}
-                        · {{ version.firmaNombre || 'sin firma' }}
+                        · {{ version.fondoUrl ? 'con diseño' : 'sin diseño' }}
+                        · {{ version.anchoPx }} × {{ version.altoPx }} px
                       </p>
                       @if (gravesDeVersion(version).length > 0) {
                         <p class="version-problemas" [attr.data-problemas-version]="version.id">
@@ -1019,7 +1047,7 @@
                         [disabled]="cargandoPlantilla()"
                         (click)="verVersion(version)"
                       >
-                        Ver en el editor
+                        Ver en el panel
                       </button>
                       @if (!version.activa) {
                         <button
@@ -1033,7 +1061,7 @@
                           "
                           [attr.title]="
                             gravesDeVersion(version).length > 0
-                              ? 'Esa versión tiene un problema grave: ábrela en el editor y corrígelo'
+                              ? 'Esa versión tiene un problema grave: ábrela en el panel y corrígelo'
                               : 'Deja esta versión como la activa'
                           "
                           (click)="activarVersion(version)"
@@ -1049,8 +1077,8 @@
               </ul>
             } @else {
               <p class="text-sm muted">
-                Todavía no hay ninguna versión guardada. Lo que ves arriba es la
-                colocación de arranque: guárdala para tener la primera.
+                Todavía no hay ninguna versión guardada. Lo que ves arriba son los
+                tres huecos de la guía de diseño: guárdalos para tener la primera.
               </p>
             }
           }

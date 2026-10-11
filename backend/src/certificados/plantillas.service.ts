@@ -7,11 +7,9 @@ import {
   CamposCertificado,
   LIENZO_POR_DEFECTO,
   LienzoPlantilla,
-  TEXTOS_LEGALES_POR_DEFECTO,
-  TextosLegales,
   normalizarCampos,
-  normalizarTextosLegales,
 } from './campos-certificado';
+import { CertificadoPdfService } from './certificado-pdf.service';
 import { GuardarPlantillaDto } from './dto/plantilla-certificado.dto';
 
 /** Lo que se devuelve de una plantilla al panel (con los campos ya saneados). */
@@ -23,8 +21,6 @@ export interface PlantillaVista {
   anchoPx: number;
   altoPx: number;
   campos: CamposCertificado;
-  textosLegales: TextosLegales;
-  firmaNombre: string;
   creadaPor: string | null;
   creadoEn: Date;
   /** Cuántos certificados salieron con esta versión (para la lista de versiones). */
@@ -37,8 +33,6 @@ export interface ContenidoPlantilla {
   anchoPx: number;
   altoPx: number;
   campos: CamposCertificado;
-  textosLegales: TextosLegales;
-  firmaNombre: string;
 }
 
 /**
@@ -51,22 +45,28 @@ export interface ContenidoPlantilla {
  * se usa para las emisiones nuevas.
  *
  * La edición **siempre es una creación**: no hay ninguna ruta que modifique una
- * versión existente. Si se pudiera editar la activa, corregir una coma del
- * texto legal dejaría sin sentido el PDF de quien ya lo tiene impreso.
+ * versión existente. Si se pudiera editar la activa, mover el hueco del nombre
+ * dejaría sin sentido el PDF de quien ya lo tiene impreso.
+ *
+ * Desde esta fase una plantilla es **una imagen de diseño más tres huecos**
+ * (nombre, folio y QR): todo lo demás va dibujado en la imagen.
  */
 @Injectable()
 export class PlantillasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pdf: CertificadoPdfService,
+  ) {}
 
   // --- Lectura ---
 
   /**
-   * Todo lo que necesita el panel: el catálogo de datos, el nombre del
-   * presidente (para proponerlo como firma) y la lista de versiones.
+   * Todo lo que necesita el panel: el catálogo de datos, la lista de versiones
+   * y la plantilla de arranque.
    *
-   * Va también `porDefecto`, que es la plantilla de arranque: sin ella el panel
-   * no podría enseñar una vista previa antes de que exista la primera versión,
-   * y el presidente tendría que adivinar dónde cae cada dato.
+   * Va también `porDefecto`, que son los tres huecos que manda la guía de
+   * diseño: sin ella el panel no podría enseñar una vista previa antes de que
+   * exista la primera versión.
    */
   async listar() {
     const versiones = await this.prisma.plantillaCertificado.findMany({
@@ -77,13 +77,11 @@ export class PlantillasService {
       },
     });
 
-    const firmaSugerida = await this.nombrePresidente();
     const vistas = versiones.map((v) => this.aVista(v));
 
     return {
       catalogo: CATALOGO_CAMPOS,
-      firmaSugerida,
-      porDefecto: this.porDefecto(firmaSugerida),
+      porDefecto: this.porDefecto(),
       versiones: vistas,
       activa: vistas.find((v) => v.activa) ?? null,
     };
@@ -97,6 +95,14 @@ export class PlantillasService {
     });
   }
 
+  /**
+   * El QR de un folio en PNG, para la vista previa del panel: así lo que se ve
+   * en la pantalla es exactamente el código que va a salir impreso.
+   */
+  qrDeMuestra(folio: string): Promise<Buffer> {
+    return this.pdf.qrDeFolio(folio.trim() || 'CACE-2026-0001');
+  }
+
   // --- Escritura (siempre una versión nueva) ---
 
   /**
@@ -107,7 +113,7 @@ export class PlantillasService {
   async crear(usuarioId: number, dto: GuardarPlantillaDto) {
     const base = await this.contenidoBase();
     // El lienzo con el que se guarda: el que trae el formulario o el de la
-    // versión activa. Es lo que se usa para encajar cada caja dentro del papel.
+    // versión activa. Es lo que se usa para encajar cada hueco dentro del papel.
     const lienzo: LienzoPlantilla = {
       anchoPx: dto.anchoPx ?? base.anchoPx,
       altoPx: dto.altoPx ?? base.altoPx,
@@ -119,24 +125,15 @@ export class PlantillasService {
       anchoPx: lienzo.anchoPx,
       altoPx: lienzo.altoPx,
       campos: normalizarCampos(dto.campos, base.campos, lienzo),
-      textosLegales: normalizarTextosLegales(
-        dto.textosLegales,
-        base.textosLegales,
-        lienzo,
-      ),
-      firmaNombre:
-        dto.firmaNombre !== undefined
-          ? dto.firmaNombre.trim().slice(0, 160)
-          : base.firmaNombre,
     });
   }
 
   /**
-   * Guarda el fondo recién subido **como una versión nueva**.
+   * Guarda el diseño recién subido **como una versión nueva**.
    *
    * Podría pensarse que una imagen no es «un cambio de plantilla», pero sí lo
-   * es: si el fondo se cambiara en la versión activa, dos certificados de la
-   * misma versión habrían salido con fondos distintos. El archivo anterior
+   * es: si el diseño se cambiara en la versión activa, dos certificados de la
+   * misma versión habrían salido con diseños distintos. El archivo anterior
    * **no se borra**, porque la versión anterior lo sigue usando en su vista
    * previa.
    */
@@ -202,11 +199,11 @@ export class PlantillasService {
           fondoUrl: datos.fondoUrl,
           anchoPx: datos.anchoPx,
           altoPx: datos.altoPx,
-          // Las dos columnas son `Json`: se guardan los objetos ya saneados.
+          // Las dos columnas son `Json` y siguen en el esquema: `campos` lleva
+          // los tres huecos y `textosLegales` va vacío, porque los textos
+          // legales van dibujados dentro del diseño.
           campos: datos.campos as unknown as Prisma.InputJsonValue,
-          textosLegales:
-            datos.textosLegales as unknown as Prisma.InputJsonValue,
-          firmaNombre: datos.firmaNombre,
+          textosLegales: [] as unknown as Prisma.InputJsonValue,
           creadaPorUsuarioId: usuarioId,
         },
         include: {
@@ -237,52 +234,22 @@ export class PlantillasService {
         // Se encajan al lienzo de la propia versión: una fila vieja con un dato
         // medio fuera del papel se corrige sola al guardar la siguiente versión.
         campos: normalizarCampos(activa.campos, CAMPOS_POR_DEFECTO, lienzo),
-        textosLegales: normalizarTextosLegales(
-          activa.textosLegales,
-          TEXTOS_LEGALES_POR_DEFECTO,
-          lienzo,
-        ),
-        firmaNombre: activa.firmaNombre,
       };
     }
-    return this.porDefecto(await this.nombrePresidente());
-  }
-
-  /** El nombre del presidente, que es quien firma los certificados. */
-  async nombrePresidente(): Promise<string> {
-    const miembro = await this.prisma.miembroCace.findFirst({
-      where: { activo: true, cargo: { in: ['PRESIDENTE', 'SUPLENTE'] } },
-      orderBy: { id: 'asc' },
-      include: {
-        usuario: {
-          select: {
-            nombres: true,
-            apellidoPaterno: true,
-            apellidoMaterno: true,
-          },
-        },
-      },
-    });
-    if (!miembro) return '';
-    const u = miembro.usuario;
-    return `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno ?? ''}`
-      .replace(/\s+/g, ' ')
-      .trim();
+    return this.porDefecto();
   }
 
   /** La plantilla de arranque, que todavía no tiene fila en la base. */
-  private porDefecto(firmaNombre: string): ContenidoPlantilla {
+  private porDefecto(): ContenidoPlantilla {
     return {
       fondoUrl: null,
       anchoPx: LIENZO_POR_DEFECTO.anchoPx,
       altoPx: LIENZO_POR_DEFECTO.altoPx,
       campos: CAMPOS_POR_DEFECTO,
-      textosLegales: TEXTOS_LEGALES_POR_DEFECTO,
-      firmaNombre,
     };
   }
 
-  /** De la fila de la base a lo que se devuelve (con los JSON saneados). */
+  /** De la fila de la base a lo que se devuelve (con el JSON saneado). */
   private aVista(plantilla: {
     id: number;
     version: number;
@@ -291,8 +258,6 @@ export class PlantillasService {
     anchoPx: number;
     altoPx: number;
     campos: unknown;
-    textosLegales: unknown;
-    firmaNombre: string;
     creadoEn: Date;
     creadaPor?: { nombres: string; apellidoPaterno: string } | null;
     _count?: { certificados: number };
@@ -309,12 +274,6 @@ export class PlantillasService {
       anchoPx: plantilla.anchoPx,
       altoPx: plantilla.altoPx,
       campos: normalizarCampos(plantilla.campos, CAMPOS_POR_DEFECTO, lienzo),
-      textosLegales: normalizarTextosLegales(
-        plantilla.textosLegales,
-        TEXTOS_LEGALES_POR_DEFECTO,
-        lienzo,
-      ),
-      firmaNombre: plantilla.firmaNombre,
       creadaPor: plantilla.creadaPor
         ? `${plantilla.creadaPor.nombres} ${plantilla.creadaPor.apellidoPaterno}`.trim()
         : null,

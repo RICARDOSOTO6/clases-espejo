@@ -80,8 +80,8 @@ un alumno cambiaría solo. Se guarda, y se reemite únicamente si alguien lo pid
 Se usará **una imagen de fondo (PNG o JPG, A4 horizontal) más los datos escritos
 encima**, con la posición de cada dato guardada en la base de datos. Así el
 diseñador de la CACE rediseña el certificado cuando quiera, sube la imagen nueva
-y no hay que tocar código: la plataforma solo escribe el nombre, la clase espejo,
-las instituciones, las fechas, el folio y la firma.
+y no hay que tocar código: la plataforma solo escribe **el nombre, el folio y el
+QR**.
 
 Se descartaron, por el momento:
 
@@ -98,7 +98,11 @@ PDF no sabe dibujar**. En un certificado eso significaría **mutilar el nombre d
 un alumno** sin que nadie se entere. Para los certificados hay que **incrustar
 una fuente Unicode** (`pdfkit` lo permite con `registerFont`) y no filtrar nada.
 
-### El editor visual de la plantilla (revisión posterior)
+### El editor visual de la plantilla (revisión posterior) — **superado**
+
+> Lo que cuenta hoy es la decisión de la sección siguiente: el editor de
+> arrastrar campos se retiró. Lo de aquí se conserva como referencia de por qué
+> el lienzo y el PDF comparten los mismos números.
 
 La primera versión de la sección «Plantilla del certificado» colocaba los datos
 **tecleando números** (posición y tamaño). Resultó confusa, así que la sección se
@@ -135,6 +139,50 @@ Decisiones que conviene no deshacer:
   fondo, un dato pegado al canto— son avisos.
 * **Versionado, que es la red de seguridad:** guardar crea una versión nueva;
   ninguna versión anterior se toca y se puede volver a activar.
+
+### La simplificación: el diseño se hace **fuera** de la aplicación
+
+> **Decidido en esta fase.** Manda la [guía de diseño del
+> certificado](guia-diseno-certificado.md), que es el documento que se le entrega
+> a quien diseña.
+
+El diseño del certificado se hace **fuera** de la aplicación (Canva, Word,
+Illustrator, lo que sea) y se sube como **una imagen terminada**. El editor de
+arrastrar campos **desaparece**: ya no hay campos de título, instituciones,
+fechas, docentes ni firma, porque todo eso va **dibujado en la imagen**.
+
+* La aplicación estampa **tres datos**, y solo tres: el **nombre del alumno**, el
+  **folio** y el **QR**. El catálogo de campos se reduce a esos tres, y una
+  plantilla vieja (con los siete) se sigue leyendo y emitiendo: se toman los tres
+  que existan y los que falten caen en su sitio por defecto.
+* El lienzo de arranque es el **A4 horizontal a 300 ppp, 3508 × 2480 px**, que es
+  lo que pide la guía. Cada plantilla conserva su `anchoPx`/`altoPx`, así que las
+  ya guardadas siguen funcionando.
+* El **nombre se ajusta solo**: se mide con la tipografía elegida y, si no cabe,
+  baja el tamaño paso a paso hasta un **mínimo legible** —**18 pt**, el que trae
+  el hueco y que se puede subir o bajar por hueco, nunca por debajo de 8 pt—; si
+  con el mínimo no cabe en una línea, se parte en **dos líneas por los espacios**
+  (nunca cortando una palabra) y, si aun así no cabe, se avisa **al emitir**
+  diciendo el nombre concreto. El nombre nunca se sale de su caja ni pierde
+  letras.
+* El **QR apunta a la verificación pública**: `{URL_PUBLICA}/verificar/{folio}`
+  (variable de entorno `URL_PUBLICA`, con `http://localhost:3000` de respaldo si
+  no está definida). Se genera con la librería `qrcode`, en blanco y negro y con
+  zona de silencio, para que se pueda escanear a 3 cm. La **página** de
+  verificación es de la fase siguiente: aquí solo se apunta a ella.
+* En el panel se sube la imagen, se **marcan los tres huecos** dibujando su
+  rectángulo con el ratón, se elige tipografía (Arial, negrita o cursiva),
+  tamaño (con su rango), color y alineación, y se ve una **vista previa con datos
+  reales** (nombre, folio y el QR de verdad). Avisa si el color no se lee sobre
+  lo que hay detrás del hueco y si la imagen tiene menos resolución de
+  3508 × 2480. La imagen se **recorta, nunca se deforma**.
+* Los dos archivos de apoyo están a un clic en esa misma pantalla: la **imagen de
+  zonas** (`/plantillas/certificado-zonas.png`) y la **guía de diseño en Word**
+  (`/plantillas/guia-diseno-certificado.docx`, generada desde el `.md`).
+
+Lo que **no** cambia: el versionado de la plantilla, el folio único, el PDF
+guardado con su hash, el ZIP, la emisión solo con la clase **FINALIZADO** y que
+cada docente solo ve la lista de **su** institución.
 
 ## 5. Tecnología
 

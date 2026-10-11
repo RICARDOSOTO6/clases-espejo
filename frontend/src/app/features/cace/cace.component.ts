@@ -10,20 +10,22 @@ import { IdentidadCaceService } from '../../core/services/identidad-cace.service
 import { PlantillaCertificadoService } from '../../core/services/plantilla-certificado.service';
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
-import { EditorCertificadoComponent } from './editor-certificado/editor-certificado.component';
+import { DisenoCertificadoComponent } from './diseno-certificado/diseno-certificado.component';
 import {
   InstitucionOpcion,
   PaisComunidad,
   Premio,
 } from '../../core/models/cace-identidad.models';
 import {
-  BloqueLegal,
   BorradorPlantillaCertificado,
   CamposCertificado,
   EstadoPlantillaCertificado,
   PlantillaCertificado,
 } from '../../core/models/certificado.models';
-import { revisarPlantilla } from '../../core/utils/certificado-medidas';
+import {
+  LIENZO_POR_DEFECTO,
+  revisarPlantilla,
+} from '../../core/utils/certificado-medidas';
 import { TEMAS_CACE, TemaCace } from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
@@ -55,7 +57,7 @@ const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
  */
 @Component({
   selector: 'app-cace',
-  imports: [ReactiveFormsModule, LayoutComponent, EditorCertificadoComponent],
+  imports: [ReactiveFormsModule, LayoutComponent, DisenoCertificadoComponent],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',
 })
@@ -203,9 +205,9 @@ export class CaceComponent implements OnInit, OnDestroy {
     () => this.premios().filter((premio) => !premio.publicado).length,
   );
 
-  // --- Plantilla del certificado (fase 4) ---
+  // --- Plantilla del certificado ---
 
-  /** Todo lo que devuelve el servidor: catálogo, firma sugerida y versiones. */
+  /** Todo lo que devuelve el servidor: catálogo y versiones. */
   readonly plantillaEstado = signal<EstadoPlantillaCertificado | null>(null);
   readonly cargandoPlantilla = signal(false);
   readonly errorPlantilla = signal<string | null>(null);
@@ -217,32 +219,53 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /**
    * Lo que se está editando. Es la versión activa (o la de arranque, con
-   * `version: 0`) con los retoques del formulario encima; guardar crea una
-   * versión nueva a partir de esto.
+   * `version: 0`) con los retoques del panel encima; guardar crea una versión
+   * nueva a partir de esto.
    */
   readonly borrador = signal<BorradorPlantillaCertificado | null>(null);
 
-  /** Los datos con su etiqueta, en el orden del catálogo, para el editor. */
+  /** Los datos con su etiqueta, en el orden del catálogo, para el panel. */
   readonly catalogoCampos = computed(
     () => this.plantillaEstado()?.catalogo ?? [],
   );
 
-  /** El fondo de la versión en edición, listo para un `<img>` o un fondo CSS. */
+  /** La imagen del diseño de la versión en edición, lista para un `<img>`. */
   readonly fondoPlantilla = computed(() => urlDeArchivo(this.borrador()?.fondoUrl));
 
   /**
+   * Los nombres de la clase con los que se puede probar la vista previa. Hoy
+   * llega vacío a propósito: las listas de alumnos las sube cada docente y la
+   * presidencia no las ve, así que el panel prueba con un nombre largo de
+   * ejemplo. El día que exista una consulta de solo lectura, se rellena aquí y
+   * el botón pasa a usar el nombre más largo de verdad.
+   */
+  readonly nombresDeLaClase = signal<string[]>([]);
+
+  /**
+   * Los dos archivos de apoyo, que se sirven desde `backend/plantillas`: la
+   * imagen de zonas (la capa que se superpone al diseño) y la guía de diseño en
+   * Word. Los dos se descargan, no se muestran.
+   */
+  readonly urlPlantillaZonas = urlDeArchivo('/plantillas/certificado-zonas.png');
+  readonly urlGuiaDiseno = urlDeArchivo('/plantillas/guia-diseno-certificado.docx');
+
+  /** El A4 a 300 ppp que pide la guía, para poder decirlo en pantalla. */
+  readonly lienzoGuia = LIENZO_POR_DEFECTO;
+
+  /**
    * Los problemas de una versión guardada, para no dejar activar una plantilla
-   * que arrastra un dato fuera del papel o un texto que no cabe. Se calcula con
-   * las mismas reglas que el editor (y con las muestras que llevan sus campos).
+   * que arrastra un hueco fuera del papel o un folio que no cabe. Se calcula con
+   * las mismas reglas que el panel (y con la muestra que lleva su nombre).
    */
   problemasDeVersion(version: PlantillaCertificado) {
     return revisarPlantilla({
       campos: version.campos,
-      textosLegales: version.textosLegales,
       lienzo: { anchoPx: version.anchoPx, altoPx: version.altoPx },
-      firmaNombre: version.firmaNombre,
       proporcionFondo: null,
+      resolucionFondo: null,
       hayFondo: !!version.fondoUrl,
+      nombrePrueba: version.campos.nombre?.muestra ?? '',
+      fondosMuestreados: {},
       etiquetas: this.plantillaEstado()?.catalogo ?? [],
     });
   }
@@ -1125,7 +1148,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Carga una versión (o la de arranque) en el formulario, sin guardar nada. */
+  /** Carga una versión (o la de arranque) en el panel, sin guardar nada. */
   usarPlantilla(plantilla: {
     id?: number | null;
     version: number;
@@ -1134,8 +1157,6 @@ export class CaceComponent implements OnInit, OnDestroy {
     anchoPx: number;
     altoPx: number;
     campos: CamposCertificado;
-    textosLegales: BloqueLegal[];
-    firmaNombre: string;
   }): void {
     this.borrador.set({
       id: plantilla.id ?? null,
@@ -1144,15 +1165,13 @@ export class CaceComponent implements OnInit, OnDestroy {
       fondoUrl: plantilla.fondoUrl,
       anchoPx: plantilla.anchoPx,
       altoPx: plantilla.altoPx,
-      campos: { ...plantilla.campos },
-      textosLegales: plantilla.textosLegales.map((bloque) => ({ ...bloque })),
-      firmaNombre: plantilla.firmaNombre,
+      campos: copiaDeCampos(plantilla.campos),
     });
     this.errorPlantilla.set(null);
     this.avisoPlantilla.set(null);
   }
 
-  /** Carga una versión concreta de la lista de versiones en el formulario. */
+  /** Carga una versión concreta de la lista de versiones en el panel. */
   verVersion(plantilla: PlantillaCertificado): void {
     this.usarPlantilla(plantilla);
     this.avisoPlantilla.set(
@@ -1160,32 +1179,52 @@ export class CaceComponent implements OnInit, OnDestroy {
     );
   }
 
-  /** Vuelve a la plantilla de arranque que propone el servidor. */
+  /**
+   * Vuelve a los tres huecos que manda la guía de diseño.
+   *
+   * Los números de la guía están medidos sobre el A4 de 3508 × 2480 px; si la
+   * plantilla tiene otro lienzo (una versión vieja, o una imagen de otra
+   * resolución), se **escalan** a su tamaño en vez de recortarse. La imagen del
+   * diseño y el tamaño del papel no se tocan: lo que se restaura es dónde va
+   * cada hueco.
+   */
   restablecerPlantilla(): void {
     const porDefecto = this.plantillaEstado()?.porDefecto;
     const actual = this.borrador();
     if (!porDefecto || !actual) return;
-    // El fondo y el tamaño del papel no son «colocación»: se conservan, que lo
-    // que se está restaurando es dónde va cada dato.
+
+    const escalaX = actual.anchoPx / LIENZO_POR_DEFECTO.anchoPx;
+    const escalaY = actual.altoPx / LIENZO_POR_DEFECTO.altoPx;
+    const campos = {} as CamposCertificado;
+    for (const clave of Object.keys(porDefecto.campos) as (keyof CamposCertificado)[]) {
+      const guia = porDefecto.campos[clave];
+      campos[clave] = {
+        ...guia,
+        x: Math.round(guia.x * escalaX),
+        y: Math.round(guia.y * escalaY),
+        ancho: Math.round(guia.ancho * escalaX),
+        alto: Math.round(guia.alto * escalaY),
+      };
+    }
+
     this.usarPlantilla({
-      ...porDefecto,
       id: actual.id,
       version: actual.version,
       activa: actual.activa,
       fondoUrl: actual.fondoUrl,
       anchoPx: actual.anchoPx,
       altoPx: actual.altoPx,
-      firmaNombre: actual.firmaNombre,
+      campos,
     });
     this.avisoPlantilla.set(
-      'Posiciones restauradas a la colocación de arranque. Guardar creará una versión nueva.',
+      'Huecos restaurados a la colocación de la guía de diseño. Guardar creará una versión nueva.',
     );
   }
 
   // --- Plantilla del certificado: edición ---
 
   /**
-   * Aplica al borrador lo que llega del editor visual. El editor no toca la
+   * Aplica al borrador lo que llega del panel de diseño. El panel no toca la
    * plantilla: avisa de lo que cambió y aquí se guarda en el borrador, que es
    * el único sitio del que sale lo que se manda al servidor.
    */
@@ -1206,8 +1245,6 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.plantillaService
       .guardar({
         campos: borrador.campos,
-        textosLegales: borrador.textosLegales,
-        firmaNombre: borrador.firmaNombre,
       })
       .subscribe({
         next: (respuesta) => {
@@ -1351,4 +1388,17 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.auth.logout();
     this.router.navigate(['/login']);
   }
+}
+
+/**
+ * Copia de los tres huecos, para no compartir referencias con lo que devolvió
+ * el servidor: el borrador se edita a mano y no debe tocar la lista de
+ * versiones que se está enseñando al lado.
+ */
+function copiaDeCampos(campos: CamposCertificado): CamposCertificado {
+  const copia = {} as CamposCertificado;
+  for (const clave of Object.keys(campos) as (keyof CamposCertificado)[]) {
+    copia[clave] = { ...campos[clave] };
+  }
+  return copia;
 }

@@ -7,11 +7,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { mkdirSync } from 'fs';
 import { CapacidadesGuard, Requiere } from '../auth/capacidades.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -22,7 +25,7 @@ import { PlantillasService } from './plantillas.service';
 import { FONDOS_CERTIFICADO_DIR } from './rutas-certificado';
 
 /**
- * La plantilla del certificado, que la diseña y la firma la presidencia.
+ * La plantilla del certificado, que la diseña la presidencia.
  *
  * Todas las rutas piden `disenarCertificados`, que solo tiene el presidente
  * (ni la secretaría, ni el agente, ni el docente): el agente y el docente
@@ -36,16 +39,30 @@ import { FONDOS_CERTIFICADO_DIR } from './rutas-certificado';
 @UseGuards(JwtAuthGuard, CapacidadesGuard)
 export class PlantillasCertificadoController {
   constructor(private readonly plantillas: PlantillasService) {
-    // La carpeta de los fondos tiene que existir antes de la primera subida
+    // La carpeta de los diseños tiene que existir antes de la primera subida
     // (el guardado con multer no la crea).
     mkdirSync(FONDOS_CERTIFICADO_DIR, { recursive: true });
   }
 
-  /** Catálogo de datos, nombre sugerido de firma y todas las versiones. */
+  /** Catálogo de datos y todas las versiones. */
   @Get()
   @Requiere('disenarCertificados')
   listar() {
     return this.plantillas.listar();
+  }
+
+  /**
+   * El QR de un folio, en PNG, para la vista previa del panel. Va detrás del
+   * mismo permiso que el resto y se pide con sesión: la imagen de un QR no es
+   * un secreto, pero tampoco hay razón para dejarla en una URL abierta.
+   */
+  @Get('qr')
+  @Requiere('disenarCertificados')
+  async qr(@Query('folio') folio: string, @Res() res: Response) {
+    const png = await this.plantillas.qrDeMuestra(folio ?? '');
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(png);
   }
 
   /**
@@ -62,13 +79,13 @@ export class PlantillasCertificadoController {
   }
 
   /**
-   * Sube la imagen de fondo. Se guarda en `uploads/certificados-fondos` y se
+   * Sube la imagen del diseño. Se guarda en `uploads/certificados-fondos` y se
    * sirve **en línea** por `/certificado-fondo/<archivo>` para poder pintarla
    * con `<img>` en la vista previa. Mismo criterio que los logos: PNG, JPG o
    * WEBP y nunca SVG (un SVG puede llevar código dentro).
    *
-   * También crea una versión nueva: si el fondo cambiara en la versión activa,
-   * dos certificados de la misma versión tendrían fondos distintos.
+   * También crea una versión nueva: si el diseño cambiara en la versión activa,
+   * dos certificados de la misma versión tendrían diseños distintos.
    */
   @Post('fondo')
   @Requiere('disenarCertificados')
