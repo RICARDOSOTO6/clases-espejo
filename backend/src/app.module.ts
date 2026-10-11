@@ -13,12 +13,14 @@ import { SolicitudesModule } from './solicitudes/solicitudes.module';
 import { ProyectosModule } from './proyectos/proyectos.module';
 import { RecordatoriosModule } from './recordatorios/recordatorios.module';
 import { CaceModule } from './cace/cace.module';
+import { CertificadosModule } from './certificados/certificados.module';
 
 @Module({
   imports: [
     PrismaModule,
     MailModule,
     CaceModule,
+    CertificadosModule,
     AuthModule,
     AgentesModule,
     UsuariosModule,

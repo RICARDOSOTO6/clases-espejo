@@ -677,6 +677,166 @@
             </div>
           }
         </section>
+
+        <!-- Certificados (fase 4): sale de la lista de arriba y solo se emite
+             con la clase cerrada. El docente ve aquí el folio y la descarga. -->
+        <section class="card" id="certificados">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+              </span>
+              <h2 id="certificados-titulo">Certificados</h2>
+              @if (certificadosEstado(); as estado) {
+                <span class="card-head-count">
+                  {{ estado.resumen.emitidos }} de {{ estado.resumen.alumnos }}
+                </span>
+              }
+            </div>
+            <div class="card-head-actions">
+              @if (certificadosEstado(); as estado) {
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  [disabled]="descargandoZip() || estado.resumen.emitidos === 0"
+                  (click)="descargarCertificadosZip()"
+                >
+                  {{ descargandoZip() ? 'Preparando…' : 'Descargar todos (.zip)' }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <p class="muted">
+            Un certificado por alumno de <strong>tu</strong> lista, con folio único.
+            Se emiten al <strong>cerrar</strong> la clase espejo y el PDF se guarda
+            tal como sale: cambiar la plantilla después no altera lo ya emitido.
+          </p>
+
+          @if (errorCertificados()) {
+            <div class="alert alert-error" role="alert">{{ errorCertificados() }}</div>
+          }
+          @if (avisoCertificados()) {
+            <div class="alert alert-success" role="status">{{ avisoCertificados() }}</div>
+          }
+
+          @if (cargandoCertificados()) {
+            <p class="muted">Cargando los certificados…</p>
+          } @else if (certificadosEstado(); as estado) {
+            @if (estado.motivoNoEmitir) {
+              <div class="alert alert-info" role="status">{{ estado.motivoNoEmitir }}</div>
+            }
+
+            <div class="certificado-acciones">
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="!puedeEmitirCertificados() || emitiendoCertificados()"
+                (click)="emitirCertificados()"
+              >
+                @if (emitiendoCertificados()) {
+                  <span class="spinner" aria-hidden="true"></span>
+                }
+                {{ emitiendoCertificados() ? 'Emitiendo...' : 'Emitir certificados' }}
+              </button>
+              @if (estado.plantilla; as plantilla) {
+                <span class="text-sm muted">
+                  Plantilla versión {{ plantilla.version }} ·
+                  firma: {{ plantilla.firmaNombre || 'pendiente de configurar' }}
+                </span>
+              }
+              @if (estado.resumen.pendientes > 0) {
+                <span class="chip-estado chip-estado--aviso">
+                  Faltan {{ estado.resumen.pendientes }} por emitir
+                </span>
+              }
+            </div>
+
+            @if (certificadosOmitidos().length > 0) {
+              <ul class="alumnos-avisos">
+                @for (omitido of certificadosOmitidos(); track omitido.alumnoId) {
+                  <li>{{ omitido.alumno }}: {{ omitido.motivo }}</li>
+                }
+              </ul>
+            }
+
+            @if (estado.certificados.length === 0) {
+              <p class="muted">Todavía no hay ningún certificado emitido en esta clase espejo.</p>
+            } @else {
+              <div class="alumnos-scroll">
+                <table class="alumnos-tabla">
+                  <thead>
+                    <tr>
+                      <th>Folio</th>
+                      <th>Alumno</th>
+                      <th>Estado</th>
+                      <th>Emitido</th>
+                      <th>Envío</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (certificado of estado.certificados; track certificado.id) {
+                      <tr [class.alumnos-fila--fuera]="certificado.estado !== 'EMITIDO'">
+                        <td><strong>{{ certificado.folio }}</strong></td>
+                        <td>
+                          {{ certificado.alumnoNombre }}
+                          @if (certificado.matricula) {
+                            <span class="muted"> · {{ certificado.matricula }}</span>
+                          }
+                        </td>
+                        <td>
+                          <span
+                            class="chip-estado"
+                            [class.chip-estado--ok]="certificado.estado === 'EMITIDO'"
+                            [class.chip-estado--error]="certificado.estado !== 'EMITIDO'"
+                          >
+                            {{ estadoCertificadoLabel(certificado.estado) }}
+                          </span>
+                          @if (certificado.anuladoMotivo) {
+                            <span class="alumnos-aviso">{{ certificado.anuladoMotivo }}</span>
+                          }
+                        </td>
+                        <td>{{ formatearFecha(certificado.emitidoEn) }}</td>
+                        <td>
+                          @if (certificado.enviadoEn) {
+                            {{ certificado.enviadoA }}
+                          } @else {
+                            <span class="muted">sin enviar</span>
+                          }
+                        </td>
+                        <td>
+                          @if (certificado.estado === 'EMITIDO') {
+                            <button
+                              type="button"
+                              class="link-button"
+                              [disabled]="descargandoCertificado() === certificado.id"
+                              (click)="descargarCertificado(certificado)"
+                            >
+                              {{ descargandoCertificado() === certificado.id ? 'Descargando…' : 'Descargar PDF' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="link-button"
+                              [disabled]="emitiendoCertificados()"
+                              (click)="reemitirCertificado(certificado)"
+                            >
+                              Reemitir
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-sm muted">
+                El envío por correo a los alumnos llega en la fase siguiente: hoy
+                solo se descargan y se reparten.
+              </p>
+            }
+          }
+        </section>
       }
 
       <section class="card">

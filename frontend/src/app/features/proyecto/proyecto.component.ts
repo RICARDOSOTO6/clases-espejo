@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  computed,
   effect,
   inject,
   OnDestroy,
@@ -14,11 +15,16 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
 import { ListasAlumnosService } from '../../core/services/listas-alumnos.service';
+import { CertificadosService } from '../../core/services/certificados.service';
 import {
   AlumnoLista,
   ListaAlumnos,
   PrevisualizacionLista,
 } from '../../core/models/lista-alumnos.models';
+import {
+  CertificadoEmitido,
+  EstadoCertificados,
+} from '../../core/models/certificado.models';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
@@ -56,6 +62,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly materiasService = inject(MateriasService);
   private readonly instituciones = inject(InstitucionesService);
   private readonly listasService = inject(ListasAlumnosService);
+  private readonly certificadosService = inject(CertificadosService);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (campana y contadores). */
   readonly ui = inject(UiStateService);
@@ -95,6 +102,32 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly guardandoLista = signal(false);
   readonly errorLista = signal<string | null>(null);
   readonly avisoLista = signal<string | null>(null);
+
+  // --- Certificados (fase 4) ---
+  /** Todo lo que necesita la sección: si se puede emitir, qué falta y qué hay. */
+  readonly certificadosEstado = signal<EstadoCertificados | null>(null);
+  readonly cargandoCertificados = signal(false);
+  readonly emitiendoCertificados = signal(false);
+  readonly errorCertificados = signal<string | null>(null);
+  readonly avisoCertificados = signal<string | null>(null);
+  /** Certificado cuyo PDF se está descargando (evita el doble clic). */
+  readonly descargandoCertificado = signal<number | null>(null);
+  readonly descargandoZip = signal(false);
+  /** Alumnos que ya tenían certificado: se listan con su motivo. */
+  readonly certificadosOmitidos = signal<
+    { alumnoId: number; alumno: string; motivo: string }[]
+  >([]);
+
+  /** ¿Se puede pulsar «Emitir»? El servidor vuelve a comprobarlo igual. */
+  readonly puedeEmitirCertificados = computed(() => {
+    const estado = this.certificadosEstado();
+    return (
+      !!estado &&
+      estado.claseCerrada &&
+      !!estado.plantilla &&
+      (estado.lista?.incluidos ?? 0) > 0
+    );
+  });
 
   /** Nombre completo para la navbar. */
   get nombreUsuario(): string {
@@ -425,7 +458,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     });
 
     // La lista de alumnos la lleva el docente: el agente solo acompaña.
-    if (this.esDocente) this.cargarLista();
+    if (this.esDocente) {
+      this.cargarLista();
+      this.cargarCertificados();
+    }
   }
 
   // --- Mensajes de la pantalla ---
@@ -611,6 +647,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           this.avisoLista.set(
             `Lista guardada: ${lista.resumen.total} alumno(s).`,
           );
+          // Los certificados salen de esta lista: la sección se recalcula.
+          this.cargarCertificados();
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoLista.set(false);
@@ -634,7 +672,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.listasService
       .editarAlumno(this.proyectoId, alumno.id, { incluido: !alumno.incluido })
       .subscribe({
-        next: (lista) => this.listaAlumnos.set(lista),
+        next: (lista) => {
+          this.listaAlumnos.set(lista);
+          this.cargarCertificados();
+        },
         error: (err: HttpErrorResponse) =>
           this.errorLista.set(
             extraerMensajeError(err, 'No se pudo actualizar al alumno'),
@@ -648,6 +689,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       next: (lista) => {
         this.listaAlumnos.set(lista);
         this.avisoLista.set(`${alumno.nombre} salió de la lista.`);
+        this.cargarCertificados();
       },
       error: (err: HttpErrorResponse) =>
         this.errorLista.set(
@@ -659,6 +701,128 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   logout(): void {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  // --- Certificados ---
+
+  /** Trae el estado de la sección: la plantilla, la lista y lo ya emitido. */
+  cargarCertificados(): void {
+    this.cargandoCertificados.set(true);
+    this.errorCertificados.set(null);
+    this.certificadosService.estado(this.proyectoId).subscribe({
+      next: (estado) => {
+        this.certificadosEstado.set(estado);
+        this.cargandoCertificados.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoCertificados.set(false);
+        this.errorCertificados.set(
+          extraerMensajeError(err, 'No se pudo cargar el estado de los certificados'),
+        );
+      },
+    });
+  }
+
+  /**
+   * Emite los certificados. Sin `alumnoId`, los de todos los alumnos incluidos;
+   * con él, solo el de ese alumno (y entonces sí se permite reemitir, porque el
+   * docente lo ha pedido alumno por alumno).
+   */
+  emitirCertificados(alumnoId?: number, reemitir = false): void {
+    if (this.emitiendoCertificados()) return;
+
+    this.emitiendoCertificados.set(true);
+    this.errorCertificados.set(null);
+    this.avisoCertificados.set(null);
+    this.certificadosOmitidos.set([]);
+
+    this.certificadosService
+      .emitir(this.proyectoId, { alumnoId, reemitir })
+      .subscribe({
+        next: (resultado) => {
+          this.emitiendoCertificados.set(false);
+          this.avisoCertificados.set(resultado.mensaje);
+          this.certificadosOmitidos.set(resultado.omitidos);
+          if (resultado.avisos.length > 0) {
+            this.errorCertificados.set(resultado.avisos.join(' '));
+          }
+          this.cargarCertificados();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.emitiendoCertificados.set(false);
+          this.errorCertificados.set(
+            extraerMensajeError(err, 'No se pudieron emitir los certificados'),
+          );
+        },
+      });
+  }
+
+  /** Descarga el PDF de un certificado. */
+  descargarCertificado(certificado: CertificadoEmitido): void {
+    if (this.descargandoCertificado() !== null) return;
+    this.descargandoCertificado.set(certificado.id);
+    this.errorCertificados.set(null);
+    this.certificadosService
+      .descargarPdf(this.proyectoId, certificado.id)
+      .subscribe({
+        next: (blob) => {
+          this.descargandoCertificado.set(null);
+          this.guardarBlob(blob, `certificado-${certificado.folio}.pdf`);
+          this.avisoCertificados.set(`Certificado ${certificado.folio} descargado`);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.descargandoCertificado.set(null);
+          this.errorCertificados.set(
+            extraerMensajeError(err, 'No se pudo descargar el certificado'),
+          );
+        },
+      });
+  }
+
+  /** Descarga todos los certificados vigentes en un ZIP. */
+  descargarCertificadosZip(): void {
+    if (this.descargandoZip()) return;
+    this.descargandoZip.set(true);
+    this.errorCertificados.set(null);
+    this.certificadosService.descargarZip(this.proyectoId).subscribe({
+      next: (blob) => {
+        this.descargandoZip.set(false);
+        this.guardarBlob(blob, `certificados-clase-espejo-${this.proyectoId}.zip`);
+        this.avisoCertificados.set('Certificados descargados en un ZIP');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoZip.set(false);
+        this.errorCertificados.set(
+          extraerMensajeError(err, 'No se pudo descargar el ZIP'),
+        );
+      },
+    });
+  }
+
+  /** Pide confirmación antes de reemitir: el anterior queda anulado. */
+  reemitirCertificado(certificado: CertificadoEmitido): void {
+    this.confirmarAccion(
+      'Reemitir certificado',
+      `Se emitirá un certificado nuevo para ${certificado.alumnoNombre} y el ${certificado.folio} quedará anulado. ¿Continuar?`,
+      () => this.emitirCertificados(certificado.alumnoId, true),
+    );
+  }
+
+  /** El nombre del archivo que se descarga, reutilizado por PDF y ZIP. */
+  private guardarBlob(blob: Blob, nombre: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Etiqueta legible del estado de un certificado. */
+  estadoCertificadoLabel(estado: string): string {
+    return estado === 'ANULADO' ? 'Anulado' : 'Emitido';
   }
 
   // --- Proyecto ---

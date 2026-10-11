@@ -66,6 +66,8 @@ model Usuario {
   institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
   agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
   configuracionCace     ConfiguracionCace[] @relation("ConfiguracionCace")
+  plantillasCertificado PlantillaCertificado[] @relation("PlantillaCertificado")
+  certificadosEmitidos  Certificado[] @relation("CertificadoEmitido")
 
   @@map("USUARIO")
 }
@@ -222,6 +224,7 @@ model ProyectoClaseEspejo {
   sesiones      Sesion[]
   mensajes      Mensaje[]
   listasAlumnos ListaAlumnos[]
+  certificados  Certificado[]
 
   @@map("PROYECTO_CLASE_ESPEJO")
 }
@@ -420,6 +423,7 @@ model Alumno {
   creadoEn      DateTime    @default(now()) @map("creado_en")
   actualizadoEn DateTime    @default(now()) @updatedAt @map("actualizado_en")
   lista         ListaAlumnos @relation(fields: [listaId], references: [id], onDelete: Cascade)
+  certificados  Certificado[]
 
   @@map("ALUMNO")
 }
@@ -487,4 +491,54 @@ model Premio {
   institucion   Institucion? @relation(fields: [institucionId], references: [id])
 
   @@map("PREMIO")
+}
+
+/// Plantilla del certificado, **versionada**: al cambiarla se crea una version
+/// nueva, para que los certificados ya emitidos no cambien nunca.
+model PlantillaCertificado {
+  id                 Int      @id @default(autoincrement())
+  version            Int      @default(1)
+  activa             Boolean  @default(false)
+  fondoUrl           String?  @map("fondo_url")
+  anchoPx            Int      @default(2480) @map("ancho_px")
+  altoPx             Int      @default(1748) @map("alto_px")
+  /// Posicion y estilo de cada dato del certificado (JSON).
+  campos             Json
+  /// Textos legales del certificado (JSON).
+  textosLegales      Json     @map("textos_legales")
+  /// Nombre de quien firma, que es el presidente de la CACE.
+  firmaNombre        String   @default("") @map("firma_nombre")
+  creadaPorUsuarioId Int?     @map("creada_por_usuario_id")
+  creadoEn           DateTime @default(now()) @map("creado_en")
+  actualizadoEn      DateTime @default(now()) @updatedAt @map("actualizado_en")
+  creadaPor          Usuario? @relation("PlantillaCertificado", fields: [creadaPorUsuarioId], references: [id])
+  certificados       Certificado[]
+
+  @@map("PLANTILLA_CERTIFICADO")
+}
+
+/// Un certificado emitido. El PDF se guarda tal como se emitio: cambiar la
+/// plantilla despues no lo altera.
+model Certificado {
+  id                  Int                  @id @default(autoincrement())
+  folio               String               @unique
+  alumnoId            Int                  @map("alumno_id")
+  proyectoId          Int                  @map("proyecto_id")
+  plantillaId         Int                  @map("plantilla_id")
+  emitidoPorUsuarioId Int?                 @map("emitido_por_usuario_id")
+  emitidoEn           DateTime             @default(now()) @map("emitido_en")
+  archivoPdf          String               @map("archivo_pdf")
+  hashSha256          String               @default("") @map("hash_sha256")
+  /// EMITIDO o ANULADO (al reemitir se anula el anterior y se deja el motivo).
+  estado              String               @default("EMITIDO")
+  anuladoMotivo       String               @default("") @map("anulado_motivo")
+  /// Cuando se le mando por correo al alumno, y a que direccion.
+  enviadoEn           DateTime?            @map("enviado_en")
+  enviadoA            String               @default("") @map("enviado_a")
+  alumno              Alumno               @relation(fields: [alumnoId], references: [id])
+  proyecto            ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
+  plantilla           PlantillaCertificado @relation(fields: [plantillaId], references: [id])
+  emitidoPor          Usuario?             @relation("CertificadoEmitido", fields: [emitidoPorUsuarioId], references: [id])
+
+  @@map("CERTIFICADO")
 }

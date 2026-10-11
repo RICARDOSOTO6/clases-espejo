@@ -64,7 +64,17 @@ async function bootstrap() {
   // Los archivos son datos del usuario, no contenido web: se fuerzan como
   // descarga y sin olfateo de tipo, para que un .html/.svg subido jamás se
   // ejecute en el origen de la aplicación.
-  app.use('/uploads', (_req: any, res: any, next: any) => {
+  app.use('/uploads', (req: any, res: any, next: any) => {
+    // Los certificados emitidos guardan su PDF dentro de `uploads` (es donde
+    // están todos los archivos del usuario), pero **no se sirven nunca como
+    // estáticos**: llevan el nombre de una persona y se descargan solo por su
+    // ruta con sesión. Sin este corte, quien adivine la URL se lleva un
+    // certificado ajeno.
+    const ruta = String(req.originalUrl ?? req.url ?? '').split('?')[0];
+    if (/^\/uploads\/certificados\//.test(ruta)) {
+      res.status(404).json({ statusCode: 404, message: 'No encontrado' });
+      return;
+    }
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Disposition', 'attachment');
     res.setHeader('Content-Security-Policy', "default-src 'none'");
@@ -130,6 +140,21 @@ async function bootstrap() {
     next();
   });
   app.useStaticAssets(premiosDir, { prefix: '/premios/' });
+
+  // Fondos de la plantilla del certificado (fase 4): se pintan con `<img>` en
+  // la vista previa del panel, así que van en línea y en su propia carpeta.
+  // Los PDF emitidos viven en `uploads/certificados` y **no** se sirven aquí:
+  // esos se descargan solo con sesión, desde su ruta de la API.
+  const fondosCertificadoDir = join(uploadsDir, 'certificados-fondos');
+  mkdirSync(fondosCertificadoDir, { recursive: true });
+  app.use('/certificado-fondo', (_req: any, res: any, next: any) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  });
+  app.useStaticAssets(fondosCertificadoDir, { prefix: '/certificado-fondo/' });
 
   // Plantillas descargables (hoy, la lista de alumnos de ejemplo). Viven en
   // `backend/plantillas` y no en `public/`, porque `public/` es la salida del

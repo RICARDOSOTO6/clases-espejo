@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { CaceService, DecisionCace, InstitucionCace } from '../../core/services/cace.service';
 import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
+import { PlantillaCertificadoService } from '../../core/services/plantilla-certificado.service';
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import {
@@ -14,6 +15,16 @@ import {
   PaisComunidad,
   Premio,
 } from '../../core/models/cace-identidad.models';
+import {
+  AlineacionCertificado,
+  BloqueLegal,
+  BorradorPlantillaCertificado,
+  CampoCertificado,
+  CamposCertificado,
+  ClaveCampoCertificado,
+  EstadoPlantillaCertificado,
+  PlantillaCertificado,
+} from '../../core/models/certificado.models';
 import { TEMAS_CACE, TemaCace } from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
@@ -54,6 +65,8 @@ export class CaceComponent implements OnInit, OnDestroy {
   private readonly cace = inject(CaceService);
   /** Identidad pública: la portada, el logo de la barra y el tema aplicado. */
   private readonly identidad = inject(IdentidadCaceService);
+  /** Plantilla del certificado (fase 4): la diseña y la firma la presidencia. */
+  private readonly plantillaService = inject(PlantillaCertificadoService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   /** Estado compartido con el esqueleto (la campana de pendientes). */
@@ -191,6 +204,60 @@ export class CaceComponent implements OnInit, OnDestroy {
     () => this.premios().filter((premio) => !premio.publicado).length,
   );
 
+  // --- Plantilla del certificado (fase 4) ---
+
+  /** Todo lo que devuelve el servidor: catálogo, firma sugerida y versiones. */
+  readonly plantillaEstado = signal<EstadoPlantillaCertificado | null>(null);
+  readonly cargandoPlantilla = signal(false);
+  readonly errorPlantilla = signal<string | null>(null);
+  readonly avisoPlantilla = signal<string | null>(null);
+  readonly guardandoPlantilla = signal(false);
+  readonly subiendoFondo = signal(false);
+  /** Versión cuyo botón «Activar» está en curso. */
+  readonly activandoVersion = signal<number | null>(null);
+
+  /**
+   * Lo que se está editando. Es la versión activa (o la de arranque, con
+   * `version: 0`) con los retoques del formulario encima; guardar crea una
+   * versión nueva a partir de esto.
+   */
+  readonly borrador = signal<BorradorPlantillaCertificado | null>(null);
+
+  /** Los datos con su etiqueta, en el orden del catálogo, para el formulario. */
+  readonly camposPlantilla = computed(() => {
+    const b = this.borrador();
+    const catalogo = this.plantillaEstado()?.catalogo ?? [];
+    if (!b) return [];
+    return catalogo.map((entrada) => ({
+      clave: entrada.clave,
+      etiqueta: entrada.etiqueta,
+      campo: b.campos[entrada.clave],
+    }));
+  });
+
+  /** El fondo de la versión en edición, listo para un `<img>` o un fondo CSS. */
+  readonly fondoPlantilla = computed(() => urlDeArchivo(this.borrador()?.fondoUrl));
+
+  /** Texto de ejemplo de cada dato, para que la vista previa se entienda. */
+  private readonly EJEMPLOS: Record<ClaveCampoCertificado, string> = {
+    titulo: 'Clase espejo: Calidad y Pruebas de Software',
+    nombre: 'José Ángel Muñoz Ruiz',
+    instituciones:
+      'Instituto Tecnológico Superior de Calkiní (México) y Universidad Nacional de Colombia (Colombia)',
+    fechas: 'del 04 de septiembre de 2026 al 16 de octubre de 2026',
+    docentes:
+      'Docentes: Sofía Gómez (Instituto Tecnológico Superior de Calkiní) · Isabella Cárdenas (Universidad Nacional de Colombia)',
+    firma: 'Nombre del presidente',
+    folio: 'Folio: CACE-2026-0001',
+  };
+
+  /** Las alineaciones que ofrece el formulario. */
+  readonly alineaciones: { valor: AlineacionCertificado; etiqueta: string }[] = [
+    { valor: 'left', etiqueta: 'Izquierda' },
+    { valor: 'center', etiqueta: 'Centrada' },
+    { valor: 'right', etiqueta: 'Derecha' },
+  ];
+
   ngOnInit(): void {
     // Mientras no cambie la contraseña provisional, el panel no se usa.
     if (!this.debeCambiarPassword()) {
@@ -198,6 +265,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       this.cargarIdentidad();
       this.cargarPaises();
       this.cargarPremios();
+      this.cargarPlantilla();
     }
 
     // El tema se elige en el formulario y se enseña en la vista previa: aquí se
@@ -1037,6 +1105,317 @@ export class CaceComponent implements OnInit, OnDestroy {
     if (control.errors['min'] || control.errors['max'])
       return campo === 'anio' ? 'Escribe un año entre 1900 y 2100' : 'El orden va de 0 a 999';
     return null;
+  }
+
+  // --- Plantilla del certificado: datos ---
+
+  /** Trae el catálogo, las versiones y la activa, y la pone en el formulario. */
+  cargarPlantilla(): void {
+    this.cargandoPlantilla.set(true);
+    this.errorPlantilla.set(null);
+    this.plantillaService.obtener().subscribe({
+      next: (estado) => {
+        this.plantillaEstado.set(estado);
+        this.cargandoPlantilla.set(false);
+        // Se abre siempre la versión activa; si todavía no hay ninguna, la
+        // plantilla de arranque que propone el servidor.
+        this.usarPlantilla(estado.activa ?? { ...estado.porDefecto, id: 0, version: 0, activa: false });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoPlantilla.set(false);
+        this.errorPlantilla.set(
+          extraerMensajeError(err, 'No se pudo cargar la plantilla del certificado'),
+        );
+      },
+    });
+  }
+
+  /** Carga una versión (o la de arranque) en el formulario, sin guardar nada. */
+  usarPlantilla(plantilla: {
+    id?: number | null;
+    version: number;
+    activa?: boolean;
+    fondoUrl: string | null;
+    anchoPx: number;
+    altoPx: number;
+    campos: CamposCertificado;
+    textosLegales: BloqueLegal[];
+    firmaNombre: string;
+  }): void {
+    this.borrador.set({
+      id: plantilla.id ?? null,
+      version: plantilla.version,
+      activa: plantilla.activa ?? false,
+      fondoUrl: plantilla.fondoUrl,
+      anchoPx: plantilla.anchoPx,
+      altoPx: plantilla.altoPx,
+      campos: { ...plantilla.campos },
+      textosLegales: plantilla.textosLegales.map((bloque) => ({ ...bloque })),
+      firmaNombre: plantilla.firmaNombre,
+    });
+    this.errorPlantilla.set(null);
+    this.avisoPlantilla.set(null);
+  }
+
+  /** Carga una versión concreta de la lista de versiones en el formulario. */
+  verVersion(plantilla: PlantillaCertificado): void {
+    this.usarPlantilla(plantilla);
+    this.avisoPlantilla.set(
+      `Estás viendo la versión ${plantilla.version}. Guardar creará una versión nueva con estos datos.`,
+    );
+  }
+
+  /** Vuelve a la plantilla de arranque que propone el servidor. */
+  restablecerPlantilla(): void {
+    const porDefecto = this.plantillaEstado()?.porDefecto;
+    if (!porDefecto) return;
+    this.usarPlantilla({ ...porDefecto, id: 0, version: 0, activa: false });
+    this.avisoPlantilla.set(
+      'Formulario restablecido con la colocación de arranque. Guardar creará una versión nueva.',
+    );
+  }
+
+  // --- Plantilla del certificado: edición ---
+
+  /** Mueve o cambia el estilo de un dato. */
+  editarCampo(
+    clave: ClaveCampoCertificado,
+    propiedad: keyof CampoCertificado,
+    valor: Event | string | number | boolean,
+  ): void {
+    const limpio = this.valorDe(valor);
+    this.borrador.update((b) => {
+      if (!b) return b;
+      const campo = b.campos[clave];
+      return {
+        ...b,
+        campos: {
+          ...b.campos,
+          [clave]: {
+            ...campo,
+            [propiedad]:
+              typeof campo[propiedad] === 'number'
+                ? Number(limpio) || 0
+                : limpio,
+          },
+        },
+      };
+    });
+  }
+
+  editarTextoLegal(
+    indice: number,
+    propiedad: keyof BloqueLegal,
+    valor: Event | string | number,
+  ): void {
+    const limpio = this.valorDe(valor);
+    this.borrador.update((b) => {
+      if (!b) return b;
+      const bloque = b.textosLegales[indice];
+      if (!bloque) return b;
+      return {
+        ...b,
+        textosLegales: b.textosLegales.map((item, i) =>
+          i === indice
+            ? {
+                ...item,
+                [propiedad]:
+                  typeof bloque[propiedad] === 'number'
+                    ? Number(limpio) || 0
+                    : limpio,
+              }
+            : item,
+        ),
+      };
+    });
+  }
+
+  /**
+   * El valor de un control del formulario: los manejadores reciben el evento
+   * entero (como en la lista de alumnos) y aquí se saca el dato, que además
+   * puede ser el de una casilla.
+   */
+  private valorDe(valor: Event | string | number | boolean) {
+    if (valor instanceof Event) {
+      const destino = valor.target as HTMLInputElement;
+      return destino.type === 'checkbox' ? destino.checked : destino.value;
+    }
+    return valor;
+  }
+
+  /** Añade un párrafo legal debajo del último. */
+  agregarTextoLegal(): void {
+    this.borrador.update((b) => {
+      if (!b) return b;
+      if (b.textosLegales.length >= 10) return b;
+      const ultimo = b.textosLegales[b.textosLegales.length - 1];
+      const y = ultimo ? ultimo.y + 60 : Math.round(b.altoPx * 0.86);
+      return {
+        ...b,
+        textosLegales: [
+          ...b.textosLegales,
+          {
+            id: `legal-${Date.now()}`,
+            texto: '',
+            x: 240,
+            y,
+            ancho: Math.max(400, b.anchoPx - 480),
+            tamano: 14,
+            alineacion: 'center' as AlineacionCertificado,
+            color: '#666666',
+          },
+        ],
+      };
+    });
+  }
+
+  quitarTextoLegal(indice: number): void {
+    this.borrador.update((b) =>
+      b
+        ? {
+            ...b,
+            textosLegales: b.textosLegales.filter((_, i) => i !== indice),
+          }
+        : b,
+    );
+  }
+
+  /** El nombre de la firma se guarda aparte: es una línea, no un dato colocado. */
+  cambiarFirma(valor: Event | string): void {
+    const limpio = String(this.valorDe(valor) ?? '');
+    this.borrador.update((b) => (b ? { ...b, firmaNombre: limpio } : b));
+  }
+
+  // --- Plantilla del certificado: guardado ---
+
+  /** Guarda los cambios como versión nueva (el servidor la deja activa). */
+  guardarPlantilla(): void {
+    const borrador = this.borrador();
+    if (!borrador || this.guardandoPlantilla()) return;
+
+    this.guardandoPlantilla.set(true);
+    this.errorPlantilla.set(null);
+    this.avisoPlantilla.set(null);
+    this.plantillaService
+      .guardar({
+        campos: borrador.campos,
+        textosLegales: borrador.textosLegales,
+        firmaNombre: borrador.firmaNombre,
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.guardandoPlantilla.set(false);
+          this.avisoPlantilla.set(respuesta.mensaje);
+          this.cargarPlantilla();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoPlantilla.set(false);
+          this.errorPlantilla.set(
+            extraerMensajeError(err, 'No se pudo guardar la plantilla'),
+          );
+        },
+      });
+  }
+
+  /**
+   * Sube el fondo. El servidor crea con él una versión nueva (así el fondo de
+   * una versión no cambia nunca) y la devuelve ya activa.
+   */
+  alSeleccionarFondo(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    if (!archivo) return;
+
+    if (archivo.size > PESO_MAXIMO_IMAGEN) {
+      this.errorPlantilla.set(
+        'La imagen pesa demasiado (máximo 12 MB). Reduce su tamaño y vuelve a intentarlo.',
+      );
+      entrada.value = '';
+      return;
+    }
+
+    this.subiendoFondo.set(true);
+    this.errorPlantilla.set(null);
+    this.avisoPlantilla.set(null);
+    this.plantillaService.subirFondo(archivo).subscribe({
+      next: (respuesta) => {
+        this.subiendoFondo.set(false);
+        entrada.value = '';
+        this.avisoPlantilla.set(`${respuesta.mensaje} Fondo actualizado.`);
+        this.cargarPlantilla();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoFondo.set(false);
+        entrada.value = '';
+        this.errorPlantilla.set(
+          extraerMensajeError(err, 'No se pudo subir el fondo'),
+        );
+      },
+    });
+  }
+
+  /** Deja activa una versión anterior (la emisión nueva usará esa). */
+  activarVersion(plantilla: PlantillaCertificado): void {
+    if (this.activandoVersion() !== null) return;
+    this.activandoVersion.set(plantilla.id);
+    this.errorPlantilla.set(null);
+    this.avisoPlantilla.set(null);
+    this.plantillaService.activar(plantilla.id).subscribe({
+      next: (respuesta) => {
+        this.activandoVersion.set(null);
+        this.avisoPlantilla.set(respuesta.mensaje);
+        this.cargarPlantilla();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.activandoVersion.set(null);
+        this.errorPlantilla.set(
+          extraerMensajeError(err, 'No se pudo activar esa versión'),
+        );
+      },
+    });
+  }
+
+  // --- Plantilla del certificado: vista previa ---
+
+  /**
+   * Posición de un dato dentro de la vista previa, en porcentaje del fondo.
+   * Como la caja de la previa representa el ancho completo de la plantilla, los
+   * números que se ven aquí son los que saldrán en el PDF.
+   */
+  posicionCampo(
+    campo: { x: number; y: number; ancho: number },
+    lado: 'x' | 'y' | 'ancho',
+  ): string {
+    const b = this.borrador();
+    if (!b) return '0%';
+    const total = lado === 'y' ? b.altoPx : b.anchoPx;
+    return `${(campo[lado] / total) * 100}%`;
+  }
+
+  /**
+   * Tamaño de letra de la previa. Se usa `cqw` (una unidad relativa al ancho de
+   * la caja, con `container-type: inline-size` en el CSS): así el texto se ve a
+   * la misma escala que en el PDF sin saber cuántos píxeles mide la previa.
+   */
+  tamanoCampo(tamano: number): string {
+    const b = this.borrador();
+    if (!b) return '0.8rem';
+    return `${(tamano / b.anchoPx) * 100}cqw`;
+  }
+
+  /** Texto de ejemplo del dato, para que la previa se entienda. */
+  ejemploCampo(clave: ClaveCampoCertificado): string {
+    if (clave === 'firma') {
+      return this.borrador()?.firmaNombre?.trim() || 'Nombre del presidente';
+    }
+    return this.EJEMPLOS[clave];
+  }
+
+  /** Etiqueta corta de la alineación, para la ficha del dato. */
+  etiquetaAlineacion(valor: AlineacionCertificado): string {
+    return (
+      this.alineaciones.find((a) => a.valor === valor)?.etiqueta ?? valor
+    );
   }
 
   // --- Presentación ---

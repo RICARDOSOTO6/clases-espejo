@@ -3399,6 +3399,22 @@ textarea.ng-invalid.ng-touched:focus {
   gap: var(--space-2);
 }
 
+/* — Certificados —
+   La fila de acciones queda con el botón a la izquierda y, a su lado, la
+   versión de la plantilla con la que se va a emitir. */
+
+.certificado-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.certificado-acciones .muted {
+  margin: 0;
+}
+
 .alumnos-carga textarea {
   width: 100%;
   max-width: 620px;

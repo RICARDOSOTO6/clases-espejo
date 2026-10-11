@@ -70,6 +70,11 @@ const ICONOS: Record<string, string[]> = {
     'M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22',
     'M18 2H6v7a6 6 0 0 0 12 0V2z',
   ],
+  // Medalla del certificado (la misma familia Lucide que el resto).
+  certificado: [
+    'M18 8a6 6 0 1 1-12 0 6 6 0 0 1 12 0',
+    'M15.477 12.89 17 22l-5-3-5 3 1.523-9.11',
+  ],
   institucion: [
     'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z',
     'M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2',
@@ -285,6 +290,14 @@ export class LayoutComponent {
           icono: 'premio',
           ancla: 'premios',
           contador: 'premios',
+        },
+        // La plantilla del certificado (fase 4). Va después de los premios
+        // porque es lo último de la pantalla y lo que menos se toca.
+        {
+          id: 'certificado',
+          etiqueta: 'Certificado',
+          icono: 'certificado',
+          ancla: 'certificado',
         },
         // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el
         // menú de la CACE es corto: así queda todo a la vista.
