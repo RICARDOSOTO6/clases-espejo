@@ -24,6 +24,7 @@ import {
 import {
   CertificadoEmitido,
   EstadoCertificados,
+  ResultadoEnvioCertificados,
 } from '../../core/models/certificado.models';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
@@ -118,6 +119,35 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     { alumnoId: number; alumno: string; motivo: string }[]
   >([]);
 
+  // --- Envío por correo a los alumnos (fase 5) ---
+  /** Certificado cuyo correo se está enviando (evita el doble clic). */
+  readonly enviandoCertificado = signal<number | null>(null);
+  readonly enviandoTodos = signal(false);
+  /** Lo que el envío no pudo entregar, con el motivo, para poder explicarlo. */
+  readonly envioOmitidos = signal<
+    { certificadoId: number; folio: string; alumno: string; motivo: string }[]
+  >([]);
+  readonly envioFallidos = signal<
+    { certificadoId: number; folio: string; alumno: string; correo: string; motivo: string }[]
+  >([]);
+  readonly envioSinCorreo = signal<
+    { certificadoId: number; folio: string; alumno: string }[]
+  >([]);
+
+  // --- Anulación (fase 5) ---
+  /** Certificado que se está anulando y el motivo que se está escribiendo. */
+  readonly certificadoAAnular = signal<CertificadoEmitido | null>(null);
+  readonly motivoAnulacion = signal('');
+  readonly anulandoCertificado = signal(false);
+  readonly errorAnulacion = signal<string | null>(null);
+
+  /** Folio cuyo enlace de verificación se acaba de copiar. */
+  readonly enlaceCopiado = signal<string | null>(null);
+
+  /** Correo que el docente está escribiendo para un alumno que no tiene. */
+  readonly correosNuevos = signal<Record<number, string>>({});
+  readonly guardandoCorreo = signal<number | null>(null);
+
   /** ¿Se puede pulsar «Emitir»? El servidor vuelve a comprobarlo igual. */
   readonly puedeEmitirCertificados = computed(() => {
     const estado = this.certificadosEstado();
@@ -128,6 +158,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       (estado.lista?.incluidos ?? 0) > 0
     );
   });
+
+  /** ¿Hay algún certificado vigente al que se le pueda enviar el correo? */
+  readonly puedeEnviarCertificados = computed(() =>
+    (this.certificadosEstado()?.certificados ?? []).some(
+      (c) => c.estado === 'EMITIDO',
+    ),
+  );
 
   /** Nombre completo para la navbar. */
   get nombreUsuario(): string {
@@ -806,6 +843,215 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       `Se emitirá un certificado nuevo para ${certificado.alumnoNombre} y el ${certificado.folio} quedará anulado. ¿Continuar?`,
       () => this.emitirCertificados(certificado.alumnoId, true),
     );
+  }
+
+  // --- Envío por correo a los alumnos (fase 5) ---
+
+  /**
+   * Envía el certificado de un alumno. Sin `reenviar`, a quien ya se le envió
+   * no se le manda otra vez: el servidor lo deja fuera y lo explica.
+   */
+  enviarCertificado(certificado: CertificadoEmitido, reenviar = false): void {
+    if (this.enviandoCertificado() !== null) return;
+
+    this.enviandoCertificado.set(certificado.id);
+    this.limpiarResultadoEnvio();
+    this.errorCertificados.set(null);
+    this.avisoCertificados.set(null);
+
+    this.certificadosService
+      .enviarUno(this.proyectoId, certificado.id, reenviar)
+      .subscribe({
+        next: (resultado) => {
+          this.enviandoCertificado.set(null);
+          this.mostrarResultadoEnvio(resultado);
+          this.cargarCertificados();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.enviandoCertificado.set(null);
+          this.errorCertificados.set(
+            extraerMensajeError(err, 'No se pudo enviar el certificado'),
+          );
+        },
+      });
+  }
+
+  /**
+   * Envía los certificados a **todos** los alumnos de la lista del docente.
+   *
+   * Los que no tienen correo no rompen el envío: salen listados aparte para
+   * añadírselo y volver a intentarlo.
+   */
+  enviarCertificadosATodos(reenviar = false): void {
+    if (this.enviandoTodos()) return;
+
+    this.enviandoTodos.set(true);
+    this.limpiarResultadoEnvio();
+    this.errorCertificados.set(null);
+    this.avisoCertificados.set(null);
+
+    this.certificadosService.enviar(this.proyectoId, { reenviar }).subscribe({
+      next: (resultado) => {
+        this.enviandoTodos.set(false);
+        this.mostrarResultadoEnvio(resultado);
+        this.cargarCertificados();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoTodos.set(false);
+        this.errorCertificados.set(
+          extraerMensajeError(err, 'No se pudieron enviar los certificados'),
+        );
+      },
+    });
+  }
+
+  /** Deja en pantalla la cuenta del envío y lo que quedó pendiente. */
+  private mostrarResultadoEnvio(resultado: ResultadoEnvioCertificados): void {
+    this.avisoCertificados.set(resultado.mensaje);
+    this.envioOmitidos.set(resultado.omitidos);
+    this.envioFallidos.set(resultado.fallidos);
+    this.envioSinCorreo.set(resultado.sinCorreo);
+  }
+
+  private limpiarResultadoEnvio(): void {
+    this.envioOmitidos.set([]);
+    this.envioFallidos.set([]);
+    this.envioSinCorreo.set([]);
+  }
+
+  // --- Anulación (fase 5) ---
+
+  /** Abre el cuadro del motivo: la anulación siempre se explica. */
+  abrirAnulacion(certificado: CertificadoEmitido): void {
+    this.motivoAnulacion.set('');
+    this.errorAnulacion.set(null);
+    this.certificadoAAnular.set(certificado);
+  }
+
+  cerrarAnulacion(): void {
+    this.certificadoAAnular.set(null);
+    this.motivoAnulacion.set('');
+    this.errorAnulacion.set(null);
+  }
+
+  /**
+   * Anula el certificado con el motivo escrito. El PDF se conserva (es un
+   * documento histórico), pero la página pública pasa a mostrarlo como anulado.
+   */
+  confirmarAnulacion(): void {
+    const certificado = this.certificadoAAnular();
+    const motivo = this.motivoAnulacion().trim();
+    if (!certificado || this.anulandoCertificado()) return;
+
+    if (motivo.length < 3) {
+      this.errorAnulacion.set(
+        'Escribe el motivo de la anulación: quien mire el certificado tiene derecho a saber qué pasó.',
+      );
+      return;
+    }
+
+    this.anulandoCertificado.set(true);
+    this.errorAnulacion.set(null);
+    this.certificadosService
+      .anular(this.proyectoId, certificado.id, motivo)
+      .subscribe({
+        next: (r) => {
+          this.anulandoCertificado.set(false);
+          this.cerrarAnulacion();
+          this.avisoCertificados.set(r.mensaje);
+          this.cargarCertificados();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.anulandoCertificado.set(false);
+          this.errorAnulacion.set(
+            extraerMensajeError(err, 'No se pudo anular el certificado'),
+          );
+        },
+      });
+  }
+
+  // --- Enlace de verificación ---
+
+  /**
+   * Copia el enlace público del certificado (el mismo que lleva el QR, con su
+   * código). Si el navegador no deja usar el portapapeles —pasa cuando la página
+   * no va por HTTPS—, se deja el enlace a la vista para copiarlo a mano.
+   */
+  copiarEnlace(certificado: CertificadoEmitido): void {
+    const enlace = certificado.enlaceVerificacion;
+    this.errorCertificados.set(null);
+
+    const portapapeles = navigator.clipboard;
+    if (!portapapeles?.writeText) {
+      this.enlaceCopiado.set(certificado.folio);
+      this.avisoCertificados.set(
+        `Copia el enlace a mano: ${enlace}`,
+      );
+      return;
+    }
+
+    portapapeles.writeText(enlace).then(
+      () => {
+        this.enlaceCopiado.set(certificado.folio);
+        this.avisoCertificados.set(
+          `Enlace de verificación del ${certificado.folio} copiado.`,
+        );
+      },
+      () => {
+        this.enlaceCopiado.set(certificado.folio);
+        this.avisoCertificados.set(`Copia el enlace a mano: ${enlace}`);
+      },
+    );
+  }
+
+  // --- Correo que falta en la lista ---
+
+  /** Lo que el docente lleva escrito para un alumno sin correo. */
+  correoDe(alumnoId: number): string {
+    return this.correosNuevos()[alumnoId] ?? '';
+  }
+
+  cambiarCorreo(alumnoId: number, valor: string): void {
+    this.correosNuevos.update((mapa) => ({ ...mapa, [alumnoId]: valor }));
+  }
+
+  /**
+   * Guarda el correo de un alumno que no lo tenía. Se guarda en la **lista**,
+   * que es de donde sale el envío: así el dato queda para las próximas veces y
+   * no solo para este envío.
+   */
+  guardarCorreo(alumnoId: number): void {
+    const correo = this.correoDe(alumnoId).trim();
+    if (this.guardandoCorreo() !== null) return;
+
+    if (!correo) {
+      this.errorLista.set('Escribe el correo antes de guardarlo.');
+      return;
+    }
+
+    this.guardandoCorreo.set(alumnoId);
+    this.errorLista.set(null);
+    this.listasService
+      .editarAlumno(this.proyectoId, alumnoId, { correo })
+      .subscribe({
+        next: (lista) => {
+          this.guardandoCorreo.set(null);
+          this.listaAlumnos.set(lista);
+          this.correosNuevos.update((mapa) => {
+            const copia = { ...mapa };
+            delete copia[alumnoId];
+            return copia;
+          });
+          this.avisoLista.set('Correo guardado: ya se le puede enviar el certificado.');
+          this.cargarCertificados();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoCorreo.set(null);
+          this.errorLista.set(
+            extraerMensajeError(err, 'No se pudo guardar el correo'),
+          );
+        },
+      });
   }
 
   /** El nombre del archivo que se descarga, reutilizado por PDF y ZIP. */

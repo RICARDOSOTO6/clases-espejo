@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { CertificadoPdfService } from './certificado-pdf.service';
+import { CertificadosCaceController } from './certificados-cace.controller';
 import { CertificadosController } from './certificados.controller';
 import { CertificadosService } from './certificados.service';
 import { PlantillasCertificadoController } from './plantillas.controller';
 import { PlantillasService } from './plantillas.service';
+import { VerificacionController } from './verificacion.controller';
+import { VerificacionService } from './verificacion.service';
 
 /**
- * Certificados de la clase espejo (fase 4).
+ * Certificados de la clase espejo (fases 4 y 5).
  *
  * Van en su propio módulo y no dentro de `CaceModule` ni de `ProyectosModule`
  * porque son **dos permisos distintos en dos pantallas distintas**: la
@@ -16,11 +19,26 @@ import { PlantillasService } from './plantillas.service';
  * espejo (`/proyectos/:id/certificados`), con `emitirCertificados`. En un
  * módulo compartido, los guardias de uno acabarían aplicándose al otro.
  *
- * `PrismaModule` es global, así que no hay que importarlo.
+ * En la fase 5 se suman tres cosas: la **verificación pública**
+ * (`/verificar/:folio`, sin guardia, que es lo que abre el QR), la **anulación**
+ * (del docente en su clase y de la presidencia en `/cace/certificados`) y el
+ * **envío por correo** a los alumnos, que va por la ruta del docente.
+ *
+ * `PrismaModule` y `MailModule` son globales, así que no hay que importarlos.
  */
 @Module({
   imports: [AuthModule],
-  controllers: [PlantillasCertificadoController, CertificadosController],
-  providers: [PlantillasService, CertificadosService, CertificadoPdfService],
+  controllers: [
+    PlantillasCertificadoController,
+    CertificadosCaceController,
+    CertificadosController,
+    VerificacionController,
+  ],
+  providers: [
+    PlantillasService,
+    CertificadosService,
+    CertificadoPdfService,
+    VerificacionService,
+  ],
 })
 export class CertificadosModule {}

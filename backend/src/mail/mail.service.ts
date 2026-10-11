@@ -218,4 +218,58 @@ export class MailService {
       `,
     });
   }
+
+  /**
+   * Envía al alumno su certificado: el PDF adjunto y el enlace de verificación.
+   *
+   * Va en un solo correo y con el PDF dentro porque el alumno **no tiene cuenta**
+   * en la plataforma: si el correo solo llevara un enlace de descarga, haría
+   * falta una sesión que no tiene. El enlace de verificación sí lo puede abrir
+   * cualquiera (es la misma página del QR, con su código), y es lo que le permite
+   * comprobar que el documento es auténtico.
+   *
+   * Los datos del certificado llegan en un objeto y no como argumentos sueltos
+   * porque son siete: en una lista posicional, cambiar el orden de dos de ellos
+   * mandaría el folio donde va el nombre sin que nadie se enterara.
+   */
+  async sendCertificadoAlumno(
+    to: string,
+    datos: {
+      /** Nombre del alumno, tal como sale impreso. */
+      alumno: string;
+      /** Título de la clase espejo. */
+      titulo: string;
+      folio: string;
+      /** Las dos instituciones, ya juntas («A (México) · B (Colombia)»). */
+      instituciones: string;
+      /** Enlace de verificación pública, con su código. */
+      enlaceVerificacion: string;
+      pdf: Buffer;
+      nombreArchivo: string;
+    },
+  ): Promise<void> {
+    const { alumno, titulo, folio, instituciones, enlaceVerificacion, pdf, nombreArchivo } =
+      datos;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: `Clases Espejo - Tu certificado de «${titulo}» (${folio})`,
+      text: `Hola ${alumno}: te adjuntamos el certificado de la clase espejo «${titulo}», que emitieron ${instituciones}. Folio: ${folio}. Puedes comprobar que es auténtico en: ${enlaceVerificacion} (no hace falta crear ninguna cuenta).`,
+      html: `
+        <p>Hola <strong>${alumno}</strong>:</p>
+        <p>Te adjuntamos el certificado de la clase espejo <strong>«${titulo}»</strong>, emitido por la CACE con la participación de ${instituciones}.</p>
+        <p><strong>Folio:</strong> ${folio}</p>
+        <p>Puedes comprobar que el certificado es auténtico —y ver su estado— en <a href="${enlaceVerificacion}">${enlaceVerificacion}</a>. No hace falta crear ninguna cuenta: el enlace abre la página de verificación directamente.</p>
+        <p>El certificado va adjunto en este correo en PDF.</p>
+      `,
+      attachments: [
+        {
+          filename: nombreArchivo,
+          content: pdf,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
 }

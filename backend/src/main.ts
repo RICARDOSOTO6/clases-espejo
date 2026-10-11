@@ -20,6 +20,11 @@ const PREFIJOS_API_CONOCIDOS = [
   '/recordatorios',
   '/cace',
   '/health',
+  // La verificación pública de un certificado se llama igual que su página
+  // (`/verificar/<folio>`), así que tiene que estar aquí: si no, la llamada de
+  // la propia página recibiría el `index.html` en lugar del JSON. La navegación
+  // del navegador sí sigue recibiendo la página, porque esa pide `text/html`.
+  '/verificar',
 ];
 
 /**

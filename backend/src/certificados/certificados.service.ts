@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from '
 import { basename, join } from 'path';
 import JSZip from 'jszip';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { ESTADO_PROYECTO_FINALIZADO } from '../common/estados';
 import {
   CAMPOS_POR_DEFECTO,
@@ -19,9 +20,14 @@ import {
   CertificadoPdfService,
   DatosCertificado,
 } from './certificado-pdf.service';
+import { codigoVerificacion as codigoDeVerificacion } from './codigo-verificacion';
 import { PlantillasService } from './plantillas.service';
-import { CERTIFICADOS_DIR } from './rutas-certificado';
+import {
+  CERTIFICADOS_DIR,
+  direccionVerificacion,
+} from './rutas-certificado';
 import { EmitirCertificadosDto } from './dto/emitir-certificados.dto';
+import { EnviarCertificadosDto } from './dto/enviar-certificado.dto';
 
 /** Estado de un certificado anulado: se conserva, pero ya no vale. */
 const ESTADO_EMITIDO = 'EMITIDO';
@@ -57,11 +63,69 @@ export interface CertificadoVista {
   estado: string;
   emitidoEn: Date;
   anuladoMotivo: string;
-  /** Para la fase 5 (envío por correo): todavía no se rellena. */
+  /** Cuándo se le envió por correo y a qué dirección (fase 5). */
   enviadoEn: Date | null;
   enviadoA: string;
   hashSha256: string;
   archivoPdf: string;
+  /**
+   * La dirección pública de este certificado **con su código**
+   * (`/verificar/<folio>?c=<codigo>`), que es la misma que va dentro del QR.
+   * El docente la copia desde la pantalla para pegarla donde le haga falta.
+   */
+  enlaceVerificacion: string;
+  /** El código corto que exige la página pública, para poder dictarlo. */
+  codigoVerificacion: string;
+}
+
+/**
+ * Un alumno al que no se le puede enviar el certificado por correo porque en la
+ * lista no hay dirección. La pantalla los nombra para poder añadírsela, en vez
+ * de que el envío falle en silencio.
+ */
+export interface AlumnoSinCorreo {
+  alumnoId: number;
+  alumno: string;
+}
+
+/** Una línea del resultado del envío por correo. */
+export interface EnvioCertificado {
+  certificadoId: number;
+  folio: string;
+  alumno: string;
+  correo: string;
+  enviadoEn: Date;
+}
+
+/** Un certificado que no se envió, con el motivo (ya enviado, anulado…). */
+export interface EnvioOmitido {
+  certificadoId: number;
+  folio: string;
+  alumno: string;
+  motivo: string;
+}
+
+/** Un envío que el servidor de correo rechazó; el resto del lote sigue. */
+export interface EnvioFallido {
+  certificadoId: number;
+  folio: string;
+  alumno: string;
+  correo: string;
+  motivo: string;
+}
+
+/**
+ * Resultado de un envío, sea de uno o de todos. Siempre informa de **cuántos
+ * salieron** y de qué pasó con los demás: un envío a varios alumnos no se cae
+ * entero porque a uno le falte el correo o el servidor rechace su dirección.
+ */
+export interface ResultadoEnvio {
+  mensaje: string;
+  total: number;
+  enviados: EnvioCertificado[];
+  omitidos: EnvioOmitido[];
+  fallidos: EnvioFallido[];
+  sinCorreo: { certificadoId: number; folio: string; alumno: string }[];
 }
 
 /**
@@ -88,6 +152,7 @@ export class CertificadosService {
     private readonly prisma: PrismaService,
     private readonly pdf: CertificadoPdfService,
     private readonly plantillas: PlantillasService,
+    private readonly mail: MailService,
   ) {
     // La carpeta tiene que existir antes de la primera emisión.
     mkdirSync(CERTIFICADOS_DIR, { recursive: true });
@@ -152,6 +217,14 @@ export class CertificadosService {
             total: lista.alumnos.length,
             incluidos: incluidos.length,
             sinCorreo: lista.alumnos.filter((a) => !a.correo).length,
+            /**
+             * Quiénes son los que no tienen correo, no solo cuántos: en la
+             * pantalla hay que poder añadírselo uno por uno. Se listan los que
+             * entran en los certificados, que son los que harán falta.
+             */
+            sinCorreoAlumnos: incluidos
+              .filter((a) => !a.correo)
+              .map((a) => ({ alumnoId: a.id, alumno: a.nombre })),
           }
         : null,
       certificados: certificados.map((c) => this.aVista(c)),
@@ -269,6 +342,341 @@ export class CertificadosService {
       reemitidos,
       omitidos,
       avisos,
+    };
+  }
+
+  // --- Anulación (fase 5) ---
+
+  /**
+   * Anula un certificado con su motivo. El PDF **no se borra**: es un documento
+   * histórico y el docente puede seguir descargándolo, pero deja de valer en la
+   * página pública, que pasa a mostrarlo como anulado con esta explicación.
+   *
+   * Quién puede: el **docente** de la clase espejo, y solo para los certificados
+   * de la lista de **su** institución (con `proyectoId`); o la **presidencia**,
+   * que responde por lo que firma la CACE y puede anular cualquiera (sin
+   * `proyectoId`, porque su panel no está dentro de una clase espejo).
+   */
+  async anular(entrada: {
+    usuarioId: number;
+    certificadoId: number;
+    motivo: string;
+    /** La clase espejo desde la que se anula (la ruta del docente). */
+    proyectoId?: number;
+  }) {
+    const motivo = (entrada.motivo ?? '').trim();
+    if (motivo.length < 3) {
+      throw new BadRequestException(
+        'El motivo de la anulación es obligatorio: hay que explicar por qué deja de valer el certificado.',
+      );
+    }
+
+    const certificado = await this.prisma.certificado.findUnique({
+      where: { id: entrada.certificadoId },
+      include: {
+        alumno: {
+          select: {
+            nombre: true,
+            matricula: true,
+            correo: true,
+            lista: { select: { institucionId: true } },
+          },
+        },
+      },
+    });
+    if (!certificado) {
+      throw new NotFoundException('Ese certificado no existe.');
+    }
+
+    if (entrada.proyectoId !== undefined) {
+      // Docente: tiene que participar en la clase y el certificado ser de la
+      // lista de su institución. Si no, no se distingue de uno que no existe.
+      const { institucionId } = await this.contexto(
+        entrada.usuarioId,
+        entrada.proyectoId,
+        'Solo el docente de esta clase espejo puede anular los certificados de su institución. La presidencia de la CACE los anula desde su panel.',
+      );
+      const esDeSuLista =
+        certificado.proyectoId === entrada.proyectoId &&
+        certificado.alumno.lista.institucionId === institucionId;
+      if (!esDeSuLista) {
+        throw new NotFoundException(
+          'Ese certificado no es de la lista de tu institución.',
+        );
+      }
+    } else {
+      await this.exigirPresidencia(entrada.usuarioId);
+    }
+
+    if (certificado.estado === ESTADO_ANULADO) {
+      throw new BadRequestException(
+        `El certificado ${certificado.folio} ya estaba anulado.`,
+      );
+    }
+
+    const actualizado = await this.prisma.certificado.update({
+      where: { id: certificado.id },
+      data: { estado: ESTADO_ANULADO, anuladoMotivo: motivo },
+      include: {
+        alumno: { select: { nombre: true, matricula: true, correo: true } },
+      },
+    });
+
+    return {
+      mensaje: `El certificado ${actualizado.folio} quedó anulado. La página de verificación ya lo muestra como anulado con este motivo.`,
+      certificado: this.aVista(actualizado),
+    };
+  }
+
+  // --- Envío por correo a los alumnos (fase 5) ---
+
+  /**
+   * Envía el certificado a **todos** los alumnos de mi lista (o a los que se
+   * indiquen en `alumnoIds`), uno por uno y con el PDF adjunto.
+   *
+   * Un lote no se cae entero porque a un alumno le falte el correo o porque el
+   * servidor rechace su dirección: cada envío se intenta por separado y el
+   * resultado dice cuántos salieron y qué pasó con el resto.
+   */
+  async enviar(
+    usuarioId: number,
+    proyectoId: number,
+    dto: EnviarCertificadosDto,
+  ): Promise<ResultadoEnvio> {
+    const { institucionId } = await this.contexto(usuarioId, proyectoId);
+
+    const certificados = await this.prisma.certificado.findMany({
+      where: {
+        proyectoId,
+        alumno: {
+          lista: { institucionId },
+          ...(dto.alumnoIds && dto.alumnoIds.length > 0
+            ? { id: { in: dto.alumnoIds } }
+            : {}),
+        },
+      },
+      include: {
+        alumno: { select: { id: true, nombre: true, correo: true } },
+      },
+      orderBy: { folio: 'asc' },
+    });
+
+    if (certificados.length === 0) {
+      throw new BadRequestException(
+        dto.alumnoIds && dto.alumnoIds.length > 0
+          ? 'Ninguno de los alumnos indicados tiene un certificado emitido en esta clase espejo.'
+          : 'Todavía no hay certificados emitidos en la lista de tu institución que enviar.',
+      );
+    }
+
+    return this.enviarLote(proyectoId, certificados, dto.reenviar === true);
+  }
+
+  /**
+   * Envía el certificado de **un** alumno concreto.
+   *
+   * Un certificado anulado no se envía: no tendría sentido mandar por correo algo
+   * que ya no vale. En el lote sí aparecen (como omitidos) porque el docente pidió
+   * «a todos» y conviene que sepa que esos quedaron fuera.
+   */
+  async enviarUno(
+    usuarioId: number,
+    proyectoId: number,
+    certificadoId: number,
+    dto: EnviarCertificadosDto,
+  ): Promise<ResultadoEnvio> {
+    const certificado = await this.certificadoDeMiLista(
+      usuarioId,
+      proyectoId,
+      certificadoId,
+    );
+    if (certificado.estado !== ESTADO_EMITIDO) {
+      throw new BadRequestException(
+        `El certificado ${certificado.folio} está anulado: no se le puede enviar al alumno.`,
+      );
+    }
+
+    const completo = await this.prisma.certificado.findUnique({
+      where: { id: certificado.id },
+      include: { alumno: { select: { id: true, nombre: true, correo: true } } },
+    });
+    if (!completo) {
+      throw new NotFoundException('Ese certificado no existe.');
+    }
+
+    return this.enviarLote(proyectoId, [completo], dto.reenviar === true);
+  }
+
+  /**
+   * El envío, alumno por alumno.
+   *
+   * Se hace **de uno en uno** a propósito: el correo es lo único que el alumno
+   * recibe, así que un fallo se anota y se sigue con el siguiente en vez de
+   * abortar el lote. `enviadoEn` y `enviadoA` se guardan justo después de que el
+   * servidor acepte el envío, que es lo que evita repetirlo por descuido.
+   */
+  private async enviarLote(
+    proyectoId: number,
+    certificados: {
+      id: number;
+      folio: string;
+      archivoPdf: string;
+      estado: string;
+      enviadoEn: Date | null;
+      enviadoA: string;
+      alumno: { id: number; nombre: string; correo: string };
+    }[],
+    reenviar: boolean,
+  ): Promise<ResultadoEnvio> {
+    const clase = await this.datosDeLaClase(proyectoId);
+    const resultado: Omit<ResultadoEnvio, 'mensaje' | 'total'> = {
+      enviados: [],
+      omitidos: [],
+      fallidos: [],
+      sinCorreo: [],
+    };
+
+    for (const certificado of certificados) {
+      const folio = certificado.folio;
+      const alumno = certificado.alumno.nombre;
+      const correo = (certificado.alumno.correo ?? '').trim();
+
+      if (certificado.estado !== ESTADO_EMITIDO) {
+        resultado.omitidos.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+          motivo: 'El certificado está anulado.',
+        });
+        continue;
+      }
+      if (!correo) {
+        resultado.sinCorreo.push({ certificadoId: certificado.id, folio, alumno });
+        continue;
+      }
+      if (certificado.enviadoEn && !reenviar) {
+        resultado.omitidos.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+          motivo: `Ya se le envió a ${certificado.enviadoA || correo}. Marca «reenviar» si quieres mandárselo otra vez.`,
+        });
+        continue;
+      }
+
+      const ruta = join(CERTIFICADOS_DIR, basename(certificado.archivoPdf));
+      if (!existsSync(ruta)) {
+        resultado.fallidos.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+          correo,
+          motivo: 'El PDF del certificado no está en el servidor. Vuelve a emitirlo.',
+        });
+        continue;
+      }
+
+      try {
+        await this.mail.sendCertificadoAlumno(correo, {
+          alumno,
+          titulo: clase.titulo,
+          folio,
+          instituciones: clase.instituciones,
+          enlaceVerificacion: direccionVerificacion(folio),
+          pdf: readFileSync(ruta),
+          nombreArchivo: `certificado-${folio}.pdf`,
+        });
+
+        const enviadoEn = new Date();
+        await this.prisma.certificado.update({
+          where: { id: certificado.id },
+          data: { enviadoEn, enviadoA: correo },
+        });
+        resultado.enviados.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+          correo,
+          enviadoEn,
+        });
+      } catch (error) {
+        // El detalle técnico va al registro; a la pantalla, algo que se entienda.
+        this.logger.warn(
+          `No se pudo enviar el certificado ${folio} a ${correo}: ${(error as Error)?.message ?? error}`,
+        );
+        resultado.fallidos.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+          correo,
+          motivo: 'El servidor de correo no aceptó el envío.',
+        });
+      }
+    }
+
+    return {
+      mensaje: this.mensajeDeEnvio(resultado),
+      total: certificados.length,
+      ...resultado,
+    };
+  }
+
+  /**
+   * La explicación del envío, con las cifras delante. Es lo que lee el docente:
+   * «3 enviados, 1 sin correo, 1 falló».
+   */
+  private mensajeDeEnvio(resultado: {
+    enviados: unknown[];
+    omitidos: unknown[];
+    fallidos: unknown[];
+    sinCorreo: unknown[];
+  }): string {
+    const partes: string[] = [];
+    partes.push(
+      resultado.enviados.length === 1
+        ? '1 certificado enviado por correo'
+        : `${resultado.enviados.length} certificados enviados por correo`,
+    );
+    if (resultado.omitidos.length > 0) {
+      partes.push(`${resultado.omitidos.length} sin enviar (ya se le había enviado)`);
+    }
+    if (resultado.sinCorreo.length > 0) {
+      partes.push(`${resultado.sinCorreo.length} sin correo en la lista`);
+    }
+    if (resultado.fallidos.length > 0) {
+      partes.push(`${resultado.fallidos.length} con error de envío`);
+    }
+    return `${partes.join(' · ')}.`;
+  }
+
+  /** El título de la clase y las dos instituciones, para el correo del alumno. */
+  private async datosDeLaClase(proyectoId: number) {
+    const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
+      where: { id: proyectoId },
+      select: {
+        solicitud: {
+          select: {
+            titulo: true,
+            asignacionOrigen: {
+              select: {
+                docenteInstitucion: {
+                  select: { institucion: { select: { nombre: true } } },
+                },
+              },
+            },
+            institucionDestino: { select: { nombre: true } },
+          },
+        },
+      },
+    });
+
+    const solicitud = proyecto?.solicitud;
+    const origen =
+      solicitud?.asignacionOrigen.docenteInstitucion.institucion.nombre ?? '';
+    const destino = solicitud?.institucionDestino.nombre ?? '';
+    return {
+      titulo: solicitud?.titulo ?? 'Clase espejo',
+      instituciones: [origen, destino].filter(Boolean).join(' · '),
     };
   }
 
@@ -464,8 +872,12 @@ export class CertificadosService {
    * institución. Es la misma regla que la lista de alumnos (fase 1): en una
    * clase espejo hay alumnos de los dos lados y cada docente responde por los
    * suyos.
+   *
+   * `aviso` deja cambiar el mensaje del 403: la anulación lo necesita, porque la
+   * presidencia también puede anular (desde su panel) y su mensaje tiene que
+   * decirle por dónde.
    */
-  private async contexto(usuarioId: number, proyectoId: number) {
+  private async contexto(usuarioId: number, proyectoId: number, aviso?: string) {
     const docente = await this.prisma.docente.findUnique({
       where: { usuarioId },
     });
@@ -486,10 +898,13 @@ export class CertificadosService {
             participa.asignacionDocente.docenteInstitucion.institucionId,
         };
       }
-      throw new ForbiddenException('No participas en esta clase espejo.');
+      throw new ForbiddenException(
+        aviso ?? 'No participas en esta clase espejo.',
+      );
     }
     throw new ForbiddenException(
-      'Solo el docente de la clase espejo puede emitir los certificados de sus alumnos.',
+      aviso ??
+        'Solo el docente de la clase espejo puede emitir los certificados de sus alumnos.',
     );
   }
 
@@ -571,6 +986,26 @@ export class CertificadosService {
       : 'No había nada que emitir.';
   }
 
+  /**
+   * La anulación desde la presidencia, que no pasa por una clase espejo.
+   *
+   * El guardia ya pide la capacidad `anularCertificados`, pero se vuelve a
+   * comprobar aquí que quien llama sea miembro activo de la CACE: una ruta que no
+   * comprueba su propio ámbito depende de que nadie cambie la matriz de permisos
+   * sin darse cuenta.
+   */
+  private async exigirPresidencia(usuarioId: number): Promise<void> {
+    const miembro = await this.prisma.miembroCace.findUnique({
+      where: { usuarioId },
+      select: { activo: true },
+    });
+    if (!miembro?.activo) {
+      throw new ForbiddenException(
+        'Solo la presidencia de la CACE puede anular un certificado que no es de su clase espejo.',
+      );
+    }
+  }
+
   /** De la fila de la base a lo que ve la pantalla. */
   private aVista(certificado: {
     id: number;
@@ -599,6 +1034,9 @@ export class CertificadosService {
       enviadoA: certificado.enviadoA,
       hashSha256: certificado.hashSha256,
       archivoPdf: certificado.archivoPdf,
+      // El enlace y su código salen del folio: no se guardan en la base.
+      enlaceVerificacion: direccionVerificacion(certificado.folio),
+      codigoVerificacion: codigoDeVerificacion(certificado.folio),
     };
   }
 

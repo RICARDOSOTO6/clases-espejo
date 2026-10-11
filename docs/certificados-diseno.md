@@ -194,12 +194,36 @@ cada docente solo ve la lista de **su** institución.
 
 ## 6. Pendiente de decidir
 
-1. **¿Folio con verificación pública?** Propuesta: una página `/verificar/<folio>`,
-   con el folio y un QR impresos en el certificado, para que cualquiera compruebe
-   que es auténtico sin depender de la institución.
+1. **¿Folio con verificación pública?** **Decidido y hecho en la fase 5**: hay una
+   página pública `/verificar/<folio>?c=<código>`, sin sesión, y el folio y el QR
+   van impresos en el certificado. El **código** es la pieza que hace que eso
+   sirva: el folio es consecutivo y se adivina, así que el QR lleva además un
+   código de 8 caracteres derivado del folio con un HMAC del secreto del servidor
+   (`JWT_SECRET`). Sin ese código —o con uno que no es— la página no enseña ningún
+   dato del alumno, y no se puede distinguir un folio que existe de uno que no.
+   Como se **deriva**, los certificados ya emitidos tienen código sin reemitirlos
+   ni añadir columnas. Cómo queda la anulación y el envío, en el apartado que
+   sigue a esta lista.
 2. **Mientras no exista el usuario presidente, ¿quién edita la plantilla?** Opción
    provisional: el agente, o dejarla como configuración del sistema.
 3. **Qué más llevará el usuario presidente.** Aparcado hasta que se defina.
+
+### La verificación pública (fase 5)
+
+* **Quién puede anular.** El **docente** de la clase espejo, para los certificados
+  de la lista de **su** institución (`POST /proyectos/:id/certificados/:id/anular`),
+  y la **presidencia** desde su panel (`POST /cace/certificados/:id/anular`), que
+  responde por lo que firma la CACE. El motivo es **obligatorio** y viaja hasta la
+  página pública: un certificado anulado tiene que verse anulado **y explicado**.
+* **El PDF anulado no se borra.** Es un documento histórico y el docente lo sigue
+  descargando; lo que cambia es que deja de valer en la verificación.
+* **El envío por correo es del docente**, uno por uno o a toda su lista, con el
+  PDF adjunto y el enlace de verificación. Se guarda a quién se envió y cuándo, y
+  **no se reenvía** salvo que se pida. Un envío a varios alumnos no se cae por uno:
+  el resultado dice cuántos salieron y qué pasó con los demás (sin correo en la
+  lista, anulado o rechazado por el servidor de correo).
+* **El alumno no necesita cuenta**: recibe el PDF y un enlace que se abre sin
+  iniciar sesión.
 
 ### Cómo queda la columna de correo
 

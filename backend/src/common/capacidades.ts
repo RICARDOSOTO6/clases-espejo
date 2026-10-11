@@ -36,12 +36,18 @@ export const CAPACIDADES = [
   'firmarCertificados',
   /** Emitir los certificados de sus alumnos (lo hacen los docentes). */
   'emitirCertificados',
+  /**
+   * Anular un certificado ya emitido, con motivo. La tiene el docente que lo
+   * emitió (para los certificados de su institución) y la presidencia, que
+   * responde por lo que firma la CACE.
+   */
+  'anularCertificados',
 ] as const;
 export type Capacidad = (typeof CAPACIDADES)[number];
 
 /** La tabla de permisos. Añadir una secretaría nueva es añadir una fila. */
 const MATRIZ: Record<Rol, Capacidad[]> = {
-  DOCENTE: ['emitirCertificados'],
+  DOCENTE: ['emitirCertificados', 'anularCertificados'],
   AGENTE: ['confirmarAgenteInstitucion'],
   PRESIDENTE_CACE: [
     'aprobarInstituciones',
@@ -50,6 +56,7 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
     'publicarPremios',
     'disenarCertificados',
     'firmarCertificados',
+    'anularCertificados',
   ],
   // La secretaría ayuda con la imagen y los premios, pero no firma ni veta.
   SECRETARIA_CACE: ['personalizarCace', 'publicarPremios'],

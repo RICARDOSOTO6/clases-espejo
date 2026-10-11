@@ -1,4 +1,5 @@
 import { join } from 'path';
+import { codigoVerificacion } from './codigo-verificacion';
 
 /**
  * Carpetas de los certificados, dentro de `uploads`, y la dirección pública de
@@ -35,9 +36,19 @@ export function urlPublica(): string {
 }
 
 /**
- * La dirección que abre el QR de un certificado. La página de verificación es
- * de la fase siguiente: aquí solo se **apunta** a ella.
+ * La dirección que abre el QR de un certificado.
+ *
+ * Lleva el **código de verificación** además del folio
+ * (`/verificar/CACE-2026-0001?c=ABCD2345`). El folio solo no vale: es
+ * consecutivo y se adivina, así que sin el código la página no enseña ningún
+ * dato del alumno. Como el código se deriva del folio con el secreto del
+ * servidor, todos los certificados —también los ya emitidos— tienen el suyo sin
+ * guardar nada nuevo.
+ *
+ * El QR del PDF y el de la vista previa del panel salen de aquí, así que los dos
+ * llevan el código dentro.
  */
 export function direccionVerificacion(folio: string): string {
-  return `${urlPublica()}/verificar/${encodeURIComponent(folio)}`;
+  const codigo = codigoVerificacion(folio);
+  return `${urlPublica()}/verificar/${encodeURIComponent(folio)}?c=${encodeURIComponent(codigo)}`;
 }

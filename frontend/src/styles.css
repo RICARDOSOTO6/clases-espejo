@@ -3421,6 +3421,60 @@ textarea.ng-invalid.ng-touched:focus {
   margin: 0;
 }
 
+/* Los correos que faltan en la lista: se nombran y se pueden añadir desde aquí,
+   porque sin correo no hay envío y el certificado hay que entregarlo impreso. */
+.certificado-sin-correo {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-lg);
+  background: var(--warning-bg);
+}
+
+.certificado-sin-correo p {
+  margin: 0 0 var(--space-2);
+}
+
+.certificado-sin-correo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.certificado-sin-correo-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.certificado-sin-correo-nombre {
+  min-width: 180px;
+  font-weight: 600;
+}
+
+.certificado-sin-correo .alumnos-input {
+  flex: 1 1 220px;
+  max-width: 320px;
+  border-color: var(--neutral-300);
+  background: var(--surface);
+}
+
+/* La columna de acciones del certificado: son varios botones de texto y conviene
+   que se apilen en pantallas estrechas. */
+.certificado-celda-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.link-button--peligro {
+  color: var(--danger-700);
+}
+
 .alumnos-carga textarea {
   width: 100%;
   max-width: 620px;

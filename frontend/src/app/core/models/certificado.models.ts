@@ -118,10 +118,18 @@ export interface CertificadoEmitido {
   estado: string;
   emitidoEn: string;
   anuladoMotivo: string;
-  /** Para la fase 5 (envío por correo): hoy siempre vacío. */
+  /** Cuándo se le envió por correo y a qué dirección (fase 5). */
   enviadoEn: string | null;
   enviadoA: string;
   hashSha256: string;
+  /**
+   * La dirección pública de este certificado **con su código**
+   * (`/verificar/<folio>?c=<codigo>`), la misma que va dentro del QR. Es lo que
+   * el docente copia para pegar donde le haga falta.
+   */
+  enlaceVerificacion: string;
+  /** El código corto de la página pública, para poder dictarlo. */
+  codigoVerificacion: string;
 }
 
 /** El estado de la sección «Certificados» de una clase espejo. */
@@ -142,6 +150,11 @@ export interface EstadoCertificados {
     total: number;
     incluidos: number;
     sinCorreo: number;
+    /**
+     * Quiénes no tienen correo (no solo cuántos): la pantalla los nombra para
+     * poder añadírselo antes de enviar los certificados.
+     */
+    sinCorreoAlumnos: { alumnoId: number; alumno: string }[];
   } | null;
   certificados: CertificadoEmitido[];
   resumen: {
@@ -160,4 +173,67 @@ export interface ResultadoEmision {
   omitidos: { alumnoId: number; alumno: string; motivo: string }[];
   /** Cosas que hay que decir sin haber fallado (por ejemplo, un diseño WEBP). */
   avisos: string[];
+}
+
+/**
+ * Resultado del envío por correo, de uno o de todos.
+ *
+ * Se mira entero porque un envío a varios alumnos **no se cae por uno**: dice
+ * cuántos salieron y qué pasó con los demás (ya se le había enviado, sin correo
+ * en la lista o rechazado por el servidor de correo).
+ */
+export interface ResultadoEnvioCertificados {
+  mensaje: string;
+  total: number;
+  enviados: {
+    certificadoId: number;
+    folio: string;
+    alumno: string;
+    correo: string;
+    enviadoEn: string;
+  }[];
+  omitidos: {
+    certificadoId: number;
+    folio: string;
+    alumno: string;
+    motivo: string;
+  }[];
+  fallidos: {
+    certificadoId: number;
+    folio: string;
+    alumno: string;
+    correo: string;
+    motivo: string;
+  }[];
+  sinCorreo: { certificadoId: number; folio: string; alumno: string }[];
+}
+
+/** Los cuatro desenlaces de la verificación pública de un folio. */
+export type EstadoVerificacion =
+  | 'VALIDO'
+  | 'ANULADO'
+  | 'NO_ENCONTRADO'
+  | 'INVALIDO';
+
+/**
+ * Lo que enseña la página pública `/verificar/:folio`. **Solo esto**: el nombre
+ * del alumno y los datos de la clase. Sin correo, sin matrícula, sin el PDF y
+ * sin nada del certificado cuando el código no es el correcto (`certificado`
+ * llega `null`).
+ */
+export interface VerificacionCertificado {
+  estado: EstadoVerificacion;
+  mensaje: string;
+  certificado: {
+    folio: string;
+    alumno: string;
+    titulo: string;
+    institucionOrigen: string;
+    institucionDestino: string;
+    fechaInicio: string;
+    fechaFin: string;
+    emitidoEn: string;
+    estado: string;
+    anuladoMotivo: string;
+  } | null;
 }

@@ -1,0 +1,129 @@
+<div class="verificacion" [attr.data-verificacion]="estadoPagina()">
+  <!-- Identidad de la CACE: es lo que hace que la página se vea como la oficial
+       y no como una imitación. -->
+  <header class="verificacion-cabecera">
+    <div class="verificacion-marca">
+      <span class="verificacion-logo">
+        <img [src]="logo()" alt="Logo de la CACE" />
+      </span>
+      <div class="verificacion-marca-texto">
+        <p class="verificacion-lema">{{ lema() }}</p>
+        <p class="verificacion-tag">{{ descripcion() }}</p>
+      </div>
+    </div>
+    <p class="verificacion-etiqueta">Verificación de certificados</p>
+  </header>
+
+  <main class="verificacion-main">
+    <section class="verificacion-card">
+      @if (cargando()) {
+        <p class="verificacion-espera">
+          <span class="spinner" aria-hidden="true"></span>
+          Comprobando el certificado…
+        </p>
+      } @else if (error()) {
+        <h1 class="verificacion-titulo">No se pudo comprobar el certificado</h1>
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+        <button type="button" class="btn btn-secondary" (click)="consultar()">
+          Reintentar
+        </button>
+      } @else if (resultado(); as r) {
+        @switch (r.estado) {
+          @case ('VALIDO') {
+            <div class="verificacion-icono verificacion-icono--ok" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            </div>
+            <h1 class="verificacion-titulo">Certificado válido</h1>
+            <p class="verificacion-mensaje">{{ r.mensaje }}</p>
+          }
+          @case ('ANULADO') {
+            <div class="verificacion-icono verificacion-icono--anulado" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></svg>
+            </div>
+            <h1 class="verificacion-titulo">Certificado anulado</h1>
+            <p class="verificacion-mensaje">{{ r.mensaje }}</p>
+          }
+          @case ('NO_ENCONTRADO') {
+            <div class="verificacion-icono verificacion-icono--neutro" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            </div>
+            <h1 class="verificacion-titulo">Certificado no encontrado</h1>
+            <p class="verificacion-mensaje">{{ r.mensaje }}</p>
+            <p class="verificacion-buscado">
+              Folio consultado: <strong>{{ folio() }}</strong>
+            </p>
+          }
+          @default {
+            <div class="verificacion-icono verificacion-icono--neutro" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V8a5 5 0 0 1 10 0v3" /></svg>
+            </div>
+            <h1 class="verificacion-titulo">Este enlace no es válido</h1>
+            <p class="verificacion-mensaje">{{ r.mensaje }}</p>
+          }
+        }
+
+        <!-- Los datos del alumno y de la clase. Solo llegan cuando el código que
+             trae el enlace es el correcto; con uno que no lo es, el servidor no
+             devuelve nada y aquí no se pinta nada. -->
+        @if (certificado(); as c) {
+          @if (anulado) {
+            <div class="verificacion-anulado" role="alert">
+              <strong>Este certificado ya no tiene validez.</strong>
+              <p>
+                Motivo de la anulación:
+                <span data-dato="anulado">{{ c.anuladoMotivo || 'no indicado' }}</span>
+              </p>
+            </div>
+          }
+
+          <dl class="verificacion-datos">
+            <div class="verificacion-fila">
+              <dt>Alumno</dt>
+              <dd><strong data-dato="nombre">{{ c.alumno }}</strong></dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Clase espejo</dt>
+              <dd data-dato="titulo">{{ c.titulo }}</dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Instituciones</dt>
+              <dd data-dato="instituciones">{{ instituciones }}</dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Fechas de la clase</dt>
+              <dd data-dato="fechas">{{ fechasClase }}</dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Emitido</dt>
+              <dd data-dato="emitido">{{ emitido }}</dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Folio</dt>
+              <dd data-dato="folio">{{ c.folio }}</dd>
+            </div>
+            <div class="verificacion-fila">
+              <dt>Estado</dt>
+              <dd>
+                <span
+                  class="chip-estado"
+                  data-dato="estado"
+                  [class.chip-estado--ok]="!anulado"
+                  [class.chip-estado--error]="anulado"
+                >
+                  {{ anulado ? 'Anulado' : 'Vigente' }}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        }
+      }
+    </section>
+
+    <p class="verificacion-pie">
+      Esta página la sirve la <strong>CACE</strong> y comprueba el certificado con
+      el código que viene en su código QR: nadie que invente un folio puede ver
+      los datos de un alumno.
+      <a routerLink="/login">Entrar a la plataforma</a>
+    </p>
+  </main>
+</div>

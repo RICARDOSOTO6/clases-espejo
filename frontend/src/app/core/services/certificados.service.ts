@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import {
   EstadoCertificados,
   ResultadoEmision,
+  ResultadoEnvioCertificados,
 } from '../models/certificado.models';
 
 const API_URL =
@@ -15,7 +16,8 @@ const API_URL =
  * Certificados de una clase espejo, del lado del **docente**.
  *
  * Emite para los alumnos de la lista de su institución (nunca los de la otra:
- * eso lo comprueba el servidor) y descarga los PDF. Las descargas van por
+ * eso lo comprueba el servidor), descarga los PDF, **anula** con motivo y
+ * **envía** el certificado a los alumnos por correo. Las descargas van por
  * `HttpClient` y no por una URL directa porque llevan la sesión: los
  * certificados no se sirven como archivos estáticos.
  */
@@ -59,6 +61,49 @@ export class CertificadosService {
     return this.http.get(
       `${API_URL}/proyectos/${proyectoId}/certificados/zip`,
       { responseType: 'blob' },
+    );
+  }
+
+  /**
+   * Envía por correo el certificado de un alumno, con el PDF adjunto.
+   *
+   * `reenviar` hay que pedirlo: sin él, a quien ya se le envió no se le manda
+   * otra vez y la respuesta lo dice.
+   */
+  enviarUno(
+    proyectoId: number,
+    certificadoId: number,
+    reenviar = false,
+  ): Observable<ResultadoEnvioCertificados> {
+    return this.http.post<ResultadoEnvioCertificados>(
+      `${API_URL}/proyectos/${proyectoId}/certificados/${certificadoId}/enviar`,
+      { reenviar },
+    );
+  }
+
+  /**
+   * Envía los certificados a los alumnos de mi lista: a todos, o solo a los que
+   * vengan en `alumnoIds`. Los que no tienen correo se informan aparte.
+   */
+  enviar(
+    proyectoId: number,
+    dto: { alumnoIds?: number[]; reenviar?: boolean } = {},
+  ): Observable<ResultadoEnvioCertificados> {
+    return this.http.post<ResultadoEnvioCertificados>(
+      `${API_URL}/proyectos/${proyectoId}/certificados/enviar`,
+      dto,
+    );
+  }
+
+  /** Anula un certificado con su motivo. El motivo es obligatorio. */
+  anular(
+    proyectoId: number,
+    certificadoId: number,
+    motivo: string,
+  ): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${API_URL}/proyectos/${proyectoId}/certificados/${certificadoId}/anular`,
+      { motivo },
     );
   }
 }
