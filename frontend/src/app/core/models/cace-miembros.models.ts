@@ -118,3 +118,71 @@ export interface RespuestaSolicitudBorrado {
   mensaje: string;
   solicitud: SolicitudBorradoCace;
 }
+
+// --- Presidencia de la CACE: se transmite, no se desactiva ---
+
+/** Alguien que entra o sale de la presidencia. */
+export interface PersonaCambioPresidencia {
+  usuarioId: number;
+  nombre: string;
+  correo: string;
+}
+
+/**
+ * Un cambio de presidencia ya registrado. El saliente **no se fue**: quedó como
+ * suplente, activo y con las mismas capacidades.
+ */
+export interface CambioPresidenciaCace {
+  id: number;
+  /** Por qué se transmitió. Puede ir vacío. */
+  motivo: string;
+  creadoEn: string;
+  saliente: PersonaCambioPresidencia;
+  entrante: PersonaCambioPresidencia;
+}
+
+/** Respuesta de `GET /cace/presidencia/historial`. */
+export interface HistorialPresidenciaCace {
+  cambios: CambioPresidenciaCace[];
+  total: number;
+  presidenteActual: PersonaCambioPresidencia | null;
+  /** Suplentes activos: los candidatos naturales a recibir el cargo. */
+  suplentes: PersonaCambioPresidencia[];
+}
+
+/**
+ * Cómo se elige al sucesor: con `miembroId` (alguien que ya está en la CACE) o
+ * con los datos de una persona nueva. Las dos formas son excluyentes.
+ */
+export interface CambiarPresidenteDto {
+  miembroId?: number;
+  correo?: string;
+  nombres?: string;
+  apellidoPaterno?: string;
+  apellidoMaterno?: string;
+  motivo?: string;
+}
+
+/** Respuesta del cambio de presidencia. */
+export interface RespuestaCambioPresidencia {
+  mensaje: string;
+  cambio: CambioPresidenciaCace;
+  saliente: { usuarioId: number; nombre: string; correo: string; cargo: string; activo: boolean };
+  entrante: {
+    correo: string;
+    nombre: string;
+    cargo: string;
+    activo: boolean;
+    /** Verdadero si hubo que crearle la cuenta. */
+    cuentaNueva: boolean;
+    /** Verdadero si ya era usuario de la plataforma (no se duplicó). */
+    cuentaExistente: boolean;
+  };
+  correoEnviado: boolean;
+  avisoCorreo: string | null;
+  /**
+   * Contraseña provisional. Solo llega cuando el correo **no** se pudo enviar:
+   * sin ella y sin correo, la cuenta nueva quedaría inaccesible.
+   */
+  passwordProvisional?: string;
+}

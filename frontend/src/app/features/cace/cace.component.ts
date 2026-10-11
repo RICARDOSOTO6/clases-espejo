@@ -17,6 +17,7 @@ import {
   Premio,
 } from '../../core/models/cace-identidad.models';
 import {
+  HistorialPresidenciaCace,
   InstitucionRechazadaCace,
   MiembroCace,
   SolicitudBorradoCace,
@@ -167,7 +168,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly creandoMiembro = signal(false);
   /** Miembro cuya activación o desactivación está en curso. */
   readonly miembroEnProceso = signal<number | null>(null);
-  /** Miembro cuya desactivación se está confirmando: pierde el acceso al panel. */
+  /** Secretaría cuya desactivación se está confirmando: pierde el acceso al panel. */
   readonly miembroADesactivar = signal<MiembroCace | null>(null);
   /**
    * Contraseña provisional que solo llega cuando el correo **no** pudo salir.
@@ -183,6 +184,61 @@ export class CaceComponent implements OnInit, OnDestroy {
     apellidoPaterno: ['', [Validators.required, Validators.minLength(2)]],
     apellidoMaterno: [''],
   });
+
+  // --- Presidencia de la CACE: se transmite, no se desactiva ---
+
+  /**
+   * La presidencia es una figura central: no se borra ni se apaga. Lo que
+   * existe es **«Cambiar de presidente»**, que transmite el cargo: el entrante
+   * pasa a presidente y el saliente queda como **suplente, activo y con las
+   * mismas capacidades** (el guardia trata igual a las dos figuras). Cada cambio
+   * queda escrito en el historial.
+   */
+  readonly historialPresidencia = signal<HistorialPresidenciaCace | null>(null);
+  readonly cargandoHistorial = signal(false);
+  readonly errorPresidencia = signal<string | null>(null);
+  readonly avisoPresidencia = signal<string | null>(null);
+  /** El historial de cambios se enseña solo cuando se pide. */
+  readonly historialAbierto = signal(false);
+  /** Cambio de presidencia en curso (evita el doble envío). */
+  readonly cambiandoPresidencia = signal(false);
+  /** Se está eligiendo al sucesor. */
+  readonly pidiendoCambioPresidencia = signal(false);
+  /** Cómo se elige al sucesor: alguien que ya está en la CACE o una persona nueva. */
+  readonly modoSucesor = signal<'miembro' | 'nuevo'>('miembro');
+  /** El cambio está a punto de enviarse: se confirma lo que va a pasar. */
+  readonly confirmandoCambioPresidencia = signal(false);
+
+  formPresidente = this.fb.group({
+    miembroId: this.fb.control<number | null>(null),
+    correo: [''],
+    nombres: [''],
+    apellidoPaterno: [''],
+    apellidoMaterno: [''],
+    motivo: [''],
+  });
+
+  /** La presidencia en ejercicio, tal como la devuelve la lista de miembros. */
+  readonly presidenteActual = computed(
+    () => this.miembros().find((m) => m.cargo === 'PRESIDENTE' && m.activo) ?? null,
+  );
+
+  /**
+   * A quién se le puede dar el cargo: cualquier miembro activo que no sea ya la
+   * presidencia (la secretaría o un suplente). Un miembro inactivo no vale:
+   * tendría el cargo sin poder entrar a ejercerlo.
+   */
+  readonly candidatosPresidencia = computed(() =>
+    this.miembros().filter((m) => m.activo && m.cargo !== 'PRESIDENTE'),
+  );
+
+  /** El sucesor elegido en el desplegable (miembro que ya está en la CACE). */
+  readonly sucesorElegido = computed(
+    () =>
+      this.candidatosPresidencia().find(
+        (m) => m.id === this.formPresidente.controls.miembroId.value,
+      ) ?? null,
+  );
 
   // --- Solicitudes de borrado de instituciones (fase 6) ---
 
@@ -303,6 +359,8 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly subiendoFondo = signal(false);
   /** Versión cuyo botón «Activar» está en curso. */
   readonly activandoVersion = signal<number | null>(null);
+  /** Versión cuyo borrado está en curso (evita el doble clic). */
+  readonly borrandoVersion = signal<number | null>(null);
 
   /**
    * Lo que se está editando. Es la versión activa (o la de arranque, con
@@ -461,7 +519,12 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Carga solo lo que este rol puede ver. */
   private cargarSegunCapacidades(): void {
     if (this.puede('aprobarInstituciones')) this.cargarInstituciones();
-    if (this.puede('gestionarMiembrosCace')) this.cargarMiembros();
+    if (this.puede('gestionarMiembrosCace')) {
+      this.cargarMiembros();
+      // El historial trae quién preside ahora: es lo que se lee primero en la
+      // sección de la presidencia.
+      this.cargarHistorialPresidencia();
+    }
     if (
       this.puede('solicitarBorradoInstitucion') ||
       this.puede('resolverSolicitudesBorrado')
@@ -616,8 +679,214 @@ export class CaceComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  // --- Solicitudes de borrado: datos ---
+  // --- Presidencia: elegir al sucesor y transmitir ---
 
+  /** Abre el cambio de presidencia: se empieza eligiendo a un miembro de la CACE. */
+  abrirCambioPresidencia(): void {
+    this.formPresidente.reset({
+      miembroId: this.candidatosPresidencia()[0]?.id ?? null,
+      correo: '',
+      nombres: '',
+      apellidoPaterno: '',
+      apellidoMaterno: '',
+      motivo: '',
+    });
+    this.modoSucesor.set('miembro');
+    this.intentoPresidencia.set(false);
+    this.confirmandoCambioPresidencia.set(false);
+    this.errorPresidencia.set(null);
+    this.avisoPresidencia.set(null);
+    this.passwordDeApoyoPresidencia.set(null);
+    this.pidiendoCambioPresidencia.set(true);
+    // Los candidatos salen de la lista de miembros: si aún no está, se pide.
+    if (this.miembros().length === 0) this.cargarMiembros();
+  }
+
+  cerrarCambioPresidencia(): void {
+    this.pidiendoCambioPresidencia.set(false);
+    this.confirmandoCambioPresidencia.set(false);
+    this.intentoPresidencia.set(false);
+  }
+
+  /** Cambia entre elegir a un miembro que ya está y traer a una persona nueva. */
+  elegirModoSucesor(modo: 'miembro' | 'nuevo'): void {
+    this.modoSucesor.set(modo);
+    this.confirmandoCambioPresidencia.set(false);
+    this.errorPresidencia.set(null);
+    if (modo === 'miembro' && this.formPresidente.controls.miembroId.value === null) {
+      this.formPresidente.controls.miembroId.setValue(
+        this.candidatosPresidencia()[0]?.id ?? null,
+      );
+    }
+  }
+
+  /** Se intentó confirmar el cambio: a partir de aquí se enseñan los campos que faltan. */
+  private readonly intentoPresidencia = signal(false);
+
+  /** Valida un campo del alta de la persona nueva, con el estilo del resto. */
+  mensajePresidente(
+    campo: 'correo' | 'nombres' | 'apellidoPaterno',
+  ): string | null {
+    if (this.modoSucesor() !== 'nuevo') return null;
+    const control = this.formPresidente.get(campo);
+    const valor = String(control?.value ?? '').trim();
+    if (!valor) {
+      return this.intentoPresidencia() ? 'Este campo es obligatorio' : null;
+    }
+    if (control?.errors?.['email']) {
+      return 'Escribe un correo válido, por ejemplo persona@universidad.edu';
+    }
+    if (control?.errors?.['minlength']) return 'Escribe al menos 2 caracteres';
+    return null;
+  }
+
+  /** ¿Está elegido el sucesor? (Cada modo tiene sus datos obligatorios.) */
+  private sucesorValido(): boolean {
+    if (this.modoSucesor() === 'miembro') {
+      return this.formPresidente.controls.miembroId.value !== null;
+    }
+    const { correo, nombres, apellidoPaterno } = this.formPresidente.getRawValue();
+    return (
+      !!correo?.trim() && !!nombres?.trim() && !!apellidoPaterno?.trim()
+    );
+  }
+
+  /**
+   * Lo que va a pasar, escrito antes de confirmar. Es el texto que evita el
+   * malentendido de siempre: quien deja el cargo **no se va**, queda como
+   * suplente activo con las mismas capacidades; y quien entra, si era
+   * secretaría, deja de serlo (el cargo manda).
+   */
+  readonly textoConfirmacionPresidencia = computed<string>(() => {
+    const sucesor = this.sucesorElegido();
+    const valores = this.formPresidente.getRawValue();
+    const quienEntra = sucesor
+      ? sucesor.nombre
+      : `${(valores.nombres ?? '').trim()} ${(valores.apellidoPaterno ?? '').trim()}`.trim() ||
+        'la persona nueva';
+    const presidente = this.presidenteActual();
+    const sale = presidente ? presidente.nombre : 'la presidencia actual';
+
+    const partes: string[] = [
+      `${quienEntra} pasa a ser PRESIDENTE de la CACE y ${sale} queda como SUPLENTE.`,
+      `${sale} sigue activo y conserva las capacidades: no pierde el acceso al panel y no se borra nada.`,
+    ];
+    if (sucesor && sucesor.cargo === 'SECRETARIA') {
+      partes.push(
+        `${quienEntra} es secretaría: al recibir la presidencia deja de ser secretaría (el cargo manda).`,
+      );
+    }
+    if (!sucesor) {
+      partes.push(
+        'Se crea su cuenta con una contraseña provisional y el sistema le pedirá cambiarla al entrar.',
+      );
+    }
+    partes.push('El cambio queda registrado en el historial y se avisa por correo a los dos.');
+
+    return partes.join(' ');
+  });
+
+  /** Pide la confirmación: el cargo cambia de manos y conviene leerlo antes. */
+  pedirConfirmarCambioPresidencia(): void {
+    this.intentoPresidencia.set(true);
+    if (!this.sucesorValido()) {
+      this.errorPresidencia.set(
+        this.modoSucesor() === 'miembro'
+          ? 'Elige a quién le vas a transmitir la presidencia. Solo valen miembros activos que no sean ya la presidencia (una secretaría o un suplente).'
+          : 'Para traer a una persona nueva hacen falta el correo, el nombre y el apellido paterno.',
+      );
+      return;
+    }
+    this.errorPresidencia.set(null);
+    this.confirmandoCambioPresidencia.set(true);
+  }
+
+  cancelarConfirmarCambioPresidencia(): void {
+    this.confirmandoCambioPresidencia.set(false);
+  }
+
+  /** Transmite la presidencia. Lo hace todo el servidor, en una transacción. */
+  confirmarCambioPresidencia(): void {
+    if (this.cambiandoPresidencia() || !this.sucesorValido()) return;
+
+    const { miembroId, correo, nombres, apellidoPaterno, apellidoMaterno, motivo } =
+      this.formPresidente.getRawValue();
+    const dto =
+      this.modoSucesor() === 'miembro'
+        ? { miembroId: miembroId ?? undefined, motivo: (motivo ?? '').trim() }
+        : {
+            correo: (correo ?? '').trim(),
+            nombres: (nombres ?? '').trim(),
+            apellidoPaterno: (apellidoPaterno ?? '').trim(),
+            apellidoMaterno: (apellidoMaterno ?? '').trim(),
+            motivo: (motivo ?? '').trim(),
+          };
+
+    this.cambiandoPresidencia.set(true);
+    this.errorPresidencia.set(null);
+    this.avisoPresidencia.set(null);
+    this.passwordDeApoyoPresidencia.set(null);
+
+    this.cace.cambiarPresidente(dto).subscribe({
+      next: (res) => {
+        this.cambiandoPresidencia.set(false);
+        this.confirmandoCambioPresidencia.set(false);
+        this.pidiendoCambioPresidencia.set(false);
+        this.avisoPresidencia.set(
+          `${res.mensaje}${res.correoEnviado ? '' : ` ${res.avisoCorreo ?? ''}`}`,
+        );
+        if (res.passwordProvisional) {
+          this.passwordDeApoyoPresidencia.set({
+            correo: res.entrante.correo,
+            password: res.passwordProvisional,
+          });
+        }
+        // La lista de miembros cambia (los dos cargos) y el historial crece.
+        this.cargarMiembros();
+        this.cargarHistorialPresidencia();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cambiandoPresidencia.set(false);
+        this.errorPresidencia.set(
+          extraerMensajeError(err, 'No se pudo cambiar la presidencia'),
+        );
+      },
+    });
+  }
+
+  /** Contraseña provisional del sucesor cuando el correo no pudo salir. */
+  readonly passwordDeApoyoPresidencia = signal<{
+    correo: string;
+    password: string;
+  } | null>(null);
+
+  // --- Presidencia: el historial ---
+
+  /** Abre o cierra el historial (se pide al abrirlo la primera vez). */
+  alternarHistorialPresidencia(): void {
+    const abierto = !this.historialAbierto();
+    this.historialAbierto.set(abierto);
+    if (abierto) this.cargarHistorialPresidencia();
+  }
+
+  cargarHistorialPresidencia(): void {
+    this.cargandoHistorial.set(true);
+    this.errorPresidencia.set(null);
+    this.cace.historialPresidencia().subscribe({
+      next: (historial) => {
+        this.historialPresidencia.set(historial);
+        this.cargandoHistorial.set(false);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoHistorial.set(false);
+        this.errorPresidencia.set(
+          extraerMensajeError(err, 'No se pudo cargar el historial de la presidencia'),
+        );
+      },
+    });
+  }
+
+  // --- Solicitudes de borrado: datos ---
   cargarSolicitudes(): void {
     this.cargandoSolicitudes.set(true);
     this.errorSolicitudes.set(null);
@@ -1711,6 +1980,33 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.activandoVersion.set(null);
         this.errorPlantilla.set(
           extraerMensajeError(err, 'No se pudo activar esa versión'),
+        );
+      },
+    });
+  }
+
+  /**
+   * Borra una versión suelta de la plantilla (ya confirmada en la tabla). El
+   * servidor se niega si es la activa o si algún certificado se emitió con ella,
+   * y lo explica; aquí solo se enseña lo que responde.
+   */
+  borrarVersion(plantilla: PlantillaCertificado): void {
+    if (this.borrandoVersion() !== null) return;
+    this.borrandoVersion.set(plantilla.id);
+    this.errorPlantilla.set(null);
+    this.avisoPlantilla.set(null);
+    this.plantillaService.eliminar(plantilla.id).subscribe({
+      next: (respuesta) => {
+        this.borrandoVersion.set(null);
+        this.avisoPlantilla.set(respuesta.mensaje);
+        // Se relee todo: la lista de versiones y el panel, que podía estar
+        // enseñando justo la versión que se acaba de borrar.
+        this.cargarPlantilla();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.borrandoVersion.set(null);
+        this.errorPlantilla.set(
+          extraerMensajeError(err, 'No se pudo borrar esa versión'),
         );
       },
     });

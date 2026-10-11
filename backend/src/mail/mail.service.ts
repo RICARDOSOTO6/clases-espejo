@@ -101,6 +101,80 @@ export class MailService {
   }
 
   /**
+   * Avisa a quien **recibe** la presidencia de la CACE.
+   *
+   * La presidencia no se borra ni se desactiva: se transmite. Quien entra tiene
+   * que enterarse de que el cargo cambió de manos y de que quien lo deja **no se
+   * va**: queda como suplente, con las mismas capacidades.
+   *
+   * Si la cuenta es nueva, este mismo aviso lleva dentro las credenciales
+   * provisionales. En este flujo no hay token de activación que mandar (la
+   * cuenta la crea el presidente que transmite), así que se reutiliza el mismo
+   * patrón del alta de secretarías: contraseña provisional y cambio obligatorio
+   * en el primer acceso.
+   */
+  async sendCambioPresidenciaEntrante(
+    to: string,
+    datos: {
+      nombreEntrante: string;
+      nombreSaliente: string;
+      /** Solo cuando la cuenta es nueva (o no tenía contraseña). */
+      password?: string;
+      motivo: string;
+    },
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/login`;
+    const credenciales = datos.password
+      ? `\n\nCorreo: ${to} · Contraseña provisional: ${datos.password}. Por seguridad, el sistema te pedirá cambiarla en el primer acceso.`
+      : '';
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Ahora presides la CACE',
+      text: `${datos.nombreSaliente} te transmitió la presidencia de la CACE: desde ahora el cargo es tuyo. ${datos.nombreSaliente} queda como suplente, sigue activo y conserva las capacidades.${datos.motivo ? ` Motivo: ${datos.motivo}.` : ''}${credenciales}\n\nEntra en: ${link}`,
+      html: `
+        <p><strong>${datos.nombreSaliente}</strong> te transmitió la <strong>presidencia de la CACE</strong>: desde ahora el cargo es tuyo.</p>
+        <p>${datos.nombreSaliente} queda como <strong>suplente</strong>, sigue activo y conserva las capacidades, así que no se pierde nada por el camino.</p>
+        ${datos.motivo ? `<p><strong>Motivo:</strong> ${datos.motivo}</p>` : ''}
+        ${
+          datos.password
+            ? `<p><strong>Correo:</strong> ${to}<br /><strong>Contraseña provisional:</strong> ${datos.password}</p>
+               <p>Por seguridad, el sistema te pedirá cambiar la contraseña en el primer acceso.</p>`
+            : ''
+        }
+        <p>Entra en <a href="${link}">${link}</a>.</p>
+      `,
+    });
+  }
+
+  /**
+   * Avisa a quien **deja** la presidencia: la transmitió, no la perdió. Su
+   * cuenta sigue activa como suplente, con las mismas capacidades.
+   */
+  async sendCambioPresidenciaSaliente(
+    to: string,
+    datos: { nombreEntrante: string; nombreSaliente: string; motivo: string },
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/cace`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Clases Espejo - Transmitiste la presidencia de la CACE',
+      text: `${datos.nombreEntrante} es desde ahora la presidencia de la CACE. Tú quedas como suplente: tu cuenta sigue activa y conservas las mismas capacidades, así que puedes seguir entrando al panel.${datos.motivo ? ` Motivo del cambio: ${datos.motivo}.` : ''} Entra en: ${link}`,
+      html: `
+        <p><strong>${datos.nombreEntrante}</strong> es desde ahora la <strong>presidencia de la CACE</strong>.</p>
+        <p>Tú quedas como <strong>suplente</strong>: tu cuenta sigue activa y conservas las mismas capacidades, así que puedes seguir entrando al panel con normalidad.</p>
+        ${datos.motivo ? `<p><strong>Motivo del cambio:</strong> ${datos.motivo}</p>` : ''}
+        <p>Entra en <a href="${link}">${link}</a>.</p>
+      `,
+    });
+  }
+
+  /**
    * Avisa al agente de que la CACE aprobó su institución: ya puede proponer y
    * recibir clases espejo.
    */

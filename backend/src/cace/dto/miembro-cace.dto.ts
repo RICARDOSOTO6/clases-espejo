@@ -36,9 +36,12 @@ export class CrearMiembroCaceDto {
 }
 
 /**
- * Activar o desactivar a un miembro de la CACE. Desactivar no borra la fila:
- * apaga el acceso (el guardia ignora las membresías inactivas), que es lo que
- * hace falta cuando alguien deja el cargo.
+ * Activar o desactivar a un miembro de la CACE.
+ *
+ * Solo vale para las **secretarías**: la presidencia y la suplencia no se
+ * desactivan (son una figura central) y el servicio lo rechaza con un mensaje
+ * que remite a «Cambiar de presidente». Desactivar una secretaría no borra la
+ * fila: apaga su acceso (el guardia ignora las membresías inactivas).
  */
 export class ActualizarMiembroCaceDto {
   @IsBoolean()

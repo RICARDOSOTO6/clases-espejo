@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { resolverUrlPublica } from '../common/url-publica';
-import { CARGO_SECRETARIA, CARGO_SUPLENTE } from '../common/estados';
+import { CARGO_SECRETARIA } from '../common/estados';
 import {
   generarDniUnico,
   generarPasswordProvisional,
@@ -32,8 +32,10 @@ import {
  * - **No se duplican personas**: si el correo ya es de un usuario de la
  *   plataforma, se le **añade** la fila de miembro en lugar de crear otra
  *   cuenta. Duplicar usuarios partiría en dos su historia y su contraseña.
- * - **Nadie se queda fuera de la CACE por descuido**: no se puede desactivar al
- *   último presidente activo ni uno mismo.
+ * - **La presidencia no se apaga**: solo las secretarías se activan y
+ *   desactivan. El cargo de la presidencia se **transmite** con «Cambiar de
+ *   presidente» (`PresidenciaCaceService`), que deja al saliente como suplente
+ *   activo con las mismas capacidades.
  */
 
 /** Etiqueta del cargo, para los mensajes. */
@@ -265,8 +267,17 @@ export class MiembrosCaceService {
   }
 
   /**
-   * Activa o desactiva a un miembro. Desactivar **no** borra nada: apaga su
-   * membresía, que es lo que el guardia mira para resolver el rol.
+   * Activa o desactiva a un miembro.
+   *
+   * **Solo las secretarías se activan y se desactivan.** La presidencia —y su
+   * suplencia— es una figura central: no se borra ni se apaga. Lo que existe es
+   * **«Cambiar de presidente»** (`PresidenciaCaceService`), que transmite el
+   * cargo: quien entra pasa a presidente y quien sale queda como suplente,
+   * activo y con las mismas capacidades. Desactivarla, además, dejaría a la CACE
+   * sin quien apruebe instituciones, autorice borrados ni firme certificados.
+   *
+   * Reactivar sigue siendo posible (`activo: true`): una secretaría que vuelve
+   * recupera su acceso sin crear otra cuenta.
    */
   async cambiarActivo(
     usuarioId: number,
@@ -296,36 +307,14 @@ export class MiembrosCaceService {
 
     const nombre = this.nombreCompleto(miembro.usuario);
     const activo = dto.activo !== false;
-    const esPresidencia = miembro.cargo !== CARGO_SECRETARIA;
 
-    if (!activo && esPresidencia) {
-      // La CACE no se puede quedar sin presidencia activa: sin ella no hay
-      // quien apruebe instituciones, autorice borrados ni firme certificados.
-      // Es la comprobación que va primero porque, con una sola presidencia, es
-      // también el motivo de que nadie pueda apagarse a sí mismo.
-      const otrasPresidencias = await this.prisma.miembroCace.count({
-        where: {
-          activo: true,
-          cargo: { in: ['PRESIDENTE', CARGO_SUPLENTE] },
-          usuarioId: { not: miembro.usuarioId },
-        },
-      });
-      if (otrasPresidencias === 0) {
-        throw new BadRequestException(
-          miembro.usuarioId === usuarioId
-            ? 'Eres la última presidencia activa de la CACE: si desactivas tu cuenta, nadie podría aprobar instituciones, autorizar borrados ni firmar certificados. ' +
-                'Da de alta antes a otro presidente o suplente.'
-            : `«${nombre}» es la última presidencia activa de la CACE: si se desactiva, nadie podría aprobar instituciones, autorizar borrados ni firmar certificados. ` +
-                'Da de alta antes a otro presidente o suplente.',
-        );
-      }
-    }
-
-    if (!activo && miembro.usuarioId === usuarioId) {
-      // Con otra presidencia activa ya no hay excusa: apagarse a uno mismo
-      // dejaría la CACE en manos de otro sin avisar.
+    if (!activo && miembro.cargo !== CARGO_SECRETARIA) {
+      // La presidencia no se apaga: se transmite. El mensaje nombra la acción
+      // que sí existe, para que no se busque un botón que nunca va a estar.
       throw new BadRequestException(
-        'No puedes desactivar tu propia cuenta de la CACE, aunque haya otra presidencia activa: pídeselo a otra persona de la presidencia.',
+        `«${nombre}» es ${this.etiquetaCargo(miembro.cargo).toLowerCase()} de la CACE: la presidencia no se desactiva ni se borra, se transmite. ` +
+          'Usa «Cambiar de presidente» para pasar el cargo a otra persona; quien lo deja queda como suplente, sigue activo y conserva las capacidades. ' +
+          'Solo las secretarías se activan y desactivan.',
       );
     }
 
@@ -350,6 +339,10 @@ export class MiembrosCaceService {
         },
       },
     });
+
+    this.logger.log(
+      `${nombre} (${this.etiquetaCargo(actualizado.cargo).toLowerCase()}) ${activo ? 'recupera' : 'pierde'} el acceso a la CACE; lo decidió el usuario ${usuarioId}.`,
+    );
 
     return {
       mensaje: activo

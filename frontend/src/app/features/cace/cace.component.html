@@ -510,33 +510,47 @@
 
                   <div class="lista-acciones">
                     @if (miembro.activo) {
-                      @if (miembroADesactivar()?.id === miembro.id) {
-                        <button
-                          type="button"
-                          class="btn btn-danger"
-                          [disabled]="miembroEnProceso() !== null"
-                          (click)="confirmarDesactivarMiembro()"
-                        >
-                          Confirmar
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-ghost"
-                          [disabled]="miembroEnProceso() !== null"
-                          (click)="cancelarDesactivarMiembro()"
-                        >
-                          Cancelar
-                        </button>
+                      @if (miembro.cargo === 'SECRETARIA') {
+                        @if (miembroADesactivar()?.id === miembro.id) {
+                          <button
+                            type="button"
+                            class="btn btn-danger"
+                            [disabled]="miembroEnProceso() !== null"
+                            (click)="confirmarDesactivarMiembro()"
+                          >
+                            Confirmar
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-ghost"
+                            [disabled]="miembroEnProceso() !== null"
+                            (click)="cancelarDesactivarMiembro()"
+                          >
+                            Cancelar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="btn btn-outline"
+                            data-accion="desactivar-miembro"
+                            [disabled]="miembroEnProceso() !== null"
+                            (click)="pedirDesactivarMiembro(miembro)"
+                          >
+                            Desactivar
+                          </button>
+                        }
                       } @else {
-                        <button
-                          type="button"
-                          class="btn btn-outline"
-                          data-accion="desactivar-miembro"
-                          [disabled]="miembroEnProceso() !== null"
-                          (click)="pedirDesactivarMiembro(miembro)"
-                        >
-                          Desactivar
-                        </button>
+                        <!--
+                          La presidencia y la suplencia **no** se desactivan: se
+                          transmiten. Aquí no hay botón de apagar; lo que hay es
+                          el aviso y el acceso a «Cambiar de presidente», que
+                          está en su propia sección.
+                        -->
+                        <span class="text-sm muted">
+                          {{ miembro.cargo === 'PRESIDENTE' ? 'Preside' : 'Suple' }} la
+                          CACE: no se desactiva, se transmite con «Cambiar de
+                          presidente».
+                        </span>
                       }
                     } @else {
                       <button
@@ -553,6 +567,304 @@
                 </li>
               }
             </ul>
+          }
+        </section>
+      }
+
+      <!--
+        La presidencia de la CACE. Es una figura central, así que **no se borra
+        ni se desactiva**: se **transmite** con «Cambiar de presidente». Quien
+        entra pasa a presidente y quien sale queda como **suplente, activo y con
+        las mismas capacidades**; el cambio queda escrito en el historial.
+        También vive aquí la elección del sucesor: alguien que ya está en la CACE
+        (una secretaría o un suplente) o una persona nueva.
+      -->
+      @if (puede('gestionarMiembrosCace')) {
+        <section class="card" id="presidencia" data-seccion="presidencia">
+          <div class="card-head">
+            <div class="card-head-title">
+              <h2>Presidencia de la CACE</h2>
+              @if (presidenteActual(); as actual) {
+                <span class="card-head-count" [attr.data-presidente-actual]="actual.correo">
+                  {{ actual.nombre }}
+                </span>
+              }
+            </div>
+            <div class="card-head-actions">
+              <button
+                type="button"
+                class="btn btn-primary"
+                data-accion="cambiar-presidente"
+                [disabled]="cambiandoPresidencia() || pidiendoCambioPresidencia()"
+                (click)="abrirCambioPresidencia()"
+              >
+                Cambiar de presidente
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-accion="ver-historial-presidencia"
+                [disabled]="cargandoHistorial()"
+                (click)="alternarHistorialPresidencia()"
+              >
+                {{ historialAbierto() ? 'Ocultar historial' : 'Ver historial' }}
+              </button>
+            </div>
+          </div>
+
+          <p class="text-sm muted">
+            La presidencia no se borra ni se desactiva: <strong>se transmite</strong>.
+            Al cambiar de presidente, quien entra pasa a presidente y quien sale
+            queda como <strong>suplente</strong>, sigue activo y conserva las
+            capacidades (aprueba instituciones, autoriza borrados y firma
+            certificados igual que antes). No se pierde nada por el camino y nada
+            se borra.
+          </p>
+
+          @if (presidenteActual(); as actual) {
+            <p class="text-sm muted">
+              Preside ahora <strong>{{ actual.nombre }}</strong> ({{ actual.correo }}).
+            </p>
+          } @else {
+            <p class="text-sm muted">
+              No hay presidencia activa registrada. Reinicia el servidor para que
+              se cree con el correo de <code>PRESIDENTE_CORREO</code>.
+            </p>
+          }
+
+          @if (errorPresidencia()) {
+            <div class="alert alert-error" role="alert">{{ errorPresidencia() }}</div>
+          }
+          @if (avisoPresidencia()) {
+            <div class="alert alert-success" role="status">{{ avisoPresidencia() }}</div>
+          }
+          @if (passwordDeApoyoPresidencia(); as apoyo) {
+            <div class="alert alert-warning" role="status">
+              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que aquí
+              está la contraseña provisional:
+              <strong>{{ apoyo.password }}</strong>. Dásela a mano: el sistema le
+              pedirá cambiarla al entrar.
+            </div>
+          }
+
+          @if (pidiendoCambioPresidencia()) {
+            <form
+              class="form-grid"
+              [formGroup]="formPresidente"
+              data-formulario="cambiar-presidente"
+              novalidate
+            >
+              <p class="text-sm muted">¿Quién recibe la presidencia?</p>
+
+              <div class="form-field">
+                <label>Sucesor</label>
+                <div class="lista-acciones">
+                  <button
+                    type="button"
+                    [class]="
+                      modoSucesor() === 'miembro' ? 'btn btn-primary' : 'btn btn-outline'
+                    "
+                    data-opcion="sucesor-miembro"
+                    (click)="elegirModoSucesor('miembro')"
+                  >
+                    Un miembro de la CACE
+                  </button>
+                  <button
+                    type="button"
+                    [class]="
+                      modoSucesor() === 'nuevo' ? 'btn btn-primary' : 'btn btn-outline'
+                    "
+                    data-opcion="sucesor-nuevo"
+                    (click)="elegirModoSucesor('nuevo')"
+                  >
+                    Una persona nueva
+                  </button>
+                </div>
+              </div>
+
+              @if (modoSucesor() === 'miembro') {
+                <div class="form-field">
+                  <label for="presidente-miembro">
+                    Miembro que recibe el cargo (activo)
+                  </label>
+                  @if (candidatosPresidencia().length === 0) {
+                    <p class="field-error">
+                      No hay a quién darle el cargo: hacen falta una secretaría o un
+                      suplente activos. Da de alta una secretaría y vuelve a
+                      intentarlo.
+                    </p>
+                  } @else {
+                    <select id="presidente-miembro" formControlName="miembroId">
+                      @for (candidato of candidatosPresidencia(); track candidato.id) {
+                        <option [value]="candidato.id">
+                          {{ candidato.nombre }} · {{ candidato.etiquetaCargo }} ·
+                          {{ candidato.correo }}
+                        </option>
+                      }
+                    </select>
+                  }
+                  @if (sucesorElegido(); as sucesor) {
+                    <p class="text-sm muted">
+                      {{ sucesor.nombre }} es {{ sucesor.etiquetaCargo.toLowerCase() }}
+                      de la CACE.
+                    </p>
+                  }
+                </div>
+              } @else {
+                <div class="form-field">
+                  <label for="presidente-correo">Correo</label>
+                  <input
+                    id="presidente-correo"
+                    type="email"
+                    formControlName="correo"
+                    autocomplete="off"
+                    placeholder="presidencia@universidad.edu"
+                  />
+                  @if (mensajePresidente('correo'); as msg) {
+                    <p class="field-error">{{ msg }}</p>
+                  }
+                </div>
+
+                <div class="form-field">
+                  <label for="presidente-nombres">Nombres</label>
+                  <input id="presidente-nombres" type="text" formControlName="nombres" />
+                  @if (mensajePresidente('nombres'); as msg) {
+                    <p class="field-error">{{ msg }}</p>
+                  }
+                </div>
+
+                <div class="form-field">
+                  <label for="presidente-apellido-paterno">Apellido paterno</label>
+                  <input
+                    id="presidente-apellido-paterno"
+                    type="text"
+                    formControlName="apellidoPaterno"
+                  />
+                  @if (mensajePresidente('apellidoPaterno'); as msg) {
+                    <p class="field-error">{{ msg }}</p>
+                  }
+                </div>
+
+                <div class="form-field">
+                  <label for="presidente-apellido-materno">
+                    Apellido materno (opcional)
+                  </label>
+                  <input
+                    id="presidente-apellido-materno"
+                    type="text"
+                    formControlName="apellidoMaterno"
+                  />
+                </div>
+              }
+
+              <div class="form-field">
+                <label for="presidente-motivo">Motivo (opcional)</label>
+                <input
+                  id="presidente-motivo"
+                  type="text"
+                  formControlName="motivo"
+                  placeholder="Por qué se transmite el cargo"
+                />
+                <p class="text-sm muted">
+                  Queda escrito en el historial: es lo que permitirá entender el
+                  cambio dentro de unos meses.
+                </p>
+              </div>
+
+              @if (sucesorElegido(); as sucesor) {
+                @if (sucesor.cargo === 'SECRETARIA') {
+                  <div class="alert alert-warning" role="status">
+                    <strong>{{ sucesor.nombre }}</strong> es secretaría: al recibir la
+                    presidencia <strong>deja de ser secretaría</strong> (el cargo
+                    manda). Sus tareas de secretaría pasan a quien se dé de alta
+                    después.
+                  </div>
+                }
+              }
+
+              @if (confirmandoCambioPresidencia()) {
+                <div class="alert alert-error" role="status" data-confirmacion="cambiar-presidente">
+                  {{ textoConfirmacionPresidencia() }}
+                </div>
+                <div class="form-grid-actions">
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-accion="confirmar-cambiar-presidente"
+                    [disabled]="cambiandoPresidencia()"
+                    (click)="confirmarCambioPresidencia()"
+                  >
+                    @if (cambiandoPresidencia()) {
+                      <span class="spinner" aria-hidden="true"></span>
+                    }
+                    {{ cambiandoPresidencia() ? 'Transmitiendo...' : 'Sí, transmitir la presidencia' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    [disabled]="cambiandoPresidencia()"
+                    (click)="cancelarConfirmarCambioPresidencia()"
+                  >
+                    Volver
+                  </button>
+                </div>
+              } @else {
+                <div class="form-grid-actions">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-accion="revisar-cambiar-presidente"
+                    (click)="pedirConfirmarCambioPresidencia()"
+                  >
+                    Continuar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    (click)="cerrarCambioPresidencia()"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              }
+            </form>
+          }
+
+          @if (historialAbierto()) {
+            <div class="panel">
+              <h3 class="text-sm muted">Historial de cambios</h3>
+              @if (cargandoHistorial() && !historialPresidencia()) {
+                <p class="text-sm muted">Cargando el historial...</p>
+              } @else if ((historialPresidencia()?.cambios?.length ?? 0) === 0) {
+                <p class="text-sm muted">
+                  Todavía no se ha transmitido la presidencia: no hay ningún cambio
+                  registrado.
+                </p>
+              } @else {
+                <ul class="lista" data-lista="historial-presidencia">
+                  @for (cambio of historialPresidencia()!.cambios; track cambio.id) {
+                    <li class="lista-item" [attr.data-cambio-presidencia]="cambio.id">
+                      <div class="inst-bloque">
+                        <div class="inst-name">
+                          <strong>{{ cambio.entrante.nombre }}</strong>
+                          <span class="estado aprobada">Toma el cargo</span>
+                        </div>
+                        <p class="text-sm muted">
+                          Deja el cargo <strong>{{ cambio.saliente.nombre }}</strong>
+                          ({{ cambio.saliente.correo }}), que pasa a suplente.
+                        </p>
+                        <p class="text-sm muted">
+                          {{ fechaRevision(cambio.creadoEn) }}
+                          @if (cambio.motivo) {
+                            · Motivo: {{ cambio.motivo }}
+                          }
+                        </p>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           }
         </section>
       }
@@ -1479,6 +1791,13 @@
               Guardar <strong>no</strong> cambia la versión anterior: crea una
               nueva, porque los certificados ya emitidos se quedan como salieron.
             </li>
+            <li>
+              Una versión suelta se puede <strong>borrar</strong> (con su imagen de
+              diseño). No se pueden borrar la <strong>activa</strong> (hay que
+              activar otra antes) ni las que ya tienen
+              <strong>certificados emitidos</strong>: el botón queda deshabilitado
+              con el motivo a la vista.
+            </li>
           </ul>
         </div>
 
@@ -1507,6 +1826,7 @@
             [urlGuia]="urlGuiaDiseno"
             [actualizando]="cargandoPlantilla()"
             [activando]="activandoVersion()"
+            [borrando]="borrandoVersion()"
             [subiendoFondo]="subiendoFondo()"
             (cambio)="aplicarCambio($event)"
             (guardar)="guardarPlantilla()"
@@ -1514,6 +1834,7 @@
             (actualizar)="cargarPlantilla()"
             (verVersion)="verVersion($event)"
             (activarVersion)="activarVersion($event)"
+            (borrarVersion)="borrarVersion($event)"
             (subirFondo)="alSeleccionarFondo($event)"
           />
         }

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -112,5 +113,19 @@ export class PlantillasCertificadoController {
   @Requiere('disenarCertificados')
   activar(@Param('id', ParseIntPipe) id: number) {
     return this.plantillas.activar(id);
+  }
+
+  /**
+   * Borra una versión suelta de la plantilla (y su imagen de diseño).
+   *
+   * Se niega con un mensaje claro en los dos casos que importan: si es la
+   * **activa** (hay que activar otra antes) y si **algún certificado se emitió**
+   * con ella (los emitidos son inmutables y apuntan a su versión). El número de
+   * certificados va en el mensaje, para no tener que contarlos a mano.
+   */
+  @Delete(':id')
+  @Requiere('disenarCertificados')
+  eliminar(@Param('id', ParseIntPipe) id: number) {
+    return this.plantillas.eliminar(id);
   }
 }

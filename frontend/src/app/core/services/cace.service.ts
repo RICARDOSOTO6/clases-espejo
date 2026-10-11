@@ -13,8 +13,11 @@ import {
 } from '../models/cace-identidad.models';
 import {
   AltaMiembroCace,
+  CambiarPresidenteDto,
   CapacidadesCace,
+  HistorialPresidenciaCace,
   MiembroCace,
+  RespuestaCambioPresidencia,
   RespuestaSolicitudBorrado,
   SolicitudesBorradoCace,
 } from '../models/cace-miembros.models';
@@ -254,6 +257,33 @@ export class CaceService {
     return this.http.patch<{ mensaje: string; miembro: MiembroCace }>(
       `${API_URL}/cace/miembros/${id}`,
       { activo },
+    );
+  }
+
+  // --- Presidencia de la CACE: se transmite, no se desactiva ---
+
+  /**
+   * Transmite la presidencia. El sucesor llega con `miembroId` (alguien que ya
+   * está en la CACE: la secretaría o un suplente) o con los datos de una persona
+   * nueva (que entra con contraseña provisional y cambio obligatorio).
+   *
+   * El servidor lo hace todo en una transacción: el entrante pasa a presidente,
+   * el saliente queda como **suplente activo** (conserva las capacidades y no se
+   * borra nada) y el cambio queda escrito en el historial.
+   */
+  cambiarPresidente(
+    dto: CambiarPresidenteDto,
+  ): Observable<RespuestaCambioPresidencia> {
+    return this.http.post<RespuestaCambioPresidencia>(
+      `${API_URL}/cace/presidencia/cambiar`,
+      dto,
+    );
+  }
+
+  /** Los cambios registrados, con quién preside ahora. Solo la presidencia. */
+  historialPresidencia(): Observable<HistorialPresidenciaCace> {
+    return this.http.get<HistorialPresidenciaCace>(
+      `${API_URL}/cace/presidencia/historial`,
     );
   }
 

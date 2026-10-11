@@ -8,6 +8,8 @@ import { IdentidadCaceService } from './identidad-cace.service';
 import { CapacidadesCaceController } from './capacidades-cace.controller';
 import { MiembrosCaceController } from './miembros-cace.controller';
 import { MiembrosCaceService } from './miembros-cace.service';
+import { PresidenciaCaceController } from './presidencia-cace.controller';
+import { PresidenciaCaceService } from './presidencia-cace.service';
 import { SolicitudesBorradoController } from './solicitudes-borrado.controller';
 import { SolicitudesBorradoService } from './solicitudes-borrado.service';
 
@@ -16,7 +18,8 @@ import { SolicitudesBorradoService } from './solicitudes-borrado.service';
  * (`CaceService`), la gestión de instituciones (`/cace/instituciones`), la
  * identidad de la CACE (textos, logo, tema, banderas y premios) con su parte
  * pública y lo de la fase 6: las **secretarías**
- * (`/cace/miembros`), las capacidades del usuario que está dentro
+ * (`/cace/miembros`), la **transmisión de la presidencia**
+ * (`/cace/presidencia`), las capacidades del usuario que está dentro
  * (`/cace/capacidades`) y el **borrado con autorización**
  * (`/cace/solicitudes-borrado`).
  * `PrismaModule` y `MailModule` son globales, así que no hay que importarlos.
@@ -28,6 +31,7 @@ import { SolicitudesBorradoService } from './solicitudes-borrado.service';
     IdentidadCaceController,
     CapacidadesCaceController,
     MiembrosCaceController,
+    PresidenciaCaceController,
     SolicitudesBorradoController,
   ],
   providers: [
@@ -35,6 +39,7 @@ import { SolicitudesBorradoService } from './solicitudes-borrado.service';
     InstitucionesCaceService,
     IdentidadCaceService,
     MiembrosCaceService,
+    PresidenciaCaceService,
     SolicitudesBorradoService,
   ],
 })

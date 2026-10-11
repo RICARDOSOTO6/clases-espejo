@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { basename, join } from 'path';
+import { existsSync } from 'fs';
 import type { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { borrarImagen } from '../common/imagenes';
 import {
   CAMPOS_POR_DEFECTO,
   CATALOGO_CAMPOS,
@@ -11,6 +18,7 @@ import {
 } from './campos-certificado';
 import { CertificadoPdfService } from './certificado-pdf.service';
 import { GuardarPlantillaDto } from './dto/plantilla-certificado.dto';
+import { FONDOS_CERTIFICADO_DIR } from './rutas-certificado';
 
 /** Lo que se devuelve de una plantilla al panel (con los campos ya saneados). */
 export interface PlantillaVista {
@@ -47,6 +55,11 @@ export interface ContenidoPlantilla {
  * La edición **siempre es una creación**: no hay ninguna ruta que modifique una
  * versión existente. Si se pudiera editar la activa, mover el hueco del nombre
  * dejaría sin sentido el PDF de quien ya lo tiene impreso.
+ *
+ * Lo que sí existe desde la fase 6 es el **borrado** de una versión suelta
+ * (`eliminar`), con dos negativas claras: la activa no se borra (la emisión se
+ * quedaría sin diseño) y una con certificados emitidos tampoco (son inmutables y
+ * apuntan a su versión).
  *
  * Desde esta fase una plantilla es **una imagen de diseño más tres huecos**
  * (nombre, folio y QR): todo lo demás va dibujado en la imagen.
@@ -170,6 +183,89 @@ export class PlantillasService {
     return {
       mensaje: `La versión ${plantilla.version} es ahora la activa.`,
       plantilla: this.aVista(actualizada),
+    };
+  }
+
+  // --- Borrado de una versión ---
+
+  /**
+   * Borra una versión de la plantilla.
+   *
+   * Las versiones no se editan, pero **sí se borran**: al diseñar quedan
+   * versiones sueltas de las pruebas que nadie va a usar y que solo ensucian la
+   * tabla. Dos cosas lo impiden, y las dos se explican en vez de dejar un error
+   * opaco:
+   *
+   * - **La activa**: es la que se usa al emitir. Sin ella la emisión no sabría
+   *   qué diseño estampar, así que primero hay que activar otra.
+   * - **Una con certificados emitidos**: un certificado es inmutable y apunta a
+   *   la versión con la que salió. Borrarla dejaría el PDF sin su diseño.
+   *
+   * Con la fila se va su imagen de diseño, y solo si **ninguna otra versión** usa
+   * el mismo archivo: dos versiones pueden compartir fondo (una versión nueva
+   * hereda el de la activa), y borrarlo dejaría a la otra sin imagen.
+   */
+  async eliminar(id: number) {
+    const plantilla = await this.prisma.plantillaCertificado.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        version: true,
+        activa: true,
+        fondoUrl: true,
+        _count: { select: { certificados: true } },
+      },
+    });
+    if (!plantilla) throw new NotFoundException('Esa versión no existe.');
+
+    if (plantilla.activa) {
+      throw new BadRequestException(
+        `La versión ${plantilla.version} es la activa: no se puede borrar. Activa antes otra versión (la que deba usarse al emitir) y vuelve a intentarlo.`,
+      );
+    }
+
+    const emitidos = plantilla._count.certificados;
+    if (emitidos > 0) {
+      throw new BadRequestException(
+        `No se puede borrar la versión ${plantilla.version}: ${emitidos} ${
+          emitidos === 1 ? 'certificado se emitió' : 'certificados se emitieron'
+        } con esta versión. Los certificados ya emitidos son inmutables y siguen apuntando a su diseño.`,
+      );
+    }
+
+    // La imagen se mira **antes** de borrar la fila: después ya no habría forma
+    // de saber qué archivo era.
+    const ruta = plantilla.fondoUrl
+      ? join(FONDOS_CERTIFICADO_DIR, basename(plantilla.fondoUrl))
+      : null;
+    const otrasConElMismoFondo = plantilla.fondoUrl
+      ? await this.prisma.plantillaCertificado.count({
+          where: { fondoUrl: plantilla.fondoUrl, id: { not: id } },
+        })
+      : 0;
+    const borrarElArchivo =
+      !!plantilla.fondoUrl &&
+      otrasConElMismoFondo === 0 &&
+      !!ruta &&
+      existsSync(ruta);
+
+    await this.prisma.plantillaCertificado.delete({ where: { id } });
+
+    // Un fallo al borrar el archivo no tumba la petición: la fila ya no está y
+    // un archivo huérfano es menos grave que un error al borrar.
+    if (borrarElArchivo) {
+      borrarImagen(FONDOS_CERTIFICADO_DIR, plantilla.fondoUrl);
+    }
+
+    return {
+      mensaje:
+        `Versión ${plantilla.version} borrada.` +
+        (borrarElArchivo
+          ? ' Su imagen de diseño también se borró del servidor.'
+          : ' No se borró ninguna imagen: esa versión no tenía diseño propio o el archivo lo usa otra versión.'),
+      id: plantilla.id,
+      version: plantilla.version,
+      archivoBorrado: borrarElArchivo,
     };
   }
 

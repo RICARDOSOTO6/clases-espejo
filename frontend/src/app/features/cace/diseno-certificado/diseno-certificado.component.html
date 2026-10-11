@@ -112,6 +112,8 @@
                 <tr
                   [attr.data-version]="version.id"
                   [attr.data-estado]="version.activa ? 'activa' : 'inactiva'"
+                  [attr.data-puede-borrar]="puedeBorrar(version) ? 'true' : 'false'"
+                  [attr.data-motivo-borrado]="motivoNoBorrar(version)"
                 >
                   <td [attr.title]="auditoriaDe(version)">
                     <strong>v{{ version.version }}</strong>
@@ -158,7 +160,54 @@
                           {{ activando() === version.id ? 'Activando…' : 'Activar' }}
                         </button>
                       }
+                      @if (versionAConfirmar() === version.id) {
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-mini"
+                          data-accion="confirmar-borrar-plantilla"
+                          [disabled]="borrando() !== null"
+                          (click)="confirmarBorrar(version)"
+                        >
+                          {{ borrando() === version.id ? 'Borrando…' : 'Confirmar' }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-mini"
+                          [disabled]="borrando() !== null"
+                          (click)="cancelarBorrar()"
+                        >
+                          Cancelar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-mini"
+                          data-accion="borrar-plantilla"
+                          data-peso="terciario"
+                          [disabled]="!puedeBorrar(version) || borrando() !== null"
+                          [attr.title]="
+                            puedeBorrar(version)
+                              ? 'Borra esta versión suelta y su imagen de diseño'
+                              : motivoNoBorrar(version)
+                          "
+                          (click)="pedirBorrar(version)"
+                        >
+                          {{ borrando() === version.id ? 'Borrando…' : 'Borrar' }}
+                        </button>
+                      }
                     </div>
+                    @if (!puedeBorrar(version)) {
+                      <p class="version-grave" [attr.data-motivo-no-borrar]="version.id">
+                        <span class="icono icono--grave" aria-hidden="true">✕</span>
+                        {{ motivoNoBorrar(version) }}
+                      </p>
+                    }
+                    @if (versionAConfirmar() === version.id) {
+                      <div class="alert alert-error" role="status">
+                        ¿Borrar la versión {{ version.version }}? Se borra su fila y
+                        su imagen de diseño. No se puede deshacer.
+                      </div>
+                    }
                     @if (gravesDeVersion(version).length > 0) {
                       <p
                         class="version-grave"
@@ -177,8 +226,11 @@
       }
       <p class="panel-nota">
         Solo una está activa: es la que se usa al emitir. Activar una anterior no
-        toca los certificados ya emitidos. Pasa el ratón por una versión para ver
-        quién la creó y cuándo.
+        toca los certificados ya emitidos. Las versiones sueltas se pueden
+        <strong>borrar</strong> (con su imagen), salvo la activa y las que ya
+        tienen certificados emitidos: ahí el botón queda deshabilitado con el
+        motivo a la vista. Pasa el ratón por una versión para ver quién la creó y
+        cuándo.
       </p>
     </details>
   </div>

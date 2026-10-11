@@ -160,6 +160,8 @@ export class DisenoCertificadoComponent {
   readonly actualizando = input(false);
   /** Versión cuyo «Activar» está en curso (`null` si ninguna). */
   readonly activando = input<number | null>(null);
+  /** Versión cuyo borrado está en curso (`null` si ninguno). */
+  readonly borrando = input<number | null>(null);
   /** Mientras se sube la imagen del diseño. */
   readonly subiendoFondo = input(false);
 
@@ -173,6 +175,8 @@ export class DisenoCertificadoComponent {
   readonly verVersion = output<PlantillaCertificado>();
   /** «Activar» una versión guardada. */
   readonly activarVersion = output<PlantillaCertificado>();
+  /** «Borrar» una versión suelta, ya confirmada. La petición la hace la pantalla. */
+  readonly borrarVersion = output<PlantillaCertificado>();
   /** La imagen del diseño elegida: la sube la pantalla. */
   readonly subirFondo = output<File>();
 
@@ -188,6 +192,8 @@ export class DisenoCertificadoComponent {
   readonly marcando = signal<ClaveCampoCertificado | null>(null);
   /** Rectángulo que se está dibujando, para verlo mientras se arrastra. */
   readonly rectangulo = signal<Rectangulo | null>(null);
+  /** Versión cuyo borrado se está confirmando (el borrado no se deshace). */
+  readonly versionAConfirmar = signal<number | null>(null);
 
   /** Datos de la vista previa: no se guardan, solo sirven para ver y medir. */
   readonly nombrePrueba = signal(NOMBRE_LARGO_EJEMPLO);
@@ -446,6 +452,46 @@ export class DisenoCertificadoComponent {
     return this.gravesDeVersion(version)
       .map((p) => `${p.donde}: ${p.mensaje}`)
       .join(' ');
+  }
+
+  /**
+   * Por qué **no** se puede borrar una versión (vacío si sí se puede).
+   *
+   * Son las dos reglas del servidor, dichas antes de pulsar: la versión activa
+   * es la que se usa al emitir (hay que activar otra primero) y una versión con
+   * certificados emitidos no se toca, porque los certificados son inmutables y
+   * apuntan a su diseño.
+   */
+  motivoNoBorrar(version: PlantillaCertificado): string {
+    if (version.activa) {
+      return 'Es la versión activa: activa antes otra versión y vuelve a intentarlo.';
+    }
+    if (version.certificados > 0) {
+      return `No se puede borrar: ${version.certificados} ${
+        version.certificados === 1 ? 'certificado se emitió' : 'certificados se emitieron'
+      } con esta versión.`;
+    }
+    return '';
+  }
+
+  /** El botón de borrar solo se habilita cuando de verdad se puede borrar. */
+  puedeBorrar(version: PlantillaCertificado): boolean {
+    return this.motivoNoBorrar(version) === '';
+  }
+
+  /** El borrado no se deshace: se confirma dentro de la propia fila. */
+  pedirBorrar(version: PlantillaCertificado): void {
+    if (!this.puedeBorrar(version)) return;
+    this.versionAConfirmar.set(version.id);
+  }
+
+  cancelarBorrar(): void {
+    this.versionAConfirmar.set(null);
+  }
+
+  confirmarBorrar(version: PlantillaCertificado): void {
+    this.versionAConfirmar.set(null);
+    this.borrarVersion.emit(version);
   }
 
   /**

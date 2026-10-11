@@ -18,6 +18,15 @@ export interface RespuestaPlantilla {
   plantilla: PlantillaCertificado;
 }
 
+/** Lo que responde el borrado de una versión suelta. */
+export interface RespuestaBorradoPlantilla {
+  mensaje: string;
+  id: number;
+  version: number;
+  /** Verdadero si además se borró su imagen de diseño del servidor. */
+  archivoBorrado: boolean;
+}
+
 /**
  * Plantilla del certificado, del lado de la **presidencia**.
  *
@@ -64,6 +73,17 @@ export class PlantillaCertificadoService {
     return this.http.patch<RespuestaPlantilla>(
       `${API_URL}/cace/certificados/plantilla/${id}/activar`,
       {},
+    );
+  }
+
+  /**
+   * Borra una versión suelta (y su imagen de diseño). El servidor la rechaza
+   * con un mensaje claro si es la **activa** o si **algún certificado se emitió**
+   * con ella: los emitidos son inmutables y apuntan a su versión.
+   */
+  eliminar(id: number): Observable<RespuestaBorradoPlantilla> {
+    return this.http.delete<RespuestaBorradoPlantilla>(
+      `${API_URL}/cace/certificados/plantilla/${id}`,
     );
   }
 

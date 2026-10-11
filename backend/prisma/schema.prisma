@@ -71,6 +71,8 @@ model Usuario {
   certificadosEmitidos  Certificado[] @relation("CertificadoEmitido")
   solicitudesBorradoSolicitadas SolicitudBorradoInstitucion[] @relation("SolicitudBorradoSolicitante")
   solicitudesBorradoResueltas   SolicitudBorradoInstitucion[] @relation("SolicitudBorradoResolutor")
+  cambiosPresidenciaSaliente    CambioPresidencia[] @relation("CambioPresidenciaSaliente")
+  cambiosPresidenciaEntrante    CambioPresidencia[] @relation("CambioPresidenciaEntrante")
 
   @@map("USUARIO")
 }
@@ -565,4 +567,19 @@ model SolicitudBorradoInstitucion {
   resueltaPor            Usuario?    @relation("SolicitudBorradoResolutor", fields: [resueltaPorUsuarioId], references: [id])
 
   @@map("SOLICITUD_BORRADO_INSTITUCION")
+}
+
+/// Registro de los cambios de presidencia. La presidencia **no se borra ni se
+/// desactiva** (es una figura central): se transmite. Quien deja el cargo queda
+/// como suplente, que conserva las capacidades, y aqui queda quien lo autorizo.
+model CambioPresidencia {
+  id                Int      @id @default(autoincrement())
+  salienteUsuarioId Int      @map("saliente_usuario_id")
+  entranteUsuarioId Int      @map("entrante_usuario_id")
+  motivo            String   @default("")
+  creadoEn          DateTime @default(now()) @map("creado_en")
+  saliente          Usuario  @relation("CambioPresidenciaSaliente", fields: [salienteUsuarioId], references: [id])
+  entrante          Usuario  @relation("CambioPresidenciaEntrante", fields: [entranteUsuarioId], references: [id])
+
+  @@map("CAMBIO_PRESIDENCIA")
 }
