@@ -36,6 +36,7 @@ import {
   PAISES,
   PERIODOS_ESCOLARES,
   PROGRAMAS_EDUCATIVOS,
+  estadoProyectoLabel as etiquetaEstadoProyecto,
 } from '../../core/constants/catalogos';
 import {
   Asignacion,
@@ -103,6 +104,17 @@ export class AgenteComponent implements OnInit, OnDestroy {
         this.calendarioAbierto.set(true);
         this.ui.atenderCalendario();
       }
+    });
+
+    // La guía interactiva abre el formulario de invitación para señalarlo paso a
+    // paso; también lo pide por el estado compartido. Es el mismo mecanismo que
+    // usa la pantalla del docente con «Nueva solicitud».
+    effect(() => {
+      const accion = this.ui.formularioInvitacion();
+      if (!accion) return;
+      if (accion === 'abrir') this.openInvite();
+      else this.closeInvite();
+      this.ui.atenderFormularioInvitacion();
     });
   }
 
@@ -1268,13 +1280,6 @@ export class AgenteComponent implements OnInit, OnDestroy {
     return fechaTexto(fecha);
   }
 
-  estadoProyectoLabel(estado: string): string {
-    const labels: Record<string, string> = {
-      EN_PLANIFICACION: 'En planificación',
-      EN_CURSO: 'En curso',
-      FINALIZADO: 'Finalizado',
-      CANCELADO: 'Cancelado',
-    };
-    return labels[estado] ?? estado;
-  }
+  /** Etiqueta del estado de una clase espejo (catálogo compartido). */
+  readonly estadoProyectoLabel = etiquetaEstadoProyecto;
 }

@@ -31,6 +31,8 @@ import { InstitucionesService } from '../../core/services/instituciones.service'
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { fechaLarga, fechaTexto } from '../../core/utils/fecha.util';
+import { descargarBlob } from '../../core/utils/descarga.util';
+import { estadoProyectoLabel as etiquetaEstadoProyecto } from '../../core/constants/catalogos';
 import { Asignacion } from '../../core/models/materia.models';
 import {
   Actividad,
@@ -804,7 +806,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (blob) => {
           this.descargandoCertificado.set(null);
-          this.guardarBlob(blob, `certificado-${certificado.folio}.pdf`);
+          descargarBlob(blob, `certificado-${certificado.folio}.pdf`);
           this.avisoCertificados.set(`Certificado ${certificado.folio} descargado`);
         },
         error: (err: HttpErrorResponse) => {
@@ -824,7 +826,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.certificadosService.descargarZip(this.proyectoId).subscribe({
       next: (blob) => {
         this.descargandoZip.set(false);
-        this.guardarBlob(blob, `certificados-clase-espejo-${this.proyectoId}.zip`);
+        descargarBlob(blob, `certificados-clase-espejo-${this.proyectoId}.zip`);
         this.avisoCertificados.set('Certificados descargados en un ZIP');
       },
       error: (err: HttpErrorResponse) => {
@@ -1052,18 +1054,6 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           );
         },
       });
-  }
-
-  /** El nombre del archivo que se descarga, reutilizado por PDF y ZIP. */
-  private guardarBlob(blob: Blob, nombre: string): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nombre;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   }
 
   /** Etiqueta legible del estado de un certificado. */
@@ -1601,14 +1591,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.proyectos.descargarResumenPdf(this.proyectoId).subscribe({
       next: (blob) => {
         this.descargandoResumenPdf.set(false);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `clase-espejo-${this.proyectoId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        descargarBlob(blob, `clase-espejo-${this.proyectoId}.pdf`);
         this.ok.set('Resumen PDF descargado');
       },
       error: (err: HttpErrorResponse) => {
@@ -1715,15 +1698,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         });
   }
 
-  estadoProyectoLabel(estado: string): string {
-    const labels: Record<string, string> = {
-      EN_PLANIFICACION: 'En planificación',
-      EN_CURSO: 'En curso',
-      FINALIZADO: 'Finalizado',
-      CANCELADO: 'Cancelado',
-    };
-    return labels[estado] ?? estado;
-  }
+  /** Etiqueta del estado de una clase espejo (catálogo compartido). */
+  readonly estadoProyectoLabel = etiquetaEstadoProyecto;
 
   estadoPlanificacionLabel(estado: string): string {
     const labels: Record<string, string> = {

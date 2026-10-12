@@ -52,7 +52,7 @@ export function normalizarFolio(folio: string | null | undefined): string {
 }
 
 /** El código tal como lo teclea una persona: sin guiones ni espacios. */
-export function normalizarCodigo(codigo: string | null | undefined): string {
+function normalizarCodigo(codigo: string | null | undefined): string {
   return (codigo ?? '')
     .trim()
     .toUpperCase()

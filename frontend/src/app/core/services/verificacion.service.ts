@@ -2,11 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { VerificacionCertificado } from '../models/certificado.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 /**
  * Verificación pública de un certificado.

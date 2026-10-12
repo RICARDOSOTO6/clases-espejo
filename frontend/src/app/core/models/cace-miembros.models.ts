@@ -122,7 +122,7 @@ export interface RespuestaSolicitudBorrado {
 // --- Presidencia de la CACE: se transmite, no se desactiva ---
 
 /** Alguien que entra o sale de la presidencia. */
-export interface PersonaCambioPresidencia {
+interface PersonaCambioPresidencia {
   usuarioId: number;
   nombre: string;
   correo: string;
@@ -132,7 +132,7 @@ export interface PersonaCambioPresidencia {
  * Un cambio de presidencia ya registrado. El saliente **no se fue**: quedó como
  * suplente, activo y con las mismas capacidades.
  */
-export interface CambioPresidenciaCace {
+interface CambioPresidenciaCace {
   id: number;
   /** Por qué se transmitió. Puede ir vacío. */
   motivo: string;

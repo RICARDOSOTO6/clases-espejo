@@ -3,11 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Institucion, InstitucionDirectorio } from '../models/auth.models';
 import { Materia } from '../models/materia.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 @Injectable({ providedIn: 'root' })
 export class InstitucionesService {

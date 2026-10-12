@@ -17,11 +17,10 @@ import {
   claseUrgencia,
   etiquetaUrgencia,
 } from '../../../core/utils/urgencia.util';
-import { fechaTexto, horaTexto } from '../../../core/utils/fecha.util';
+import { claveLocal, fechaTexto } from '../../../core/utils/fecha.util';
 import { ModalComponent } from '../modal/modal.component';
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const MS_DIA = 24 * 60 * 60 * 1000;
 /** Cuántos puntos caben en una casilla antes de resumir el resto. */
 const MAX_PUNTOS = 4;
 
@@ -38,11 +37,6 @@ interface DiaCalendario {
   puntos: { clase: boolean; urgencia: Urgencia }[];
   /** Cuántos eventos no caben como punto. */
   restantes: number;
-}
-
-/** Clave local `YYYY-MM-DD` (con `toISOString` se adelantaba un día). */
-function clave(fecha: Date): string {
-  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
 }
 
 function inicioDeMes(fecha: Date): Date {
@@ -92,18 +86,18 @@ export class CalendarioComponent {
     // La semana empieza en lunes: se retrocede hasta el lunes anterior.
     const desfase = (primero.getDay() + 6) % 7;
     const inicio = sumarDias(primero, -desfase);
-    const hoy = clave(new Date());
+    const hoy = claveLocal(new Date());
 
     const casillas: DiaCalendario[] = [];
     const porClave = new Map<string, DiaCalendario>();
     for (let i = 0; i < 42; i++) {
       const fecha = sumarDias(inicio, i);
       const dia: DiaCalendario = {
-        clave: clave(fecha),
+        clave: claveLocal(fecha),
         fecha,
         numero: fecha.getDate(),
         delMes: fecha.getMonth() === primero.getMonth(),
-        esHoy: clave(fecha) === hoy,
+        esHoy: claveLocal(fecha) === hoy,
         clases: [],
         vencimientos: [],
         puntos: [],
@@ -115,7 +109,7 @@ export class CalendarioComponent {
 
     // Índice por día: evita recorrer todo el calendario por cada evento.
     for (const clase of this.clases) {
-      porClave.get(clave(new Date(clase.fechaHora)))?.clases.push(clase);
+      porClave.get(claveLocal(new Date(clase.fechaHora)))?.clases.push(clase);
     }
     for (const vencimiento of this.vencimientos) {
       // `fechaLimite` es una columna DATE: su día es el texto, no la fecha local.

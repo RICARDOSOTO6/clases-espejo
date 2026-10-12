@@ -122,13 +122,13 @@ export interface DatosCertificado {
 }
 
 /** El PDF ya armado, con lo que hubo que avisar por el camino. */
-export interface PdfGenerado {
+interface PdfGenerado {
   buffer: Buffer;
   avisos: string[];
 }
 
 /** Cómo queda el nombre después del autoajuste, para poder avisar. */
-export interface NombreAjustado {
+interface NombreAjustado {
   lineas: string[];
   tamano: number;
   /** `true` cuando ni con el mínimo y dos líneas cabe en el hueco. */
@@ -138,17 +138,6 @@ export interface NombreAjustado {
 /** Se avisa una sola vez de que no hay fuente Unicode, no en cada certificado. */
 let avisadoSinFuente = false;
 let avisadoSinFondo = false;
-
-/**
- * La etiqueta con la que se nombra un dato en los avisos. Está aquí y no en el
- * catálogo porque un aviso se lee en la pantalla de emisión, donde el catálogo
- * del panel no hace falta.
- */
-const ETIQUETAS: Record<string, string> = {
-  nombre: 'nombre del alumno',
-  folio: 'folio',
-  qr: 'código QR',
-};
 
 @Injectable()
 export class CertificadoPdfService {
@@ -342,6 +331,10 @@ export class CertificadoPdfService {
    *
    * Se mide con el **mismo** documento (misma fuente y mismo tamaño) con el que
    * después se escribe: cualquier otra medida mentiría.
+   *
+   * ⚠️ El editor del cliente replica este criterio en `ajustarNombre`
+   * (`frontend/src/app/core/utils/certificado-medidas.ts`) para que la vista
+   * previa coincida con el PDF. Los dos lados se cambian a la vez.
    */
   ajustarNombre(
     doc: any,
@@ -399,6 +392,13 @@ export class CertificadoPdfService {
    * deja las dos mitades más parecidas. Devuelve `null` si no hay ningún hueco
    * donde cortar (un nombre de una sola palabra): entonces no se parte, porque
    * partir una palabra por la mitad es mutilar el nombre de una persona.
+   *
+   * ⚠️ **Gemelo** de `partirEnDos` en
+   * `frontend/src/app/core/utils/certificado-medidas.ts`. El editor del cliente
+   * y este generador de PDF parten las líneas con el mismo criterio **a
+   * propósito** (los dos paquetes no comparten módulos): si se cambia el
+   * algoritmo aquí, hay que cambiarlo allí, o la vista previa y el PDF dejarán
+   * de coincidir, que es justo lo que el editor promete evitar.
    */
   private partirEnDos(texto: string): [string, string] | null {
     const palabras = texto.split(/\s+/).filter(Boolean);

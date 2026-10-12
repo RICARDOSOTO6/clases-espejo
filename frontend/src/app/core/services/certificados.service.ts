@@ -6,11 +6,7 @@ import {
   ResultadoEmision,
   ResultadoEnvioCertificados,
 } from '../models/certificado.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 /**
  * Certificados de una clase espejo, del lado del **docente**.

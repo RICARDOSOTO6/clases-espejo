@@ -9,11 +9,8 @@ import {
   RegisterResponse,
   Usuario,
 } from '../models/auth.models';
+import { API_URL } from '../api-url';
 
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
 const TOKEN_KEY = 'access_token';
 const USER_KEY = 'usuario';
 

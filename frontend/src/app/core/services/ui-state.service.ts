@@ -13,7 +13,7 @@ export interface PendienteUi {
 }
 
 /** Una clase espejo con chat, para el desplegable de mensajes. */
-export interface ChatUi {
+interface ChatUi {
   /** Id del proyecto: al pulsarlo se abre su pantalla. */
   id: number;
   titulo: string;
@@ -121,7 +121,7 @@ export class UiStateService {
 }
 
 /** Minúsculas y sin acentos, para comparar texto escrito por el usuario. */
-export function normalizar(texto: string): string {
+function normalizar(texto: string): string {
   return texto
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

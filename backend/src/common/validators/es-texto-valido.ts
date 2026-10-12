@@ -10,7 +10,7 @@ const KEYBOARD_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
  *  - sin secuencias de teclado (ej. "qwerty", "asdf")
  *  - longitud entre 2 y 80 caracteres
  */
-export function esTextoValido(value: unknown): boolean {
+function esTextoValido(value: unknown): boolean {
   if (value == null || value === '') return true; // @IsNotEmpty se encarga del vacío
   if (typeof value !== 'string') return false;
 

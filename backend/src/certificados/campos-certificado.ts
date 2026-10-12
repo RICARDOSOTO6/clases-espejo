@@ -35,15 +35,15 @@
  */
 
 /** Dónde va el texto dentro de su caja. */
-export const ALINEACIONES = ['left', 'center', 'right'] as const;
-export type Alineacion = (typeof ALINEACIONES)[number];
+const ALINEACIONES = ['left', 'center', 'right'] as const;
+type Alineacion = (typeof ALINEACIONES)[number];
 
 /**
  * Los datos que lleva el certificado, en el orden en que se pintan. Cambiar
  * esta lista cambia a la vez el PDF, la validación y el panel.
  */
 export const CLAVES_CAMPO = ['nombre', 'folio', 'qr'] as const;
-export type ClaveCampo = (typeof CLAVES_CAMPO)[number];
+type ClaveCampo = (typeof CLAVES_CAMPO)[number];
 
 /** A4 horizontal en puntos (1 pt = 1/72 pulgada): el tamaño de la hoja. */
 export const ANCHO_PT = 841.89;
@@ -79,15 +79,8 @@ export const TAMANO_MINIMO_NOMBRE = 18;
 export const PASO_AJUSTE = 0.5;
 
 /** Caja mínima de un hueco, en píxeles de la plantilla. */
-export const ANCHO_MINIMO = 120;
-export const ALTO_MINIMO = 48;
-
-/**
- * Margen seguro: un 5 % por cada lado (que es, redondeando, el 1,5 cm que pide
- * la guía de diseño). El lienzo lo dibuja para que nada quede pegado al canto;
- * no es un límite duro, pero sí se avisa cuando un hueco entra en él.
- */
-export const MARGEN_SEGURO = 0.05;
+const ANCHO_MINIMO = 120;
+const ALTO_MINIMO = 48;
 
 /** El lienzo de la plantilla, en píxeles (el tamaño de la imagen de fondo). */
 export interface LienzoPlantilla {
@@ -158,12 +151,12 @@ export const CATALOGO_CAMPOS: { clave: ClaveCampo; etiqueta: string }[] = [
 ];
 
 /** Píxeles de plantilla por punto del PDF: el factor entre las dos medidas. */
-export function pxPorPunto(lienzo: LienzoPlantilla = LIENZO_POR_DEFECTO): number {
+function pxPorPunto(lienzo: LienzoPlantilla = LIENZO_POR_DEFECTO): number {
   return lienzo.anchoPx / ANCHO_PT;
 }
 
 /** Lo que mide de alto, en píxeles de la plantilla, un texto de `lineas`. */
-export function altoDeLineas(
+function altoDeLineas(
   tamano: number,
   lineas: number,
   lienzo: LienzoPlantilla = LIENZO_POR_DEFECTO,
@@ -237,7 +230,7 @@ export const CAMPOS_POR_DEFECTO: CamposCertificado = {
  * flujos que no tienen un hueco guardado (por ejemplo, al emitir con una
  * plantilla vieja). Es la misma muestra que llevan los campos por defecto.
  */
-export const MUESTRAS_POR_DEFECTO: Record<ClaveCampo, string> = {
+const MUESTRAS_POR_DEFECTO: Record<ClaveCampo, string> = {
   nombre: CAMPOS_POR_DEFECTO.nombre.muestra,
   folio: CAMPOS_POR_DEFECTO.folio.muestra,
   qr: '',

@@ -126,7 +126,7 @@ const ICONOS: Record<string, string[]> = {
  * Roles que usan este esqueleto. La presidencia y la secretaría de la CACE
  * comparten la misma pantalla, así que comparten también su menú.
  */
-export type RolLayout =
+type RolLayout =
   | 'DOCENTE'
   | 'AGENTE'
   | 'PRESIDENTE_CACE'
@@ -200,10 +200,6 @@ export class LayoutComponent {
 
   @Input() set capacidades(valor: string[] | null) {
     this.capacidadesSenal.set(valor);
-  }
-
-  get capacidades(): string[] | null {
-    return this.capacidadesSenal();
   }
 
   /** Se emite cuando el usuario pulsa "Cerrar sesión". */
@@ -324,7 +320,7 @@ export class LayoutComponent {
           id: 'personalizacion',
           etiqueta: 'Personalización',
           icono: 'personalizar',
-          ancla: 'personalizacion',
+          ruta: '/cace/personalizacion',
           capacidades: ['personalizarCace'],
         },
         {
@@ -348,7 +344,7 @@ export class LayoutComponent {
           id: 'certificado',
           etiqueta: 'Certificado',
           icono: 'certificado',
-          ancla: 'certificado',
+          ruta: '/cace/certificado',
           capacidades: ['disenarCertificados', 'firmarCertificados'],
         },
         // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el
@@ -835,7 +831,9 @@ export class LayoutComponent {
       this.ui.solicitarCalendario();
       return;
     }
-    this.ui.solicitarFormularioInvitacion('cerrar');
+    if (accion === 'cerrar-invitacion') {
+      this.ui.solicitarFormularioInvitacion('cerrar');
+    }
   }
 
   cerrarSesion(): void {

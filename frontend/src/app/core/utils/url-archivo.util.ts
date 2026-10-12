@@ -7,10 +7,12 @@
  * navegador la pide al servidor de desarrollo y recibe el `index.html`, que no
  * es una imagen.
  */
+import { API_URL } from '../api-url';
+
 export function urlDeArchivo(url: string | null | undefined): string | null {
   if (!url) return null;
-  if (url.startsWith('/') && window.location.port === '4200') {
-    return `http://${window.location.hostname}:3000${url}`;
+  if (url.startsWith('/') && API_URL) {
+    return `${API_URL}${url}`;
   }
   return url;
 }

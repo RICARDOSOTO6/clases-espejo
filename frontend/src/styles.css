@@ -214,17 +214,8 @@ img {
   color: var(--text-muted);
 }
 
-.text-aux {
-  color: var(--text-aux);
-}
-
 .text-sm {
   font-size: 0.875rem; /* 14 px — Body small */
-}
-
-.text-caption {
-  font-size: 0.75rem; /* 12 px — Caption */
-  font-weight: 500;
 }
 
 .center {
@@ -525,16 +516,6 @@ img {
   color: var(--accent-texto);
 }
 
-.sidebar-link.is-muted {
-  cursor: default;
-  color: var(--text-aux);
-}
-
-.sidebar-link.is-muted:hover {
-  background: transparent;
-  color: var(--text-aux);
-}
-
 .sidebar-link--button {
   color: var(--danger);
 }
@@ -659,7 +640,6 @@ img {
 
 /* Botón primario en contextos inline (ancho automático) */
 .card-head .btn-primary,
-.card-actions .btn-primary,
 .welcome-action,
 .form-grid-actions .btn,
 .form-inline .btn {
@@ -896,10 +876,6 @@ textarea.ng-invalid.ng-touched:focus {
   box-shadow: var(--shadow-card);
 }
 
-.card--elevated {
-  box-shadow: var(--shadow-card-elevated);
-}
-
 .card h1 {
   margin-bottom: var(--space-3);
 }
@@ -961,14 +937,6 @@ textarea.ng-invalid.ng-touched:focus {
   color: var(--accent-texto);
   font-size: 0.72rem;
   font-weight: 700;
-}
-
-.card-actions {
-  margin: var(--space-5) 0 var(--space-4);
-}
-
-.card-actions .btn-primary {
-  padding: 0.7rem 1.5rem;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1209,6 +1177,20 @@ textarea.ng-invalid.ng-touched:focus {
 .logo-institucion-lg {
   width: 56px;
   height: 56px;
+}
+
+/* Logo de la institución en el buscador del registro. Comparte cuadro con el
+   hueco vacío (`.inst-logo-vacio`) para que la fila no se descuadre cuando una
+   institución tiene logo y otra no. */
+.inst-logo {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: var(--radius-sm, 6px);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
 }
 
 .inst-logo-vacio {
@@ -1526,20 +1508,6 @@ textarea.ng-invalid.ng-touched:focus {
 /* ----------------------------------------------------------------------------
    17. Grupos por estado + tablero (kanban)
    ---------------------------------------------------------------------------- */
-.grupo-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.grupo-head:first-child {
-  margin-top: 0;
-}
-
 .grupo-dot {
   width: 10px;
   height: 10px;
@@ -1555,30 +1523,6 @@ textarea.ng-invalid.ng-touched:focus {
   color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 700;
-}
-
-.grupo-pendiente .grupo-dot {
-  background: var(--warning);
-}
-
-.grupo-aceptada .grupo-dot {
-  background: var(--success);
-}
-
-.grupo-rechazada .grupo-dot {
-  background: var(--danger);
-}
-
-.grupo-activo .grupo-dot {
-  background: var(--accent);
-}
-
-.grupo-finalizado .grupo-dot {
-  background: var(--success);
-}
-
-.grupo-cancelado .grupo-dot {
-  background: var(--text-aux);
 }
 
 .tablero {
@@ -2697,6 +2641,13 @@ textarea.ng-invalid.ng-touched:focus {
   font-size: 1.35rem;
   font-weight: 700;
   flex-shrink: 0;
+}
+
+/* Nombre, rol y país van en columna dentro de la cabecera del perfil.
+   `min-width: 0` deja que un nombre largo se recorte en vez de empujar el
+   avatar. */
+.perfil-identidad {
+  min-width: 0;
 }
 
 .perfil-nombre {
@@ -4141,4 +4092,381 @@ textarea.ng-invalid.ng-touched:focus {
 
 [data-tema='OSCURO'] .chat-vacio {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   CACE · Personalización (formulario 60% + vista previa 40%)
+   ============================================================ */
+
+.cace-pantalla .personalizacion-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.cace-pantalla .personalizacion-form {
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cace-pantalla .personalizacion-form .form-field {
+  margin-bottom: 24px;
+}
+
+.cace-pantalla .personalizacion-form label,
+.cace-pantalla .personalizacion-form legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cace-pantalla .personalizacion-form input,
+.cace-pantalla .personalizacion-form textarea {
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.cace-pantalla .personalizacion-form input:focus,
+.cace-pantalla .personalizacion-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+.cace-pantalla .personalizacion-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Selector de tema en 2x2 */
+.cace-pantalla .temas-grid {
+  border: none;
+  padding: 0;
+  margin: 0 0 24px;
+}
+
+.cace-pantalla .temas-grid legend {
+  padding: 0;
+}
+
+.cace-pantalla .temas-grid-cajas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cace-pantalla .tema-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.cace-pantalla .tema-card:hover {
+  border-color: var(--accent);
+}
+
+.cace-pantalla .tema-card.seleccionada {
+  border: 2px solid var(--accent);
+  background: var(--primary-50);
+}
+
+.cace-pantalla .tema-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cace-pantalla .tema-card-muestra {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+.cace-pantalla .tema-card-nombre {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cace-pantalla .tema-card-desc {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* Logo: caja 64x64 + botón estilizado */
+.cace-pantalla .logo-caja {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.cace-pantalla .logo-caja img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.cace-pantalla .logo-subida {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--accent-texto);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cace-pantalla .logo-subida:hover {
+  background: var(--hover);
+}
+
+.cace-pantalla .logo-controles input[type='file'] {
+  display: none;
+}
+
+.cace-pantalla .personalizacion-acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cace-pantalla .personalizacion-acciones .btn-primary {
+  width: auto;
+  margin: 0;
+  padding: 12px 32px;
+}
+
+/* Vista previa fija */
+.cace-pantalla .personalizacion-vista {
+  position: sticky;
+  top: 24px;
+}
+
+.cace-pantalla .vista-titulo-cabecera {
+  margin: 0 0 var(--space-3);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cace-pantalla .vista-aviso {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: var(--primary-50);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .cace-pantalla .personalizacion-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cace-pantalla .personalizacion-vista {
+    position: static;
+  }
+
+  .cace-pantalla .temas-grid-cajas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   CACE · Premios y reconocimientos (cuadrícula del formulario)
+   ============================================================ */
+
+.cace-pantalla .premios-form {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cace-pantalla .premios-form .fila-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cace-pantalla .premios-form .fila-3 .form-field {
+  margin-bottom: 0;
+}
+
+.cace-pantalla .premios-form .form-field {
+  margin-bottom: 16px;
+}
+
+.cace-pantalla .premios-form label {
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.cace-pantalla .premios-form input,
+.cace-pantalla .premios-form select,
+.cace-pantalla .premios-form textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.cace-pantalla .premios-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.cace-pantalla .premios-controles {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: 24px;
+}
+
+.cace-pantalla .premios-controles .form-grid-actions {
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.cace-pantalla .premios-controles .btn-primary {
+  width: auto;
+  margin: 0;
+  padding: 10px 32px;
+}
+
+/* Lista horizontal de premios guardados */
+.cace-pantalla .premios-lista {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cace-pantalla .premio-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.cace-pantalla .premio-thumb-caja {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background: var(--neutral-100);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cace-pantalla .premio-thumb-caja img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cace-pantalla .premio-thumb-caja .sin-imagen {
+  color: var(--text-muted);
+}
+
+.cace-pantalla .premio-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cace-pantalla .premio-info .titulo {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cace-pantalla .premio-info .secundario {
+  margin: 2px 0 4px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cace-pantalla .premio-fila-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cace-pantalla .premio-fila-acciones .btn {
+  width: auto;
+  margin: 0;
+}
+
+/* Botón "Subir imagen" estilizado (oculta el input crudo). */
+.cace-pantalla .subir-imagen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent-texto);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cace-pantalla .subir-imagen:hover {
+  background: var(--hover);
+}
+
+.cace-pantalla .subir-imagen input {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .cace-pantalla .premios-form .fila-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .cace-pantalla .premio-fila {
+    flex-wrap: wrap;
+  }
+
+  .cace-pantalla .premio-fila-acciones {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

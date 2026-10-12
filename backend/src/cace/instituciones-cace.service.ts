@@ -15,6 +15,8 @@ import {
   ESTADO_CACE_VETADA,
 } from '../common/estados';
 import { DecisionInstitucionDto } from './dto/decision-institucion.dto';
+import { mensajeDeError } from '../common/mensaje-error';
+import { nombreCompleto as nombreDe } from '../common/nombre-completo';
 
 /**
  * Panel de instituciones de la presidencia de la CACE: listar (con lo pendiente
@@ -515,7 +517,7 @@ export class InstitucionesCaceService {
         );
       } catch (error) {
         this.logger.error(
-          `No se pudo avisar a ${correo} de la decisión sobre «${nombre}»: ${this.mensajeDe(error)}`,
+          `No se pudo avisar a ${correo} de la decisión sobre «${nombre}»: ${mensajeDeError(error)}`,
         );
       }
     }
@@ -673,10 +675,6 @@ export class InstitucionesCaceService {
     } | null,
   ): string | null {
     if (!usuario) return null;
-    return `${usuario.nombres} ${usuario.apellidoPaterno} ${usuario.apellidoMaterno}`.trim();
-  }
-
-  private mensajeDe(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+    return nombreDe(usuario);
   }
 }

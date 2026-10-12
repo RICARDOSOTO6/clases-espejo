@@ -13,7 +13,7 @@ import {
 } from './dto/listas-alumnos.dto';
 
 /** Una fila leída de la lista, ya limpia, con lo que haya que avisar. */
-export interface FilaLista {
+interface FilaLista {
   nombre: string;
   matricula: string;
   correo: string;

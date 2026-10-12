@@ -15,10 +15,10 @@ import { existsSync, unlinkSync } from 'fs';
  */
 
 /** Solo imágenes de mapa de bits: nada de SVG ni de documentos. */
-export const EXTENSIONES_IMAGEN = ['.png', '.jpg', '.jpeg', '.webp'];
+const EXTENSIONES_IMAGEN = ['.png', '.jpg', '.jpeg', '.webp'];
 
 /** Tope de peso de una imagen de identidad: 2 MB de sobra para un logo. */
-export const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
+const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024;
 
 /**
  * Opciones de multer para una carpeta concreta. El nombre del archivo lleva un

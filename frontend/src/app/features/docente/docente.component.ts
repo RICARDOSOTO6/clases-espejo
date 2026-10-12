@@ -23,7 +23,10 @@ import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { Institucion, Perfil } from '../../core/models/auth.models';
 import { Premio } from '../../core/models/cace-identidad.models';
-import { PAISES } from '../../core/constants/catalogos';
+import {
+  PAISES,
+  estadoProyectoLabel as etiquetaEstadoProyecto,
+} from '../../core/constants/catalogos';
 import { Materia } from '../../core/models/materia.models';
 import {
   AsignacionMia,
@@ -598,11 +601,6 @@ export class DocenteComponent implements OnInit, OnDestroy {
     return fechaTexto(fecha);
   }
 
-  /** Igual que `formatearFecha`, pero para mostrar: «15 mar 2027». */
-  fechaLegible(fecha: string): string {
-    return fechaLarga(fecha);
-  }
-
   /** Antelación exigida para proponer (la manda el backend; 7 por defecto). */
   diasAntelacion(): number {
     return this.agenda()?.configuracion?.diasAntelacionRevision ?? 7;
@@ -615,13 +613,6 @@ export class DocenteComponent implements OnInit, OnDestroy {
     return hoyTexto(minimo);
   }
 
-  estadoProyectoLabel(estado: string): string {
-    const labels: Record<string, string> = {
-      EN_PLANIFICACION: 'En planificación',
-      EN_CURSO: 'En curso',
-      FINALIZADO: 'Finalizado',
-      CANCELADO: 'Cancelado',
-    };
-    return labels[estado] ?? estado;
-  }
+  /** Etiqueta del estado de una clase espejo (catálogo compartido). */
+  readonly estadoProyectoLabel = etiquetaEstadoProyecto;
 }

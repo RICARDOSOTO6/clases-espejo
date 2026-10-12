@@ -11,6 +11,7 @@ import { IdentidadCaceService } from '../../../core/services/identidad-cace.serv
 import { Premio } from '../../../core/models/cace-identidad.models';
 import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
+import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
 @Component({
   selector: 'app-login',
@@ -70,12 +71,11 @@ export class LoginComponent implements OnInit {
 
 
   mensajeDe(campo: 'correo' | 'password'): string | null {
-    const control = this.form.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['email']) return 'Introduce un correo válido';
-    if (control.errors['minlength']) return 'Mínimo 6 caracteres';
-    return null;
+    return mensajeDeControl(this.form, campo, {
+      required: 'Este campo es obligatorio',
+      email: 'Introduce un correo válido',
+      minlength: 'Mínimo 6 caracteres',
+    });
   }
 
   toggleRecoveryHint(): void {

@@ -13,7 +13,7 @@
  */
 
 /** Dónde va el texto dentro de su hueco. */
-export type AlineacionCertificado = 'left' | 'center' | 'right';
+type AlineacionCertificado = 'left' | 'center' | 'right';
 
 /** Los datos que estampa la aplicación. */
 export type ClaveCampoCertificado = 'nombre' | 'folio' | 'qr';
@@ -209,7 +209,7 @@ export interface ResultadoEnvioCertificados {
 }
 
 /** Los cuatro desenlaces de la verificación pública de un folio. */
-export type EstadoVerificacion =
+type EstadoVerificacion =
   | 'VALIDO'
   | 'ANULADO'
   | 'NO_ENCONTRADO'

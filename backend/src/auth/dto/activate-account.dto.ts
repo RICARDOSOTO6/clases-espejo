@@ -1,33 +1,11 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { EsTextoValido } from '../../common/validators/es-texto-valido';
+import { DatosPersonaDto } from './datos-persona.dto';
 
-export class ActivateAccountDto {
+export class ActivateAccountDto extends DatosPersonaDto {
   @IsString()
   @IsNotEmpty()
   token: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  nombres: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  apellidoPaterno: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  apellidoMaterno: string;
-
-  @IsString()
-  @IsNotEmpty()
-  tipoDocumento: string;
-
-  @IsString()
-  @IsNotEmpty()
-  dni: string;
 
   @IsString()
   @IsNotEmpty()

@@ -67,6 +67,18 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'cace/personalizacion',
+    loadComponent: () =>
+      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'cace/certificado',
+    loadComponent: () =>
+      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'proyectos/:id',
     loadComponent: () =>
       import('./features/proyecto/proyecto.component').then(

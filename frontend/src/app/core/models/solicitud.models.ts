@@ -3,7 +3,7 @@ import { Materia } from './materia.models';
 import { Urgencia } from './recordatorio.models';
 
 /** Plazo de respuesta que calcula el backend para cada solicitud. */
-export interface PlazoRevision {
+interface PlazoRevision {
   /** Último día para responder. */
   fechaLimite?: string;
   /** Días que quedan (negativo si ya pasó). */
@@ -25,7 +25,7 @@ export interface AsignacionMia {
   };
 }
 
-export interface RevisionSolicitud {
+interface RevisionSolicitud {
   id: number;
   etapa: string;
   decision: string;

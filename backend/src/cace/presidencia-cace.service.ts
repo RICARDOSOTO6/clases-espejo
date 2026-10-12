@@ -18,6 +18,8 @@ import {
   generarPasswordProvisional,
 } from './credenciales-cace';
 import { CambiarPresidenteDto } from './dto/cambiar-presidente.dto';
+import { mensajeDeError } from '../common/mensaje-error';
+import { nombreCompleto } from '../common/nombre-completo';
 
 /**
  * La presidencia de la CACE **se transmite** (fase 6).
@@ -86,7 +88,7 @@ export class PresidenciaCaceService {
         'No hay ninguna presidencia a la que suceder: la CACE no tiene presidente registrado. Reinicia el servidor para que se cree con el correo de `PRESIDENTE_CORREO`.',
       );
     }
-    const nombreSaliente = this.nombreCompleto(saliente.usuario);
+    const nombreSaliente = nombreCompleto(saliente.usuario);
 
     // --- Quién entra ---
 
@@ -140,7 +142,7 @@ export class PresidenciaCaceService {
       }
       if (!miembro.activo) {
         throw new BadRequestException(
-          `${this.nombreCompleto(miembro.usuario)} no está activo en la CACE: actívalo antes de darle la presidencia.`,
+          `${nombreCompleto(miembro.usuario)} no está activo en la CACE: actívalo antes de darle la presidencia.`,
         );
       }
       entrante = {
@@ -148,7 +150,7 @@ export class PresidenciaCaceService {
         miembroId: miembro.id,
         usuarioId: miembro.usuarioId,
         correo: miembro.usuario.correo,
-        nombre: this.nombreCompleto(miembro.usuario),
+        nombre: nombreCompleto(miembro.usuario),
         cargoAnterior: miembro.cargo,
       };
     } else {
@@ -174,7 +176,7 @@ export class PresidenciaCaceService {
             forma: 'usuario',
             usuarioId: existente.id,
             correo,
-            nombre: this.nombreCompleto({
+            nombre: nombreCompleto({
               nombres: existente.nombres,
               apellidoPaterno: existente.apellidoPaterno,
               apellidoMaterno: existente.apellidoMaterno,
@@ -404,13 +406,13 @@ export class PresidenciaCaceService {
       presidenteActual: presidente
         ? {
             usuarioId: presidente.usuarioId,
-            nombre: this.nombreCompleto(presidente.usuario),
+            nombre: nombreCompleto(presidente.usuario),
             correo: presidente.usuario.correo,
           }
         : null,
       suplentes: suplentes.map((suplente) => ({
         usuarioId: suplente.usuarioId,
-        nombre: this.nombreCompleto(suplente.usuario),
+        nombre: nombreCompleto(suplente.usuario),
         correo: suplente.usuario.correo,
       })),
     };
@@ -440,7 +442,7 @@ export class PresidenciaCaceService {
     } catch (error) {
       correoEnviado = false;
       this.logger.error(
-        `No se pudo avisar del cambio de presidencia a ${correoEntrante}: ${this.mensajeDe(error)}`,
+        `No se pudo avisar del cambio de presidencia a ${correoEntrante}: ${mensajeDeError(error)}`,
       );
       if (passwordProvisional) {
         this.logger.warn(
@@ -459,7 +461,7 @@ export class PresidenciaCaceService {
       );
     } catch (error) {
       this.logger.error(
-        `No se pudo avisar del cambio de presidencia a ${correoSaliente}: ${this.mensajeDe(error)}`,
+        `No se pudo avisar del cambio de presidencia a ${correoSaliente}: ${mensajeDeError(error)}`,
       );
       avisoCorreo = avisoCorreo
         ? `${avisoCorreo} Tampoco se pudo avisar a quien dejó el cargo por correo.`
@@ -518,26 +520,14 @@ export class PresidenciaCaceService {
       creadoEn: cambio.creadoEn.toISOString(),
       saliente: {
         usuarioId: cambio.saliente.id,
-        nombre: this.nombreCompleto(cambio.saliente),
+        nombre: nombreCompleto(cambio.saliente),
         correo: cambio.saliente.correo,
       },
       entrante: {
         usuarioId: cambio.entrante.id,
-        nombre: this.nombreCompleto(cambio.entrante),
+        nombre: nombreCompleto(cambio.entrante),
         correo: cambio.entrante.correo,
       },
     };
-  }
-
-  private nombreCompleto(usuario: {
-    nombres: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-  }): string {
-    return `${usuario.nombres} ${usuario.apellidoPaterno} ${usuario.apellidoMaterno}`.trim();
-  }
-
-  private mensajeDe(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
   }
 }

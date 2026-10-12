@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { InstitucionesCaceService } from './instituciones-cace.service';
 import { rolDeUsuario } from '../auth/capacidades.guard';
 import { puede } from '../common/capacidades';
+import { nombreCompleto } from '../common/nombre-completo';
 import {
   ESTADO_BORRADO_APROBADA,
   ESTADO_BORRADO_PENDIENTE,
@@ -292,7 +293,7 @@ export class SolicitudesBorradoService {
       },
     });
     const resueltaPor = resolutor
-      ? this.nombreCompleto(resolutor)
+      ? nombreCompleto(resolutor)
       : 'Presidencia de la CACE';
 
     // Constancia primero: la solicitud queda APROBADA con quién la autorizó y
@@ -400,26 +401,17 @@ export class SolicitudesBorradoService {
       motivoInstitucion: institucion?.motivoCace ?? null,
       motivo: solicitud.motivo,
       estado: solicitud.estado,
-      solicitadaPor: this.nombreCompleto(solicitud.solicitadaPor),
+      solicitadaPor: nombreCompleto(solicitud.solicitadaPor),
       solicitadaPorCorreo: solicitud.solicitadaPor.correo,
       // En ISO: la interfaz las formatea y el orden de la lista se apoya en
       // compararlas como texto (que en ISO es el orden cronológico).
       creadoEn: solicitud.creadoEn.toISOString(),
       resueltaPor: solicitud.resueltaPor
-        ? this.nombreCompleto(solicitud.resueltaPor)
+        ? nombreCompleto(solicitud.resueltaPor)
         : null,
       resueltaEn: solicitud.resueltaEn
         ? solicitud.resueltaEn.toISOString()
         : null,
     };
-  }
-
-  /** Nombre completo de un usuario, para las filas del panel. */
-  private nombreCompleto(usuario: {
-    nombres: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-  }): string {
-    return `${usuario.nombres} ${usuario.apellidoPaterno} ${usuario.apellidoMaterno}`.trim();
   }
 }

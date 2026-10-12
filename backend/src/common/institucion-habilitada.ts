@@ -23,13 +23,13 @@ import {
  */
 
 /** Datos mínimos de la institución y del agente para decidir si puede operar. */
-export type InstitucionDelAgente = {
+type InstitucionDelAgente = {
   nombre: string;
   estadoCace: string;
   motivoCace: string;
 };
 
-export type ResultadoHabilitacion = {
+type ResultadoHabilitacion = {
   /** Verdadero si el agente puede usar el resto del panel. */
   puedeOperar: boolean;
   /**
@@ -40,7 +40,7 @@ export type ResultadoHabilitacion = {
 };
 
 /** Frase que explica la situación de la institución ante la CACE. */
-export function situacionCace(estadoCace: string): string {
+function situacionCace(estadoCace: string): string {
   switch (estadoCace) {
     case ESTADO_CACE_PENDIENTE:
       return 'todavía está pendiente de aprobación por la CACE';

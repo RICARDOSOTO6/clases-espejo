@@ -1,7 +1,7 @@
 import { Institucion } from './auth.models';
 import { Materia } from './materia.models';
 
-export interface UsuarioResumen {
+interface UsuarioResumen {
   id: number;
   nombres: string;
   apellidoPaterno: string;
@@ -9,7 +9,7 @@ export interface UsuarioResumen {
   correo?: string;
 }
 
-export interface ProyectoDocenteItem {
+interface ProyectoDocenteItem {
   id: number;
   rol: string;
   asignacionDocente: {
@@ -57,7 +57,7 @@ export interface PlanificacionConjunta {
   reportes: ReportePlanificacion[];
 }
 
-export interface SolicitudDeProyecto {
+interface SolicitudDeProyecto {
   id: number;
   titulo: string;
   objetivo: string;

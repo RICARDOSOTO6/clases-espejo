@@ -22,10 +22,9 @@ import {
 
 /** A4 horizontal en puntos (1 pt = 1/72 pulgada): la hoja del PDF. */
 export const ANCHO_PT = 841.89;
-export const ALTO_PT = 595.28;
 
 /** Interlineado del PDF y del lienzo: el mismo número en los dos lados. */
-export const INTERLINEADO = 1.15;
+const INTERLINEADO = 1.15;
 
 /** Rango de tamaño de letra admitido, en puntos del PDF. */
 export const TAMANO_MINIMO = 8;
@@ -39,14 +38,14 @@ export const TAMANO_MAXIMO = 72;
 export const TAMANO_MINIMO_NOMBRE = 18;
 
 /** Cuánto baja el tamaño en cada paso del autoajuste, en puntos. */
-export const PASO_AJUSTE = 0.5;
+const PASO_AJUSTE = 0.5;
 
 /** Hueco mínimo de un dato, en píxeles de la plantilla. */
-export const ANCHO_MINIMO = 120;
-export const ALTO_MINIMO = 48;
+const ANCHO_MINIMO = 120;
+const ALTO_MINIMO = 48;
 
 /** Margen seguro: un 5 % por cada lado (el 1,5 cm que pide la guía). */
-export const MARGEN_SEGURO = 0.05;
+const MARGEN_SEGURO = 0.05;
 
 /**
  * El A4 horizontal a 300 ppp (3508 × 2480 px) que pide la guía de diseño. Por
@@ -64,7 +63,7 @@ export interface LienzoPlantilla {
 }
 
 /** Una caja cualquiera del certificado, para las cuentas de posición. */
-export interface CajaCertificado {
+interface CajaCertificado {
   x: number;
   y: number;
   ancho: number;
@@ -75,17 +74,8 @@ export interface CajaCertificado {
 }
 
 /** Píxeles de plantilla por punto del PDF. */
-export function pxPorPunto(lienzo: LienzoPlantilla): number {
+function pxPorPunto(lienzo: LienzoPlantilla): number {
   return lienzo.anchoPx / ANCHO_PT;
-}
-
-/** Lo que mide de alto, en píxeles de la plantilla, un texto de `lineas`. */
-export function altoDeLineas(
-  tamano: number,
-  lineas: number,
-  lienzo: LienzoPlantilla,
-): number {
-  return Math.round(tamano * pxPorPunto(lienzo) * INTERLINEADO * lineas);
 }
 
 /**
@@ -107,7 +97,7 @@ export function encajarCaja<
 }
 
 /** ¿La caja cabe entera dentro del papel? */
-export function dentroDelLienzo(
+function dentroDelLienzo(
   caja: { x: number; y: number; ancho: number; alto: number },
   lienzo: LienzoPlantilla,
 ): boolean {
@@ -120,7 +110,7 @@ export function dentroDelLienzo(
 }
 
 /** ¿La caja se mete en el margen seguro del 5 %? */
-export function tocaMargenSeguro(
+function tocaMargenSeguro(
   caja: { x: number; y: number; ancho: number; alto: number },
   lienzo: LienzoPlantilla,
 ): boolean {
@@ -150,12 +140,12 @@ function contexto(): CanvasRenderingContext2D | null {
 }
 
 /** La fuente de CSS que corresponde al estilo guardado (Arial y sus variantes). */
-export function fuenteCss(negrita: boolean, cursiva: boolean, tamanoPx: number): string {
+function fuenteCss(negrita: boolean, cursiva: boolean, tamanoPx: number): string {
   return `${cursiva ? 'italic ' : ''}${negrita ? '700' : '400'} ${tamanoPx}px Arial, Helvetica, sans-serif`;
 }
 
 /** Lo que mide de ancho un texto, en píxeles de la plantilla. */
-export function medirAncho(
+function medirAncho(
   texto: string,
   estilo: { negrita: boolean; cursiva: boolean },
   tamano: number,
@@ -169,7 +159,7 @@ export function medirAncho(
 }
 
 /** Cómo queda el nombre después del autoajuste. */
-export interface NombreAjustado {
+interface NombreAjustado {
   lineas: string[];
   tamano: number;
   /** `true` cuando ni con el mínimo y dos líneas cabe en el hueco. */
@@ -184,6 +174,11 @@ export interface NombreAjustado {
  *
  * Sirve para que la vista previa enseñe el nombre al tamaño que va a salir de
  * verdad, no al tamaño de partida.
+ *
+ * ⚠️ **Gemelo** de `CertificadoPdfService.ajustarNombre` en
+ * `backend/src/certificados/certificado-pdf.service.ts`: los dos paquetes no
+ * comparten módulos, así que el criterio está escrito dos veces a propósito. Se
+ * cambian los dos a la vez o la vista previa mentirá.
  */
 export function ajustarNombre(
   texto: string,
@@ -229,8 +224,13 @@ export function ajustarNombre(
  * deja las dos mitades más parecidas. Devuelve `null` si no hay ningún hueco
  * donde cortar (un nombre de una sola palabra): partir una palabra por la mitad
  * es mutilar el nombre de una persona.
+ *
+ * ⚠️ **Gemelo** de `partirEnDos` en
+ * `backend/src/certificados/certificado-pdf.service.ts`: los dos paquetes no
+ * comparten módulos, así que el algoritmo está escrito dos veces a propósito.
+ * Se cambian los dos a la vez.
  */
-export function partirEnDos(texto: string): [string, string] | null {
+function partirEnDos(texto: string): [string, string] | null {
   const palabras = texto.split(/\s+/).filter(Boolean);
   if (palabras.length < 2) return null;
 
@@ -261,7 +261,7 @@ function redondear(valor: number): number {
  * `styles.css`): cada canal se normaliza y se le aplica la curva de la
  * percepción, porque el ojo no ve igual de brillante un verde que un azul.
  */
-export function luminancia(color: string): number {
+function luminancia(color: string): number {
   const canales = aRgb(color);
   if (!canales) return 0;
   const [r, g, b] = canales.map((canal) => {
@@ -285,7 +285,7 @@ export function contraste(colorA: string, colorB: string): number {
 }
 
 /** El mínimo de la WCAG para texto normal, que es el que se avisa. */
-export const CONTRASTE_MINIMO = 4.5;
+const CONTRASTE_MINIMO = 4.5;
 
 /** `#RRGGBB` → `[r, g, b]`, o `null` si el color no tiene esa forma. */
 function aRgb(color: string): [number, number, number] | null {
@@ -308,7 +308,7 @@ export function aHex(r: number, g: number, b: number): string {
 // --- La revisión de la plantilla ---
 
 /** Todo lo que hace falta para revisar una plantilla. */
-export interface RevisionPlantilla {
+interface RevisionPlantilla {
   campos: CamposCertificado;
   lienzo: LienzoPlantilla;
   /** Proporción (ancho/alto) de la imagen del diseño, si se pudo leer. */

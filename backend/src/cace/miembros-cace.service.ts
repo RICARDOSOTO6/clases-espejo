@@ -18,6 +18,8 @@ import {
   ActualizarMiembroCaceDto,
   CrearMiembroCaceDto,
 } from './dto/miembro-cace.dto';
+import { mensajeDeError } from '../common/mensaje-error';
+import { nombreCompleto } from '../common/nombre-completo';
 
 /**
  * Miembros de la CACE vistos desde el panel del presidente (fase 6).
@@ -305,7 +307,7 @@ export class MiembrosCaceService {
       throw new NotFoundException('Miembro de la CACE no encontrado');
     }
 
-    const nombre = this.nombreCompleto(miembro.usuario);
+    const nombre = nombreCompleto(miembro.usuario);
     const activo = dto.activo !== false;
 
     if (!activo && miembro.cargo !== CARGO_SECRETARIA) {
@@ -370,7 +372,7 @@ export class MiembrosCaceService {
       return { enviado: true, aviso: null };
     } catch (error) {
       this.logger.error(
-        `No se pudieron enviar las credenciales de secretaría a ${correo}: ${this.mensajeDe(error)}`,
+        `No se pudieron enviar las credenciales de secretaría a ${correo}: ${mensajeDeError(error)}`,
       );
       this.logger.warn(
         `Contraseña provisional de ${correo}: ${password} (el sistema pedirá cambiarla al entrar)`,
@@ -402,7 +404,7 @@ export class MiembrosCaceService {
     return {
       id: miembro.id,
       usuarioId: miembro.usuario.id,
-      nombre: this.nombreCompleto(miembro.usuario),
+      nombre: nombreCompleto(miembro.usuario),
       correo: miembro.usuario.correo,
       cargo: miembro.cargo,
       etiquetaCargo: this.etiquetaCargo(miembro.cargo),
@@ -416,17 +418,5 @@ export class MiembrosCaceService {
 
   private etiquetaCargo(cargo: string): string {
     return ETIQUETA_CARGO[cargo] ?? cargo;
-  }
-
-  private nombreCompleto(usuario: {
-    nombres: string;
-    apellidoPaterno: string;
-    apellidoMaterno: string;
-  }): string {
-    return `${usuario.nombres} ${usuario.apellidoPaterno} ${usuario.apellidoMaterno}`.trim();
-  }
-
-  private mensajeDe(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
   }
 }

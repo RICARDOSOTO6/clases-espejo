@@ -6,13 +6,6 @@
  */
 
 // --- Solicitudes y su doble revisión ---
-export const ESTADOS_SOLICITUD = [
-  'PENDIENTE',
-  'APROBADA_POR_ORIGEN',
-  'APROBADA',
-  'RECHAZADA',
-  'CADUCADA',
-];
 export const ESTADO_SOLICITUD_PENDIENTE = 'PENDIENTE';
 export const ESTADO_SOLICITUD_APROBADA_POR_ORIGEN = 'APROBADA_POR_ORIGEN';
 export const ESTADO_SOLICITUD_APROBADA = 'APROBADA';
@@ -29,17 +22,10 @@ export const ESTADOS_SOLICITUD_EN_REVISION: string[] = [
   ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
 ];
 
-export const ETAPAS_REVISION = ['REVISION_ORIGEN', 'REVISION_DESTINO'];
 export const ETAPA_REVISION_ORIGEN = 'REVISION_ORIGEN';
 export const ETAPA_REVISION_DESTINO = 'REVISION_DESTINO';
 
 // --- Proyecto ---
-export const ESTADOS_PROYECTO = [
-  'EN_PLANIFICACION',
-  'EN_CURSO',
-  'FINALIZADO',
-  'CANCELADO',
-];
 export const ESTADO_PROYECTO_INICIAL = 'EN_PLANIFICACION';
 export const ESTADO_PROYECTO_FINALIZADO = 'FINALIZADO';
 export const ESTADO_PROYECTO_CANCELADO = 'CANCELADO';
@@ -55,7 +41,6 @@ export const ESTADOS_PLANIFICACION = ['BORRADOR', 'EN_REVISION', 'APROBADA'];
 export const ESTADO_PLANIFICACION_INICIAL = 'BORRADOR';
 
 // --- Reporte de clase ---
-export const ESTADOS_REPORTE_CLASE = ['BORRADOR', 'EN_REVISION', 'CONFIRMADO'];
 export const ESTADO_REPORTE_BORRADOR = 'BORRADOR';
 export const ESTADO_REPORTE_EN_REVISION = 'EN_REVISION';
 export const ESTADO_REPORTE_CONFIRMADO = 'CONFIRMADO';
@@ -81,12 +66,6 @@ export const ESTATUS_CONFIRMADA = 'CONFIRMADA';
  * inactiva (sin agentes activos) y seguir aprobada. Este estado es el que
  * explica **por qué** una institución no puede operar.
  */
-export const ESTADOS_CACE: string[] = [
-  'PENDIENTE',
-  'APROBADA',
-  'RECHAZADA',
-  'VETADA',
-];
 export const ESTADO_CACE_PENDIENTE = 'PENDIENTE';
 export const ESTADO_CACE_APROBADA = 'APROBADA';
 export const ESTADO_CACE_RECHAZADA = 'RECHAZADA';
@@ -98,11 +77,6 @@ export const ESTADO_CACE_VETADA = 'VETADA';
  * presidente lo autoriza. La solicitud nace PENDIENTE y solo se resuelve una
  * vez: aprobada (y entonces se borra) o rechazada (con su motivo).
  */
-export const ESTADOS_SOLICITUD_BORRADO: string[] = [
-  'PENDIENTE',
-  'APROBADA',
-  'RECHAZADA',
-];
 export const ESTADO_BORRADO_PENDIENTE = 'PENDIENTE';
 export const ESTADO_BORRADO_APROBADA = 'APROBADA';
 export const ESTADO_BORRADO_RECHAZADA = 'RECHAZADA';
@@ -113,11 +87,6 @@ export const ESTADO_BORRADO_RECHAZADA = 'RECHAZADA';
  * presidencia y suplencia comparten capacidades (`common/capacidades.ts`), por
  * eso el rol se resuelve con una sola comparación.
  */
-export const CARGOS_MIEMBRO_CACE: string[] = [
-  'PRESIDENTE',
-  'SUPLENTE',
-  'SECRETARIA',
-];
 export const CARGO_PRESIDENTE = 'PRESIDENTE';
 export const CARGO_SUPLENTE = 'SUPLENTE';
 export const CARGO_SECRETARIA = 'SECRETARIA';

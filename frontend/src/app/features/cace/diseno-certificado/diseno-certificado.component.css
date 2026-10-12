@@ -1,48 +1,60 @@
 /* --- Panel de diseño del certificado ---
-   Tres columnas: herramientas y versiones (izquierda), la hoja (centro) y las
-   propiedades (derecha). El lienzo se queda con ~65 % del ancho (la hoja, con
-   ~61 %): es lo que se mira; las otras dos columnas son raíles de herramientas,
-   y por eso van en tarjetas compactas.
-
-   Las piezas reutilizables (tarjetas, viñetas, campos, semáforo de la salud y
-   tabla de versiones) viven en `styles.css`, con el resto del sistema. Aquí
-   queda solo lo que es del editor: las columnas, la hoja con su sombra, los
-   huecos y el zoom. */
+   Tres columnas fijas (herramientas 20%, lienzo 55%, propiedades 25%).
+   Todo el color de acento sale del tema activo (var(--accent)); nada de azules
+   clavados a mano. */
 
 .diseno {
   display: grid;
-  /* El lienzo se queda con el ~65 % del ancho (y la hoja, con el ~61 %): las
-     laterales son raíles de herramientas, no columnas de contenido. */
-  grid-template-columns: minmax(140px, 14%) minmax(0, 1fr) minmax(190px, 19%);
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
   align-items: start;
 }
 
-@media (max-width: 900px) {
-  .diseno {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.columna {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
+/* Las columnas de herramientas y propiedades se aplanan: sus tarjetas pasan a
+   ser celdas del mosaico. La del editor ocupa todo el ancho. */
+.columna--herramientas,
+.columna--propiedades {
+  display: contents;
 }
 
 .columna--editor {
+  display: block;
+  grid-column: 1 / -1;
   position: relative;
+  background: var(--lienzo-fondo, #f3f4f6);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
 }
 
-/* --- La mesa de trabajo y la hoja --- */
+/* Títulos de bloque en mayúsculas pequeñas. */
+.diseno .panel-titulo {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* Cada bloque funcional es una tarjeta del mosaico. */
+.diseno .panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 0;
+  min-width: 0;
+}
+
+/* --- Mesa de trabajo y hoja --- */
 
 .lienzo-mesa {
   position: relative;
   padding: var(--space-5) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--lienzo-fondo);
+  border-radius: 8px;
+  background: var(--lienzo-fondo, #f3f4f6);
   overflow: auto;
 }
 
@@ -50,14 +62,16 @@
   cursor: crosshair;
 }
 
-/* La hoja: sin borde, con sombra. Es lo que le da el aire de papel. */
+/* La hoja: papel flotando sobre la mesa gris. */
 .lienzo {
   position: relative;
   container-type: inline-size;
   overflow: hidden;
   background-color: #fff;
-  border-radius: 3px;
-  box-shadow: var(--shadow-card-elevated), 0 1px 2px rgba(15, 23, 42, 0.18);
+  border-radius: 4px;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.08);
   touch-action: none;
 }
 
@@ -69,8 +83,6 @@
   cursor: crosshair;
 }
 
-/* En modo edición la cruz manda, también encima de los huecos: el arrastre
-   dibuja uno nuevo en vez de mover el que ya está. */
 .lienzo--marcando .caja {
   cursor: crosshair;
 }
@@ -84,16 +96,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  /* Recorta, nunca deforma. */
   object-fit: cover;
   object-position: center;
-  /* El diseño es el fondo: los gestos los recoge el lienzo. */
   pointer-events: none;
   user-select: none;
 }
 
-/* El velo del modo edición: oscurece el diseño para que se note que el
-   siguiente arrastre dibuja un hueco. Las cajas se pintan por encima. */
 .lienzo-velo {
   position: absolute;
   inset: 0;
@@ -102,27 +110,25 @@
   pointer-events: none;
 }
 
-/* Guía del margen seguro (el 5 % por lado, unos 1,5 cm). */
 .lienzo-margen {
   position: absolute;
   inset: 5%;
   z-index: 1;
-  border: 1px dashed rgba(31, 58, 95, 0.45);
+  border: 1px dashed var(--border);
   border-radius: 2px;
   pointer-events: none;
 }
 
-/* El rectángulo que se está dibujando ahora mismo. */
 .rectangulo {
   position: absolute;
   z-index: 4;
-  border: 2px dashed #3b82f6;
+  border: 2px dashed var(--accent);
   border-radius: 6px;
-  background: rgba(59, 130, 246, 0.2);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   pointer-events: none;
 }
 
-/* --- Cada hueco --- */
+/* --- Cada hueco: punteado del tema, esquinas con asidero --- */
 
 .caja {
   position: absolute;
@@ -130,22 +136,21 @@
   box-sizing: border-box;
   cursor: grab;
   user-select: none;
-  border: 2px solid rgba(59, 130, 246, 0.55);
+  border: 2px dashed var(--accent);
   border-radius: 6px;
-  background: rgba(59, 130, 246, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .caja:hover,
 .caja--seleccionada {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .caja--seleccionada {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
-/* El contenido va en su propia capa: la caja deja salir los tiradores. */
 .caja-contenido {
   position: absolute;
   inset: 0;
@@ -159,7 +164,6 @@
   display: block;
   width: 100%;
   line-height: 1.15;
-  /* El nombre puede venir partido en dos líneas: se respeta el salto. */
   white-space: pre-line;
   overflow-wrap: break-word;
 }
@@ -167,8 +171,6 @@
 .caja-qr {
   width: 100%;
   height: 100%;
-  /* El QR se dibuja cuadrado, inscrito en el hueco (igual que en el PDF): un
-     hueco con otra proporción no lo deforma. */
   object-fit: contain;
   background: #ffffff;
 }
@@ -181,21 +183,21 @@
   color: var(--text-aux);
 }
 
-/* El aviso del dato, justo encima de su hueco. */
+/* El aviso del dato: pequeño y sutil. */
 .caja-aviso {
   position: absolute;
-  top: -9px;
-  right: -9px;
+  top: -8px;
+  right: -8px;
   z-index: 6;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border: 1px solid var(--warning-border);
   border-radius: 50%;
   background: var(--warning-bg);
   color: var(--warning);
-  font-size: 0.66rem;
+  font-size: 0.56rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -206,8 +208,6 @@
   color: var(--danger);
 }
 
-/* Puntos de las esquinas: asoman al pasar el ratón, para indicar que el hueco
-   se puede redimensionar. */
 .caja-esquinas {
   position: absolute;
   inset: 0;
@@ -226,10 +226,10 @@
   position: absolute;
   width: 9px;
   height: 9px;
-  border: 2px solid #3b82f6;
+  border: 2px solid var(--accent);
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.2);
 }
 
 .caja-esquinas i:nth-child(1) {
@@ -252,7 +252,6 @@
   bottom: -5px;
 }
 
-/* Tirador de la esquina inferior derecha: agranda el hueco. */
 .tirador {
   position: absolute;
   right: -6px;
@@ -260,36 +259,36 @@
   z-index: 5;
   width: 14px;
   height: 14px;
-  border: 2px solid #3b82f6;
+  border: 2px solid var(--accent);
   border-radius: 3px;
   background: #ffffff;
   cursor: nwse-resize;
 }
 
-/* --- El zoom, flotando en la esquina de la mesa --- */
+/* --- Zoom flotante en píldora --- */
 
 .zoom {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   z-index: 5;
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: 20px;
   background: var(--surface);
-  box-shadow: var(--shadow-card-elevated);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .zoom-boton,
 .zoom-nivel {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 10px;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: 16px;
   background: transparent;
   color: var(--accent-texto);
   font: inherit;
@@ -300,8 +299,8 @@
 }
 
 .zoom-nivel {
-  min-width: 46px;
-  font-size: 0.72rem;
+  min-width: 48px;
+  font-size: 0.74rem;
 }
 
 .zoom-boton:hover:not(:disabled),
@@ -312,4 +311,109 @@
 .zoom-boton:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* --- Piezas propias del editor (sobre las clases compartidas) --- */
+
+/* Botón de subir diseño: label con pinta de botón primario. */
+.diseno .subir-diseno {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.diseno .subir-diseno:hover {
+  background: var(--accent-hover);
+}
+
+.diseno .subir-diseno input[type='file'] {
+  display: none;
+}
+
+/* Botones de bloque, ancho completo. */
+.diseno .columna--herramientas .btn-ancho,
+.diseno .columna--propiedades .btn-ancho {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Selector de alineación: botones pequeños y activos con el tema. */
+.diseno .panel-fila .btn-mini {
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.diseno .panel-fila .btn-mini.activo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Campos en dos columnas dentro de propiedades. */
+.diseno .columna--propiedades .campo {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.diseno .campo-unidad {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Salud del diseño: aviso amarillo pálido. */
+.diseno .panel--salud {
+  border-left: 4px solid var(--warning);
+  border-radius: 8px;
+  background: var(--warning-bg);
+  padding: 12px 14px;
+}
+
+.diseno .salud-resumen {
+  font-weight: 700;
+}
+
+/* Guardar: ancho acotado y centrado. */
+.diseno .panel--salud .btn-primary {
+  width: 100%;
+  max-width: 250px;
+  margin: 12px auto 0;
+  display: block;
+}
+
+/* Viñetas y notas con aire, sin saturar. */
+.diseno .vinetas {
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.diseno .nota-pie {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Acordeón de ayuda del lienzo (cerrado por defecto). */
+.diseno .ayuda-lienzo {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.diseno .ayuda-lienzo summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent-texto);
+}
+
+.diseno .ayuda-lienzo[open] .vinetas {
+  font-size: 12px;
 }

@@ -78,18 +78,8 @@ export interface CertificadoVista {
   codigoVerificacion: string;
 }
 
-/**
- * Un alumno al que no se le puede enviar el certificado por correo porque en la
- * lista no hay dirección. La pantalla los nombra para poder añadírsela, en vez
- * de que el envío falle en silencio.
- */
-export interface AlumnoSinCorreo {
-  alumnoId: number;
-  alumno: string;
-}
-
 /** Una línea del resultado del envío por correo. */
-export interface EnvioCertificado {
+interface EnvioCertificado {
   certificadoId: number;
   folio: string;
   alumno: string;
@@ -98,7 +88,7 @@ export interface EnvioCertificado {
 }
 
 /** Un certificado que no se envió, con el motivo (ya enviado, anulado…). */
-export interface EnvioOmitido {
+interface EnvioOmitido {
   certificadoId: number;
   folio: string;
   alumno: string;
@@ -106,7 +96,7 @@ export interface EnvioOmitido {
 }
 
 /** Un envío que el servidor de correo rechazó; el resto del lote sigue. */
-export interface EnvioFallido {
+interface EnvioFallido {
   certificadoId: number;
   folio: string;
   alumno: string;

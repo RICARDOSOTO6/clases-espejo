@@ -12,8 +12,6 @@
  *   ahí sí corresponde la zona del usuario.
  */
 
-const MS_DIA = 24 * 60 * 60 * 1000;
-
 /** Texto `YYYY-MM-DD` del día que representa una fecha de calendario. */
 export function fechaTexto(valor: string | Date | null | undefined): string {
   if (!valor) return '';
@@ -64,44 +62,6 @@ export function horaTexto(valor: string | Date | null | undefined): string {
   const d = fechaDeInstante(valor);
   if (!d) return '';
   return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-}
-
-/** Días que faltan hasta un día de calendario (negativo si ya pasó). */
-export function diasHastaFecha(
-  valor: string | Date | null | undefined,
-  ahora: Date = new Date(),
-): number {
-  const texto = fechaTexto(valor);
-  if (!texto) return 0;
-  const objetivo = new Date(`${texto}T12:00:00`).getTime();
-  const hoy = new Date(
-    ahora.getFullYear(),
-    ahora.getMonth(),
-    ahora.getDate(),
-    12,
-  ).getTime();
-  return Math.round((objetivo - hoy) / MS_DIA);
-}
-
-/** Días que faltan hasta un instante, contando su día local. */
-export function diasHastaInstante(
-  valor: string | Date,
-  ahora: Date = new Date(),
-): number {
-  const d = new Date(valor);
-  const objetivo = new Date(
-    d.getFullYear(),
-    d.getMonth(),
-    d.getDate(),
-    12,
-  ).getTime();
-  const hoy = new Date(
-    ahora.getFullYear(),
-    ahora.getMonth(),
-    ahora.getDate(),
-    12,
-  ).getTime();
-  return Math.round((objetivo - hoy) / MS_DIA);
 }
 
 function fechaDeInstante(

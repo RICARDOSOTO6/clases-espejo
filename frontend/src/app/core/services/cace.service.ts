@@ -21,11 +21,10 @@ import {
   RespuestaSolicitudBorrado,
   SolicitudesBorradoCace,
 } from '../models/cace-miembros.models';
-
-const API_URL = window.location.port === '4200' ? `http://${window.location.hostname}:3000` : '';
+import { API_URL } from '../api-url';
 
 /** Agente de la institución: es a quien se le avisa de la decisión. */
-export interface AgenteContacto {
+interface AgenteContacto {
   nombre: string;
   correo: string;
   cargo: string;
@@ -92,10 +91,6 @@ export class CaceService {
   }
 
   // --- Configuración: textos, tema y logo ---
-
-  obtenerConfiguracion(): Observable<ConfiguracionCace> {
-    return this.http.get<ConfiguracionCace>(`${API_URL}/cace/configuracion`);
-  }
 
   actualizarConfiguracion(
     dto: ConfiguracionCaceDto,

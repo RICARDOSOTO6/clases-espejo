@@ -22,7 +22,7 @@
  */
 
 /** Acción que la guía le pide a la pantalla al entrar en un paso. */
-export type AccionGuia =
+type AccionGuia =
   | 'abrir-solicitud'
   | 'cerrar-solicitud'
   | 'abrir-invitacion'
@@ -320,9 +320,17 @@ export const GUIA_AGENTE: GuiaSeccion[] = [
         selector: '.welcome-action',
         titulo: 'Empieza invitando a un docente',
         texto:
-          'Los docentes no se registran solos: tú los invitas y ellos activan su cuenta desde el correo. Se abre un formulario con dos datos: su correo y su número de empleado.',
+          'Los docentes no se registran solos: tú los invitas y ellos activan su cuenta desde el correo.',
       },
       {
+        accion: 'abrir-invitacion',
+        selector: '#d-correo',
+        titulo: 'El formulario de invitación',
+        texto:
+          'Solo hacen falta dos datos: el correo del docente y su número de empleado. Al enviar, le llega un correo con un enlace que solo puede usar una vez.',
+      },
+      {
+        accion: 'cerrar-invitacion',
         selector: '#docentes',
         titulo: 'Docentes de tu institución',
         texto:
@@ -435,12 +443,14 @@ export const GUIA_AGENTE: GuiaSeccion[] = [
     resumen: 'Invitar docentes y qué puedes hacer con cada uno.',
     pasos: [
       {
-        selector: '.welcome-action',
+        accion: 'abrir-invitacion',
+        selector: '#d-correo',
         titulo: 'Invita desde aquí',
         texto:
           'Se abre un formulario con dos datos: el correo del docente y su número de empleado. Le llega un correo con un enlace que solo puede usar una vez.',
       },
       {
+        accion: 'cerrar-invitacion',
         selector: '#docentes',
         titulo: 'Quiénes son tus docentes',
         texto:

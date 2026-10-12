@@ -14,6 +14,7 @@ import {
   TIPOS_DOCUMENTO,
 } from '../../../core/constants/catalogos';
 import { esTextoValido } from '../../../core/utils/validators';
+import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
 @Component({
   selector: 'app-activate',
@@ -72,13 +73,12 @@ export class ActivateComponent implements OnInit {
   }
 
   mensajeDe(campo: string): string | null {
-    const control = this.form.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['minlength']) return 'Mínimo 6 caracteres';
-    if (control.errors['textoInvalido'])
-      return 'Escribe un valor válido (solo letras, sin secuencias aleatorias)';
-    return null;
+    return mensajeDeControl(this.form, campo, {
+      required: 'Este campo es obligatorio',
+      minlength: 'Mínimo 6 caracteres',
+      textoInvalido:
+        'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
+    });
   }
 
   get passwordsNoCoinciden(): boolean {

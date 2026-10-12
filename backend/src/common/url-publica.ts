@@ -28,7 +28,7 @@ const LOCALHOST = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?/i;
 const HOST_VALIDO = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?$/i;
 
 /** Valores de `FRONTEND_URL` (admite varios separados por coma). */
-export function origenesConfigurados(): string[] {
+function origenesConfigurados(): string[] {
   return (process.env.FRONTEND_URL ?? '')
     .split(',')
     .map((origen) => origen.trim())
@@ -36,14 +36,14 @@ export function origenesConfigurados(): string[] {
 }
 
 /** Hosts permitidos para derivar del origen de la petición (vacío = cualquiera). */
-export function hostsPermitidos(): string[] {
+function hostsPermitidos(): string[] {
   return (process.env.URLS_PERMITIDAS ?? '')
     .split(',')
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
 }
 
-export function esLocalhost(url: string): boolean {
+function esLocalhost(url: string): boolean {
   return LOCALHOST.test(url);
 }
 

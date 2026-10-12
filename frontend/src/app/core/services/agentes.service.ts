@@ -6,11 +6,7 @@ import {
   InviteDocenteDto,
   InviteResponse,
 } from '../models/auth.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 export interface HistorialClase {
   proyectoId: number;

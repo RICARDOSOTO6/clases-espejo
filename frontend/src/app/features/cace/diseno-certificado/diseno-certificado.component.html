@@ -9,15 +9,14 @@
 -->
 <div class="diseno">
   <!-- ============ 1. Herramientas y acciones ============ -->
-  <div class="columna columna--herramientas" data-columna="herramientas">
+  <div class="columna--herramientas" data-columna="herramientas">
     <!-- La imagen terminada: el diseño entero, hecho fuera. -->
     <div class="panel">
       <h3 class="panel-titulo">Imagen del diseño</h3>
-      <label class="campo" for="certificado-fondo">
-        <span>Subir o cambiar el diseño</span>
+      <label class="subir-diseno" for="certificado-fondo">
+        <span>Subir o cambiar diseño</span>
         <input
           id="certificado-fondo"
-          class="file-input"
           type="file"
           accept="image/png,image/jpeg,image/webp"
           [disabled]="subiendoFondo()"
@@ -236,7 +235,7 @@
   </div>
 
   <!-- ============ 2. El lienzo (la hoja) ============ -->
-  <div class="columna columna--editor" data-columna="editor">
+  <div class="columna--editor" data-columna="editor">
     <!-- El zoom, flotando en la esquina de la hoja. Va fuera de la mesa para
          que no se vaya con el desplazamiento al acercar. -->
     <div class="zoom" role="group" aria-label="Zoom del lienzo">
@@ -313,7 +312,6 @@
             <div
               class="caja"
               [class.caja--seleccionada]="esSeleccionada(item.clave)"
-              [class.caja--qr]="item.clave === 'qr'"
               [attr.data-campo]="item.clave"
               [attr.data-x]="item.caja.x"
               [attr.data-y]="item.caja.y"
@@ -389,24 +387,27 @@
       </div>
     </div>
 
-    <!-- Instrucciones cortas, y la nota del lienzo al pie y en gris. -->
-    <ul class="vinetas">
-      <li>
-        Elige el hueco en <strong>«Marcar huecos»</strong> y arrastra el ratón
-        sobre la hoja para dibujarlo.
-      </li>
-      <li>Mueve el rectángulo arrastrándolo y agrándalo tirando de la esquina.</li>
-      <li>La imagen se recorta por el centro: nunca se estira.</li>
-    </ul>
-    <p class="nota-pie">
-      Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px (A4 horizontal a
-      300 ppp). Es la misma proporción y la misma escala que la hoja del PDF: lo
-      que se ve aquí es lo que sale impreso.
-    </p>
+    <!-- Instrucciones, plegadas por defecto para no saturar. -->
+    <details class="ayuda-lienzo">
+      <summary>¿Cómo marcar los huecos?</summary>
+      <ul class="vinetas">
+        <li>
+          Elige el hueco en <strong>«Marcar huecos»</strong> y arrastra el ratón
+          sobre la hoja para dibujarlo.
+        </li>
+        <li>Mueve el rectángulo arrastrándolo y agrándalo tirando de la esquina.</li>
+        <li>La imagen se recorta por el centro: nunca se estira.</li>
+      </ul>
+      <p class="nota-pie">
+        Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px (A4 horizontal a
+        300 ppp). Es la misma proporción y la misma escala que la hoja del PDF: lo
+        que se ve aquí es lo que sale impreso.
+      </p>
+    </details>
   </div>
 
   <!-- ============ 3. Propiedades ============ -->
-  <aside class="columna columna--propiedades" data-columna="propiedades" aria-label="Ajustes del certificado">
+  <aside class="columna--propiedades" data-columna="propiedades" aria-label="Ajustes del certificado">
     <!-- Marcar los huecos: desde aquí se elige el que se va a dibujar. -->
     <div class="panel">
       <h3 class="panel-titulo">Marcar huecos</h3>

@@ -25,7 +25,6 @@ import { fechaHoraLarga } from '../../../core/utils/fecha.util';
 import {
   ALINEACIONES,
   ANCHO_PT,
-  LIENZO_POR_DEFECTO,
   LienzoPlantilla,
   TAMANO_MAXIMO,
   TAMANO_MINIMO,
@@ -228,7 +227,6 @@ export class DisenoCertificadoComponent {
   readonly tamanoMinimo = TAMANO_MINIMO;
   readonly tamanoMaximo = TAMANO_MAXIMO;
   readonly minimoLegible = TAMANO_MINIMO_NOMBRE;
-  readonly lienzoPorDefecto = LIENZO_POR_DEFECTO;
 
   constructor() {
     // Al cambiar de versión se empieza de cero y la vista previa vuelve a los

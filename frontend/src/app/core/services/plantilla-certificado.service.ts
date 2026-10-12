@@ -6,20 +6,16 @@ import {
   EstadoPlantillaCertificado,
   PlantillaCertificado,
 } from '../models/certificado.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 /** Lo que responde guardar o subir el diseño: la versión nueva ya activa. */
-export interface RespuestaPlantilla {
+interface RespuestaPlantilla {
   mensaje: string;
   plantilla: PlantillaCertificado;
 }
 
 /** Lo que responde el borrado de una versión suelta. */
-export interface RespuestaBorradoPlantilla {
+interface RespuestaBorradoPlantilla {
   mensaje: string;
   id: number;
   version: number;

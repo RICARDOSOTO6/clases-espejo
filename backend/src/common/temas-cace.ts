@@ -11,7 +11,7 @@
  */
 export const TEMAS_CACE = ['AZUL', 'VERDE', 'VINO', 'OSCURO'] as const;
 
-export type TemaCace = (typeof TEMAS_CACE)[number];
+type TemaCace = (typeof TEMAS_CACE)[number];
 
 /** Tema por defecto: el azul actual, para que nada cambie si no se elige otro. */
 export const TEMA_CACE_POR_DEFECTO: TemaCace = 'AZUL';

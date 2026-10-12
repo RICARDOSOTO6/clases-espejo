@@ -1,4 +1,4 @@
-export interface Pais {
+interface Pais {
   codigo: string; // ISO 3166-1 alpha-2
   nombre: string;
   prefijo: string; // código telefónico internacional
@@ -263,3 +263,15 @@ export const PERIODOS_ESCOLARES = [
   '2026-1',
   '2026-2',
 ];
+
+/** Etiqueta del estado de una clase espejo. Estaba copiada en tres pantallas. */
+const ETIQUETAS_ESTADO_PROYECTO: Record<string, string> = {
+  EN_PLANIFICACION: 'En planificación',
+  EN_CURSO: 'En curso',
+  FINALIZADO: 'Finalizado',
+  CANCELADO: 'Cancelado',
+};
+
+export function estadoProyectoLabel(estado: string): string {
+  return ETIQUETAS_ESTADO_PROYECTO[estado] ?? estado;
+}

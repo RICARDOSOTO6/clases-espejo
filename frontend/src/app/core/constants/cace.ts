@@ -13,7 +13,7 @@ export type TemaCace = 'AZUL' | 'VERDE' | 'VINO' | 'OSCURO';
 /** Tema inicial y de respaldo: el azul con el que ya se veía la aplicación. */
 export const TEMA_CACE_POR_DEFECTO: TemaCace = 'AZUL';
 
-export interface OpcionTema {
+interface OpcionTema {
   valor: TemaCace;
   etiqueta: string;
   descripcion: string;

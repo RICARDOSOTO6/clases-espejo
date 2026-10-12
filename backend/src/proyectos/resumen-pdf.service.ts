@@ -10,7 +10,6 @@ import PDFDocument from 'pdfkit';
 
 const AZUL = '#1F3A5F';
 const GRIS = '#555555';
-const VERDE = '#16A34A';
 
 /** Deja solo caracteres que la fuente estándar del PDF (WinAnsi) puede dibujar. */
 function seguro(texto: unknown): string {

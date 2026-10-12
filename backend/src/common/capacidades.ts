@@ -7,7 +7,7 @@
  * pregunta por la **capacidad**, no por el rol.
  */
 
-export const ROLES = [
+const ROLES = [
   'DOCENTE',
   'AGENTE',
   'PRESIDENTE_CACE',
@@ -15,7 +15,7 @@ export const ROLES = [
 ] as const;
 export type Rol = (typeof ROLES)[number];
 
-export const CAPACIDADES = [
+const CAPACIDADES = [
   /** Aprobar, rechazar y vetar instituciones. */
   'aprobarInstituciones',
   /**
@@ -87,7 +87,7 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
   ],
 };
 
-export function esRolValido(rol: string | null | undefined): rol is Rol {
+function esRolValido(rol: string | null | undefined): rol is Rol {
   return !!rol && (ROLES as readonly string[]).includes(rol);
 }
 

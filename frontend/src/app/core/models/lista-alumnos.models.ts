@@ -2,7 +2,7 @@
 export type OrigenLista = 'EXCEL' | 'CSV' | 'PEGADO';
 
 /** Una fila ya leída, antes de guardarla (puede traer avisos). */
-export interface FilaLista {
+interface FilaLista {
   nombre: string;
   matricula: string;
   correo: string;

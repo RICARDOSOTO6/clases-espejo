@@ -7,7 +7,7 @@ export interface Materia {
   activa: boolean;
 }
 
-export interface UsuarioDocente {
+interface UsuarioDocente {
   id: number;
   nombres: string;
   apellidoPaterno: string;

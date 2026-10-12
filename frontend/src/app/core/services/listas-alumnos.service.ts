@@ -7,11 +7,7 @@ import {
   OrigenLista,
   PrevisualizacionLista,
 } from '../models/lista-alumnos.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 /**
  * Lista de alumnos de una clase espejo, por institución.

@@ -11,7 +11,7 @@
  */
 
 /** Niveles de urgencia, de más a menos apremiante. */
-export const URGENCIAS = ['VENCIDA', 'CRITICA', 'PROXIMA', 'NORMAL'] as const;
+const URGENCIAS = ['VENCIDA', 'CRITICA', 'PROXIMA', 'NORMAL'] as const;
 export type Urgencia = (typeof URGENCIAS)[number];
 
 /**
@@ -82,11 +82,6 @@ export function urgenciaSegunDias(
   if (dias <= critico) return 'CRITICA';
   if (dias <= proximo) return 'PROXIMA';
   return 'NORMAL';
-}
-
-/** Urgencia de una fecha concreta. */
-export function urgenciaDeFecha(fecha: Date, ahora: Date = new Date()): Urgencia {
-  return urgenciaSegunDias(diasHasta(fecha, ahora));
 }
 
 /**

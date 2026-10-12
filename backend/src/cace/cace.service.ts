@@ -7,6 +7,7 @@ import {
   generarDniUnico,
   generarPasswordProvisional,
 } from './credenciales-cace';
+import { mensajeDeError } from '../common/mensaje-error';
 
 /**
  * Alta automática de la presidencia de la CACE (fase 0).
@@ -35,7 +36,7 @@ export class CaceService implements OnApplicationBootstrap {
       await this.asegurarPresidente();
     } catch (error) {
       this.logger.error(
-        `No se pudo dar de alta a la presidencia de la CACE: ${this.mensajeDe(error)}`,
+        `No se pudo dar de alta a la presidencia de la CACE: ${mensajeDeError(error)}`,
       );
     }
   }
@@ -161,15 +162,11 @@ export class CaceService implements OnApplicationBootstrap {
       this.logger.log(`Credenciales de presidencia enviadas a ${correo}.`);
     } catch (error) {
       this.logger.error(
-        `No se pudieron enviar las credenciales a ${correo}: ${this.mensajeDe(error)}`,
+        `No se pudieron enviar las credenciales a ${correo}: ${mensajeDeError(error)}`,
       );
       this.logger.warn(
         `Contraseña provisional de ${correo}: ${password} (el sistema pedirá cambiarla al entrar)`,
       );
     }
-  }
-
-  private mensajeDe(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
   }
 }

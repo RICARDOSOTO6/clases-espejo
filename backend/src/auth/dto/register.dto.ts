@@ -7,6 +7,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { EsTextoValido } from '../../common/validators/es-texto-valido';
+import { DatosPersonaDto } from './datos-persona.dto';
 
 /**
  * Alta de un agente de internacionalización.
@@ -20,30 +21,7 @@ import { EsTextoValido } from '../../common/validators/es-texto-valido';
  * - **Crear una institución nueva** (sin `institucionId`): entonces sí hacen
  *   falta sus datos, y nace **pendiente** de aprobación por la CACE.
  */
-export class RegisterDto {
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  nombres: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  apellidoPaterno: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  apellidoMaterno: string;
-
-  @IsString()
-  @IsNotEmpty()
-  tipoDocumento: string;
-
-  @IsString()
-  @IsNotEmpty()
-  dni: string;
-
+export class RegisterDto extends DatosPersonaDto {
   @IsEmail()
   correo: string;
 

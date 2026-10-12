@@ -11,10 +11,10 @@ import {
 } from 'class-validator';
 
 /** De dónde salió la lista, para poder rastrearlo después. */
-export const ORIGENES_LISTA = ['EXCEL', 'CSV', 'PEGADO'] as const;
+const ORIGENES_LISTA = ['EXCEL', 'CSV', 'PEGADO'] as const;
 export type OrigenLista = (typeof ORIGENES_LISTA)[number];
 
-export class AlumnoDto {
+class AlumnoDto {
   @IsString()
   @MaxLength(120)
   nombre!: string;

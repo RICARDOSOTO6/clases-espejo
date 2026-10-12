@@ -7,3 +7,24 @@
 
 # Perfiles de Chrome de las pruebas en el navegador
 .tmp-chrome*/
+
+# Las skills de Prisma viven una sola vez, en backend/.agents/skills. Estas dos
+# rutas son *junctions* de Windows que apuntan allí: se ignoran para que git no
+# vuelva a versionar 142 copias del mismo contenido (auditoría de código muerto
+# v5, CM-22). Las junctions siguen funcionando en disco.
+backend/.claude/skills/
+backend/.windsurf/skills/
+
+# Versiones superadas del informe técnico: la vigente (v4) sí se versiona, las
+# anteriores no (auditoría de código muerto v5, CM-23). Los archivos se quedan
+# en disco; solo salen del control de versiones.
+Informe_Tecnico_Clases_Espejo_corregido.docx
+Informe_Tecnico_Clases_Espejo_v2.docx
+Informe_Tecnico_Clases_Espejo_v3.docx
+borradores no importante/
+
+# Herramientas de un solo uso que generaron ese informe: escriben en rutas
+# absolutas de C:\Users\ricar\ y no las referencia ningún documento. Se quedan
+# en disco. (contraste-certificado.py NO se toca: es un entregable.)
+generar_informe.py
+corregir_informe.py

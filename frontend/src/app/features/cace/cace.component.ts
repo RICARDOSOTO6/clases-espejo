@@ -36,9 +36,16 @@ import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { prepararLogo } from '../../core/utils/imagen.util';
+import { mensajeDeControl } from '../../core/utils/formulario.util';
 
 /** Decisión que exige motivo: el correo al agente lo lleva escrito. */
 type DecisionConMotivo = 'rechazar' | 'vetar';
+
+/** Siguiente número de orden libre de una lista (el último + 1). */
+function siguienteOrdenDe(items: { orden: number }[]): number {
+  const ordenes = items.map((item) => item.orden);
+  return ordenes.length === 0 ? 1 : Math.max(...ordenes) + 1;
+}
 
 /**
  * Peso máximo de la imagen original antes de prepararla. El navegador la reduce
@@ -104,9 +111,37 @@ export class CaceComponent implements OnInit, OnDestroy {
       : 'PRESIDENTE_CACE',
   );
 
+  /** ¿Se enseña esta sección en la pantalla actual? */
+  mostrarSeccion(
+    id:
+      | 'instituciones'
+      | 'miembros'
+      | 'presidencia'
+      | 'solicitudes'
+      | 'personalizacion'
+      | 'comunidad'
+      | 'premios'
+      | 'certificado',
+  ): boolean {
+    const solo = this.soloSeccion();
+    if (solo) {
+      return solo === id;
+    }
+    // Personalización y Certificado tienen página propia: en el panel general
+    // no se repiten (el menú lateral lleva a ellas).
+    return id !== 'personalizacion' && id !== 'certificado';
+  }
+
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly exito = signal<string | null>(null);
+
+  /**
+   * Página dedicada: al entrar por /cace/personalizacion o /cace/certificado
+   * se enseña solo esa sección a pantalla completa (la misma lógica y datos,
+   * sin mover el estado a otro componente).
+   */
+  readonly soloSeccion = signal<'personalizacion' | 'certificado' | null>(null);
 
   // --- Capacidades del rol (fase 6) ---
 
@@ -412,6 +447,13 @@ export class CaceComponent implements OnInit, OnDestroy {
 
 
   ngOnInit(): void {
+    const url = this.router.url;
+    if (url.startsWith('/cace/personalizacion')) {
+      this.soloSeccion.set('personalizacion');
+    } else if (url.startsWith('/cace/certificado')) {
+      this.soloSeccion.set('certificado');
+    }
+
     // Mientras no cambie la contraseña provisional, el panel no se usa. Las
     // secciones se cargan **después** de saber las capacidades: pedir datos que
     // el rol no puede ver acabaría en 403 (era el fallo de «Instituciones» en la
@@ -444,11 +486,10 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   mensajeDe(campo: 'actual' | 'nueva' | 'confirmar'): string | null {
-    const control = this.form.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['minlength']) return 'Mínimo 8 caracteres';
-    return null;
+    return mensajeDeControl(this.form, campo, {
+      required: 'Este campo es obligatorio',
+      minlength: 'Mínimo 8 caracteres',
+    });
   }
 
   submit(): void {
@@ -669,14 +710,11 @@ export class CaceComponent implements OnInit, OnDestroy {
   mensajeMiembro(
     campo: 'correo' | 'nombres' | 'apellidoPaterno',
   ): string | null {
-    const control = this.formMiembro.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['email']) {
-      return 'Escribe un correo válido, por ejemplo persona@universidad.edu';
-    }
-    if (control.errors['minlength']) return 'Escribe al menos 2 caracteres';
-    return null;
+    return mensajeDeControl(this.formMiembro, campo, {
+      required: 'Este campo es obligatorio',
+      email: 'Escribe un correo válido, por ejemplo persona@universidad.edu',
+      minlength: 'Escribe al menos 2 caracteres',
+    });
   }
 
   // --- Presidencia: elegir al sucesor y transmitir ---
@@ -723,7 +761,12 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Se intentó confirmar el cambio: a partir de aquí se enseñan los campos que faltan. */
   private readonly intentoPresidencia = signal(false);
 
-  /** Valida un campo del alta de la persona nueva, con el estilo del resto. */
+  /**
+   * Valida un campo del alta de la persona nueva, con el estilo del resto.
+   *
+   * No usa `mensajeDeControl` a propósito: aquí el aviso de campo vacío sale al
+   * intentar enviar (`intentoPresidencia`), no al tocar el campo.
+   */
   mensajePresidente(
     campo: 'correo' | 'nombres' | 'apellidoPaterno',
   ): string | null {
@@ -1328,10 +1371,9 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   mensajePersonalizacion(campo: 'lema' | 'descripcion'): string | null {
-    const control = this.formPersonalizacion.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['maxlength']) return 'El texto es demasiado largo';
-    return null;
+    return mensajeDeControl(this.formPersonalizacion, campo, {
+      maxlength: 'El texto es demasiado largo',
+    });
   }
 
   // --- Banderas de la comunidad: datos ---
@@ -1503,19 +1545,17 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   /** Siguiente número de orden libre (el último + 1). */
   private siguienteOrden(): number {
-    const ordenes = this.paises().map((pais) => pais.orden);
-    return ordenes.length === 0 ? 1 : Math.max(...ordenes) + 1;
+    return siguienteOrdenDe(this.paises());
   }
 
   mensajePais(campo: 'codigo' | 'nombre' | 'orden'): string | null {
-    const control = this.formPais.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['pattern']) return 'Dos letras, por ejemplo PT';
-    if (control.errors['minlength']) return 'Escribe el nombre del país';
-    if (control.errors['min'] || control.errors['max'])
-      return 'El orden va de 0 a 999';
-    return null;
+    return mensajeDeControl(this.formPais, campo, {
+      required: 'Este campo es obligatorio',
+      pattern: 'Dos letras, por ejemplo PT',
+      minlength: 'Escribe el nombre del país',
+      min: 'El orden va de 0 a 999',
+      max: 'El orden va de 0 a 999',
+    });
   }
 
   /** Bandera de un país: la arma el código ISO, igual que en docente y agente. */
@@ -1780,21 +1820,23 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   private siguienteOrdenPremio(): number {
-    const ordenes = this.premios().map((premio) => premio.orden);
-    return ordenes.length === 0 ? 1 : Math.max(...ordenes) + 1;
+    return siguienteOrdenDe(this.premios());
   }
 
   mensajePremio(
     campo: 'titulo' | 'descripcion' | 'anio' | 'otorgadoA' | 'orden',
   ): string | null {
-    const control = this.formPremio.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['minlength']) return 'Escribe al menos 3 caracteres';
-    if (control.errors['maxlength']) return 'El texto es demasiado largo';
-    if (control.errors['min'] || control.errors['max'])
-      return campo === 'anio' ? 'Escribe un año entre 1900 y 2100' : 'El orden va de 0 a 999';
-    return null;
+    const textoRango =
+      campo === 'anio'
+        ? 'Escribe un año entre 1900 y 2100'
+        : 'El orden va de 0 a 999';
+    return mensajeDeControl(this.formPremio, campo, {
+      required: 'Este campo es obligatorio',
+      minlength: 'Escribe al menos 3 caracteres',
+      maxlength: 'El texto es demasiado largo',
+      min: textoRango,
+      max: textoRango,
+    });
   }
 
   // --- Plantilla del certificado: datos ---

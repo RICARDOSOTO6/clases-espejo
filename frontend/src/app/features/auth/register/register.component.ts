@@ -20,6 +20,7 @@ import {
   TIPOS_DOCUMENTO,
 } from '../../../core/constants/catalogos';
 import { esTextoValido } from '../../../core/utils/validators';
+import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
 /** Campos de la institución: solo se exigen cuando se crea una nueva. */
 const CAMPOS_INSTITUCION = [
@@ -225,14 +226,13 @@ export class RegisterComponent {
   }
 
   mensajeDe(campo: string): string | null {
-    const control = this.form.get(campo);
-    if (!control || !control.touched || !control.errors) return null;
-    if (control.errors['required']) return 'Este campo es obligatorio';
-    if (control.errors['email']) return 'Introduce un correo válido';
-    if (control.errors['minlength']) return 'Mínimo 6 caracteres';
-    if (control.errors['textoInvalido'])
-      return 'Escribe un valor válido (solo letras, sin secuencias aleatorias)';
-    return null;
+    return mensajeDeControl(this.form, campo, {
+      required: 'Este campo es obligatorio',
+      email: 'Introduce un correo válido',
+      minlength: 'Mínimo 6 caracteres',
+      textoInvalido:
+        'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
+    });
   }
 
   submit(): void {

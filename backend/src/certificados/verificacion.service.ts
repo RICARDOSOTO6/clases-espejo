@@ -7,7 +7,7 @@ import {
 } from './codigo-verificacion';
 
 /** Los cuatro desenlaces que puede tener una consulta pública. */
-export type EstadoVerificacion =
+type EstadoVerificacion =
   | 'VALIDO'
   | 'ANULADO'
   | 'NO_ENCONTRADO'
@@ -19,7 +19,7 @@ export type EstadoVerificacion =
  * el PDF. Un certificado es un documento que se enseña, pero la lista de
  * alumnos de una institución no.
  */
-export interface CertificadoVerificado {
+interface CertificadoVerificado {
   folio: string;
   /** Solo el nombre: la matrícula no se publica (sirve para uso interno). */
   alumno: string;

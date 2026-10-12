@@ -18,11 +18,7 @@ import {
   Sesion,
   UpdateProyectoDto,
 } from '../models/proyecto.models';
-
-const API_URL =
-  window.location.port === '4200'
-    ? `http://${window.location.hostname}:3000`
-    : '';
+import { API_URL } from '../api-url';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectosService {
@@ -80,12 +76,6 @@ export class ProyectosService {
     return this.http.post<PlanificacionConjunta>(
       `${API_URL}/proyectos/${id}/planificacion/confirmar`,
       {},
-    );
-  }
-
-  listarReportes(id: number): Observable<ReportePlanificacion[]> {
-    return this.http.get<ReportePlanificacion[]>(
-      `${API_URL}/proyectos/${id}/reportes`,
     );
   }
 
