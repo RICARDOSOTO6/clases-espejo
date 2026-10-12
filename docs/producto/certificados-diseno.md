@@ -143,7 +143,7 @@ Decisiones que conviene no deshacer:
 ### La simplificación: el diseño se hace **fuera** de la aplicación
 
 > **Decidido en esta fase.** Manda la [guía de diseño del
-> certificado](guia-diseno-certificado.md), que es el documento que se le entrega
+> certificado](../guias/guia-diseno-certificado.md), que es el documento que se le entrega
 > a quien diseña.
 
 El diseño del certificado se hace **fuera** de la aplicación (Canva, Word,

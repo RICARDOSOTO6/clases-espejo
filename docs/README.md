@@ -1,5 +1,19 @@
 # 🏫 Clases Conjuntas
 
+## 📁 Mapa de la documentación
+
+| Carpeta | Qué hay dentro |
+|---|---|
+| [`producto/`](producto/) | Cómo está diseñado: [`plan-de-accion.md`](producto/plan-de-accion.md) (las fases del proyecto), [`certificados-diseno.md`](producto/certificados-diseno.md) y [`diagramas/`](producto/diagramas/) (casos de uso, entidades, estados, pantallas) |
+| [`guias/`](guias/) | Cómo se usa y se pone en marcha: [`manual-de-usuario.md`](guias/manual-de-usuario.md), [`guia-diseno-certificado.md`](guias/guia-diseno-certificado.md), [`guia-de-despliegue.md`](guias/guia-de-despliegue.md), [`receta-para-montarlo.md`](guias/receta-para-montarlo.md), [`respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) |
+| [`tesis/`](tesis/) | Los documentos académicos: memoria, marco teórico, antecedentes e informe técnico |
+| [`informes/`](informes/) | Informes de entrega y de actividades |
+| [`presentacion/`](presentacion/) | Material para exponer: discurso, guion de estudio y las presentaciones |
+| [`auditorias/`](auditorias/) | Las auditorías de calidad y las respuestas a cada una |
+| [`plantillas/`](plantillas/) | Los diseños de ejemplo del certificado, la imagen de zonas y la plantilla de la lista de alumnos (la aplicación sirve copias desde `backend/plantillas/`) |
+| [`capturas/`](capturas/) | Capturas de pantalla de las verificaciones |
+| [`logos/`](logos/) | Material de imagen de la marca |
+
 **Clases Conjuntas** es una plataforma web B2B (institución a institución) diseñada para facilitar la colaboración académica entre instituciones educativas mediante la creación y gestión de **clases espejo**.
 
 Una clase espejo permite que docentes de distintas instituciones coordinen una experiencia académica conjunta utilizando herramientas de comunicación y colaboración virtual.

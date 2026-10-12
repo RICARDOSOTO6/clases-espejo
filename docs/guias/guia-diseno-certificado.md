@@ -199,9 +199,9 @@ Los tres archivos están en la carpeta `docs/plantillas/` del proyecto y miden
 
 | Archivo | Para qué sirve |
 | --- | --- |
-| [certificado-zonas.png](plantillas/certificado-zonas.png) | **La capa de zonas.** Ponla como **capa superior** de tu diseño: verás dibujadas las tres cajas, el margen seguro de 1,5 cm y las medidas. Tiene **fondo transparente**, así que el diseño se ve debajo. **Ocúltala o bórrala antes de exportar**: es una guía, no se imprime. |
-| [certificado-ejemplo-clasica.png](plantillas/certificado-ejemplo-clasica.png) | Ejemplo «clásico» ya terminado: filete doble, tipografía con serifas, espacio limpio para el nombre y línea de firma. Puedes usarlo tal cual o como referencia. |
-| [certificado-ejemplo-moderna.png](plantillas/certificado-ejemplo-moderna.png) | Ejemplo «moderno»: banda azul de la CACE (`#075985`), tipografía sans y mucho aire. Igual: se puede usar tal cual. |
+| [certificado-zonas.png](../plantillas/certificado-zonas.png) | **La capa de zonas.** Ponla como **capa superior** de tu diseño: verás dibujadas las tres cajas, el margen seguro de 1,5 cm y las medidas. Tiene **fondo transparente**, así que el diseño se ve debajo. **Ocúltala o bórrala antes de exportar**: es una guía, no se imprime. |
+| [certificado-ejemplo-clasica.png](../plantillas/certificado-ejemplo-clasica.png) | Ejemplo «clásico» ya terminado: filete doble, tipografía con serifas, espacio limpio para el nombre y línea de firma. Puedes usarlo tal cual o como referencia. |
+| [certificado-ejemplo-moderna.png](../plantillas/certificado-ejemplo-moderna.png) | Ejemplo «moderno»: banda azul de la CACE (`#075985`), tipografía sans y mucho aire. Igual: se puede usar tal cual. |
 
 En los dos ejemplos, las tres cajas están **vacías a propósito**: no llevan
 nombre, ni folio, ni QR, porque esos datos los pone la plataforma al emitir.
