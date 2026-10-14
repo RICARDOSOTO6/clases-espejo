@@ -38,7 +38,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | [`informes/informe-de-actividades.md`](informes/informe-de-actividades.md) | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
 | [`informes/informe-para-el-cliente.md`](informes/informe-para-el-cliente.md) | El informe de entrega para el cliente. |
 | [`auditorias/`](auditorias/) | Las auditorías de calidad, sus respuestas y la auditoría de código muerto v5. |
-| [`producto/diagramas/`](producto/diagramas/) | Casos de uso, entidad-relación, diagrama de flujo, secuencias, estados y mapa de pantallas. |
+| [`producto/diagramas/`](producto/diagramas/) | Los **14 diagramas**: casos de uso, entidad-relación, clases del dominio, arquitectura (componentes y despliegue), diagrama de flujo, actividades, secuencias, estados, mapa de pantallas, módulos del backend y sus endpoints, permisos (roles × capacidades), pruebas, cronograma y trazabilidad. |
 
 ---
 
@@ -1801,7 +1801,7 @@ El proyecto pasó por **cinco rondas de auditoría** documentadas en
 | QA 1 | [`reporte-qa-clasesespejo.md`](auditorias/reporte-qa-clasesespejo.md) | 12 hallazgos | Todos corregidos |
 | QA 2 | [`reporte-qa-clasesespejo-v2.md`](auditorias/reporte-qa-clasesespejo-v2.md) | 3 hallazgos técnicos + 6 de UX | Todos corregidos |
 | QA 3 | [`auditoria-v3-y-analisis-de-diseno.md`](auditorias/auditoria-v3-y-analisis-de-diseno.md) | Problemas de código, diseño y accesibilidad | Todos corregidos |
-| QA 4 | [`reporte-qa-clasesespejo-v4.md`](auditorias/reporte-qa-clasesespejo-v4.md) y su [`respuesta`](auditorias/respuesta-auditoria-v4.md) | Revisión del alta pública de agentes y del flujo | Respondida (el alta se mantiene con límite de intentos y verificación de correo) |
+| QA 4 | [`reporte-qa-clasesespejo-v4.md`](auditorias/reporte-qa-clasesespejo-v4.md) y su [`respuesta`](auditorias/respuesta-auditoria-v4.md) | Revisión del alta pública de agentes y del flujo | Respondida (el alta sigue siendo **pública**: el límite de intentos está solo en el login y la activación, y el alta de un agente en una institución ya aprobada la **confirma un agente** de esa institución) |
 | QA 5 | [`auditoria-codigo-muerto-v5.md`](auditorias/auditoria-codigo-muerto-v5.md) | Barrido de código muerto sobre el backend nuevo (CACE y certificados) y el frontend nuevo, con su plan de limpieza priorizado | Documentada (parte corregida, el resto es limpieza no bloqueante) |
 
 Pendientes reconocidos de la tercera ronda (documentados, no bloqueantes):
