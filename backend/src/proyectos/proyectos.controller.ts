@@ -20,6 +20,7 @@ import { extname, join } from 'path';
 import type { Response } from 'express';
 import { ProyectosService } from './proyectos.service';
 import { ResumenPdfService } from './resumen-pdf.service';
+import { CalendarioIcsService } from './calendario-ics.service';
 import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { CreateProyectoDocenteDto } from './dto/create-proyecto-docente.dto';
 import { SavePlanificacionDto } from './dto/save-planificacion.dto';
@@ -88,6 +89,7 @@ export class ProyectosController {
   constructor(
     private readonly proyectosService: ProyectosService,
     private readonly resumenPdf: ResumenPdfService,
+    private readonly calendarioIcs: CalendarioIcsService,
   ) {}
 
   @Get('mios')
@@ -126,6 +128,35 @@ export class ProyectosController {
       `attachment; filename="clase-espejo-${id}.pdf"`,
     );
     res.send(buffer);
+  }
+
+  /**
+   * Descarga el archivo `.ics` para añadir la clase espejo y sus sesiones al
+   * calendario del usuario, con sus recordatorios dentro.
+   *
+   * No hay ningún envío desde la plataforma: quien avisa es el calendario de
+   * cada persona (Google, Apple, Outlook…), y por eso aquí solo se entrega el
+   * archivo, igual que se entrega un PDF.
+   */
+  @Get(':id/calendario.ics')
+  async descargarCalendario(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const proyecto = await this.proyectosService.obtenerParaCalendario(
+      usuarioId,
+      id,
+    );
+    const archivo = this.calendarioIcs.generar(proyecto);
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${this.calendarioIcs.nombreArchivo(proyecto)}"`,
+    );
+    // Va cambiando cuando cambian las sesiones: mejor no cachearlo.
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(Buffer.from(archivo, 'utf8'));
   }
 
   @Get(':id/mensajes')

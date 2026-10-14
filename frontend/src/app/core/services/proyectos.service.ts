@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   Actividad,
@@ -41,6 +41,22 @@ export class ProyectosService {
   /** Descarga el resumen de la clase en PDF (registro físico). */
   descargarResumenPdf(id: number): Observable<Blob> {
     return this.http.get(`${API_URL}/proyectos/${id}/resumen-pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /**
+   * Descarga el archivo `.ics` de la clase espejo y sus sesiones, listo para
+   * abrir con el calendario de cada quien (Google, Apple, Outlook…), que es el
+   * que pone los recordatorios.
+   *
+   * Se pide la respuesta completa para poder leer el nombre del archivo que
+   * manda el servidor (`clase-espejo-calidad-y-pruebas.ics`) en lugar de
+   * inventarlo aquí.
+   */
+  descargarCalendario(id: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${API_URL}/proyectos/${id}/calendario.ics`, {
+      observe: 'response',
       responseType: 'blob',
     });
   }

@@ -287,6 +287,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   confirmandoReporteClase = signal(false);
   guardandoEvaluacion = signal(false);
   descargandoResumenPdf = signal(false);
+  descargandoCalendario = signal(false);
 
   // Confirmaciones con el mismo modal que usa el resto de la aplicación.
   confirmacion = signal<{
@@ -1601,6 +1602,47 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         );
       },
     });
+  }
+
+  /**
+   * Descarga el archivo `.ics` de la clase espejo para abrirlo con el calendario
+   * de cada quien. La plataforma no avisa de nada: son los recordatorios que van
+   * dentro del archivo (60, 30 y 15 minutos antes) los que hacen que el
+   * calendario del usuario le avise.
+   */
+  descargarCalendario(): void {
+    if (this.descargandoCalendario()) return;
+    this.descargandoCalendario.set(true);
+    this.error.set(null);
+    this.proyectos.descargarCalendario(this.proyectoId).subscribe({
+      next: (respuesta) => {
+        this.descargandoCalendario.set(false);
+        const blob = respuesta.body;
+        if (!blob) {
+          this.error.set('El calendario llegó vacío');
+          return;
+        }
+        descargarBlob(
+          blob,
+          this.nombreArchivoCalendario(
+            respuesta.headers.get('Content-Disposition'),
+          ),
+        );
+        this.ok.set('Calendario descargado: ábrelo para añadirlo');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoCalendario.set(false);
+        this.error.set(
+          extraerMensajeError(err, 'Error al descargar el calendario'),
+        );
+      },
+    });
+  }
+
+  /** Nombre que manda el servidor; si no llega, uno razonable. */
+  private nombreArchivoCalendario(cabecera: string | null): string {
+    const nombre = /filename="?([^";]+)"?/i.exec(cabecera ?? '')?.[1]?.trim();
+    return nombre || `clase-espejo-${this.proyectoId}.ics`;
   }
 
   cerrarProyecto(): void {

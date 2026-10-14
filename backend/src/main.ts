@@ -57,7 +57,15 @@ async function bootstrap() {
   ]
     .map((o) => o.trim())
     .filter(Boolean);
-  app.enableCors({ origin: origenes, credentials: false });
+  app.enableCors({
+    origin: origenes,
+    credentials: false,
+    // El nombre del archivo que se descarga (el .ics del calendario, el PDF del
+    // resumen…) viaja en `Content-Disposition`. Sin exponerla, el navegador no
+    // deja leerla cuando el frontend está en otro origen (en desarrollo, el
+    // 4200) y la descarga acaba con un nombre genérico.
+    exposedHeaders: ['Content-Disposition'],
+  });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   // Los errores de integridad de Prisma salen como respuestas legibles.

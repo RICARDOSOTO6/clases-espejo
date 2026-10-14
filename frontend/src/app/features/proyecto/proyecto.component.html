@@ -65,7 +65,7 @@
 
         <p class="muted">Objetivo: {{ p.solicitud.objetivo }}</p>
 
-        <p>
+        <div class="form-inline">
           <button
             type="button"
             class="btn btn-secondary"
@@ -78,7 +78,32 @@
                 : 'Descargar resumen (PDF)'
             }}
           </button>
-        </p>
+
+          <!-- Solo para los docentes participantes (esta primera fase deja el
+               calendario fuera del alcance del agente). La plataforma no avisa
+               de nada: se descarga el archivo .ics y quien avisa es el
+               calendario de cada quien, con los recordatorios que van dentro. -->
+          @if (esDocente) {
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-accion="anadir-calendario"
+              (click)="descargarCalendario()"
+              [disabled]="descargandoCalendario() || sesiones().length === 0"
+              [title]="
+                sesiones().length === 0
+                  ? 'Todavía no hay sesiones programadas'
+                  : 'Descarga un archivo .ics para tu calendario, con avisos 60, 30 y 15 minutos antes de cada sesión'
+              "
+            >
+              {{
+                descargandoCalendario()
+                  ? 'Generando calendario…'
+                  : 'Añadir a mi calendario'
+              }}
+            </button>
+          }
+        </div>
       </section>
 
       @if (esAgente) {

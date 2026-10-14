@@ -111,6 +111,24 @@ export class ProyectosService {
     return proyecto;
   }
 
+  /**
+   * Carga un proyecto con sus sesiones para generar el archivo de calendario.
+   * Mismo criterio de acceso que el resto de `/proyectos/:id`: quien no participa
+   * recibe 403.
+   */
+  async obtenerParaCalendario(usuarioId: number, id: number) {
+    const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
+      where: { id },
+      include: {
+        ...this.includeProyecto(),
+        sesiones: { orderBy: { fechaHora: 'asc' as const } },
+      },
+    });
+    if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
+    await this.verificarAcceso(usuarioId, proyecto);
+    return proyecto;
+  }
+
   // --- Proyecto ---
 
   async actualizar(usuarioId: number, id: number, dto: UpdateProyectoDto) {
