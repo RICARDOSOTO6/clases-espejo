@@ -4,7 +4,7 @@
 
 | Carpeta | Qué hay dentro |
 |---|---|
-| [`producto/`](producto/) | Cómo está diseñado: [`plan-de-accion.md`](producto/plan-de-accion.md) (el plan de la CACE y los certificados por fases), [`certificados-diseno.md`](producto/certificados-diseno.md) y [`diagramas/`](producto/diagramas/) (casos de uso, entidad-relación, flujo, secuencias, estados y mapa de pantallas) |
+| [`producto/`](producto/) | Cómo está diseñado: [`plan-de-accion.md`](producto/plan-de-accion.md) (el plan de la CACE y los certificados por fases), [`certificados-diseno.md`](producto/certificados-diseno.md) y [`diagramas/`](producto/diagramas/) (casos de uso, entidad-relación, clases del dominio, flujo, actividades, secuencias, estados, mapa de pantallas, arquitectura, módulos del backend, permisos, pruebas, cronograma y trazabilidad) |
 | [`guias/`](guias/) | Cómo se usa y se pone en marcha: [`manual-de-usuario.md`](guias/manual-de-usuario.md), [`guia-diseno-certificado.md`](guias/guia-diseno-certificado.md), [`guia-de-despliegue.md`](guias/guia-de-despliegue.md), [`receta-para-montarlo.md`](guias/receta-para-montarlo.md), [`practica-en-maquina-virtual.md`](guias/practica-en-maquina-virtual.md) y [`respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) |
 | [`tesis/`](tesis/) | Los documentos académicos: memoria, marco teórico, antecedentes e informe técnico |
 | [`informes/`](informes/) | Informes de entrega y de actividades |
