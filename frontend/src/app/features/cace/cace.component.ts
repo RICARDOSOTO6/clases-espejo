@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -38,6 +38,20 @@ import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { prepararLogo } from '../../core/utils/imagen.util';
 import { mensajeDeControl } from '../../core/utils/formulario.util';
 
+interface ModuloCace {
+  id: string;
+  etiqueta: string;
+  ancla?: string;
+  ruta?: string;
+  capacidades?: string[];
+}
+
+interface KpiCace {
+  etiqueta: string;
+  valor: number;
+  tono: 'warn' | 'info' | 'success' | 'danger';
+}
+
 /** Decisión que exige motivo: el correo al agente lo lleva escrito. */
 type DecisionConMotivo = 'rechazar' | 'vetar';
 
@@ -53,6 +67,14 @@ function siguienteOrdenDe(items: { orden: number }[]): number {
  * para avisar antes de subir una foto de móvil de varios megas.
  */
 const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
+
+/** Normaliza búsquedas para que los acentos no cambien los resultados. */
+function normalizarBusqueda(valor: string | null | undefined): string {
+  return (valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase();
+}
 
 /**
  * Primera pantalla del presidente de la CACE.
@@ -76,7 +98,7 @@ const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
  */
 @Component({
   selector: 'app-cace',
-  imports: [ReactiveFormsModule, LayoutComponent, DisenoCertificadoComponent],
+  imports: [ReactiveFormsModule, RouterLink, LayoutComponent, DisenoCertificadoComponent],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',
 })
@@ -143,6 +165,112 @@ export class CaceComponent implements OnInit, OnDestroy {
    */
   readonly soloSeccion = signal<'personalizacion' | 'certificado' | null>(null);
 
+  /** Navegación compacta de los módulos que este rol puede usar. */
+  readonly modulosCace = computed<ModuloCace[]>(() => {
+    const modulos: ModuloCace[] = [
+      { id: 'resumen', etiqueta: 'Resumen', ancla: 'cabecera' },
+      {
+        id: 'instituciones',
+        etiqueta: 'Instituciones',
+        ancla: 'instituciones',
+        capacidades: ['aprobarInstituciones'],
+      },
+      {
+        id: 'miembros',
+        etiqueta: 'Equipo CACE',
+        ancla: 'miembros',
+        capacidades: ['gestionarMiembrosCace']
+      },
+      {
+        id: 'presidencia',
+        etiqueta: 'Presidencia',
+        ancla: 'presidencia',
+        capacidades: ['gestionarMiembrosCace']
+      },
+      {
+        id: 'solicitudes',
+        etiqueta: 'Solicitudes',
+        ancla: 'solicitudes',
+      },
+      {
+        id: 'personalizacion',
+        etiqueta: 'Identidad',
+        ruta: '/cace/personalizacion',
+        capacidades: ['personalizarCace']
+      },
+      {
+        id: 'comunidad',
+        etiqueta: 'Comunidad',
+        ancla: 'comunidad',
+        capacidades: ['personalizarCace']
+      },
+      {
+        id: 'premios',
+        etiqueta: 'Premios',
+        ancla: 'premios',
+        capacidades: ['publicarPremios']
+      },
+      {
+        id: 'certificado',
+        etiqueta: 'Certificados',
+        ruta: '/cace/certificado',
+        capacidades: ['disenarCertificados', 'firmarCertificados']
+      },
+    ];
+
+    return modulos.filter((modulo) => {
+      if (modulo.id === 'solicitudes') {
+        return (
+          this.puede('solicitarBorradoInstitucion') ||
+          this.puede('resolverSolicitudesBorrado')
+        );
+      }
+      return (
+        !modulo.capacidades ||
+        modulo.capacidades.some((capacidad) => this.puede(capacidad))
+      );
+    });
+  });
+
+  /** Resumen de trabajo visible sin abrir cada módulo. */
+  readonly kpisCace = computed<KpiCace[]>(() => {
+    const kpis: KpiCace[] = [];
+
+    if (this.puede('aprobarInstituciones')) {
+      kpis.push({
+        etiqueta: 'Instituciones pendientes',
+        valor: this.pendientes().length,
+        tono: 'warn',
+      });
+    }
+    if (this.puede('gestionarMiembrosCace')) {
+      kpis.push({
+        etiqueta: 'Miembros activos',
+        valor: this.miembros().filter((miembro) => miembro.activo).length,
+        tono: 'info',
+      });
+    }
+    if (
+      this.puede('solicitarBorradoInstitucion') ||
+      this.puede('resolverSolicitudesBorrado')
+    ) {
+      kpis.push({
+        etiqueta: 'Solicitudes de borrado',
+        valor: this.solicitudesPendientes(),
+        tono: 'danger',
+      });
+    }
+    if (this.puede('publicarPremios')) {
+      kpis.push({
+        etiqueta: 'Premios en borrador',
+        valor: this.borradores(),
+        tono: 'success',
+      });
+    }
+
+    return kpis;
+  });
+
   // --- Capacidades del rol (fase 6) ---
 
   /**
@@ -184,6 +312,25 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.instituciones().filter((i) => i.estadoCace === 'PENDIENTE'),
   );
 
+  /** Filtros locales de la bandeja administrativa de instituciones. */
+  readonly filtroInstituciones = signal('');
+  readonly estadoInstituciones = signal('TODAS');
+  readonly institucionesFiltradas = computed(() => {
+    const texto = normalizarBusqueda(this.filtroInstituciones());
+    const estado = this.estadoInstituciones();
+
+    return this.instituciones().filter((institucion) => {
+      const coincideEstado = estado === 'TODAS' || institucion.estadoCace === estado;
+      if (!coincideEstado) return false;
+      if (!texto) return true;
+
+      const agentes = institucion.agentes
+        .map((agente) => `${agente.nombre} ${agente.correo}`)
+        .join(' ');
+      return normalizarBusqueda(`${institucion.nombre} ${institucion.pais} ${agentes}`).includes(texto);
+    });
+  });
+
   form = this.fb.group({
     actual: ['', Validators.required],
     nueva: ['', [Validators.required, Validators.minLength(8)]],
@@ -205,6 +352,27 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly miembroEnProceso = signal<number | null>(null);
   /** Secretaría cuya desactivación se está confirmando: pierde el acceso al panel. */
   readonly miembroADesactivar = signal<MiembroCace | null>(null);
+
+  /** Filtros de la lista del equipo CACE. */
+  readonly filtroMiembros = signal('');
+  readonly estadoMiembros = signal<'TODOS' | 'ACTIVOS' | 'INACTIVOS'>('TODOS');
+  readonly miembrosFiltrados = computed(() => {
+    const texto = normalizarBusqueda(this.filtroMiembros());
+    const estado = this.estadoMiembros();
+
+    return this.miembros().filter((miembro) => {
+      const coincideEstado =
+        estado === 'TODOS' ||
+        (estado === 'ACTIVOS' && miembro.activo) ||
+        (estado === 'INACTIVOS' && !miembro.activo);
+      if (!coincideEstado) return false;
+      if (!texto) return true;
+      return normalizarBusqueda(
+        `${miembro.nombre} ${miembro.correo} ${miembro.etiquetaCargo}`,
+      ).includes(texto);
+    });
+  });
+
   /**
    * Contraseña provisional que solo llega cuando el correo **no** pudo salir.
    * Se muestra una vez para que la presidencia se la pueda dar a mano.
@@ -285,6 +453,24 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly avisoSolicitudes = signal<string | null>(null);
   /** Cuántas esperan decisión (insignia del menú y de la campana). */
   readonly solicitudesPendientes = signal(0);
+
+  /** Filtros de la bandeja de solicitudes de borrado. */
+  readonly filtroSolicitudes = signal('');
+  readonly estadoSolicitudes = signal<'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA'>('TODAS');
+  readonly solicitudesFiltradas = computed(() => {
+    const texto = normalizarBusqueda(this.filtroSolicitudes());
+    const estado = this.estadoSolicitudes();
+
+    return this.solicitudes().filter((solicitud) => {
+      const coincideEstado = estado === 'TODAS' || solicitud.estado === estado;
+      if (!coincideEstado) return false;
+      if (!texto) return true;
+      return normalizarBusqueda(
+        `${solicitud.institucionNombre ?? 'Institución borrada'} ${solicitud.institucionPais ?? ''} ${solicitud.solicitadaPor} ${solicitud.solicitadaPorCorreo} ${solicitud.motivo}`,
+      ).includes(texto);
+    });
+  });
+
   /** Institución rechazada cuyo borrado está pidiendo la secretaría. */
   readonly pidiendoSolicitudBorrado = signal<InstitucionRechazadaCace | null>(
     null,
@@ -301,6 +487,57 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly motivoSolicitud = this.fb.control('', Validators.required);
   /** Motivo del rechazo de una solicitud: es obligatorio. */
   readonly motivoRechazo = this.fb.control('', Validators.required);
+
+  // --- Filtros y estado de edición de las bandejas ---
+
+  actualizarFiltroInstituciones(evento: Event): void {
+    this.filtroInstituciones.set((evento.target as HTMLInputElement).value);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  actualizarEstadoInstituciones(evento: Event): void {
+    this.estadoInstituciones.set((evento.target as HTMLSelectElement).value);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  actualizarFiltroMiembros(evento: Event): void {
+    this.filtroMiembros.set((evento.target as HTMLInputElement).value);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  actualizarEstadoMiembros(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    const estado: 'TODOS' | 'ACTIVOS' | 'INACTIVOS' =
+      valor === 'ACTIVOS' || valor === 'INACTIVOS' ? valor : 'TODOS';
+    this.estadoMiembros.set(estado);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  actualizarFiltroSolicitudes(evento: Event): void {
+    this.filtroSolicitudes.set((evento.target as HTMLInputElement).value);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  actualizarEstadoSolicitudes(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    const estado: 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' =
+      valor === 'PENDIENTE' || valor === 'APROBADA' || valor === 'RECHAZADA'
+        ? valor
+        : 'TODAS';
+    this.estadoSolicitudes.set(estado);
+    this.cerrarEdicionesAlFiltrar();
+  }
+
+  private cerrarEdicionesAlFiltrar(): void {
+    this.pidiendoMotivo.set(null);
+    this.pidiendoBorrado.set(null);
+    this.miembroADesactivar.set(null);
+    this.pidiendoSolicitudBorrado.set(null);
+    this.resolviendoSolicitud.set(null);
+    this.motivo.reset('');
+    this.motivoSolicitud.reset('');
+    this.motivoRechazo.reset('');
+  }
 
   // --- Personalización (lema, descripción, tema y logo) ---
 

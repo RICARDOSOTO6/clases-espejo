@@ -17,14 +17,27 @@
       </p>
     }
 
-    <!-- Cabecera: quién eres y, en el primer acceso, el cambio de contraseña
-         obligatorio. -->
+    <!-- Cabecera administrativa: identidad del rol, estado y acceso rápido a los módulos. -->
     @if (!soloSeccion()) {
-    <section class="card cace-cabecera" id="cabecera">
-      <h1 class="auth-title">
-        {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría de la CACE' : 'Presidencia de la CACE' }}
-      </h1>
-      <p class="auth-subtitle">Hola, {{ nombreUsuario }}.</p>
+    <section class="card cace-cabecera cace-hero" id="cabecera">
+      <div class="cace-hero-head">
+        <div class="cace-hero-copy">
+          <span class="role-badge cace">
+            {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría CACE' : 'Presidencia CACE' }}
+          </span>
+          <p class="cace-eyebrow">Centro de administración</p>
+          <h1>
+            {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría de la CACE' : 'Presidencia de la CACE' }}
+          </h1>
+          <p class="cace-hero-subtitle">Hola, {{ nombreUsuario }}. Aquí tienes tus tareas y módulos de gestión.</p>
+        </div>
+        @if (!debeCambiarPassword() && !cargandoCapacidades()) {
+          <span class="cace-hero-state">
+            <span class="cace-hero-state-dot" aria-hidden="true"></span>
+            Panel listo
+          </span>
+        }
+      </div>
 
       @if (debeCambiarPassword()) {
         <div class="alert alert-warning" role="status">
@@ -91,6 +104,41 @@
         <div class="alert alert-success" role="status">{{ exito() }}</div>
       }
     </section>
+
+    @if (!debeCambiarPassword() && !cargandoCapacidades()) {
+      @if (kpisCace().length > 0) {
+        <section class="cace-kpis" aria-label="Resumen de actividad">
+          @for (kpi of kpisCace(); track kpi.etiqueta) {
+            <article
+              class="cace-kpi"
+              [class.cace-kpi--warn]="kpi.tono === 'warn'"
+              [class.cace-kpi--info]="kpi.tono === 'info'"
+              [class.cace-kpi--success]="kpi.tono === 'success'"
+              [class.cace-kpi--danger]="kpi.tono === 'danger'"
+            >
+              <span class="cace-kpi-value">{{ kpi.valor }}</span>
+              <span class="cace-kpi-label">{{ kpi.etiqueta }}</span>
+            </article>
+          }
+        </section>
+      }
+
+      <nav class="cace-modulos" aria-label="Módulos de administración">
+        @for (modulo of modulosCace(); track modulo.id) {
+          @if (modulo.ruta) {
+            <a class="cace-modulo" [routerLink]="modulo.ruta">
+              <span>{{ modulo.etiqueta }}</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          } @else {
+            <a class="cace-modulo" [href]="'#' + modulo.ancla">
+              <span>{{ modulo.etiqueta }}</span>
+              <span aria-hidden="true">↓</span>
+            </a>
+          }
+        }
+      </nav>
+    }
     }
 
     @if (soloSeccion() || !debeCambiarPassword()) {
@@ -155,13 +203,50 @@
           </div>
         }
 
+        @if (instituciones().length > 0) {
+          <div class="cace-filtros" role="search" aria-label="Filtrar instituciones">
+            <div class="form-field">
+              <label for="buscar-instituciones">Buscar institución</label>
+              <input
+                id="buscar-instituciones"
+                type="search"
+                placeholder="Nombre, país o agente…"
+                [value]="filtroInstituciones()"
+                (input)="actualizarFiltroInstituciones($event)"
+              />
+            </div>
+            <div class="form-field">
+              <label for="estado-instituciones">Estado</label>
+              <select
+                id="estado-instituciones"
+                [value]="estadoInstituciones()"
+                (change)="actualizarEstadoInstituciones($event)"
+              >
+                <option value="TODAS">Todos los estados</option>
+                <option value="PENDIENTE">Pendientes</option>
+                <option value="APROBADA">Aprobadas</option>
+                <option value="RECHAZADA">Rechazadas</option>
+                <option value="VETADA">Vetadas</option>
+              </select>
+            </div>
+            <p class="cace-filtros-resumen" aria-live="polite">
+              {{ institucionesFiltradas().length }} de {{ instituciones().length }} instituciones
+            </p>
+          </div>
+        }
+
         @if (cargando() && instituciones().length === 0) {
           <p class="text-sm muted">Cargando instituciones...</p>
         } @else if (instituciones().length === 0) {
           <p class="text-sm muted">Todavía no hay instituciones registradas.</p>
+        } @else if (institucionesFiltradas().length === 0) {
+          <div class="cace-vacio-filtro">
+            <strong>No hay instituciones que coincidan.</strong>
+            <p class="text-sm muted">Prueba con otro nombre, país o estado.</p>
+          </div>
         } @else {
-          <ul class="lista">
-            @for (institucion of instituciones(); track institucion.id) {
+          <ul class="lista cace-admin-list">
+            @for (institucion of institucionesFiltradas(); track institucion.id) {
               <li class="lista-item">
                 <div class="inst-bloque">
                   <div class="inst-name">
@@ -404,6 +489,36 @@
             </div>
           }
 
+          @if (miembros().length > 0) {
+            <div class="cace-filtros" role="search" aria-label="Filtrar equipo CACE">
+              <div class="form-field">
+                <label for="buscar-miembros">Buscar miembro</label>
+                <input
+                  id="buscar-miembros"
+                  type="search"
+                  placeholder="Nombre, correo o cargo…"
+                  [value]="filtroMiembros()"
+                  (input)="actualizarFiltroMiembros($event)"
+                />
+              </div>
+              <div class="form-field">
+                <label for="estado-miembros">Estado</label>
+                <select
+                  id="estado-miembros"
+                  [value]="estadoMiembros()"
+                  (change)="actualizarEstadoMiembros($event)"
+                >
+                  <option value="TODOS">Todos</option>
+                  <option value="ACTIVOS">Activos</option>
+                  <option value="INACTIVOS">Sin acceso</option>
+                </select>
+              </div>
+              <p class="cace-filtros-resumen" aria-live="polite">
+                {{ miembrosFiltrados().length }} de {{ miembros().length }} miembros
+              </p>
+            </div>
+          }
+
           <div class="grupo-alta">
             <p class="grupo-alta-titulo">Dar de alta una secretaría</p>
             <form [formGroup]="formMiembro" (ngSubmit)="crearMiembro()" novalidate>
@@ -475,9 +590,14 @@
               Todavía no hay miembros de la CACE. Da de alta una secretaría para
               repartir el trabajo.
             </p>
+          } @else if (miembrosFiltrados().length === 0) {
+            <div class="cace-vacio-filtro">
+              <strong>No hay miembros que coincidan.</strong>
+              <p class="text-sm muted">Prueba con otro nombre, cargo o estado.</p>
+            </div>
           } @else {
-            <ul class="lista lista-miembros">
-              @for (miembro of miembros(); track miembro.id) {
+            <ul class="lista lista-miembros cace-admin-list">
+              @for (miembro of miembrosFiltrados(); track miembro.id) {
                 <li class="lista-item">
                   <span class="miembro-avatar" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1017,7 +1137,39 @@
           }
 
           <!-- Las solicitudes: la presidencia las resuelve, la secretaría ve las suyas. -->
-          <h3 class="text-sm">Solicitudes</h3>
+          <div class="cace-subsection-head">
+            <h3 class="text-sm">Solicitudes</h3>
+            @if (solicitudes().length > 0) {
+              <div class="cace-filtros cace-filtros--inline" role="search" aria-label="Filtrar solicitudes de borrado">
+                <div class="form-field">
+                  <label for="buscar-solicitudes">Buscar solicitud</label>
+                  <input
+                    id="buscar-solicitudes"
+                    type="search"
+                    placeholder="Institución, persona o motivo…"
+                    [value]="filtroSolicitudes()"
+                    (input)="actualizarFiltroSolicitudes($event)"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="estado-solicitudes">Estado</label>
+                  <select
+                    id="estado-solicitudes"
+                    [value]="estadoSolicitudes()"
+                    (change)="actualizarEstadoSolicitudes($event)"
+                  >
+                    <option value="TODAS">Todos</option>
+                    <option value="PENDIENTE">Pendientes</option>
+                    <option value="APROBADA">Autorizadas</option>
+                    <option value="RECHAZADA">Rechazadas</option>
+                  </select>
+                </div>
+                <p class="cace-filtros-resumen" aria-live="polite">
+                  {{ solicitudesFiltradas().length }} de {{ solicitudes().length }} solicitudes
+                </p>
+              </div>
+            }
+          </div>
           @if (cargandoSolicitudes() && solicitudes().length === 0) {
             <p class="text-sm muted">Cargando las solicitudes...</p>
           } @else if (solicitudes().length === 0) {
@@ -1028,9 +1180,14 @@
                 Todavía no has pedido el borrado de ninguna institución.
               }
             </p>
+          } @else if (solicitudesFiltradas().length === 0) {
+            <div class="cace-vacio-filtro">
+              <strong>No hay solicitudes que coincidan.</strong>
+              <p class="text-sm muted">Prueba con otro estado, institución o solicitante.</p>
+            </div>
           } @else {
-            <ul class="lista">
-              @for (solicitud of solicitudes(); track solicitud.id) {
+            <ul class="lista cace-admin-list">
+              @for (solicitud of solicitudesFiltradas(); track solicitud.id) {
                 <li class="lista-item">
                   <div class="inst-bloque">
                     <div class="inst-name">
@@ -1167,7 +1324,7 @@
         <p class="ayuda-contexto">
           El lema, la descripción y el logo salen en la portada del acceso y en la
           sección «Comunidad» de docentes y agentes. El tema cambia los colores de
-          toda la aplicación; son cuatro temas ya probados, con el contraste
+          toda la aplicación; hay diez temas institucionales, estacionales y festivos ya probados, con el contraste
           comprobado, porque un color libre dejaría texto ilegible sobre el fondo.
         </p>
 
@@ -1179,7 +1336,13 @@
         }
 
         <div class="personalizacion-layout">
-          <form class="personalizacion-form" [formGroup]="formPersonalizacion" (ngSubmit)="guardarPersonalizacion()" novalidate>
+          <form
+            id="personalizacion-form"
+            class="personalizacion-form"
+            [formGroup]="formPersonalizacion"
+            (ngSubmit)="guardarPersonalizacion()"
+            novalidate
+          >
             <div class="form-field">
               <label for="lema">Lema</label>
               <input
@@ -1209,7 +1372,7 @@
             </div>
 
             <fieldset class="temas-grid" id="personalizacion-temas">
-              <legend>Tema</legend>
+              <legend>Paleta visual</legend>
               <div class="temas-grid-cajas">
                 @for (tema of temas; track tema.valor) {
                   <label class="tema-card" [class.seleccionada]="temaElegido() === tema.valor">
@@ -1218,7 +1381,12 @@
                       [value]="tema.valor"
                       formControlName="tema"
                     />
-                    <span class="tema-card-muestra" [style.background]="tema.muestra"></span>
+                    <span
+                      class="tema-card-muestra"
+                      role="img"
+                      [style.background]="'linear-gradient(135deg, ' + tema.muestra + ' 0%, ' + tema.muestraSecundaria + ' 100%)'"
+                      [attr.aria-label]="'Paleta ' + tema.etiqueta"
+                    ></span>
                     <span class="tema-card-nombre">{{ tema.etiqueta }}</span>
                     <span class="tema-card-desc">{{ tema.descripcion }}</span>
                   </label>
@@ -1260,21 +1428,10 @@
               </div>
             </div>
 
-            <div class="personalizacion-acciones">
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="guardandoPersonalizacion() || formPersonalizacion.invalid"
-              >
-                @if (guardandoPersonalizacion()) {
-                  <span class="spinner" aria-hidden="true"></span>
-                }
-                {{ guardandoPersonalizacion() ? 'Guardando...' : 'Guardar personalización' }}
-              </button>
-            </div>
           </form>
 
-          <aside class="personalizacion-vista">
+          <div class="personalizacion-vista-columna">
+            <aside class="personalizacion-vista">
             <p class="vista-titulo-cabecera">Vista previa ({{ etiquetaTemaElegido }})</p>
             <div class="vista-previa-caja" [attr.data-tema]="temaElegido()">
               <div class="vista-hero">
@@ -1298,6 +1455,24 @@
               </div>
             </div>
           </aside>
+
+            <div class="personalizacion-acciones">
+              <p class="personalizacion-acciones-nota">
+                Revisa la vista previa y aplica la paleta, textos y logo a toda la aplicación.
+              </p>
+              <button
+                type="submit"
+                form="personalizacion-form"
+                class="btn btn-primary"
+                [disabled]="guardandoPersonalizacion() || formPersonalizacion.invalid"
+              >
+                @if (guardandoPersonalizacion()) {
+                  <span class="spinner" aria-hidden="true"></span>
+                }
+                {{ guardandoPersonalizacion() ? 'Guardando...' : 'Guardar cambios' }}
+              </button>
+            </div>
+          </div>
         </div>
       </section>
       }

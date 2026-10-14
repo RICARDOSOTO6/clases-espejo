@@ -4,12 +4,25 @@
  * El usuario pidió **temas predefinidos y no color libre**: un color elegido a
  * mano rompe el contraste y la accesibilidad, que es justo el fallo que se
  * arregló con el botón invisible. La lista es corta y cerrada, y cada tema está
- * definido en `frontend/src/styles.css` con sus colores ya comprobados.
+ * definido en `frontend/src/styles.css` con sus colores ya comprobados. Incluye
+ * temas institucionales, estacionales y festivos; la activación sigue siendo
+ * manual en esta fase.
  *
  * El valor guardado en `CONFIGURACION_CACE.tema` es una de estas claves; el
  * frontend la pinta como atributo `data-tema` en el elemento raíz.
  */
-export const TEMAS_CACE = ['AZUL', 'VERDE', 'VINO', 'OSCURO'] as const;
+export const TEMAS_CACE = [
+  'AZUL',
+  'VERDE',
+  'VINO',
+  'OSCURO',
+  'PRIMAVERA',
+  'VERANO',
+  'OTONO',
+  'INVIERNO',
+  'NAVIDAD',
+  'ANIVERSARIO',
+] as const;
 
 type TemaCace = (typeof TEMAS_CACE)[number];
 

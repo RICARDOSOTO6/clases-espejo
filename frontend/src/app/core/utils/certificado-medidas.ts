@@ -257,7 +257,7 @@ function redondear(valor: number): number {
 
 /**
  * Luminancia relativa de un color `#RRGGBB`, con la fórmula de la WCAG 2.1 que
- * ya se usó para dar por buenos los cuatro temas de la CACE (ver
+ * ya se usa para comprobar los temas de la CACE (ver
  * `styles.css`): cada canal se normaliza y se le aplica la curva de la
  * percepción, porque el ojo no ve igual de brillante un verde que un azul.
  */

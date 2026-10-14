@@ -232,6 +232,8 @@
               [routerLink]="item.ruta"
               (click)="irA(item)"
               [attr.aria-current]="seccionActiva() === item.id ? 'page' : null"
+              [attr.title]="item.etiqueta"
+              [attr.aria-label]="contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 @for (d of trazos(item.icono); track d) {
@@ -250,6 +252,8 @@
               [class.is-active]="seccionActiva() === item.id"
               (click)="irA(item)"
               [attr.aria-current]="seccionActiva() === item.id ? 'true' : null"
+               [attr.title]="item.etiqueta"
+              [attr.aria-label]="contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 @for (d of trazos(item.icono); track d) {
@@ -269,7 +273,7 @@
         <!-- La CACE ya tiene «Mi perfil» y «Ayuda» en el menú de la plataforma:
              aquí solo queda cerrar sesión, para no repetir entradas. -->
         @if (!esCace) {
-          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirPerfil()">
+          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirPerfil()" title="Mi perfil" aria-label="Mi perfil">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               @for (d of trazos('perfil'); track d) {
                 <path [attr.d]="d" />
@@ -277,7 +281,7 @@
             </svg>
             <span class="sidebar-label">Mi perfil</span>
           </button>
-          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirAyuda()">
+          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirAyuda()" title="Ayuda" aria-label="Ayuda">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               @for (d of trazos('ayuda'); track d) {
                 <path [attr.d]="d" />
@@ -286,7 +290,7 @@
             <span class="sidebar-label">Ayuda</span>
           </button>
         }
-        <button type="button" class="sidebar-link sidebar-link--button sidebar-link--danger" (click)="cerrarSesion()">
+        <button type="button" class="sidebar-link sidebar-link--button sidebar-link--danger" (click)="cerrarSesion()" title="Cerrar sesión" aria-label="Cerrar sesión">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             @for (d of trazos('salir'); track d) {
               <path [attr.d]="d" />

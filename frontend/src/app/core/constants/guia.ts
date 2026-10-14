@@ -703,7 +703,7 @@ export const GUIA_CACE: GuiaSeccion[] = [
   {
     id: 'personalizacion',
     titulo: 'Personalización',
-    resumen: 'Lema, descripción, tema de color y logo de la CACE.',
+    resumen: 'Lema, descripción, paletas de temporada y logo de la CACE.',
     pasos: [
       {
         selector: '#personalizacion',
@@ -715,7 +715,7 @@ export const GUIA_CACE: GuiaSeccion[] = [
         selector: '#personalizacion-temas',
         titulo: 'Temas, no color libre',
         texto:
-          'Eliges entre cuatro temas ya probados. Un color libre rompería el contraste y dejaría texto ilegible sobre el fondo; con temas cerrados eso no puede pasar.',
+          'Eliges entre diez paletas institucionales, estacionales y festivas ya probadas. Un color libre rompería el contraste y dejaría texto ilegible sobre el fondo; con temas cerrados eso no puede pasar.',
       },
       {
         selector: '#personalizacion-vista',
