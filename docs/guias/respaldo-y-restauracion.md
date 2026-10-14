@@ -1,142 +1,170 @@
 # Respaldo y restauración de la base de datos
 
-**Fecha del respaldo:** 10 de octubre de 2026
 **Base de datos de trabajo:** `ClasesconjuntasBD`
-**Base de datos de respaldo:** `clasesconjuntas_respaldo_20261010`
+**Base de datos de respaldo vigente:** `clasesconjuntas_respaldo_20261013`
+**Fecha del respaldo:** 13 de octubre de 2026
+**Respaldo anterior:** `clasesconjuntas_respaldo_20261010` — **ya no existe: se borró**
 
-> Este documento explica qué se hizo, cómo se comprobó y, sobre todo, **cómo
-> devolver la base a su estado original** paso a paso, sin necesidad de ayuda.
+> Este documento explica qué hay respaldado, cómo se hizo la copia y, sobre todo,
+> **cómo devolver la base a su estado original** paso a paso, sin necesidad de
+> ayuda.
 
 ---
 
-## 1. Qué se hizo
+## 1. Qué hay hoy
 
-1. **Se hizo una copia completa** de `ClasesconjuntasBD` antes de tocar nada.
-2. **Se verificó la copia** comparando todas las tablas de las dos bases.
-3. Solo entonces se borraron datos, dejando un conjunto pequeño para las pruebas.
-4. **La base de respaldo no se ha vuelto a tocar** desde que se creó.
+1. El respaldo vigente es **`clasesconjuntas_respaldo_20261013`**: una **copia
+   exacta del estado actual** de `ClasesconjuntasBD`, hecha con PostgreSQL.
+2. La copia se creó **con la base de trabajo en reposo** (backend detenido), que
+   es la única forma de que `CREATE DATABASE … WITH TEMPLATE` funcione.
+3. El respaldo anterior (`clasesconjuntas_respaldo_20261010`) **se ha borrado**:
+   describía un estado que ya no es el actual, y mantener dos copias con nombres
+   parecidos solo invita a restaurar la equivocada.
+4. **La base de respaldo no se toca** desde que se creó: no se le apunta la
+   aplicación ni se trabaja sobre ella.
 
 El respaldo es una **copia entera de la base** (no un volcado de texto), hecha con
 PostgreSQL a través de la instrucción:
 
 ```sql
-CREATE DATABASE "clasesconjuntas_respaldo_20261010" WITH TEMPLATE "ClasesconjuntasBD";
+CREATE DATABASE "clasesconjuntas_respaldo_20261013" WITH TEMPLATE "ClasesconjuntasBD";
 ```
 
-Esta instrucción **tiene que ejecutarse conectado a otra base** (por ejemplo
-`postgres`), porque PostgreSQL no permite copiar una base con conexiones
-abiertas y porque `CREATE DATABASE` no puede ir dentro de una transacción.
+---
+
+## 2. La regla que hay que respetar: parar el servidor
+
+**PostgreSQL no copia una base que tenga conexiones abiertas.** Mientras el
+backend esté corriendo (o cualquier otra herramienta tenga una sesión abierta
+contra `ClasesconjuntasBD`), la instrucción falla con:
+
+```text
+ERROR:  source database "ClasesconjuntasBD" is being accessed by other users
+DETAIL: There is 1 other session using the database.
+```
+
+Antes de copiar, por tanto:
+
+1. **Para el backend** (el del puerto 3000 y cualquier servidor de pruebas o
+   `npm run start:dev` que esté levantado).
+2. **Cierra Prisma Studio** (`npx prisma studio`), pgAdmin, DBeaver o cualquier
+   consola SQL que esté conectada a la base de trabajo.
+3. Comprueba que no queda ninguna conexión:
+
+   ```sql
+   -- Conectado a la base "postgres", NO a ClasesconjuntasBD.
+   SELECT count(*) FROM pg_stat_activity WHERE datname = 'ClasesconjuntasBD';
+   ```
+
+   Tiene que dar `0`. Si no, la copia fallará.
+
+Y una segunda regla, igual de importante: **`CREATE DATABASE` no puede ir dentro de
+una transacción**, así que hay que ejecutarlo conectado a **otra** base (por
+ejemplo `postgres`), nunca a la que se está copiando.
 
 ---
 
-## 2. Cómo se comprobó que el respaldo sirve
+## 3. Cómo comprobar que el respaldo sirve
 
-Se compararon **las 25 tablas** de la base original y del respaldo, dos veces por
-tabla:
+Un respaldo que no se ha probado no es un respaldo. La comprobación es comparar
+**el respaldo y la base de trabajo**, tabla por tabla, en dos cosas:
 
 * **Número de filas** de cada tabla.
-* **Huella del contenido** (`md5` de todas las filas de la tabla), para
-  asegurar que no solo coincidía la cantidad, sino **el contenido exacto**.
+* **Huella del contenido** (`md5` de todas las filas), para asegurar que no solo
+  coincide la cantidad, sino **el contenido exacto**.
 
-Resultado: **las 25 tablas coincidieron en filas y en contenido**. También
-coincide el número de tablas del esquema (`26`, que son las 25 tablas de datos
-más la tabla interna `_prisma_migrations`).
+El esquema tiene **32 tablas** (`backend/prisma/schema.prisma`, 32 modelos con su
+`@@map`), así que la base tiene esas **32 tablas de datos más `_prisma_migrations`**
+(la tabla interna de Prisma).
 
-| Tabla | Filas en el respaldo |
-|---|---|
-| INSTITUCION | 3 |
-| USUARIO | 19 |
-| INVITACION | 2 |
-| AGENTE_INTERNACIONALIZACION | 3 |
-| DOCENTE | 15 |
-| DOCENTE_INSTITUCION | 15 |
-| MATERIA | 11 |
-| ASIGNACION_DOCENTE | 15 |
-| SOLICITUD_CLASE_ESPEJO | 19 |
-| REVISION_SOLICITUD | 25 |
-| PROYECTO_CLASE_ESPEJO | 10 |
-| PROYECTO_DOCENTE | 25 |
-| MENSAJE | 5 |
-| PLANIFICACION_CONJUNTA | 9 |
-| PARTICIPACION_PLANIFICACION | 23 |
-| REPORTE_PLANIFICACION | 3 |
-| SESION | 17 |
-| ACTIVIDAD | 14 |
-| REPORTE_CLASE_CONJUNTA | 11 |
-| PARTICIPACION_REPORTE | 22 |
-| EVIDENCIA | 8 |
-| EVALUACION | 4 |
-| LISTA_ALUMNOS | 0 |
-| ALUMNO | 0 |
-| MIEMBRO_CACE | 1 |
+> **A propósito no se dejan escritos aquí los conteos de filas del estado actual:**
+> cambian en cuanto alguien usa la aplicación (una solicitud nueva, una clase
+> cerrada, un certificado emitido). Un número fijo en esta página envejecería mal.
+> Compruébalos con el script, que siempre dice la verdad del momento.
 
----
+### Script para contar y comparar (opcional, pero recomendado)
 
-## 3. Qué quedó en la base después de la limpieza
+`psql` y `pg_dump` **no están en el PATH** de este equipo, así que lo más cómodo es
+un pequeño script de Node: el cliente de Prisma ya está instalado.
 
-Se conservó un conjunto mínimo:
+Crea `backend/scripts/comparar-respaldo.js` con este contenido:
 
-| Tabla | Antes | Después |
-|---|---|---|
-| INSTITUCION | 3 | **2** |
-| USUARIO | 19 | **5** |
-| INVITACION | 2 | **0** |
-| AGENTE_INTERNACIONALIZACION | 3 | **2** |
-| DOCENTE | 15 | **2** |
-| DOCENTE_INSTITUCION | 15 | **2** |
-| MATERIA | 11 | **2** |
-| ASIGNACION_DOCENTE | 15 | **2** |
-| SOLICITUD_CLASE_ESPEJO | 19 | **2** |
-| REVISION_SOLICITUD | 25 | **4** |
-| PROYECTO_CLASE_ESPEJO | 10 | **2** |
-| PROYECTO_DOCENTE | 25 | **4** |
-| MENSAJE | 5 | **0** |
-| PLANIFICACION_CONJUNTA | 9 | **2** |
-| PARTICIPACION_PLANIFICACION | 23 | **4** |
-| REPORTE_PLANIFICACION | 3 | **2** |
-| SESION | 17 | **3** |
-| ACTIVIDAD | 14 | **3** |
-| REPORTE_CLASE_CONJUNTA | 11 | **3** |
-| PARTICIPACION_REPORTE | 22 | **6** |
-| EVIDENCIA | 8 | **2** |
-| EVALUACION | 4 | **2** |
-| LISTA_ALUMNOS | 0 | **0** |
-| ALUMNO | 0 | **0** |
-| MIEMBRO_CACE | 1 | **1** |
+```js
+// Compara la base de trabajo con el respaldo: filas y huella de contenido.
+// Uso:  node scripts/comparar-respaldo.js
+//
+// Se abren DOS conexiones (una por base) porque PostgreSQL no permite consultar
+// dos bases en la misma consulta: cada cuenta se pide a su propia conexión.
+require('dotenv').config();
+const { PrismaClient } = require('../dist/generated/prisma/client');
 
-### Lo que se conservó, con nombre y apellidos
+const HOST = 'postgresql://postgres:root@localhost:5432';
+const BD_TRABAJO = 'ClasesconjuntasBD';
+const BD_RESPALDO = 'clasesconjuntas_respaldo_20261013';
 
-**Instituciones**
-* `id 14` — Instituto Tecnológico Superior de Calkiní (México)
-* `id 15` — Universidad Nacional de Colombia (Colombia)
+// Las 32 tablas del esquema, más la de Prisma.
+const TABLAS = [
+  'INSTITUCION', 'USUARIO', 'INVITACION', 'AGENTE_INTERNACIONALIZACION', 'DOCENTE',
+  'DOCENTE_INSTITUCION', 'MATERIA', 'ASIGNACION_DOCENTE', 'SOLICITUD_CLASE_ESPEJO',
+  'REVISION_SOLICITUD', 'PROYECTO_CLASE_ESPEJO', 'PROYECTO_DOCENTE', 'MENSAJE',
+  'PLANIFICACION_CONJUNTA', 'PARTICIPACION_PLANIFICACION', 'REPORTE_PLANIFICACION',
+  'SESION', 'ACTIVIDAD', 'REPORTE_CLASE_CONJUNTA', 'PARTICIPACION_REPORTE',
+  'EVIDENCIA', 'EVALUACION', 'LISTA_ALUMNOS', 'ALUMNO', 'MIEMBRO_CACE',
+  'CONFIGURACION_CACE', 'PAIS_COMUNIDAD', 'PREMIO', 'PLANTILLA_CERTIFICADO',
+  'CERTIFICADO', 'SOLICITUD_BORRADO_INSTITUCION', 'CAMBIO_PRESIDENCIA',
+  '_prisma_migrations',
+];
 
-**Agentes** (uno por institución)
-* `usuario 43` — María Fernanda López Hernández · `agente.calkini@clasesespejo.mx` (Calkiní)
-* `usuario 44` — Juan Carlos Ramírez Torres · `agente.colombia@clasesespejo.co` (Colombia)
+function cliente(bd) {
+  return new PrismaClient({
+    datasources: { db: { url: `${HOST}/${bd}?schema=public` } },
+  });
+}
 
-**Docentes** (uno por institución)
-* `usuario 46` — Sofía Gómez Ruiz · `sofia.gomez@clasesespejo.mx` (Calkiní, docente 31)
-* `usuario 56` — Isabella Cárdenas Uribe · `isabella.cardenas@clasesespejo.co` (Colombia, docente 41)
+async function main() {
+  const trabajo = cliente(BD_TRABAJO);
+  const respaldo = cliente(BD_RESPALDO);
+  let diferencias = 0;
 
-**Presidencia de la CACE**
-* `usuario 63` — Presidente CACE · `antiniosotobeh@gmail.com` · `MIEMBRO_CACE 3` (cargo `PRESIDENTE`)
+  for (const t of TABLAS) {
+    // Una consulta por base: no se pueden cruzar dos bases en la misma.
+    const resumen = async (p) =>
+      (
+        await p.$queryRawUnsafe(
+          `SELECT count(*)::int AS filas,
+                  coalesce(md5(string_agg(x::text, '' ORDER BY x::text)), '') AS huella
+             FROM "${t}" x`,
+        )
+      )[0];
 
-**Clases espejo**
-* `proyecto 17` (solicitud 37) — «Clase espejo: Calidad y Pruebas de Software» ·
-  FINALIZADO · Sofía Gómez (ORIGEN) ↔ Isabella Cárdenas (DESTINO) ·
-  3 sesiones, 3 reportes de clase, 6 participaciones, 3 actividades,
-  2 evidencias, 2 evaluaciones y planificación aprobada con reporte.
-* `proyecto 24` (solicitud 50) — «Clase espejo: Metodologías Ágiles de Software» ·
-  EN_PLANIFICACION · Sofía Gómez (ORIGEN) ↔ Isabella Cárdenas (DESTINO) ·
-  planificación con 2 participaciones y su reporte.
+    const [a, b] = await Promise.all([resumen(trabajo), resumen(respaldo)]);
+    const igual = a.filas === b.filas && a.huella === b.huella;
+    if (!igual) diferencias += 1;
+    console.log(
+      `${igual ? 'OK  ' : 'DIFF'} ${t.padEnd(32)} trabajo=${a.filas}/${a.huella.slice(0, 8)}  respaldo=${b.filas}/${b.huella.slice(0, 8)}`,
+    );
+  }
 
-**Ajuste mínimo que hubo que hacer** (queda dicho por transparencia): la
-solicitud 50 tenía como docente de origen una asignación del docente Roberto
-Pérez (que no se conserva). Como la clase espejo 24 ya declaraba a Sofía Gómez
-como docente **ORIGEN**, se reapuntó la solicitud a la asignación de Sofía
-(`asignacion_origen_id`: 33 → 34). Es el único dato que se modificó en vez de
-borrarse. Todo lo demás que desapareció eran dependencias de entidades no
-conservadas.
+  console.log(
+    diferencias === 0
+      ? '\nTodas las tablas coinciden en filas y en contenido.'
+      : `\n${diferencias} tabla(s) con diferencias: el respaldo y la base de trabajo no son el mismo estado.`,
+  );
+  await trabajo.$disconnect();
+  await respaldo.$disconnect();
+}
+main().catch((e) => { console.error('ERROR:', e.message); process.exit(1); });
+```
+
+La **huella** es el `md5` de todas las filas de la tabla puestas en orden: sirve
+para detectar que, con el mismo número de filas, el contenido cambió.
+
+Ejecútalo desde la carpeta `backend`:
+
+```powershell
+cd C:\Users\ricar\Documents\ClasesEspejo\backend
+node scripts/comparar-respaldo.js
+```
 
 ---
 
@@ -145,8 +173,9 @@ conservadas.
 ### Antes de empezar
 
 1. **Para el backend** (el servidor del puerto 3000 y cualquier servidor de
-   pruebas). Si hay conexiones abiertas a `ClasesconjuntasBD`, PostgreSQL no
-   dejará renombrarla ni borrarla.
+   pruebas) y cierra cualquier herramienta con una sesión abierta. Si hay
+   conexiones abiertas a `ClasesconjuntasBD`, PostgreSQL no dejará renombrarla ni
+   borrarla.
 2. **No apuntes nunca la aplicación a la base de respaldo** para trabajar con
    ella: la aplicación escribe, y estropearías el respaldo. Lo correcto es
    **traer el respaldo encima de `ClasesconjuntasBD`**.
@@ -158,7 +187,7 @@ Esto **no borra nada**: la base actual se guarda con otro nombre.
 ```sql
 -- Conectado a la base "postgres", NO a ClasesconjuntasBD.
 ALTER DATABASE "ClasesconjuntasBD" RENAME TO "ClasesconjuntasBD_antes_de_restaurar";
-CREATE DATABASE "ClasesconjuntasBD" WITH TEMPLATE "clasesconjuntas_respaldo_20261010";
+CREATE DATABASE "ClasesconjuntasBD" WITH TEMPLATE "clasesconjuntas_respaldo_20261013";
 ```
 
 Cuando compruebes que todo está bien, puedes borrar la intermedia:
@@ -172,7 +201,7 @@ DROP DATABASE "ClasesconjuntasBD_antes_de_restaurar";
 ```sql
 -- Conectado a la base "postgres".
 DROP DATABASE "ClasesconjuntasBD" WITH (FORCE);
-CREATE DATABASE "ClasesconjuntasBD" WITH TEMPLATE "clasesconjuntas_respaldo_20261010";
+CREATE DATABASE "ClasesconjuntasBD" WITH TEMPLATE "clasesconjuntas_respaldo_20261013";
 ```
 
 `WITH (FORCE)` exige PostgreSQL 13 o superior; cierra las conexiones abiertas.
@@ -191,7 +220,7 @@ Crea el archivo `backend/scripts/restaurar.js` con este contenido:
 require('dotenv').config();
 const { PrismaClient } = require('../dist/generated/prisma/client');
 
-const RESPALDO = 'clasesconjuntas_respaldo_20261010';
+const RESPALDO = 'clasesconjuntas_respaldo_20261013';
 const TRABAJO = 'ClasesconjuntasBD';
 const INTERMEDIA = 'ClasesconjuntasBD_antes_de_restaurar';
 const admin = 'postgresql://postgres:root@localhost:5432/postgres?schema=public';
@@ -249,52 +278,39 @@ de las dos opciones (A o B) de arriba.
 
 ## 5. Cómo comprobar que la restauración fue bien
 
-Después de restaurar, la base debe volver a tener **3 instituciones, 19 usuarios,
-10 clases espejo, 25 filas en `PROYECTO_DOCENTE`**, etc. (columna «Antes» de la
-tabla de la sección 3).
+1. **Cuenta las filas** de las 32 tablas del respaldo restaurado con el script de
+   la sección 3 (`node scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
+   tienen que coincidir **tabla por tabla**.
+2. **Aplica las migraciones** por si acaso, que no debería hacer nada:
 
-Puedes comprobarlo con este script (guárdalo como `backend/scripts/contar.js`):
+   ```bash
+   npx prisma migrate status
+   npx prisma migrate deploy
+   ```
 
-```js
-require('dotenv').config();
-const { PrismaClient } = require('../dist/generated/prisma/client');
-
-const TABLAS = [
-  'INSTITUCION', 'USUARIO', 'INVITACION', 'AGENTE_INTERNACIONALIZACION', 'DOCENTE',
-  'DOCENTE_INSTITUCION', 'MATERIA', 'ASIGNACION_DOCENTE', 'SOLICITUD_CLASE_ESPEJO',
-  'REVISION_SOLICITUD', 'PROYECTO_CLASE_ESPEJO', 'PROYECTO_DOCENTE', 'MENSAJE',
-  'PLANIFICACION_CONJUNTA', 'PARTICIPACION_PLANIFICACION', 'REPORTE_PLANIFICACION',
-  'SESION', 'ACTIVIDAD', 'REPORTE_CLASE_CONJUNTA', 'PARTICIPACION_REPORTE',
-  'EVIDENCIA', 'EVALUACION', 'LISTA_ALUMNOS', 'ALUMNO', 'MIEMBRO_CACE',
-];
-
-async function main() {
-  const p = new PrismaClient();
-  for (const t of TABLAS) {
-    const [r] = await p.$queryRawUnsafe(`SELECT COUNT(*)::int AS n FROM "${t}"`);
-    console.log(t.padEnd(30), r.n);
-  }
-  await p.$disconnect();
-}
-main();
-```
-
-Como último paso, arranca el backend y entra con las cuentas de demostración
-(`Demo1234`) y con la del presidente (`CaceDemo2026`).
+   El respaldo ya trae las **21 migraciones** aplicadas, así que `migrate deploy`
+   no debe tener nada pendiente.
+3. **Arranca el backend** y entra con una cuenta conocida. Con los datos de
+   demostración, la contraseña común es `Demo1234`.
+4. Comprueba las dos cosas que más duelen si faltan: **una clase espejo con su
+   planificación y sus sesiones**, y **un certificado emitido** que se pueda
+   verificar en `/verificar/<folio>?c=<código>`.
 
 ---
 
 ## 6. Avisos
 
-* **No borres ni modifiques `clasesconjuntas_respaldo_20261010`.** Es la única
-  copia del estado original. Si necesitas trabajar con esos datos, **restaura**
-  sobre `ClasesconjuntasBD`, no trabajes sobre el respaldo.
+* **No borres ni modifiques `clasesconjuntas_respaldo_20261013`.** Es la copia del
+  estado actual. Si necesitas trabajar con esos datos, **restaura** sobre
+  `ClasesconjuntasBD`; no trabajes sobre el respaldo.
+* **El respaldo anterior (`clasesconjuntas_respaldo_20261010`) ya no existe.** Si
+  algún documento antiguo lo menciona, está desactualizado.
+* Recuerda: **para copiar hay que parar el servidor.** PostgreSQL no copia una
+  base con conexiones abiertas, y `CREATE DATABASE … WITH TEMPLATE` no puede ir
+  dentro de una transacción.
 * `backend/.env` sigue apuntando a `ClasesconjuntasBD`; el nombre de la base de
-  trabajo no ha cambiado, así que la aplicación no necesita ninguna
-  configuración nueva.
-* En la copia original **no había ninguna lista de alumnos ni ningún alumno**
-  (`LISTA_ALUMNOS` y `ALUMNO` estaban a 0), así que tampoco hay nada de eso
-  ahora.
-* La aplicación, al arrancar, revisa si hay solicitudes vencidas y si alguna
-  solicitud aprobada se quedó sin clase espejo. Con los datos que quedan eso no
-  cambia nada (se comprobó: los conteos no se movieron).
+  trabajo no ha cambiado, así que la aplicación no necesita ninguna configuración
+  nueva.
+* La aplicación, al arrancar, revisa los vencimientos de las solicitudes y la
+  agenda. Con los datos que queden en la base eso no cambia el contenido más allá
+  de pasar a *Caducada* alguna solicitud que ya estuviera fuera de plazo.
