@@ -1,0 +1,139 @@
+/* Carrusel reutilizable (sección «Comunidad»).
+   Solo se usan los tokens de color y de forma de la aplicación, que ya cambian
+   con los temas de la CACE: aquí no se inventa ningún color. */
+
+.carrusel {
+  position: relative;
+}
+
+/* La ventana recorta la pista: las diapositivas que no toca ver quedan fuera,
+   ocultas e inertes (no se pueden enfocar con el tabulador). */
+.carrusel-ventana {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+.carrusel-pista {
+  display: flex;
+  transition: transform 320ms ease;
+}
+
+.carrusel-item {
+  flex: 0 0 100%;
+  min-width: 0;
+  /* Un pelín de aire para que el anillo de foco no lo recorte la ventana. */
+  padding: 2px;
+}
+
+/* Una diapositiva oculta de verdad: `visibility: hidden` la saca del orden de
+   tabulación en cualquier navegador (el `inert` y el `aria-hidden` los pone la
+   plantilla). El retardo deja que termine el desplazamiento antes de esconderla,
+   así el movimiento se ve entero. */
+.carrusel-item[aria-hidden='true'] {
+  visibility: hidden;
+  transition: visibility 0s linear 320ms;
+}
+
+.carrusel-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* Botones de anterior y siguiente: siempre visibles, con un área de toque
+   cómoda en móvil. */
+.carrusel-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--accent-texto);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.carrusel-boton:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--border-hover);
+}
+
+.carrusel-boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.carrusel-boton:focus-visible,
+.carrusel-indicador:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.carrusel-indicadores {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* El botón del indicador es grande (área de toque) y el punto es el dibujo. */
+.carrusel-indicador {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.carrusel-indicador::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.carrusel-indicador.activo::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.carrusel-indicador:disabled {
+  cursor: not-allowed;
+}
+
+/* Aviso para lectores de pantalla: oculto a la vista, pero presente. */
+.carrusel-aviso {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 480px) {
+  .carrusel-controles {
+    justify-content: center;
+  }
+}

@@ -1687,10 +1687,11 @@
         </div>
 
         <p class="text-sm muted">
-          Los premios publicados salen en la sección «Comunidad» de docentes y
-          agentes y en la portada del acceso. Un premio sin publicar es un
-          borrador: solo lo ves aquí. La imagen es opcional y se añade desde la
-          ficha del premio, una vez guardado.
+          Los premios publicados salen en el carrusel de la sección «Comunidad»
+          de docentes y agentes. Un premio sin publicar es un borrador: solo lo
+          ves aquí. La imagen es la pieza de exhibición y el certificado es el
+          documento que acredita el reconocimiento (PDF, PNG, JPG o WEBP, hasta
+          8 MB); los dos se añaden desde la ficha del premio, una vez guardado.
         </p>
 
         @if (errorPremios()) {
@@ -1844,7 +1845,7 @@
                           [id]="'premio-imagen-' + premio.id"
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
-                          [disabled]="subiendoImagen() !== null"
+                          [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
                           (change)="alSeleccionarImagen(premio, $event)"
                         />
                       </label>
@@ -1852,7 +1853,7 @@
                         <button
                           type="button"
                           class="btn btn-outline"
-                          [disabled]="subiendoImagen() !== null"
+                          [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
                           (click)="quitarImagen(premio)"
                         >
                           Quitar imagen
@@ -1860,6 +1861,67 @@
                       }
                       @if (subiendoImagen() === premio.id) {
                         <span class="text-sm muted">Subiendo…</span>
+                      }
+                    </div>
+
+                    <!-- Certificado del premio: es el documento que acredita el
+                         reconocimiento, así que admite PDF además de imagen. -->
+                    <div class="premio-certificado-control">
+                      <label
+                        class="subir-imagen"
+                        [for]="'premio-certificado-' + premio.id"
+                      >
+                        {{
+                          premio.certificadoUrl
+                            ? 'Cambiar certificado'
+                            : 'Subir certificado'
+                        }}
+                        <input
+                          [id]="'premio-certificado-' + premio.id"
+                          type="file"
+                          accept="application/pdf,image/png,image/jpeg,image/webp"
+                          data-accion="subir-certificado"
+                          [disabled]="subiendoCertificado() !== null || subiendoImagen() !== null"
+                          (change)="alSeleccionarCertificado(premio, $event)"
+                        />
+                      </label>
+
+                      @if (premio.certificadoUrl) {
+                        <button
+                          type="button"
+                          class="btn btn-outline"
+                          data-accion="quitar-certificado"
+                          [disabled]="subiendoCertificado() !== null"
+                          (click)="quitarCertificado(premio)"
+                        >
+                          Quitar certificado
+                        </button>
+                        @if (premio.publicado && certificadoDe(premio); as enlace) {
+                          <a
+                            class="premio-certificado-enlace"
+                            [href]="enlace"
+                            rel="noopener"
+                          >
+                            Ver o descargar
+                            @if (premio.certificadoNombre) {
+                              ({{ premio.certificadoNombre }})
+                            }
+                          </a>
+                        }
+                      }
+
+                      @if (subiendoCertificado() === premio.id) {
+                        <span class="text-sm muted">Subiendo…</span>
+                      }
+                      @if (premio.certificadoUrl && !premio.publicado) {
+                        <span class="text-sm muted">
+                          El certificado se descarga cuando el premio esté publicado.
+                        </span>
+                      }
+                      @if (!premio.certificadoUrl) {
+                        <span class="text-sm muted">
+                          Un reconocimiento sin certificado no se puede acreditar.
+                        </span>
                       }
                     </div>
                   }

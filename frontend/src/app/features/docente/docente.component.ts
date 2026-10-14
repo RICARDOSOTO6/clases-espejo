@@ -20,9 +20,7 @@ import { InstitucionesService } from '../../core/services/instituciones.service'
 import { ProyectosService } from '../../core/services/proyectos.service';
 import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
-import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { Institucion, Perfil } from '../../core/models/auth.models';
-import { Premio } from '../../core/models/cace-identidad.models';
 import {
   PAISES,
   estadoProyectoLabel as etiquetaEstadoProyecto,
@@ -44,6 +42,8 @@ import { RecordatoriosService } from '../../core/services/recordatorios.service'
 import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
 import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
 import { AgendaComponent } from '../../shared/components/agenda/agenda.component';
+import { CarruselComponent } from '../../shared/components/carrusel/carrusel.component';
+import { PremioTarjetaComponent } from '../../shared/components/premio-tarjeta/premio-tarjeta.component';
 import {
   claseUrgencia,
   etiquetaUrgencia,
@@ -63,6 +63,8 @@ import {
     LayoutComponent,
     CalendarioComponent,
     AgendaComponent,
+    CarruselComponent,
+    PremioTarjetaComponent,
   ],
   templateUrl: './docente.component.html',
 })
@@ -384,11 +386,6 @@ export class DocenteComponent implements OnInit, OnDestroy {
 
   flagUrl(codigo: string): string {
     return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
-  }
-
-  /** Imagen de un premio lista para un `<img>` (la sirve el backend). */
-  imagenDe(premio: Premio): string | null {
-    return urlDeArchivo(premio.imagenUrl);
   }
 
   pendientes(): number {

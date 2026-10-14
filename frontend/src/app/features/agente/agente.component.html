@@ -266,36 +266,23 @@
         }
       </ul>
 
-      <!-- Premios y reconocimientos publicados por la presidencia de la CACE. -->
+      <!-- Premios y reconocimientos publicados por la presidencia de la CACE,
+           exhibidos en su versión formal: la pieza de exhibición con su título,
+           su año y a quién se otorgó, y el enlace a su certificado. -->
       @if (premiosComunidad().length > 0) {
         <div class="premios-comunidad">
           <h3 class="premios-comunidad-titulo">Premios y reconocimientos</h3>
-          <ul class="premios-lista">
-            @for (premio of premiosComunidad(); track premio.id) {
-              <li class="premio-item">
-                @if (imagenDe(premio); as imagen) {
-                  <img
-                    class="premio-item-imagen"
-                    [src]="imagen"
-                    [alt]="premio.titulo"
-                    loading="lazy"
-                  />
-                }
-                <div class="premio-item-texto">
-                  <strong>{{ premio.titulo }}</strong>
-                  <p class="text-sm muted">
-                    {{ premio.anio }} · Otorgado a {{ premio.otorgadoA }}
-                    @if (premio.institucionNombre) {
-                      · {{ premio.institucionNombre }}
-                    }
-                  </p>
-                  @if (premio.descripcion) {
-                    <p class="text-sm">{{ premio.descripcion }}</p>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
+
+          <ng-template #fichaPremio let-premio>
+            <app-premio-tarjeta [premio]="premio" />
+          </ng-template>
+
+          <app-carrusel
+            [items]="premiosComunidad()"
+            [plantilla]="fichaPremio"
+            etiqueta="Premios y reconocimientos de la CACE"
+            nombreElemento="reconocimiento"
+          />
         </div>
       }
     </section>

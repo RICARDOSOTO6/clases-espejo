@@ -1,11 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { join } from 'path';
+import { basename, join } from 'path';
+import { existsSync, readFileSync } from 'fs';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   TEMA_CACE_POR_DEFECTO,
   esTemaCaceValido,
 } from '../common/temas-cace';
-import { borrarImagen } from '../common/imagenes';
+import {
+  borrarImagen,
+  nombreArchivoLegible,
+  tipoDocumentoReal,
+} from '../common/imagenes';
 import { ActualizarConfiguracionCaceDto } from './dto/configuracion-cace.dto';
 import {
   ActualizarPaisComunidadDto,
@@ -18,6 +23,28 @@ export const LOGOS_CACE_DIR = join(process.cwd(), 'uploads', 'cace');
 
 /** Carpeta de las imágenes de los premios (dentro de `uploads`). */
 export const IMAGENES_PREMIO_DIR = join(process.cwd(), 'uploads', 'premios');
+
+/**
+ * Carpeta de los **certificados** de los premios. Va aparte de las imágenes
+ * porque un certificado es un documento que se descarga, no una pieza que se
+ * pinta: así no se sirve como archivo estático (no está bajo `/premios`) y solo
+ * sale por su ruta de la API, que comprueba que el premio esté publicado y le
+ * pone su nombre y su tipo.
+ */
+export const CERTIFICADOS_PREMIO_DIR = join(
+  process.cwd(),
+  'uploads',
+  'premios-certificados',
+);
+
+/**
+ * URL con la que se sirve el certificado de un premio. Es lo que se guarda en
+ * `certificadoUrl` y lo que devuelve el listado público, de modo que el enlace
+ * del premio publicado ya es directamente el documento.
+ */
+export function urlCertificadoPremio(archivo: string): string {
+  return `/cace/premios/certificado/${archivo}`;
+}
 
 /**
  * Orden de los países y de los premios: primero el que decide la presidencia
@@ -293,11 +320,12 @@ export class IdentidadCaceService {
     return this.aPremio(premio);
   }
 
-  /** Borra el premio y su imagen: un archivo huérfano no le sirve a nadie. */
+  /** Borra el premio, su imagen y su certificado: un huérfano no sirve a nadie. */
   async eliminarPremio(id: number) {
     const premio = await this.exigirPremio(id);
     await this.prisma.premio.delete({ where: { id } });
     borrarImagen(IMAGENES_PREMIO_DIR, premio.imagenUrl);
+    borrarImagen(CERTIFICADOS_PREMIO_DIR, premio.certificadoUrl);
     return { mensaje: `Premio «${premio.titulo}» eliminado`, id };
   }
 
@@ -321,6 +349,74 @@ export class IdentidadCaceService {
     });
     borrarImagen(IMAGENES_PREMIO_DIR, premio.imagenUrl);
     return this.aPremio(actualizado);
+  }
+
+  // --- Certificado del premio (el documento que lo acredita) ---
+
+  /**
+   * Guarda el certificado recién subido y borra el anterior.
+   *
+   * En `certificadoUrl` se guarda la ruta con la que se **sirve** el documento
+   * (`/cace/premios/certificado/<archivo>`, con un nombre de archivo aleatorio),
+   * no la ruta interna del disco: así el listado público ya devuelve el enlace
+   * que hay que abrir, y el archivo no queda expuesto como estático.
+   */
+  async guardarCertificadoPremio(
+    id: number,
+    archivo: { filename: string; originalname: string },
+  ) {
+    const premio = await this.exigirPremio(id);
+    const actualizado = await this.prisma.premio.update({
+      where: { id },
+      data: {
+        certificadoUrl: urlCertificadoPremio(archivo.filename),
+        certificadoNombre: nombreArchivoLegible(archivo.originalname),
+      },
+      include: { institucion: { select: { id: true, nombre: true } } },
+    });
+    borrarImagen(CERTIFICADOS_PREMIO_DIR, premio.certificadoUrl);
+    return this.aPremio(actualizado);
+  }
+
+  /** Quita el certificado: el premio se queda sin documento que acreditar. */
+  async quitarCertificadoPremio(id: number) {
+    const premio = await this.exigirPremio(id);
+    const actualizado = await this.prisma.premio.update({
+      where: { id },
+      data: { certificadoUrl: null, certificadoNombre: '' },
+      include: { institucion: { select: { id: true, nombre: true } } },
+    });
+    borrarImagen(CERTIFICADOS_PREMIO_DIR, premio.certificadoUrl);
+    return this.aPremio(actualizado);
+  }
+
+  /**
+   * El certificado listo para enviarlo al navegador.
+   *
+   * Solo se entrega si el premio está **publicado**: un borrador no es público
+   * y su certificado tampoco. El archivo se resuelve por el nombre que va en la
+   * URL (con `basename`, para que una ruta manipulada no salga de la carpeta) y
+   * el tipo se lee del contenido, no de la extensión.
+   */
+  async certificadoDescargable(archivo: string) {
+    const nombre = basename(archivo);
+    const premio = await this.prisma.premio.findFirst({
+      where: { certificadoUrl: urlCertificadoPremio(nombre), publicado: true },
+      select: { certificadoNombre: true },
+    });
+    if (!premio) throw new NotFoundException('Certificado no encontrado');
+
+    const ruta = join(CERTIFICADOS_PREMIO_DIR, nombre);
+    if (!existsSync(ruta)) {
+      throw new NotFoundException('Certificado no encontrado');
+    }
+
+    return {
+      // Si el nombre original se perdiera, se ofrece el del archivo.
+      nombre: premio.certificadoNombre || nombre,
+      tipo: tipoDocumentoReal(ruta) ?? 'application/octet-stream',
+      buffer: readFileSync(ruta),
+    };
   }
 
   private async exigirPremio(id: number) {
@@ -354,6 +450,8 @@ export class IdentidadCaceService {
     otorgadoA: string;
     institucionId: number | null;
     imagenUrl: string | null;
+    certificadoUrl: string | null;
+    certificadoNombre: string;
     orden: number;
     publicado: boolean;
     actualizadoEn: Date;
@@ -368,6 +466,8 @@ export class IdentidadCaceService {
       institucionId: premio.institucionId,
       institucionNombre: premio.institucion?.nombre ?? null,
       imagenUrl: premio.imagenUrl,
+      certificadoUrl: premio.certificadoUrl,
+      certificadoNombre: premio.certificadoNombre,
       orden: premio.orden,
       publicado: premio.publicado,
       actualizadoEn: premio.actualizadoEn,

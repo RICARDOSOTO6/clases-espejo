@@ -177,6 +177,25 @@ export class CaceService {
     return this.http.delete<Premio>(`${API_URL}/cace/premios/${id}/imagen`);
   }
 
+  /**
+   * Certificado del premio: el documento que lo acredita. Admite PDF además de
+   * PNG, JPG y WEBP, con un tope de 8 MB; el servidor comprueba el contenido
+   * real del archivo, no solo su extensión.
+   */
+  subirCertificadoPremio(id: number, archivo: File): Observable<Premio> {
+    const datos = new FormData();
+    datos.append('certificado', archivo);
+    return this.http.post<Premio>(
+      `${API_URL}/cace/premios/${id}/certificado`,
+      datos,
+    );
+  }
+
+  /** Quita el certificado: el premio deja de tener documento que lo acredite. */
+  quitarCertificadoPremio(id: number): Observable<Premio> {
+    return this.http.delete<Premio>(`${API_URL}/cace/premios/${id}/certificado`);
+  }
+
   /** Todas las instituciones, con las pendientes primero. */
   listarInstituciones(): Observable<InstitucionCace[]> {
     return this.http.get<InstitucionCace[]>(`${API_URL}/cace/instituciones`);

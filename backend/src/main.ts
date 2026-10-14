@@ -75,8 +75,16 @@ async function bootstrap() {
     // estáticos**: llevan el nombre de una persona y se descargan solo por su
     // ruta con sesión. Sin este corte, quien adivine la URL se lleva un
     // certificado ajeno.
+    //
+    // Lo mismo vale para los certificados de los **premios**: se descargan por
+    // `/cace/premios/certificado/<archivo>`, que comprueba que el premio esté
+    // publicado y le pone su nombre y su tipo; servidos desde aquí saldrían sin
+    // nombre y sin comprobar nada.
     const ruta = String(req.originalUrl ?? req.url ?? '').split('?')[0];
-    if (/^\/uploads\/certificados\//.test(ruta)) {
+    if (
+      /^\/uploads\/certificados\//.test(ruta) ||
+      /^\/uploads\/premios-certificados\//.test(ruta)
+    ) {
       res.status(404).json({ statusCode: 404, message: 'No encontrado' });
       return;
     }

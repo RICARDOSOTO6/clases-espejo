@@ -1,0 +1,80 @@
+<article class="premio-tarjeta">
+  <div class="premio-tarjeta-pieza">
+    @if (imagen(); as pieza) {
+      <img
+        class="premio-tarjeta-imagen"
+        [src]="pieza"
+        [alt]="'Pieza de exhibición del premio «' + premio().titulo + '»'"
+        loading="lazy"
+      />
+    } @else {
+      <!-- Sin imagen no se deja un hueco roto: la ficha enseña su emblema. -->
+      <div class="premio-tarjeta-emblema" aria-hidden="true">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+        </svg>
+      </div>
+    }
+  </div>
+
+  <div class="premio-tarjeta-cuerpo">
+    <h4 class="premio-tarjeta-titulo">{{ premio().titulo }}</h4>
+    <p class="premio-tarjeta-otorgado">{{ otorgamiento() }}</p>
+
+    @if (premio().descripcion) {
+      <p class="premio-tarjeta-descripcion">{{ premio().descripcion }}</p>
+    }
+
+    @if (certificado(); as enlace) {
+      <p class="premio-tarjeta-certificado">
+        <a
+          class="premio-tarjeta-enlace"
+          [href]="enlace"
+          data-accion="descargar-certificado"
+          rel="noopener"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Ver o descargar el certificado
+        </a>
+        @if (premio().certificadoNombre) {
+          <span class="premio-tarjeta-certificado-nombre">
+            ({{ premio().certificadoNombre }})
+          </span>
+        }
+      </p>
+    } @else {
+      <p class="premio-tarjeta-sin-certificado">
+        El certificado de este reconocimiento todavía no está disponible.
+      </p>
+    }
+  </div>
+</article>

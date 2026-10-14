@@ -61,6 +61,8 @@ import {
 import { fechaTexto } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { prepararLogo } from '../../core/utils/imagen.util';
+import { CarruselComponent } from '../../shared/components/carrusel/carrusel.component';
+import { PremioTarjetaComponent } from '../../shared/components/premio-tarjeta/premio-tarjeta.component';
 
 @Component({
   selector: 'app-agente',
@@ -71,6 +73,8 @@ import { prepararLogo } from '../../core/utils/imagen.util';
     LayoutComponent,
     CalendarioComponent,
     AgendaComponent,
+    CarruselComponent,
+    PremioTarjetaComponent,
   ],
   templateUrl: './agente.component.html',
 })
@@ -818,11 +822,6 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   flagUrl(codigo: string): string {
     return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
-  }
-
-  /** Imagen de un premio lista para un `<img>` (la sirve el backend). */
-  imagenDe(premio: Premio): string | null {
-    return urlDeArchivo(premio.imagenUrl);
   }
 
   // --- Doble revisión ---

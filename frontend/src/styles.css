@@ -1349,7 +1349,8 @@ textarea.ng-invalid.ng-touched:focus {
 }
 
 /* Premios y reconocimientos dentro de la sección «Comunidad» de docente y
-   agente. Solo se pintan los publicados. */
+   agente. Solo se pintan los publicados, y cada uno va en el carrusel
+   (`app-carrusel`): el aspecto de la ficha lo pone `app-premio-tarjeta`. */
 .premios-comunidad {
   margin-top: var(--space-5);
   padding-top: var(--space-4);
@@ -1360,38 +1361,6 @@ textarea.ng-invalid.ng-touched:focus {
   margin: 0 0 var(--space-3);
   font-size: 1rem;
   color: var(--accent-texto);
-}
-
-.premios-lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.premio-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.premio-item-imagen {
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  background: var(--neutral-100);
-  flex-shrink: 0;
-}
-
-.premio-item-texto {
-  min-width: 0;
-}
-
-.premio-item-texto p {
-  margin: 0;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1983,60 +1952,8 @@ textarea.ng-invalid.ng-touched:focus {
   max-width: 580px;
 }
 
-/* Columna de la portada: la tarjeta de acceso y, debajo, el resumen de premios.
-   La tarjeta se centra ella sola dentro de la columna. */
-.auth-columna {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  width: 100%;
-  max-width: 430px;
-  margin: auto;
-}
-
-.auth-main .auth-columna .auth-card {
-  max-width: none;
-  margin: 0;
-}
-
-/* Resumen de premios de la portada (solo los publicados). */
-.auth-premios {
-  padding: var(--space-5);
-}
-
-.auth-premios-titulo {
-  margin: 0 0 var(--space-3);
-  font-size: 1rem;
-  color: var(--accent-texto);
-}
-
-.auth-premios-lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.auth-premio {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.auth-premio-imagen {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  background: var(--neutral-100);
-  flex-shrink: 0;
-}
-
-.auth-premio-texto p {
-  margin: 0;
-}
+/* Los premios ya no se resumen en la portada del acceso: se exhiben en el
+   carrusel de la sección «Comunidad», dentro de la aplicación. */
 
 .auth-card {
   width: 100%;
@@ -4644,6 +4561,24 @@ textarea.ng-invalid.ng-touched:focus {
 
 .cace-pantalla .subir-imagen input {
   display: none;
+}
+
+/* Imagen y certificado del premio, en su ficha del panel: los dos controles van
+   en fila y se envuelven si no caben. */
+.cace-pantalla .premio-imagen-control,
+.cace-pantalla .premio-certificado-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.cace-pantalla .premio-certificado-enlace {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent-texto);
+  text-decoration: underline;
 }
 
 @media (max-width: 700px) {

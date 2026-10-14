@@ -15,6 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { mkdirSync } from 'fs';
 import {
+  CERTIFICADOS_PREMIO_DIR,
   IMAGENES_PREMIO_DIR,
   LOGOS_CACE_DIR,
   IdentidadCaceService,
@@ -28,7 +29,12 @@ import { ActualizarPremioDto, CrearPremioDto } from './dto/premio.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CapacidadesGuard, Requiere } from '../auth/capacidades.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { opcionesImagen } from '../common/imagenes';
+import {
+  borrarImagen,
+  opcionesDocumento,
+  opcionesImagen,
+  validarDocumentoSubido,
+} from '../common/imagenes';
 
 /**
  * Gestión de la identidad de la CACE desde el panel de la presidencia.
@@ -47,6 +53,7 @@ export class IdentidadCaceController {
     // multer no las crea).
     mkdirSync(LOGOS_CACE_DIR, { recursive: true });
     mkdirSync(IMAGENES_PREMIO_DIR, { recursive: true });
+    mkdirSync(CERTIFICADOS_PREMIO_DIR, { recursive: true });
   }
 
   // --- Configuración: lema, descripción y tema ---
@@ -175,5 +182,51 @@ export class IdentidadCaceController {
   @Requiere('publicarPremios')
   quitarImagenPremio(@Param('id', ParseIntPipe) id: number) {
     return this.identidad.quitarImagenPremio(id);
+  }
+
+  // --- Certificado del premio ---
+
+  /**
+   * Certificado del premio: el documento que acredita el reconocimiento. Admite
+   * PDF además de PNG, JPG y WEBP, y **comprueba el contenido** (no solo la
+   * extensión) antes de guardarlo: un `.txt` renombrado a `.pdf` se rechaza.
+   *
+   * El archivo vive en `uploads/premios-certificados`, que no se sirve como
+   * estático; se descarga por la ruta pública
+   * `/cace/premios/certificado/:archivo`, que solo entrega certificados de
+   * premios publicados y con su nombre (`certificadoNombre`).
+   */
+  @Post('premios/:id/certificado')
+  @Requiere('publicarPremios')
+  @UseInterceptors(
+    FileInterceptor(
+      'certificado',
+      opcionesDocumento(CERTIFICADOS_PREMIO_DIR, 'premio-certificado'),
+    ),
+  )
+  async subirCertificadoPremio(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() archivo: any,
+  ) {
+    if (!archivo) {
+      throw new BadRequestException(
+        'Adjunta el certificado en el campo «certificado» (PDF, PNG, JPG o WEBP, hasta 8 MB)',
+      );
+    }
+    try {
+      validarDocumentoSubido(archivo);
+      return await this.identidad.guardarCertificadoPremio(id, archivo);
+    } catch (error) {
+      // Multer ya escribió el archivo antes de que el servicio pudiera decir
+      // que no (por ejemplo, un premio que no existe): no se deja huérfano.
+      borrarImagen(CERTIFICADOS_PREMIO_DIR, archivo.filename);
+      throw error;
+    }
+  }
+
+  @Delete('premios/:id/certificado')
+  @Requiere('publicarPremios')
+  quitarCertificadoPremio(@Param('id', ParseIntPipe) id: number) {
+    return this.identidad.quitarCertificadoPremio(id);
   }
 }

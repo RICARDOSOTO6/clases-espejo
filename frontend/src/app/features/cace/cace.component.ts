@@ -68,6 +68,22 @@ function siguienteOrdenDe(items: { orden: number }[]): number {
  */
 const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
 
+/**
+ * Certificado de un premio: el documento que lo acredita. Se admite PDF además
+ * de imagen y el tope es el del servidor (8 MB), porque un certificado escaneado
+ * pesa más que una foto y aquí no se reduce nada: el documento se guarda tal cual
+ * y se descarga con su nombre.
+ */
+const PESO_MAXIMO_CERTIFICADO = 8 * 1024 * 1024;
+
+/** Tipos de documento que acepta el certificado de un premio. */
+const TIPOS_CERTIFICADO = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+];
+
 /** Normaliza búsquedas para que los acentos no cambien los resultados. */
 function normalizarBusqueda(valor: string | null | undefined): string {
   return (valor ?? '')
@@ -596,6 +612,8 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly premioAEliminar = signal<Premio | null>(null);
   /** Premio cuya imagen se está subiendo (evita el doble clic). */
   readonly subiendoImagen = signal<number | null>(null);
+  /** Premio cuyo certificado se está subiendo o quitando. */
+  readonly subiendoCertificado = signal<number | null>(null);
 
   formPremio = this.fb.group({
     titulo: ['', [Validators.required, Validators.minLength(3)]],
@@ -2054,6 +2072,85 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Imagen de un premio lista para un `<img>`. */
   imagenDe(premio: Premio): string | null {
     return urlDeArchivo(premio.imagenUrl);
+  }
+
+  // --- Certificado del premio ---
+
+  /**
+   * Certificado del premio: el documento que acredita el reconocimiento. Se
+   * sube tal cual (sin reducir), porque un certificado escaneado en PDF tiene
+   * que llegar legible. El servidor comprueba el contenido real del archivo, así
+   * que aquí solo se avisa antes de gastar la subida.
+   */
+  alSeleccionarCertificado(premio: Premio, evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    entrada.value = '';
+    if (!archivo) return;
+
+    if (!TIPOS_CERTIFICADO.includes(archivo.type)) {
+      this.errorPremios.set('Elige un certificado en PDF, PNG, JPG o WEBP.');
+      return;
+    }
+    if (archivo.size > PESO_MAXIMO_CERTIFICADO) {
+      this.errorPremios.set('El certificado es demasiado grande (máximo 8 MB).');
+      return;
+    }
+
+    this.subiendoCertificado.set(premio.id);
+    this.errorPremios.set(null);
+    this.avisoPremios.set(null);
+
+    this.cace.subirCertificadoPremio(premio.id, archivo).subscribe({
+      next: (actualizado) => {
+        this.subiendoCertificado.set(null);
+        this.avisoPremios.set(
+          `Certificado de «${actualizado.titulo}» guardado. ${
+            actualizado.publicado
+              ? 'Ya se puede ver y descargar.'
+              : 'Se podrá descargar cuando publiques el premio.'
+          }`,
+        );
+        this.cargarPremios();
+        this.recargarIdentidadPublica();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoCertificado.set(null);
+        this.errorPremios.set(
+          extraerMensajeError(err, 'No se pudo subir el certificado'),
+        );
+      },
+    });
+  }
+
+  quitarCertificado(premio: Premio): void {
+    if (this.subiendoCertificado() !== null) return;
+
+    this.subiendoCertificado.set(premio.id);
+    this.errorPremios.set(null);
+    this.avisoPremios.set(null);
+
+    this.cace.quitarCertificadoPremio(premio.id).subscribe({
+      next: (actualizado) => {
+        this.subiendoCertificado.set(null);
+        this.avisoPremios.set(
+          `Certificado de «${actualizado.titulo}» eliminado.`,
+        );
+        this.cargarPremios();
+        this.recargarIdentidadPublica();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoCertificado.set(null);
+        this.errorPremios.set(
+          extraerMensajeError(err, 'No se pudo quitar el certificado'),
+        );
+      },
+    });
+  }
+
+  /** Certificado listo para abrir o descargar, si el premio lo tiene. */
+  certificadoDe(premio: Premio): string | null {
+    return urlDeArchivo(premio.certificadoUrl);
   }
 
   private siguienteOrdenPremio(): number {

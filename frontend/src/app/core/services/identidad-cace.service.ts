@@ -22,9 +22,9 @@ import { urlDeArchivo } from '../utils/url-archivo.util';
  *
  * La pide una sola vez el componente raíz y la deja en señales, porque la
  * necesitan cuatro sitios distintos: la portada del acceso (logo, lema y
- * premios), el panel del presidente, y las secciones «Comunidad» de docente y
- * agente (banderas y premios). También es quien **aplica el tema** al
- * documento.
+ * descripción), el panel del presidente, y las secciones «Comunidad» de docente
+ * y agente (banderas y premios, que van en el carrusel). También es quien
+ * **aplica el tema** al documento.
  *
  * Todo tiene respaldo: si la configuración está vacía o la petición falla, se
  * devuelven el lema, la descripción, el logo y las banderas que ya había fijos
@@ -45,7 +45,7 @@ export class IdentidadCaceService {
   /** La configuración tal cual llegó (o `null` si todavía no se ha leído). */
   readonly publica = this.configuracion.asReadonly();
 
-  /** Premios publicados, para la sección «Comunidad» y la portada. */
+  /** Premios publicados, para el carrusel de la sección «Comunidad». */
   readonly premios = this.listaPremios.asReadonly();
 
   /** Lema de la CACE, con el texto de siempre como respaldo. */

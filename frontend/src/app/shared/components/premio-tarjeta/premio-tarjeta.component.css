@@ -1,0 +1,116 @@
+/* Ficha formal de un premio de la CACE (dentro del carrusel de «Comunidad»).
+   Todo sale de los tokens de la aplicación, que ya cambian con los temas de la
+   CACE: ningún color nuevo. */
+
+.premio-tarjeta {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.premio-tarjeta-pieza {
+  min-width: 0;
+}
+
+.premio-tarjeta-imagen,
+.premio-tarjeta-emblema {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background: var(--neutral-100);
+  object-fit: cover;
+}
+
+/* Emblema de los premios sin pieza gráfica: el mismo hueco, pero con el
+   trofeo en vez de una imagen rota. */
+.premio-tarjeta-emblema {
+  display: grid;
+  place-items: center;
+  color: var(--text-aux);
+  border: 1px dashed var(--border);
+}
+
+.premio-tarjeta-cuerpo {
+  min-width: 0;
+}
+
+.premio-tarjeta-titulo {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  color: var(--accent-texto);
+}
+
+.premio-tarjeta-otorgado {
+  margin: var(--space-2) 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.premio-tarjeta-descripcion {
+  margin: var(--space-3) 0 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.premio-tarjeta-certificado {
+  margin: var(--space-4) 0 0;
+  font-size: 0.9rem;
+}
+
+.premio-tarjeta-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent-texto);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.premio-tarjeta-enlace:hover {
+  color: var(--accent-hover);
+}
+
+.premio-tarjeta-enlace:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.premio-tarjeta-certificado-nombre {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 0.8rem;
+  color: var(--text-aux);
+  overflow-wrap: anywhere;
+}
+
+.premio-tarjeta-sin-certificado {
+  margin: var(--space-4) 0 0;
+  font-size: 0.9rem;
+  color: var(--text-aux);
+}
+
+/* En móvil la pieza va arriba y el texto debajo: la ficha ocupa el ancho
+   completo y nada queda apretado. */
+@media (max-width: 640px) {
+  .premio-tarjeta {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .premio-tarjeta-imagen,
+  .premio-tarjeta-emblema {
+    aspect-ratio: 16 / 9;
+  }
+}

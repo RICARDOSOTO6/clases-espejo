@@ -489,6 +489,11 @@ model Premio {
   otorgadoA     String       @map("otorgado_a")
   institucionId Int?         @map("institucion_id")
   imagenUrl     String?      @map("imagen_url")
+  /// El certificado del premio: es el documento que se exhibe y se descarga,
+  /// porque un reconocimiento sin su certificado no se puede acreditar.
+  certificadoUrl    String?      @map("certificado_url")
+  /// Nombre del archivo del certificado, para ofrecerlo al descargarlo.
+  certificadoNombre String       @default("") @map("certificado_nombre")
   orden         Int          @default(0)
   publicado     Boolean      @default(false)
   creadoEn      DateTime     @default(now()) @map("creado_en")

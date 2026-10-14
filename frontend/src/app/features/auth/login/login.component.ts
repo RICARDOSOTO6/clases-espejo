@@ -8,8 +8,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { IdentidadCaceService } from '../../../core/services/identidad-cace.service';
-import { Premio } from '../../../core/models/cace-identidad.models';
-import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
@@ -27,6 +25,9 @@ export class LoginComponent implements OnInit {
    * Identidad de la CACE: la portada del acceso es justo lo que se ve antes de
    * entrar, así que tiene que llevar el logo, el lema y el nombre de la
    * comunidad que haya configurado la presidencia (con respaldo si no hay).
+   *
+   * Los premios **no** salen aquí: se exhiben en la sección «Comunidad», que ya
+   * está dentro de la aplicación.
    */
   private readonly identidad = inject(IdentidadCaceService);
 
@@ -34,9 +35,6 @@ export class LoginComponent implements OnInit {
   readonly logo = this.identidad.logo;
   readonly lema = this.identidad.lema;
   readonly descripcion = this.identidad.descripcion;
-
-  /** Resumen de los premios publicados: se muestran los tres primeros. */
-  readonly premios = this.identidad.premios;
 
   form = this.fb.group({
     correo: ['', [Validators.required, Validators.email]],
@@ -56,19 +54,11 @@ export class LoginComponent implements OnInit {
     this.success = params.has('registrado');
     this.avisoRegistro = params.get('aviso') ?? '';
 
-    this.identidad.cargarPremios().subscribe({ error: () => {} });
-
     const user = this.auth.currentUser();
     if (this.auth.isAuthenticated && user) {
       this.router.navigate([this.destinoPorRol(user.rol)]);
     }
   }
-
-  /** URL de la imagen de un premio, lista para un `<img>`. */
-  imagenDe(premio: Premio): string | null {
-    return urlDeArchivo(premio.imagenUrl);
-  }
-
 
   mensajeDe(campo: 'correo' | 'password'): string | null {
     return mensajeDeControl(this.form, campo, {

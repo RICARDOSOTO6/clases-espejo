@@ -1,0 +1,113 @@
+<section
+  class="carrusel"
+  data-carrusel
+  role="group"
+  aria-roledescription="carrusel"
+  [attr.aria-label]="etiqueta()"
+  (keydown)="alTeclado($event)"
+  (touchstart)="alTocarInicio($event)"
+  (touchend)="alTocarFin($event)"
+>
+  <div class="carrusel-ventana">
+    <div
+      class="carrusel-pista"
+      [style.transform]="'translateX(-' + indiceActivo() * 100 + '%)'"
+    >
+      @for (elemento of items(); track $index; let i = $index) {
+        <div
+          class="carrusel-item"
+          data-carrusel-item
+          role="group"
+          aria-roledescription="diapositiva"
+          [attr.aria-label]="i + 1 + ' de ' + items().length"
+          [attr.aria-hidden]="esActivo(i) ? null : 'true'"
+          [attr.inert]="esActivo(i) ? null : ''"
+        >
+          <ng-container
+            [ngTemplateOutlet]="plantilla()"
+            [ngTemplateOutletContext]="{ $implicit: elemento, indice: i }"
+          />
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="carrusel-controles">
+    <button
+      type="button"
+      class="carrusel-boton"
+      data-accion="carrusel-anterior"
+      [disabled]="!puedeNavegar()"
+      [attr.aria-label]="'Ver ' + nombreElemento() + ' anterior'"
+      (click)="anterior()"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+      <span>Anterior</span>
+    </button>
+
+    <ol class="carrusel-indicadores" aria-label="Posición del carrusel">
+      @for (elemento of items(); track $index; let i = $index) {
+        <li>
+          <button
+            type="button"
+            class="carrusel-indicador"
+            data-accion="carrusel-indicador"
+            [class.activo]="esActivo(i)"
+            [disabled]="!puedeNavegar()"
+            [attr.aria-current]="esActivo(i) ? 'true' : null"
+            [attr.aria-label]="
+              'Ir al ' +
+              nombreElemento() +
+              ' ' +
+              (i + 1) +
+              ' de ' +
+              items().length
+            "
+            (click)="irA(i)"
+          ></button>
+        </li>
+      }
+    </ol>
+
+    <button
+      type="button"
+      class="carrusel-boton"
+      data-accion="carrusel-siguiente"
+      [disabled]="!puedeNavegar()"
+      [attr.aria-label]="'Ver ' + nombreElemento() + ' siguiente'"
+      (click)="siguiente()"
+    >
+      <span>Siguiente</span>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Aviso para lectores de pantalla: al cambiar de diapositiva se anuncia en
+       qué posición se está. No se ve, pero no se oculta con `display: none`
+       porque entonces tampoco se anunciaría. -->
+  <p class="carrusel-aviso" aria-live="polite">{{ aviso() }}</p>
+</section>

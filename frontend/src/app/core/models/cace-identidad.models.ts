@@ -53,7 +53,16 @@ export interface Premio {
   institucionId: number | null;
   /** Nombre de la institución, ya resuelto por el servidor. */
   institucionNombre: string | null;
+  /** Pieza de exhibición: la imagen que se ve en el carrusel. */
   imagenUrl: string | null;
+  /**
+   * Certificado del premio: el documento que lo acredita. Se sirve por una ruta
+   * de la API (`/cace/premios/certificado/…`) que solo entrega los de premios
+   * publicados, con su `Content-Type` y su nombre para descargar.
+   */
+  certificadoUrl: string | null;
+  /** Nombre del archivo del certificado, para ofrecerlo al descargarlo. */
+  certificadoNombre: string;
   orden: number;
   publicado: boolean;
   actualizadoEn?: string;
