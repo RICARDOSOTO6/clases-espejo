@@ -44,6 +44,19 @@ const ROL_ORIGEN = 'ORIGEN';
 const ROL_DESTINO = 'DESTINO';
 const DIAS_POR_DEFECTO = 14;
 
+/**
+ * Estados en los que una solicitud puede llegar a los ojos del agente de
+ * destino. `PENDIENTE` no está: mientras el origen no la apruebe, el destino
+ * **ni se entera** (ver `destinoConoce`). Los dos últimos son los estados
+ * cerrados, que después se afinan mirando quién los cerró.
+ */
+const ESTADOS_VISIBLES_PARA_DESTINO: string[] = [
+  ESTADO_SOLICITUD_APROBADA_POR_ORIGEN,
+  ESTADO_SOLICITUD_APROBADA,
+  ESTADO_SOLICITUD_RECHAZADA,
+  ESTADO_SOLICITUD_CADUCADA,
+];
+
 @Injectable()
 export class SolicitudesService {
   constructor(private readonly prisma: PrismaService) {}
@@ -337,6 +350,11 @@ export class SolicitudesService {
   /**
    * Bandeja del agente: solicitudes en las que participa su institución,
    * ya sea como origen (le toca la 1.ª revisión) o como destino (la 2.ª).
+   *
+   * El destino **solo ve lo que el origen ya aprobó**: hasta entonces su
+   * institución no participa en nada y avisarla sería avisarla por nada (si el
+   * origen rechaza, nunca debe enterarse). El origen sigue viendo todo lo que
+   * propusieron sus docentes, en cualquier estado.
    */
   async listarEntrantes(usuarioId: number) {
     const agente = await this.getAgente(usuarioId);
@@ -344,18 +362,82 @@ export class SolicitudesService {
     const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         OR: [
-          { institucionDestinoId: agente.institucionId },
           {
             asignacionOrigen: {
               docenteInstitucion: { institucionId: agente.institucionId },
             },
+          },
+          {
+            institucionDestinoId: agente.institucionId,
+            estado: { in: ESTADOS_VISIBLES_PARA_DESTINO },
           },
         ],
       },
       include: this.includeEntrante(),
       orderBy: { creadoEn: 'desc' },
     });
-    return solicitudes.map((solicitud) => this.conPlazos(solicitud));
+    // El descarte fino (una solicitud cerrada antes de la aprobación del origen)
+    // va aquí, con las revisiones ya incluidas, para no ensuciar el `where`.
+    const visibles = solicitudes.filter((solicitud) =>
+      this.esDelOrigen(solicitud, agente.institucionId)
+        ? true
+        : this.destinoConoce(solicitud),
+    );
+    return visibles.map((solicitud) => this.conPlazos(solicitud));
+  }
+
+  /** ¿La institución del agente es la que propone la clase espejo? */
+  private esDelOrigen(
+    solicitud: {
+      asignacionOrigen: { docenteInstitucion: { institucionId: number } };
+    },
+    institucionId: number,
+  ): boolean {
+    return (
+      solicitud.asignacionOrigen.docenteInstitucion.institucionId ===
+      institucionId
+    );
+  }
+
+  /**
+   * ¿El agente de destino puede enterarse de esta solicitud?
+   *
+   * Solo desde que el origen la aprueba. Con el estado no basta para las
+   * solicitudes cerradas —`RECHAZADA`/`CADUCADA` pueden venir de que el origen
+   * dijo que no (el destino no debe saberlo jamás) o de que el propio destino
+   * rechazó o dejó vencer la suya (que sí la conocía)—, así que se mira quién
+   * cerró: cuenta la última revisión de origen.
+   */
+  private destinoConoce(solicitud: {
+    estado: string;
+    revisiones: {
+      id: number;
+      etapa: string;
+      decision: string;
+      revisadaEn: Date;
+    }[];
+  }): boolean {
+    if (
+      solicitud.estado === ESTADO_SOLICITUD_APROBADA_POR_ORIGEN ||
+      solicitud.estado === ESTADO_SOLICITUD_APROBADA
+    ) {
+      return true;
+    }
+    if (
+      solicitud.estado !== ESTADO_SOLICITUD_RECHAZADA &&
+      solicitud.estado !== ESTADO_SOLICITUD_CADUCADA
+    ) {
+      return false;
+    }
+    const delOrigen = solicitud.revisiones
+      .filter((revision) => revision.etapa === ETAPA_REVISION_ORIGEN)
+      .sort(
+        (a, b) =>
+          a.revisadaEn.getTime() - b.revisadaEn.getTime() || a.id - b.id,
+      );
+    return (
+      delOrigen[delOrigen.length - 1]?.decision === ESTADO_SOLICITUD_APROBADA
+    );
   }
 
   /**
@@ -369,7 +451,10 @@ export class SolicitudesService {
     await this.mantenimiento();
     const solicitud = await this.prisma.solicitudClaseEspejo.findUnique({
       where: { id },
-      include: { asignacionOrigen: { include: { docenteInstitucion: true } } },
+      include: {
+        asignacionOrigen: { include: { docenteInstitucion: true } },
+        revisiones: true,
+      },
     });
     if (!solicitud) throw new NotFoundException('Solicitud no encontrada');
 
@@ -378,7 +463,10 @@ export class SolicitudesService {
     const esOrigen = agente.institucionId === institucionOrigen;
     const esDestino = agente.institucionId === solicitud.institucionDestinoId;
 
-    if (!esOrigen && !esDestino) {
+    // Mientras el origen no apruebe, para el destino la solicitud **no existe**:
+    // ni se lista (ver `listarEntrantes`) ni se puede revisar por identificador
+    // directo. Se responde 404, igual que cuando la institución no participa.
+    if (!esOrigen && (!esDestino || !this.destinoConoce(solicitud))) {
       throw new NotFoundException('Solicitud no encontrada');
     }
 
