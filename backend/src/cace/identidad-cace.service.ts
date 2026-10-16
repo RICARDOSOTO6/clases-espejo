@@ -46,12 +46,15 @@ export function urlCertificadoPremio(archivo: string): string {
   return `/cace/premios/certificado/${archivo}`;
 }
 
-/**
- * Orden de los países y de los premios: primero el que decide la presidencia
- * (`orden`) y, a igualdad, el más antiguo. Sin el desempate por `id`, dos filas
- * con el mismo orden podrían salir en distinto orden en cada lectura.
- */
+/** Orden estable para países administrados manualmente. */
 const ORDEN_LISTA = [{ orden: 'asc' as const }, { id: 'asc' as const }];
+
+/** Premios: los más recientes primero y luego la prioridad que elige la CACE. */
+const ORDEN_PREMIOS = [
+  { anio: 'desc' as const },
+  { orden: 'asc' as const },
+  { id: 'asc' as const },
+];
 
 /**
  * Identidad de la CACE (fase 3): los textos, el logo, el tema, las banderas de
@@ -251,7 +254,7 @@ export class IdentidadCaceService {
     const [premios, instituciones] = await Promise.all([
       this.prisma.premio.findMany({
         include: { institucion: { select: { id: true, nombre: true } } },
-        orderBy: ORDEN_LISTA,
+        orderBy: ORDEN_PREMIOS,
       }),
       this.prisma.institucion.findMany({
         where: { activa: true },
@@ -271,7 +274,7 @@ export class IdentidadCaceService {
     const premios = await this.prisma.premio.findMany({
       where: { publicado: true },
       include: { institucion: { select: { id: true, nombre: true } } },
-      orderBy: ORDEN_LISTA,
+      orderBy: ORDEN_PREMIOS,
     });
     return premios.map((premio) => this.aPremio(premio));
   }
@@ -281,9 +284,12 @@ export class IdentidadCaceService {
     const premio = await this.prisma.premio.create({
       data: {
         titulo: dto.titulo.trim(),
+        tipo: dto.tipo ?? 'RECONOCIMIENTO',
         descripcion: dto.descripcion?.trim() ?? '',
         anio: dto.anio,
         otorgadoA: dto.otorgadoA.trim(),
+        fuenteNombre: dto.fuenteNombre?.trim() ?? '',
+        fuenteUrl: dto.fuenteUrl?.trim() || null,
         institucionId: dto.institucionId ?? null,
         orden: dto.orden ?? 0,
         publicado: dto.publicado ?? false,
@@ -301,12 +307,19 @@ export class IdentidadCaceService {
       where: { id },
       data: {
         ...(dto.titulo !== undefined ? { titulo: dto.titulo.trim() } : {}),
+        ...(dto.tipo !== undefined ? { tipo: dto.tipo } : {}),
         ...(dto.descripcion !== undefined
           ? { descripcion: dto.descripcion.trim() }
           : {}),
         ...(dto.anio !== undefined ? { anio: dto.anio } : {}),
         ...(dto.otorgadoA !== undefined
           ? { otorgadoA: dto.otorgadoA.trim() }
+          : {}),
+        ...(dto.fuenteNombre !== undefined
+          ? { fuenteNombre: dto.fuenteNombre.trim() }
+          : {}),
+        ...(dto.fuenteUrl !== undefined
+          ? { fuenteUrl: dto.fuenteUrl?.trim() || null }
           : {}),
         // `null` quita la institución; ausente, no se toca.
         ...(dto.institucionId !== undefined
@@ -445,9 +458,12 @@ export class IdentidadCaceService {
   private aPremio(premio: {
     id: number;
     titulo: string;
+    tipo: string;
     descripcion: string;
     anio: number;
     otorgadoA: string;
+    fuenteNombre: string;
+    fuenteUrl: string | null;
     institucionId: number | null;
     imagenUrl: string | null;
     certificadoUrl: string | null;
@@ -460,9 +476,12 @@ export class IdentidadCaceService {
     return {
       id: premio.id,
       titulo: premio.titulo,
+      tipo: premio.tipo,
       descripcion: premio.descripcion,
       anio: premio.anio,
       otorgadoA: premio.otorgadoA,
+      fuenteNombre: premio.fuenteNombre,
+      fuenteUrl: premio.fuenteUrl,
       institucionId: premio.institucionId,
       institucionNombre: premio.institucion?.nombre ?? null,
       imagenUrl: premio.imagenUrl,

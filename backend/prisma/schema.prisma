@@ -482,15 +482,18 @@ model PaisComunidad {
 
 /// Premios y reconocimientos de la CACE, que el presidente publica.
 model Premio {
+  tipo          String       @default("RECONOCIMIENTO")
   id            Int          @id @default(autoincrement())
   titulo        String
   descripcion   String       @default("")
   anio          Int          @map("anio")
   otorgadoA     String       @map("otorgado_a")
+  fuenteNombre  String       @default("") @map("fuente_nombre")
+  fuenteUrl     String?      @map("fuente_url")
   institucionId Int?         @map("institucion_id")
   imagenUrl     String?      @map("imagen_url")
   /// El certificado del premio: es el documento que se exhibe y se descarga,
-  /// porque un reconocimiento sin su certificado no se puede acreditar.
+  /// también puede acreditarse mediante la fuente oficial registrada.
   certificadoUrl    String?      @map("certificado_url")
   /// Nombre del archivo del certificado, para ofrecerlo al descargarlo.
   certificadoNombre String       @default("") @map("certificado_nombre")

@@ -31,7 +31,12 @@ import {
 import {
   LIENZO_POR_DEFECTO,
 } from '../../core/utils/certificado-medidas';
-import { TEMAS_CACE, TemaCace } from '../../core/constants/cace';
+import {
+  TEMAS_CACE,
+  TIPOS_RECONOCIMIENTO,
+  TipoReconocimiento,
+  TemaCace,
+} from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
@@ -602,6 +607,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   // --- Premios y reconocimientos ---
 
   readonly premios = signal<Premio[]>([]);
+  readonly tiposReconocimiento = TIPOS_RECONOCIMIENTO;
   /** Instituciones para el desplegable del formulario de premios. */
   readonly institucionesOpcion = signal<InstitucionOpcion[]>([]);
   readonly cargandoPremios = signal(false);
@@ -617,6 +623,7 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   formPremio = this.fb.group({
     titulo: ['', [Validators.required, Validators.minLength(3)]],
+    tipo: this.fb.nonNullable.control<TipoReconocimiento>('RECONOCIMIENTO'),
     descripcion: ['', Validators.maxLength(1500)],
     anio: this.fb.control<number | null>(new Date().getFullYear(), [
       Validators.required,
@@ -624,6 +631,11 @@ export class CaceComponent implements OnInit, OnDestroy {
       Validators.max(2100),
     ]),
     otorgadoA: ['', [Validators.required, Validators.minLength(2)]],
+    fuenteNombre: ['', Validators.maxLength(120)],
+    fuenteUrl: [
+      '',
+      [Validators.maxLength(500), Validators.pattern(/^https?:\/\/\S+$/i)],
+    ],
     institucionId: this.fb.control<number | null>(null),
     orden: this.fb.nonNullable.control(0, [
       Validators.required,
@@ -1848,9 +1860,12 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.premioEnEdicion.set(null);
     this.formPremio.reset({
       titulo: '',
+      tipo: 'RECONOCIMIENTO',
       descripcion: '',
       anio: new Date().getFullYear(),
       otorgadoA: '',
+      fuenteNombre: '',
+      fuenteUrl: '',
       institucionId: null,
       orden: this.siguienteOrdenPremio(),
       // Se crea sin publicar: sale al aire solo cuando la presidencia lo decide.
@@ -1864,9 +1879,12 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.premioEnEdicion.set(premio.id);
     this.formPremio.reset({
       titulo: premio.titulo,
+      tipo: premio.tipo,
       descripcion: premio.descripcion,
       anio: premio.anio,
       otorgadoA: premio.otorgadoA,
+      fuenteNombre: premio.fuenteNombre,
+      fuenteUrl: premio.fuenteUrl ?? '',
       institucionId: premio.institucionId,
       orden: premio.orden,
       publicado: premio.publicado,
@@ -1891,9 +1909,12 @@ export class CaceComponent implements OnInit, OnDestroy {
     const id = this.premioEnEdicion();
     const dto = {
       titulo: valores.titulo ?? '',
+      tipo: valores.tipo,
       descripcion: valores.descripcion ?? '',
       anio: valores.anio ?? new Date().getFullYear(),
       otorgadoA: valores.otorgadoA ?? '',
+      fuenteNombre: valores.fuenteNombre ?? '',
+      fuenteUrl: valores.fuenteUrl?.trim() || null,
       institucionId: valores.institucionId,
       orden: valores.orden,
       publicado: valores.publicado,
@@ -2069,6 +2090,13 @@ export class CaceComponent implements OnInit, OnDestroy {
     });
   }
 
+  etiquetaTipo(tipo: TipoReconocimiento): string {
+    return (
+      this.tiposReconocimiento.find((opcion) => opcion.valor === tipo)?.etiqueta ??
+      'Reconocimiento'
+    );
+  }
+
   /** Imagen de un premio lista para un `<img>`. */
   imagenDe(premio: Premio): string | null {
     return urlDeArchivo(premio.imagenUrl);
@@ -2077,8 +2105,8 @@ export class CaceComponent implements OnInit, OnDestroy {
   // --- Certificado del premio ---
 
   /**
-   * Certificado del premio: el documento que acredita el reconocimiento. Se
-   * sube tal cual (sin reducir), porque un certificado escaneado en PDF tiene
+   * Certificado opcional del premio: la evidencia documental del reconocimiento.
+   * Se sube tal cual (sin reducir), porque un certificado escaneado en PDF tiene
    * que llegar legible. El servidor comprueba el contenido real del archivo, así
    * que aquí solo se avisa antes de gastar la subida.
    */
@@ -2158,18 +2186,27 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   mensajePremio(
-    campo: 'titulo' | 'descripcion' | 'anio' | 'otorgadoA' | 'orden',
+    campo:
+      | 'titulo'
+      | 'descripcion'
+      | 'anio'
+      | 'otorgadoA'
+      | 'orden'
+      | 'fuenteUrl',
   ): string | null {
     const textoRango =
       campo === 'anio'
         ? 'Escribe un año entre 1900 y 2100'
-        : 'El orden va de 0 a 999';
+        : campo === 'orden'
+          ? 'El orden va de 0 a 999'
+          : 'Escribe una URL que empiece por http:// o https://';
     return mensajeDeControl(this.formPremio, campo, {
       required: 'Este campo es obligatorio',
       minlength: 'Escribe al menos 3 caracteres',
       maxlength: 'El texto es demasiado largo',
       min: textoRango,
       max: textoRango,
+      pattern: textoRango,
     });
   }
 

@@ -23,6 +23,21 @@ export type TemaCace =
 /** Tema inicial y de respaldo: el azul con el que ya se veía la aplicación. */
 export const TEMA_CACE_POR_DEFECTO: TemaCace = 'AZUL';
 
+export type TipoReconocimiento =
+  | 'PREMIO'
+  | 'RECONOCIMIENTO'
+  | 'BUENA_PRACTICA'
+  | 'MENCION'
+  | 'SELECCION';
+
+export const TIPOS_RECONOCIMIENTO: { valor: TipoReconocimiento; etiqueta: string }[] = [
+  { valor: 'PREMIO', etiqueta: 'Premio' },
+  { valor: 'RECONOCIMIENTO', etiqueta: 'Reconocimiento' },
+  { valor: 'BUENA_PRACTICA', etiqueta: 'Buena práctica' },
+  { valor: 'MENCION', etiqueta: 'Mención' },
+  { valor: 'SELECCION', etiqueta: 'Selección' },
+];
+
 interface OpcionTema {
   valor: TemaCace;
   etiqueta: string;

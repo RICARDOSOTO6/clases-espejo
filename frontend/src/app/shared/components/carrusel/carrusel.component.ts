@@ -2,6 +2,7 @@ import {
   Component,
   TemplateRef,
   computed,
+  effect,
   input,
   signal,
 } from '@angular/core';
@@ -18,14 +19,15 @@ export interface CarruselContexto<T = any> {
 
 /** Distancia mínima de un deslizamiento para que cuente como un gesto. */
 const DESLIZAMIENTO_MINIMO = 40;
+const INTERVALO_AUTOMATICO_MS = 6500;
 
 /**
  * Carrusel reutilizable y accesible.
  *
- * Muestra **un elemento cada vez** y se mueve solo cuando la persona lo pide:
- * no hay avance automático (lo que también evita tener que pausarlo al pasar el
- * ratón) y hay botones de anterior y siguiente, indicadores de posición y
- * navegación con las flechas del teclado.
+ * Muestra **un elemento cada vez** y avanza automáticamente cuando hay más de
+ * una diapositiva. Se pausa al pasar el ratón, recibir el foco o pulsar «Pausar»;
+ * también ofrece botones de anterior y siguiente, indicadores y navegación con
+ * las flechas del teclado.
  *
  * El aspecto lo pone cada pantalla: el carrusel no sabe qué enseña. Se le pasan
  * la lista y la plantilla de la ficha, con `let-elemento`:
@@ -78,9 +80,38 @@ export class CarruselComponent<T = any> {
 
   private readonly indice = signal(0);
   private inicioToque: number | null = null;
+  readonly pausaManual = signal(false);
+  private readonly pausaPorInteraccion = signal(false);
+  private readonly prefiereMenosMovimiento = signal(
+    typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true,
+  );
+
+  /** El avance automático respeta la pausa y las preferencias de movimiento. */
+  readonly automaticoPausado = computed(
+    () =>
+      this.pausaManual() ||
+      this.pausaPorInteraccion() ||
+      this.prefiereMenosMovimiento(),
+  );
+
+  readonly etiquetaPausa = computed(() =>
+    this.pausaManual() ? 'Reanudar carrusel' : 'Pausar carrusel',
+  );
 
   /** ¿Hay más de un elemento? Con uno solo no hay nada que navegar. */
   readonly puedeNavegar = computed(() => this.items().length > 1);
+
+  /** Sincroniza un único temporizador con la cantidad actual de diapositivas. */
+  private readonly avanceAutomatico = effect((onCleanup) => {
+    if (!this.puedeNavegar()) return;
+
+    const temporizador = setInterval(() => {
+      if (!this.automaticoPausado()) this.siguiente();
+    }, INTERVALO_AUTOMATICO_MS);
+
+    onCleanup(() => clearInterval(temporizador));
+  });
 
   /**
    * Posición actual, siempre dentro de la lista: si la lista encoge (por
@@ -122,6 +153,20 @@ export class CarruselComponent<T = any> {
     // El módulo deja el índice siempre dentro de la lista, en las dos
     // direcciones: -1 es la última diapositiva.
     this.indice.set(((indice % total) + total) % total);
+  }
+
+  alternarPausa(): void {
+    this.pausaManual.update((pausada) => !pausada);
+  }
+
+  pausarPorInteraccion(pausar: boolean): void {
+    this.pausaPorInteraccion.set(pausar);
+  }
+
+  alPerderFoco(evento: FocusEvent): void {
+    const contenedor = evento.currentTarget as HTMLElement | null;
+    const destino = evento.relatedTarget as Node | null;
+    if (!contenedor?.contains(destino)) this.pausaPorInteraccion.set(false);
   }
 
   /**

@@ -71,6 +71,17 @@
   cursor: not-allowed;
 }
 
+.carrusel-pausa {
+  border-color: var(--accent-soft);
+  background: var(--accent-50);
+  color: var(--accent-texto);
+}
+
+.carrusel-pausa:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .carrusel-boton:focus-visible,
 .carrusel-indicador:focus-visible {
   outline: 2px solid var(--focus);

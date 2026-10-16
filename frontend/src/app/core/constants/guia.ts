@@ -752,13 +752,13 @@ export const GUIA_CACE: GuiaSeccion[] = [
   {
     id: 'premios',
     titulo: 'Premios',
-    resumen: 'Premios y reconocimientos: se preparan aquí y se publican cuando toca.',
+    resumen: 'Reconocimientos verificados: se preparan aquí y se publican cuando toca.',
     pasos: [
       {
         selector: '#premios',
         titulo: 'Premios y reconocimientos',
         texto:
-          'Cada premio guarda el título, el año, a quién se le otorgó y, si quieres, la institución y una imagen.',
+          'Cada reconocimiento guarda el tipo, el título, el año, la entidad otorgante y una fuente oficial opcional, además de la imagen y el certificado.',
       },
       {
         boton: 'Guardar premio',
@@ -767,9 +767,9 @@ export const GUIA_CACE: GuiaSeccion[] = [
           'Mientras no lo marques como publicado, el premio solo lo ves tú aquí: no sale ni en la sección «Comunidad» ni en la portada del acceso.',
       },
       {
-        titulo: 'La imagen es opcional',
+        titulo: 'Evidencia y carrusel',
         texto:
-          'Para subir la imagen primero hay que guardar el premio: se añade desde su ficha, en la lista. Una imagen se ve mejor en la sección pública.',
+          'Después de guardar, añade una imagen, certificado o enlace de fuente oficial desde la ficha. Los reconocimientos publicados avanzan automáticamente en el carrusel y se pueden pausar.',
       },
     ],
   },

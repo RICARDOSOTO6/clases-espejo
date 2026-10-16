@@ -1687,11 +1687,11 @@
         </div>
 
         <p class="text-sm muted">
-          Los premios publicados salen en el carrusel de la sección «Comunidad»
-          de docentes y agentes. Un premio sin publicar es un borrador: solo lo
-          ves aquí. La imagen es la pieza de exhibición y el certificado es el
-          documento que acredita el reconocimiento (PDF, PNG, JPG o WEBP, hasta
-          8 MB); los dos se añaden desde la ficha del premio, una vez guardado.
+          Los reconocimientos publicados aparecen en el carrusel automático de la sección «Comunidad»
+          de docentes y agentes. Un registro sin publicar es un borrador: solo lo
+          ves aquí. Una imagen, certificado o fuente oficial ayudan a que el reconocimiento sea
+          verificable; la fuente se puede consultar desde la ficha.
+          La imagen y el certificado se añaden desde la ficha, una vez guardado.
         </p>
 
         @if (errorPremios()) {
@@ -1716,6 +1716,15 @@
             }
           </div>
 
+          <div class="form-field premio-tipo">
+            <label for="premio-tipo">Tipo de reconocimiento</label>
+            <select id="premio-tipo" formControlName="tipo">
+              @for (tipo of tiposReconocimiento; track tipo.valor) {
+                <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+              }
+            </select>
+          </div>
+
           <div class="fila-3">
             <div class="form-field">
               <label for="premio-anio">Año</label>
@@ -1726,7 +1735,7 @@
             </div>
 
             <div class="form-field">
-              <label for="premio-orden">Orden</label>
+              <label for="premio-orden">Prioridad visual</label>
               <input id="premio-orden" type="number" formControlName="orden" min="0" max="999" />
               @if (mensajePremio('orden'); as msg) {
                 <p class="field-error">{{ msg }}</p>
@@ -1734,7 +1743,7 @@
             </div>
 
             <div class="form-field">
-              <label for="premio-institucion">Institución (opcional)</label>
+              <label for="premio-institucion">Institución vinculada (opcional)</label>
               <select id="premio-institucion" formControlName="institucionId">
                 <option [ngValue]="null">Sin institución</option>
                 @for (institucion of institucionesOpcion(); track institucion.id) {
@@ -1745,17 +1754,44 @@
           </div>
 
           <div class="form-field">
-            <label for="premio-otorgado">Otorgado a</label>
+            <label for="premio-otorgado">Entidad otorgante</label>
             <input
               id="premio-otorgado"
               type="text"
               formControlName="otorgadoA"
               maxlength="200"
-              placeholder="Nombre de la persona o institución premiada"
+              placeholder="Universidad, ministerio o entidad que reconoce"
             />
             @if (mensajePremio('otorgadoA'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
+          </div>
+
+          <div class="premio-fuente-grid">
+            <div class="form-field">
+              <label for="premio-fuente-nombre">Fuente oficial</label>
+              <input
+                id="premio-fuente-nombre"
+                type="text"
+                formControlName="fuenteNombre"
+                maxlength="120"
+                placeholder="Catálogo Co-Lab, sitio de la universidad…"
+              />
+            </div>
+            <div class="form-field">
+              <label for="premio-fuente-url">Enlace de verificación</label>
+              <input
+                id="premio-fuente-url"
+                type="url"
+                formControlName="fuenteUrl"
+                maxlength="500"
+                placeholder="https://…"
+              />
+              @if (mensajePremio('fuenteUrl'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+              <p class="text-sm muted">Recomendado si no hay certificado adjunto.</p>
+            </div>
           </div>
 
           <div class="form-field">
@@ -1817,13 +1853,28 @@
                 </div>
 
                 <div class="premio-info">
+                  <div class="premio-fila-encabezado">
+                    <span class="premio-tipo">{{ etiquetaTipo(premio.tipo) }}</span>
+                    <span class="premio-anio">{{ premio.anio }}</span>
+                  </div>
                   <p class="titulo">{{ premio.titulo }}</p>
                   <p class="secundario">
-                    {{ premio.anio }} · {{ premio.otorgadoA }}
+                    Entidad otorgante: {{ premio.otorgadoA }}
                     @if (premio.institucionNombre) {
-                      · {{ premio.institucionNombre }}
+                      · Vinculada: {{ premio.institucionNombre }}
                     }
                   </p>
+                  @if (premio.fuenteUrl) {
+                    <a
+                      class="premio-fuente-enlace"
+                      [href]="premio.fuenteUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ premio.fuenteNombre || 'Ver fuente oficial' }}
+                      <span aria-hidden="true">↗</span>
+                    </a>
+                  }
                   @if (premio.publicado) {
                     <span class="estado aprobada">Publicado</span>
                   } @else {
@@ -1864,8 +1915,8 @@
                       }
                     </div>
 
-                    <!-- Certificado del premio: es el documento que acredita el
-                         reconocimiento, así que admite PDF además de imagen. -->
+                    <!-- Certificado opcional del premio: evidencia documental que admite PDF
+                         además de imagen. -->
                     <div class="premio-certificado-control">
                       <label
                         class="subir-imagen"
@@ -1920,7 +1971,7 @@
                       }
                       @if (!premio.certificadoUrl) {
                         <span class="text-sm muted">
-                          Un reconocimiento sin certificado no se puede acreditar.
+                          Se recomienda añadir un certificado o una fuente oficial para verificarlo.
                         </span>
                       }
                     </div>

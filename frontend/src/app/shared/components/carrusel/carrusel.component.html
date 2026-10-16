@@ -5,6 +5,10 @@
   aria-roledescription="carrusel"
   [attr.aria-label]="etiqueta()"
   (keydown)="alTeclado($event)"
+  (mouseenter)="pausarPorInteraccion(true)"
+  (mouseleave)="pausarPorInteraccion(false)"
+  (focusin)="pausarPorInteraccion(true)"
+  (focusout)="alPerderFoco($event)"
   (touchstart)="alTocarInicio($event)"
   (touchend)="alTocarFin($event)"
 >
@@ -56,6 +60,20 @@
       </svg>
       <span>Anterior</span>
     </button>
+
+    @if (puedeNavegar()) {
+      <button
+        type="button"
+        class="carrusel-boton carrusel-pausa"
+        data-accion="carrusel-pausa"
+        [attr.aria-label]="etiquetaPausa()"
+        [attr.aria-pressed]="pausaManual()"
+        (click)="alternarPausa()"
+      >
+        <span aria-hidden="true">{{ pausaManual() ? '▶' : 'Ⅱ' }}</span>
+        {{ pausaManual() ? 'Reanudar' : 'Pausar' }}
+      </button>
+    }
 
     <ol class="carrusel-indicadores" aria-label="Posición del carrusel">
       @for (elemento of items(); track $index; let i = $index) {

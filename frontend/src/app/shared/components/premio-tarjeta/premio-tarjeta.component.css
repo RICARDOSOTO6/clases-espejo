@@ -42,6 +42,35 @@
   min-width: 0;
 }
 
+.premio-tarjeta-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.premio-tarjeta-tipo,
+.premio-tarjeta-anio {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.premio-tarjeta-tipo {
+  background: var(--primary-100);
+  color: var(--accent-texto);
+}
+
+.premio-tarjeta-anio {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
 .premio-tarjeta-titulo {
   margin: 0;
   font-size: 1.15rem;
@@ -60,6 +89,28 @@
   margin: var(--space-3) 0 0;
   font-size: 0.95rem;
   color: var(--text);
+}
+
+.premio-tarjeta-fuente {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  color: var(--accent-texto);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.premio-tarjeta-fuente:hover {
+  color: var(--accent-hover);
+}
+
+.premio-tarjeta-fuente:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .premio-tarjeta-certificado {

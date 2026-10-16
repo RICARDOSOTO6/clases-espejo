@@ -1,4 +1,4 @@
-import { TemaCace } from '../constants/cace';
+import { TemaCace, TipoReconocimiento } from '../constants/cace';
 
 /**
  * Identidad de la CACE tal como la devuelve el servidor.
@@ -47,18 +47,21 @@ export interface CacePublico {
 export interface Premio {
   id: number;
   titulo: string;
+  tipo: TipoReconocimiento;
   descripcion: string;
   anio: number;
   otorgadoA: string;
+  fuenteNombre: string;
+  fuenteUrl: string | null;
   institucionId: number | null;
   /** Nombre de la institución, ya resuelto por el servidor. */
   institucionNombre: string | null;
   /** Pieza de exhibición: la imagen que se ve en el carrusel. */
   imagenUrl: string | null;
   /**
-   * Certificado del premio: el documento que lo acredita. Se sirve por una ruta
-   * de la API (`/cace/premios/certificado/…`) que solo entrega los de premios
-   * publicados, con su `Content-Type` y su nombre para descargar.
+   * Certificado opcional del premio. Se sirve por una ruta de la API
+   * (`/cace/premios/certificado/…`) que solo entrega los de premios publicados,
+   * con su `Content-Type` y su nombre para descargar.
    */
   certificadoUrl: string | null;
   /** Nombre del archivo del certificado, para ofrecerlo al descargarlo. */
@@ -102,9 +105,12 @@ export interface PaisComunidadDto {
 /** Cuerpo de alta o edición de un premio. */
 export interface PremioDto {
   titulo?: string;
+  tipo?: TipoReconocimiento;
   descripcion?: string;
   anio?: number;
   otorgadoA?: string;
+  fuenteNombre?: string;
+  fuenteUrl?: string | null;
   institucionId?: number | null;
   orden?: number;
   publicado?: boolean;

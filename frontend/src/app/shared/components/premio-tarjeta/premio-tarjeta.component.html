@@ -33,11 +33,27 @@
   </div>
 
   <div class="premio-tarjeta-cuerpo">
+    <div class="premio-tarjeta-meta">
+      <span class="premio-tarjeta-tipo">{{ etiquetaTipo() }}</span>
+      <span class="premio-tarjeta-anio">{{ premio().anio }}</span>
+    </div>
     <h4 class="premio-tarjeta-titulo">{{ premio().titulo }}</h4>
     <p class="premio-tarjeta-otorgado">{{ otorgamiento() }}</p>
 
     @if (premio().descripcion) {
       <p class="premio-tarjeta-descripcion">{{ premio().descripcion }}</p>
+    }
+
+    @if (fuente(); as enlaceFuente) {
+      <a
+        class="premio-tarjeta-fuente"
+        [href]="enlaceFuente"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ premio().fuenteNombre || 'Consultar fuente oficial' }}
+        <span aria-hidden="true">↗</span>
+      </a>
     }
 
     @if (certificado(); as enlace) {
@@ -73,7 +89,7 @@
       </p>
     } @else {
       <p class="premio-tarjeta-sin-certificado">
-        El certificado de este reconocimiento todavía no está disponible.
+        El certificado no está disponible; consulta la fuente oficial si aparece arriba.
       </p>
     }
   </div>

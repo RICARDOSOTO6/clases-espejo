@@ -1,13 +1,16 @@
 import {
   IsBoolean,
   IsInt,
+  IsIn,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
+import { TIPOS_RECONOCIMIENTO } from '../../common/tipos-reconocimiento';
 
 /**
  * Premios y reconocimientos de la CACE.
@@ -24,6 +27,10 @@ export class CrearPremioDto {
   @MinLength(3, { message: 'El título es obligatorio' })
   @MaxLength(160, { message: 'El título no puede pasar de 160 caracteres' })
   titulo: string;
+
+  @IsOptional()
+  @IsIn(TIPOS_RECONOCIMIENTO, { message: 'El tipo de reconocimiento no es válido' })
+  tipo?: (typeof TIPOS_RECONOCIMIENTO)[number];
 
   @IsOptional()
   @IsString()
@@ -43,6 +50,17 @@ export class CrearPremioDto {
     message: '«Otorgado a» no puede pasar de 200 caracteres',
   })
   otorgadoA: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  fuenteNombre?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  fuenteUrl?: string | null;
 
   /** `null` borra la institución; sin el campo, no se toca. */
   @IsOptional()
@@ -69,6 +87,10 @@ export class ActualizarPremioDto {
   titulo?: string;
 
   @IsOptional()
+  @IsIn(TIPOS_RECONOCIMIENTO, { message: 'El tipo de reconocimiento no es válido' })
+  tipo?: (typeof TIPOS_RECONOCIMIENTO)[number];
+
+  @IsOptional()
   @IsString()
   @MaxLength(1500, {
     message: 'La descripción no puede pasar de 1500 caracteres',
@@ -88,6 +110,17 @@ export class ActualizarPremioDto {
     message: '«Otorgado a» no puede pasar de 200 caracteres',
   })
   otorgadoA?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  fuenteNombre?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  fuenteUrl?: string | null;
 
   /** `null` borra la institución; sin el campo, no se toca. */
   @IsOptional()

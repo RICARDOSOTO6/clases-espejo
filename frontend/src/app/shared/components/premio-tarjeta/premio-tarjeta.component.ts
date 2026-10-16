@@ -1,12 +1,13 @@
 import { Component, computed, input } from '@angular/core';
 import { Premio } from '../../../core/models/cace-identidad.models';
+import { TIPOS_RECONOCIMIENTO } from '../../../core/constants/cace';
 import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
 
 /**
  * La ficha **formal** de un premio de la CACE, tal como se exhibe en el
  * carrusel de la sección «Comunidad»: la pieza de exhibición (la imagen), el
- * título, el año, a quién se le otorgó y el enlace para ver o descargar el
- * certificado, que es lo que acredita el reconocimiento.
+ * tipo, el año, la entidad otorgante y una fuente oficial o certificado para
+ * verificar el reconocimiento.
  *
  * Solo se le pasan premios **publicados**: los certificados de los alumnos son
  * documentos personales y no tienen nada que hacer aquí.
@@ -27,17 +28,26 @@ export class PremioTarjetaComponent {
   /** Pieza de exhibición (la imagen del carrusel), si la tiene. */
   readonly imagen = computed(() => urlDeArchivo(this.premio().imagenUrl));
 
+  readonly etiquetaTipo = computed(
+    () =>
+      TIPOS_RECONOCIMIENTO.find((tipo) => tipo.valor === this.premio().tipo)?.etiqueta ??
+      'Reconocimiento',
+  );
+
   /** Certificado listo para abrir o descargar, si lo tiene. */
   readonly certificado = computed(() =>
     urlDeArchivo(this.premio().certificadoUrl),
   );
 
-  /** «2026 · Otorgado a Fulano · Institución», sin partes vacías. */
+  /** Fuente oficial externa, si está registrada. */
+  readonly fuente = computed(() => this.premio().fuenteUrl || null);
+
+  /** «2026 · Entidad otorgante · Institución», sin partes vacías. */
   readonly otorgamiento = computed(() => {
     const premio = this.premio();
     return [
       String(premio.anio),
-      `Otorgado a ${premio.otorgadoA}`,
+      `Entidad otorgante: ${premio.otorgadoA}`,
       premio.institucionNombre,
     ]
       .filter((parte) => !!parte)

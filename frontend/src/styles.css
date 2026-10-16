@@ -4452,6 +4452,18 @@ textarea.ng-invalid.ng-touched:focus {
   resize: vertical;
 }
 
+/* El campo del formulario, no la etiqueta del listado: las dos usan
+   `premio-tipo`, así que el alcance tiene que distinguirlas. */
+.cace-pantalla .premios-form .premio-tipo {
+  max-width: 420px;
+}
+
+.cace-pantalla .premio-fuente-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: var(--space-3);
+}
+
 .cace-pantalla .premios-controles {
   display: flex;
   justify-content: space-between;
@@ -4518,15 +4530,63 @@ textarea.ng-invalid.ng-touched:focus {
   min-width: 0;
 }
 
+.cace-pantalla .premio-fila-encabezado {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+/* Etiquetas del listado del panel (tipo y año). Van ancladas a la fila del
+   encabezado porque `premio-tipo` también nombra el campo del formulario. */
+.cace-pantalla .premio-fila-encabezado .premio-tipo,
+.cace-pantalla .premio-fila-encabezado .premio-anio {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.cace-pantalla .premio-fila-encabezado .premio-tipo {
+  background: var(--primary-100);
+  color: var(--accent-texto);
+}
+
+.cace-pantalla .premio-fila-encabezado .premio-anio {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
 .cace-pantalla .premio-info .titulo {
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .cace-pantalla .premio-info .secundario {
   margin: 2px 0 4px;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.cace-pantalla .premio-fuente-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: var(--accent-texto);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.cace-pantalla .premio-fuente-enlace:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .cace-pantalla .premio-fila-acciones {
@@ -4582,7 +4642,8 @@ textarea.ng-invalid.ng-touched:focus {
 }
 
 @media (max-width: 700px) {
-  .cace-pantalla .premios-form .fila-3 {
+  .cace-pantalla .premios-form .fila-3,
+  .cace-pantalla .premio-fuente-grid {
     grid-template-columns: 1fr;
   }
 
