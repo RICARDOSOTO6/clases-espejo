@@ -6,6 +6,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CalendarioIcsService } from './calendario-ics.service';
+import { MailService } from '../mail/mail.service';
+import { nombreCompleto } from '../common/nombre-completo';
 import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { CreateProyectoDocenteDto } from './dto/create-proyecto-docente.dto';
 import { SavePlanificacionDto } from './dto/save-planificacion.dto';
@@ -49,7 +52,11 @@ interface ProyectoAccesible {
 
 @Injectable()
 export class ProyectosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly calendarioIcs: CalendarioIcsService,
+    private readonly mail: MailService,
+  ) {}
 
   // --- Listados ---
 
@@ -127,6 +134,91 @@ export class ProyectosService {
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
     await this.verificarAcceso(usuarioId, proyecto);
     return proyecto;
+  }
+
+  /**
+   * Manda el calendario de la clase por correo a los docentes participantes,
+   * con el `.ics` adjunto.
+   *
+   * Es la misma entrega que la descarga, pero resuelta: el formato `.ics` es
+   * incómodo de manejar en el móvil y el docente que organiza la clase tiene que
+   * acordarse de mandarlo. Aquí se manda una vez y queda constancia de a quién
+   * llegó.
+   *
+   * **Se informa de cada envío, no solo de que «se envió»**: un SMTP puede
+   * aceptar cinco correos y rechazar el sexto, y el docente necesita saber cuál
+   * falló para poder reenviarlo. Los fallos no abortan el resto: se acumulan en
+   * `fallidos` con su motivo.
+   *
+   * Va reservado a los docentes participantes (el agente solo consulta) y se
+   * permite con la clase cerrada: enviar el calendario no cambia la clase, y con
+   * el cierre es cuando más falta hace que las sesiones queden en la agenda.
+   */
+  async enviarCalendarioPorCorreo(usuarioId: number, id: number) {
+    const proyecto = await this.obtenerParaCalendario(usuarioId, id);
+    await this.exigirDocenteParticipante(usuarioId, id, { exigirAbierto: false });
+
+    const sesiones = proyecto.sesiones.length;
+    if (sesiones === 0) {
+      throw new BadRequestException(
+        'La clase espejo todavía no tiene sesiones: añade al menos una para poder enviar el calendario',
+      );
+    }
+
+    const archivo = Buffer.from(this.calendarioIcs.generar(proyecto), 'utf8');
+    const nombreArchivo = this.calendarioIcs.nombreArchivo(proyecto);
+    const instituciones = this.calendarioIcs.institucionesDe(proyecto);
+    const titulo = proyecto.solicitud.titulo;
+
+    // Un destinatario por correo: dos asignaciones del mismo docente no deben
+    // producir dos correos idénticos.
+    const destinatarios = new Map<string, string>();
+    for (const proyectoDocente of proyecto.docentes) {
+      const usuario =
+        proyectoDocente.asignacionDocente?.docenteInstitucion?.docente?.usuario;
+      const correo = usuario?.correo?.trim().toLowerCase();
+      if (!usuario || !correo || destinatarios.has(correo)) continue;
+      destinatarios.set(correo, nombreCompleto(usuario));
+    }
+
+    if (destinatarios.size === 0) {
+      throw new BadRequestException(
+        'No hay docentes participantes con correo: no se puede enviar el calendario',
+      );
+    }
+
+    const enviados: { nombre: string; correo: string }[] = [];
+    const fallidos: { nombre: string; correo: string; motivo: string }[] = [];
+
+    for (const [correo, nombre] of destinatarios) {
+      try {
+        await this.mail.sendCalendarioClase(correo, {
+          destinatario: nombre,
+          titulo,
+          instituciones,
+          sesiones,
+          archivo,
+          nombreArchivo,
+        });
+        enviados.push({ nombre, correo });
+      } catch (error) {
+        fallidos.push({ nombre, correo, motivo: this.motivoDeFallo(error) });
+      }
+    }
+
+    return {
+      total: destinatarios.size,
+      enviados,
+      fallidos,
+      sesiones,
+      nombreArchivo,
+    };
+  }
+
+  /** Motivo legible de un fallo de correo, sin arrastrar objetos raros. */
+  private motivoDeFallo(error: unknown): string {
+    if (error instanceof Error && error.message) return error.message;
+    return 'Error desconocido al enviar el correo';
   }
 
   // --- Proyecto ---
@@ -965,7 +1057,16 @@ export class ProyectosService {
   // El agente de internacionalización solo consulta: las acciones que
   // organizan la clase conjunta quedan reservadas a los docentes participantes.
   // Un proyecto cerrado (finalizado o cancelado) no admite más cambios.
-  private async exigirDocenteParticipante(usuarioId: number, id: number) {
+  //
+  // `exigirAbierto` se puede desactivar para las acciones que **no cambian** la
+  // clase y siguen teniendo sentido con el proyecto cerrado: enviar el
+  // calendario por correo es la misma entrega que descargarlo, y descargar se
+  // permite siempre.
+  private async exigirDocenteParticipante(
+    usuarioId: number,
+    id: number,
+    opciones: { exigirAbierto?: boolean } = {},
+  ) {
     const docente = await this.prisma.docente.findUnique({
       where: { usuarioId },
     });
@@ -978,7 +1079,9 @@ export class ProyectosService {
         include: { proyecto: { select: { estado: true } } },
       });
       if (participa) {
-        this.verificarProyectoAbierto(participa.proyecto.estado);
+        if (opciones.exigirAbierto !== false) {
+          this.verificarProyectoAbierto(participa.proyecto.estado);
+        }
         return participa;
       }
     }

@@ -134,9 +134,10 @@ export class ProyectosController {
    * Descarga el archivo `.ics` para añadir la clase espejo y sus sesiones al
    * calendario del usuario, con sus recordatorios dentro.
    *
-   * No hay ningún envío desde la plataforma: quien avisa es el calendario de
+   * La plataforma **no programa recordatorios**: quien avisa es el calendario de
    * cada persona (Google, Apple, Outlook…), y por eso aquí solo se entrega el
-   * archivo, igual que se entrega un PDF.
+   * archivo, igual que se entrega un PDF. La vía cómoda es la de abajo, que
+   * manda ese mismo archivo por correo; esta es la segunda vía.
    */
   @Get(':id/calendario.ics')
   async descargarCalendario(
@@ -157,6 +158,21 @@ export class ProyectosController {
     // Va cambiando cuando cambian las sesiones: mejor no cachearlo.
     res.setHeader('Cache-Control', 'no-store');
     res.send(Buffer.from(archivo, 'utf8'));
+  }
+
+  /**
+   * Manda el calendario por correo a los docentes participantes (con el `.ics`
+   * adjunto) y devuelve a quién se envió y a quién no.
+   *
+   * La descarga (`GET .../calendario.ics`) sigue existiendo como segunda vía:
+   * esto es lo mismo, resuelto para quien no quiere manejar un archivo.
+   */
+  @Post(':id/calendario/enviar')
+  enviarCalendario(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.proyectosService.enviarCalendarioPorCorreo(usuarioId, id);
   }
 
   @Get(':id/mensajes')

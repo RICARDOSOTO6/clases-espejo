@@ -36,6 +36,7 @@ import { estadoProyectoLabel as etiquetaEstadoProyecto } from '../../core/consta
 import { Asignacion } from '../../core/models/materia.models';
 import {
   Actividad,
+  EnvioCalendario,
   Evaluacion,
   Evidencia,
   Mensaje,
@@ -288,6 +289,10 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   guardandoEvaluacion = signal(false);
   descargandoResumenPdf = signal(false);
   descargandoCalendario = signal(false);
+  /** Envío del calendario por correo (mientras va, el botón se bloquea). */
+  enviandoCalendario = signal(false);
+  /** Resultado del último envío: a quién llegó y a quién no. */
+  envioCalendario = signal<EnvioCalendario | null>(null);
 
   // Confirmaciones con el mismo modal que usa el resto de la aplicación.
   confirmacion = signal<{
@@ -1643,6 +1648,57 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private nombreArchivoCalendario(cabecera: string | null): string {
     const nombre = /filename="?([^";]+)"?/i.exec(cabecera ?? '')?.[1]?.trim();
     return nombre || `clase-espejo-${this.proyectoId}.ics`;
+  }
+
+  /**
+   * Manda el calendario por correo a los docentes participantes.
+   *
+   * La plataforma no programa recordatorios: el archivo `.ics` los lleva dentro
+   * (1 hora, 30 y 15 minutos antes) y quien avisa es el calendario de cada
+   * quien. Este envío es la vía cómoda; la descarga sigue disponible al lado.
+   *
+   * El resultado no se resuelve con un «enviado» genérico: se guarda el informe
+   * completo (`envioCalendario`) para poder enseñar a quién le llegó y a quién
+   * no, con el motivo del fallo.
+   */
+  enviarCalendarioPorCorreo(): void {
+    if (this.enviandoCalendario()) return;
+    this.enviandoCalendario.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+    this.envioCalendario.set(null);
+    this.proyectos.enviarCalendario(this.proyectoId).subscribe({
+      next: (resultado) => {
+        this.enviandoCalendario.set(false);
+        this.envioCalendario.set(resultado);
+        const enviados = resultado.enviados.length;
+        const fallidos = resultado.fallidos.length;
+        if (fallidos === 0) {
+          this.ok.set(
+            `Calendario enviado a ${enviados} ${enviados === 1 ? 'docente' : 'docentes'}.`,
+          );
+        } else if (enviados === 0) {
+          this.error.set(
+            'No se pudo enviar el calendario a ningún docente: mira el detalle del envío.',
+          );
+        } else {
+          this.ok.set(
+            `Calendario enviado a ${enviados} de ${resultado.total} docentes; ${fallidos} falló. Mira el detalle.`,
+          );
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoCalendario.set(false);
+        this.error.set(
+          extraerMensajeError(err, 'No se pudo enviar el calendario por correo'),
+        );
+      },
+    });
+  }
+
+  /** Cierra el informe del último envío (la «x» del detalle). */
+  cerrarEnvioCalendario(): void {
+    this.envioCalendario.set(null);
   }
 
   cerrarProyecto(): void {

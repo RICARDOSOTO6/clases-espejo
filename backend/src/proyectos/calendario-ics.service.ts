@@ -256,19 +256,29 @@ export class CalendarioIcsService {
       : `${tituloClase} — Sesión ${sesion.id}`;
   }
 
+  /**
+   * Las dos instituciones de la clase espejo, ya juntas para un texto:
+   * «A (México) · B (Colombia)». Lo usan la descripción de cada evento y el
+   * correo con el que se manda el calendario, para que digan lo mismo.
+   */
+  institucionesDe(proyecto: ProyectoCalendario): string {
+    const solicitud = proyecto.solicitud;
+    const origen = solicitud?.asignacionOrigen?.docenteInstitucion?.institucion;
+    const destino = solicitud?.institucionDestino;
+
+    return [origen, destino]
+      .filter(Boolean)
+      .map((i) => `${i!.nombre} (${i!.pais})`)
+      .join(' · ');
+  }
+
   /** Las dos instituciones y los docentes de la clase espejo. */
   private descripcion(
     proyecto: ProyectoCalendario,
     sesion: SesionCalendario,
   ): string {
     const solicitud = proyecto.solicitud;
-    const origen = solicitud?.asignacionOrigen?.docenteInstitucion?.institucion;
-    const destino = solicitud?.institucionDestino;
-
-    const instituciones = [origen, destino]
-      .filter(Boolean)
-      .map((i) => `${i!.nombre} (${i!.pais})`)
-      .join(' · ');
+    const instituciones = this.institucionesDe(proyecto);
 
     const docentes = (proyecto.docentes ?? [])
       .map((pd) => {

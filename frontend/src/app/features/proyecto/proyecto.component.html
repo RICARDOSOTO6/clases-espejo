@@ -79,11 +79,31 @@
             }}
           </button>
 
-          <!-- Solo para los docentes participantes (esta primera fase deja el
-               calendario fuera del alcance del agente). La plataforma no avisa
-               de nada: se descarga el archivo .ics y quien avisa es el
-               calendario de cada quien, con los recordatorios que van dentro. -->
+          <!-- Solo para los docentes participantes (el agente consulta). La
+               plataforma no programa recordatorios: entrega un `.ics` que lleva
+               dentro los avisos (1 hora, 30 y 15 minutos) y quien avisa es el
+               calendario de cada quien. Primero el envío por correo, que es la
+               vía cómoda; la descarga queda como segunda vía. -->
           @if (esDocente) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-accion="enviar-calendario"
+              (click)="enviarCalendarioPorCorreo()"
+              [disabled]="enviandoCalendario() || sesiones().length === 0"
+              [title]="
+                sesiones().length === 0
+                  ? 'Todavía no hay sesiones programadas'
+                  : 'Manda el archivo .ics por correo a los docentes participantes; los recordatorios (1 hora, 30 y 15 minutos) los pone su calendario, no la plataforma'
+              "
+            >
+              {{
+                enviandoCalendario()
+                  ? 'Enviando el calendario…'
+                  : 'Enviar el calendario por correo'
+              }}
+            </button>
+
             <button
               type="button"
               class="btn btn-secondary"
@@ -93,17 +113,70 @@
               [title]="
                 sesiones().length === 0
                   ? 'Todavía no hay sesiones programadas'
-                  : 'Descarga un archivo .ics para tu calendario, con avisos 60, 30 y 15 minutos antes de cada sesión'
+                  : 'Descarga el archivo .ics para tu calendario, con avisos 60, 30 y 15 minutos antes de cada sesión'
               "
             >
               {{
                 descargandoCalendario()
                   ? 'Generando calendario…'
-                  : 'Añadir a mi calendario'
+                  : 'Descargar para mi calendario (.ics)'
               }}
             </button>
           }
         </div>
+
+        @if (envioCalendario(); as envio) {
+          <div class="envio-calendario" role="status" aria-live="polite">
+            <p class="text-sm">
+              <strong>
+                {{ envio.enviados.length }} de {{ envio.total }}
+                {{ envio.total === 1 ? 'correo enviado' : 'correos enviados' }}
+              </strong>
+              · {{ envio.sesiones }}
+              {{ envio.sesiones === 1 ? 'sesión' : 'sesiones' }} en
+              <code>{{ envio.nombreArchivo }}</code> · los recordatorios (1 hora,
+              30 y 15 minutos) los pone el calendario de cada quien, no la
+              plataforma.
+              <button
+                type="button"
+                class="btn btn-ghost"
+                (click)="cerrarEnvioCalendario()"
+                aria-label="Cerrar el detalle del envío"
+              >
+                Cerrar
+              </button>
+            </p>
+
+            @if (envio.enviados.length > 0) {
+              <p class="text-sm">
+                <strong>Enviado a:</strong>
+                @for (enviado of envio.enviados; track enviado.correo) {
+                  <span>{{ enviado.nombre }} ({{ enviado.correo }})</span>
+                  @if (!$last) {
+                    <span aria-hidden="true"> · </span>
+                  }
+                }
+              </p>
+            }
+
+            @if (envio.fallidos.length > 0) {
+              <div class="alert alert-error" role="alert">
+                <strong>No se pudo enviar a:</strong>
+                <ul>
+                  @for (fallo of envio.fallidos; track fallo.correo) {
+                    <li>
+                      {{ fallo.nombre }} ({{ fallo.correo }}): {{ fallo.motivo }}
+                    </li>
+                  }
+                </ul>
+                <p class="text-sm">
+                  El archivo es el mismo: puedes descargarlo y mandarlo tú
+                  mientras se arregla el correo.
+                </p>
+              </div>
+            }
+          </div>
+        }
       </section>
 
       @if (esAgente) {

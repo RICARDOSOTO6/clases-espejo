@@ -375,4 +375,71 @@ export class MailService {
       ],
     });
   }
+
+  /**
+   * Envía el calendario de una clase espejo a un docente participante: el
+   * archivo `.ics` va adjunto (no como enlace) para que funcione aunque el
+   * docente abra el correo en otro equipo.
+   *
+   * El texto dice **quién pone los recordatorios** porque es la duda que
+   * aparece siempre: la plataforma no manda avisos ni notificaciones; el
+   * archivo trae tres `VALARM` por evento (1 hora, 30 y 15 minutos) y quien
+   * avisa es el calendario de cada quien al importarlo. También se avisa de que
+   * volver a importar el archivo **actualiza** los eventos en vez de
+   * duplicarlos (el `UID` es estable), que es lo que evita que la segunda
+   * sesión aparezca dos veces.
+   *
+   * El archivo se entrega con su `Content-Type` real (`text/calendar`): algunos
+   * clientes de correo deciden con esa cabecera si abrirlo con el calendario o
+   * guardarlo como un archivo cualquiera.
+   */
+  async sendCalendarioClase(
+    to: string,
+    datos: {
+      /** Nombre de quien recibe el correo (docente participante). */
+      destinatario: string;
+      /** Título de la clase espejo. */
+      titulo: string;
+      /** Las dos instituciones, ya juntas («A (México) · B (Colombia)»). */
+      instituciones: string;
+      /** Cuántas sesiones lleva el archivo, para poder decirlo en el texto. */
+      sesiones: number;
+      /** Contenido del `.ics`, ya generado. */
+      archivo: Buffer;
+      nombreArchivo: string;
+    },
+  ): Promise<void> {
+    const {
+      destinatario,
+      titulo,
+      instituciones,
+      sesiones,
+      archivo,
+      nombreArchivo,
+    } = datos;
+
+    const cuantas = sesiones === 1 ? 'una sesión' : `${sesiones} sesiones`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: `Clases Espejo - Calendario de «${titulo}»`,
+      text: `Hola ${destinatario}: te adjuntamos el calendario de la clase espejo «${titulo}» (${instituciones}), con ${cuantas}. Ábrelo con tu calendario (Google, Outlook, Apple…) para añadir las sesiones. Los recordatorios los pone tu calendario: el archivo ya trae avisos 1 hora, 30 minutos y 15 minutos antes de cada sesión, y la plataforma no envía recordatorios ni notificaciones. Si vuelves a importar el mismo archivo más adelante, se actualizan los mismos eventos en vez de duplicarse.`,
+      html: `
+        <p>Hola <strong>${destinatario}</strong>:</p>
+        <p>Te adjuntamos el calendario de la clase espejo <strong>«${titulo}»</strong> (${instituciones}), con ${cuantas}.</p>
+        <p>Abre el archivo con tu calendario (Google, Outlook, Apple…) para añadir las sesiones.</p>
+        <p><strong>Los recordatorios los pone tu calendario, no la plataforma.</strong> El archivo ya trae avisos <strong>1 hora, 30 minutos y 15 minutos</strong> antes de cada sesión. La plataforma no envía recordatorios ni notificaciones: el aviso lo da el calendario de cada quien al importarlo.</p>
+        <p>Si vuelves a importar el mismo archivo más adelante, se actualizan los mismos eventos en vez de duplicarse.</p>
+        <p>El calendario va adjunto en este correo.</p>
+      `,
+      attachments: [
+        {
+          filename: nombreArchivo,
+          content: archivo,
+          contentType: 'text/calendar; charset=utf-8',
+        },
+      ],
+    });
+  }
 }

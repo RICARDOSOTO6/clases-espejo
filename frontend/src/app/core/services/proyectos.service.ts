@@ -6,6 +6,7 @@ import {
   CreateEvaluacionDto,
   CreateProyectoDocenteDto,
   CreateReportePlanificacionDto,
+  EnvioCalendario,
   Evaluacion,
   Evidencia,
   Mensaje,
@@ -59,6 +60,17 @@ export class ProyectosService {
       observe: 'response',
       responseType: 'blob',
     });
+  }
+
+  /**
+   * Manda el calendario por correo a los docentes participantes (con el `.ics`
+   * adjunto) y devuelve a quién se envió y a quién no, para poder enseñarlo.
+   */
+  enviarCalendario(id: number): Observable<EnvioCalendario> {
+    return this.http.post<EnvioCalendario>(
+      `${API_URL}/proyectos/${id}/calendario/enviar`,
+      {},
+    );
   }
 
   actualizar(id: number, dto: UpdateProyectoDto): Observable<Proyecto> {

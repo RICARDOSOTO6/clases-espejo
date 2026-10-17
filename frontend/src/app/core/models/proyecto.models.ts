@@ -192,3 +192,28 @@ export interface CreateEvaluacionDto {
   resultado: string;
   observaciones: string;
 }
+
+/** Destinatario al que sí le llegó el calendario. */
+export interface EnvioCalendarioEntregado {
+  nombre: string;
+  correo: string;
+}
+
+/** Destinatario al que no le llegó, con el motivo tal como lo dio el servidor. */
+export interface EnvioCalendarioFallido extends EnvioCalendarioEntregado {
+  motivo: string;
+}
+
+/**
+ * Resultado de `POST /proyectos/:id/calendario/enviar`: se informa de cada
+ * envío por separado (no solo «enviado») para que el docente sepa a quién le
+ * llegó y a quién no.
+ */
+export interface EnvioCalendario {
+  total: number;
+  enviados: EnvioCalendarioEntregado[];
+  fallidos: EnvioCalendarioFallido[];
+  /** Sesiones que lleva el archivo, para poder decirlo en la pantalla. */
+  sesiones: number;
+  nombreArchivo: string;
+}
