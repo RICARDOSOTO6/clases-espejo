@@ -585,6 +585,23 @@ export class CaceComponent implements OnInit, OnDestroy {
   // --- Banderas de la comunidad ---
 
   readonly paises = signal<PaisComunidad[]>([]);
+  /** Texto del buscador de países: filtra por nombre o por código ISO. */
+  readonly busquedaPaises = signal('');
+  /**
+   * Países que se pintan: los que pasan el buscador. El orden ya viene
+   * alfabético del servidor (sin acentos ni mayúsculas), así que aquí no se
+   * reordena: una sola regla de orden para el panel y para la web pública.
+   */
+  readonly paisesFiltrados = computed(() => {
+    const texto = normalizarBusqueda(this.busquedaPaises()).trim();
+    const paises = this.paises();
+    if (!texto) return paises;
+    return paises.filter(
+      (pais) =>
+        normalizarBusqueda(pais.nombre).includes(texto) ||
+        normalizarBusqueda(pais.codigo).includes(texto),
+    );
+  });
   readonly cargandoPaises = signal(false);
   readonly errorPaises = signal<string | null>(null);
   readonly avisoPaises = signal<string | null>(null);
@@ -596,11 +613,6 @@ export class CaceComponent implements OnInit, OnDestroy {
   formPais = this.fb.group({
     codigo: ['', [Validators.required, Validators.pattern(/^[A-Za-z]{2}$/)]],
     nombre: ['', [Validators.required, Validators.minLength(2)]],
-    orden: this.fb.nonNullable.control(0, [
-      Validators.required,
-      Validators.min(0),
-      Validators.max(999),
-    ]),
     activo: this.fb.nonNullable.control(true),
   });
 
@@ -1665,14 +1677,12 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   // --- Banderas de la comunidad: alta y edición ---
 
-  /** Deja el formulario listo para añadir un país, ordenado al final. */
+  /** Deja el formulario listo para añadir un país. El orden lo pone la lista. */
   nuevoPais(): void {
     this.paisEnEdicion.set(null);
     this.formPais.reset({
       codigo: '',
       nombre: '',
-      // El siguiente número libre: así un país nuevo no se cuela el primero.
-      orden: this.siguienteOrden(),
       activo: true,
     });
     this.errorPaises.set(null);
@@ -1684,7 +1694,6 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.formPais.reset({
       codigo: pais.codigo,
       nombre: pais.nombre,
-      orden: pais.orden,
       activo: pais.activo,
     });
     this.errorPaises.set(null);
@@ -1704,12 +1713,11 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { codigo, nombre, orden, activo } = this.formPais.getRawValue();
+    const { codigo, nombre, activo } = this.formPais.getRawValue();
     const id = this.paisEnEdicion();
     const dto = {
       codigo: (codigo ?? '').toUpperCase(),
       nombre: (nombre ?? '').trim(),
-      orden,
       activo,
     };
 
@@ -1810,18 +1818,19 @@ export class CaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Siguiente número de orden libre (el último + 1). */
-  private siguienteOrden(): number {
-    return siguienteOrdenDe(this.paises());
+  /**
+   * Buscador de países: por nombre o por código ISO, y sin que los acentos ni
+   * las mayúsculas cambien el resultado («peru» encuentra «Perú» y «PE»).
+   */
+  actualizarBusquedaPaises(evento: Event): void {
+    this.busquedaPaises.set((evento.target as HTMLInputElement).value);
   }
 
-  mensajePais(campo: 'codigo' | 'nombre' | 'orden'): string | null {
+  mensajePais(campo: 'codigo' | 'nombre'): string | null {
     return mensajeDeControl(this.formPais, campo, {
       required: 'Este campo es obligatorio',
       pattern: 'Dos letras, por ejemplo PT',
       minlength: 'Escribe el nombre del país',
-      min: 'El orden va de 0 a 999',
-      max: 'El orden va de 0 a 999',
     });
   }
 

@@ -14,7 +14,6 @@ export interface PaisComunidad {
   /** ISO 3166-1 alpha-2: es lo que arma la bandera. */
   codigo: string;
   nombre: string;
-  orden: number;
   activo: boolean;
 }
 
@@ -98,7 +97,6 @@ export interface ConfiguracionCaceDto {
 export interface PaisComunidadDto {
   codigo?: string;
   nombre?: string;
-  orden?: number;
   activo?: boolean;
 }
 

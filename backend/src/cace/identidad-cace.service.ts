@@ -46,8 +46,42 @@ export function urlCertificadoPremio(archivo: string): string {
   return `/cace/premios/certificado/${archivo}`;
 }
 
-/** Orden estable para países administrados manualmente. */
-const ORDEN_LISTA = [{ orden: 'asc' as const }, { id: 'asc' as const }];
+/**
+ * Clave de comparación alfabética de un país: sin acentos, sin mayúsculas y sin
+ * depender del signo. «Perú» y «peru» dan la misma clave, que es lo que hace
+ * que la lista se lea en el orden que espera una persona y que el buscador del
+ * panel encuentre «Perú» escribiendo «peru».
+ */
+export function claveAlfabeticaPais(valor: string | null | undefined): string {
+  return (valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es');
+}
+
+/**
+ * Países en orden alfabético por nombre, sin distinguir mayúsculas ni acentos.
+ *
+ * Se ordena en memoria y no con `orderBy` de Prisma porque la base no sabe
+ * comparar «África» con «america»: un `ORDER BY nombre` pondría todas las
+ * mayúsculas y los acentos en su propio bloque, que es justo el defecto que se
+ * quería quitar. La lista es de decenas de filas, así que el coste es nulo.
+ * El desempate por nombre exacto evita que dos países iguales cambien de sitio
+ * entre dos peticiones (el `sort` de JavaScript es estable, pero el orden de
+ * llegada de la base no está garantizado sin `orderBy`).
+ */
+export function ordenarPaises<T extends { nombre: string }>(paises: T[]): T[] {
+  return [...paises].sort((a, b) => {
+    const comparacion = claveAlfabeticaPais(a.nombre).localeCompare(
+      claveAlfabeticaPais(b.nombre),
+      'es',
+    );
+    return comparacion !== 0
+      ? comparacion
+      : a.nombre.localeCompare(b.nombre, 'es');
+  });
+}
+
 
 /** Premios: los más recientes primero y luego la prioridad que elige la CACE. */
 const ORDEN_PREMIOS = [
@@ -186,21 +220,34 @@ export class IdentidadCaceService {
 
   // --- Banderas de la comunidad ---
 
-  /** Todos los países, activos e inactivos: es la lista del panel. */
-  listarPaises() {
-    return this.prisma.paisComunidad.findMany({ orderBy: ORDEN_LISTA });
+  /**
+   * Todos los países, activos e inactivos: es la lista del panel.
+   *
+   * Va en orden alfabético por nombre (sin acentos ni mayúsculas), igual que la
+   * lista pública. No se ordena por la columna `orden`: ese campo ya no se
+   * edita desde la interfaz y su valor histórico no debe alterar el orden.
+   */
+  async listarPaises() {
+    return ordenarPaises(
+      await this.prisma.paisComunidad.findMany({ orderBy: { id: 'asc' } }),
+    );
   }
 
   /**
    * Solo los activos. Es lo que ve la sección «Comunidad» de docentes y agentes
    * (y la pantalla de acceso): desactivar un país lo saca de las banderas sin
    * borrarlo, que es lo que se quiere cuando un país deja la comunidad.
+   *
+   * Es también lo que devuelve `GET /cace/publico`, así que el orden con el que
+   * se guardó cada fila no importa: se entrega alfabético.
    */
-  listarPaisesActivos() {
-    return this.prisma.paisComunidad.findMany({
-      where: { activo: true },
-      orderBy: ORDEN_LISTA,
-    });
+  async listarPaisesActivos() {
+    return ordenarPaises(
+      await this.prisma.paisComunidad.findMany({
+        where: { activo: true },
+        orderBy: { id: 'asc' },
+      }),
+    );
   }
 
   async crearPais(dto: CrearPaisComunidadDto) {
@@ -209,7 +256,6 @@ export class IdentidadCaceService {
         // Se guarda en mayúsculas porque el código arma la bandera.
         codigo: dto.codigo.trim().toUpperCase(),
         nombre: dto.nombre.trim(),
-        orden: dto.orden ?? 0,
         activo: dto.activo ?? true,
       },
     });
@@ -224,7 +270,6 @@ export class IdentidadCaceService {
           ? { codigo: dto.codigo.trim().toUpperCase() }
           : {}),
         ...(dto.nombre !== undefined ? { nombre: dto.nombre.trim() } : {}),
-        ...(dto.orden !== undefined ? { orden: dto.orden } : {}),
         ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
       },
     });

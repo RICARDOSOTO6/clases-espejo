@@ -1505,7 +1505,9 @@
 
         <p class="text-sm muted">
           Estos son los países que aparecen como banderas en la sección «Comunidad»
-          de docentes y agentes, en este mismo orden. Si un país deja la comunidad,
+          de docentes y agentes. La lista va siempre en orden alfabético por nombre
+          (sin distinguir mayúsculas ni acentos), tanto aquí como en la web pública:
+          no hay ningún número de orden que mantener. Si un país deja la comunidad,
           desactívalo: desaparece de la web sin perder la fila.
         </p>
 
@@ -1540,14 +1542,6 @@
           </div>
 
           <div class="form-field">
-            <label for="pais-orden">Orden</label>
-            <input id="pais-orden" type="number" min="0" max="999" formControlName="orden" />
-            @if (mensajePais('orden'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          <div class="form-field">
             <label for="pais-activo">
               <input id="pais-activo" type="checkbox" formControlName="activo" />
               <span>Visible en la web</span>
@@ -1571,6 +1565,24 @@
           </div>
         </form>
 
+        @if (paises().length > 0) {
+          <div class="cace-filtros" role="search" aria-label="Buscar país">
+            <div class="form-field">
+              <label for="buscar-paises">Buscar país</label>
+              <input
+                id="buscar-paises"
+                type="search"
+                placeholder="Nombre o código: Perú, PE…"
+                [value]="busquedaPaises()"
+                (input)="actualizarBusquedaPaises($event)"
+              />
+            </div>
+            <p class="cace-filtros-resumen" aria-live="polite">
+              {{ paisesFiltrados().length }} de {{ paises().length }} países
+            </p>
+          </div>
+        }
+
         @if (cargandoPaises() && paises().length === 0) {
           <p class="text-sm muted">Cargando los países de la comunidad...</p>
         } @else if (paises().length === 0) {
@@ -1578,9 +1590,16 @@
             Todavía no hay países cargados. Mientras no haya ninguno, la web muestra
             la lista de banderas que traía de antes.
           </p>
+        } @else if (paisesFiltrados().length === 0) {
+          <div class="cace-vacio-filtro">
+            <strong>Ningún país coincide con «{{ busquedaPaises() }}».</strong>
+            <p class="text-sm muted">
+              Escribe el nombre completo o su código ISO de dos letras.
+            </p>
+          </div>
         } @else {
           <ul class="lista">
-            @for (pais of paises(); track pais.id) {
+            @for (pais of paisesFiltrados(); track pais.id) {
               <li class="lista-item">
                 <div class="pais-bloque">
                   <div class="pais-nombre">
@@ -1594,7 +1613,6 @@
                     />
                     <strong>{{ pais.nombre }}</strong>
                     <span class="pais-codigo">{{ pais.codigo }}</span>
-                    <span class="text-sm muted">Orden {{ pais.orden }}</span>
                     @if (pais.activo) {
                       <span class="estado aprobada">Visible</span>
                     } @else {

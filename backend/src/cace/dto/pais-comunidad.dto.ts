@@ -1,12 +1,9 @@
 import {
   IsBoolean,
-  IsInt,
   IsOptional,
   IsString,
   Matches,
-  Max,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
 
@@ -17,6 +14,12 @@ import {
  * El código es ISO 3166-1 alpha-2 y se guarda en mayúsculas: es lo que arma la
  * bandera (`https://flagcdn.com/w40/<codigo>.png`), así que un código con otro
  * formato daría una bandera rota sin que nadie se entere.
+ *
+ * **No hay campo de orden a propósito.** La lista se muestra siempre en orden
+ * alfabético por nombre (sin distinguir mayúsculas ni acentos), así que un
+ * número manual solo servía para descolocar la lista: el panel y
+ * `GET /cace/publico` ordenan igual, y la columna `orden` del esquema queda
+ * con su valor por defecto sin que nadie la escriba.
  */
 export class CrearPaisComunidadDto {
   @IsString()
@@ -29,12 +32,6 @@ export class CrearPaisComunidadDto {
   @MinLength(2, { message: 'El nombre del país es obligatorio' })
   @MaxLength(80, { message: 'El nombre no puede pasar de 80 caracteres' })
   nombre: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(999)
-  orden?: number;
 
   @IsOptional()
   @IsBoolean()
@@ -55,12 +52,6 @@ export class ActualizarPaisComunidadDto {
   @MinLength(2, { message: 'El nombre del país es obligatorio' })
   @MaxLength(80, { message: 'El nombre no puede pasar de 80 caracteres' })
   nombre?: string;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(999)
-  orden?: number;
 
   @IsOptional()
   @IsBoolean()
