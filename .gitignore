@@ -15,9 +15,30 @@
 backend/.claude/skills/
 backend/.windsurf/skills/
 
-# Versiones superadas del informe técnico: la vigente (v4) sí se versiona, las
-# anteriores no (auditoría de código muerto v5, CM-23). Los archivos se quedan
-# en disco; solo salen del control de versiones.
+# Documentos ofimáticos: NO se versionan. Word, PowerPoint y Excel son
+# entregables (tesis, informes, presentaciones, plantillas de ejemplo) que
+# cambian a diario y no aportan nada a un clon; el repositorio guarda el
+# contenido en `.md` y las capturas. Los archivos se quedan en disco: solo
+# salen del control de versiones. Antes de esto se versionaron por error.
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.xlsx
+*.xls
+*.odt
+*.ods
+*.odp
+
+# La app SÍ descarga estas dos plantillas desde `backend/plantillas`
+# (`/plantillas/plantilla-lista-alumnos.xlsx` y
+# `/plantillas/guia-diseno-certificado.docx`), así que son código: si se
+# ignoraran, los botones de descarga darían 404 en un clon o en un servidor.
+!backend/plantillas/plantilla-lista-alumnos.xlsx
+!backend/plantillas/guia-diseno-certificado.docx
+
+# Versiones superadas del informe técnico y borradores de la raíz (además de la
+# regla general de arriba). Se quedan en disco.
 Informe_Tecnico_Clases_Espejo_corregido.docx
 Informe_Tecnico_Clases_Espejo_v2.docx
 Informe_Tecnico_Clases_Espejo_v3.docx
