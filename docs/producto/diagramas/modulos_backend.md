@@ -4,7 +4,7 @@ Los módulos de NestJS leídos de `backend/src/**/*.module.ts`, con sus
 dependencias, y la lista completa de rutas leída de los controladores
 (`backend/src/**/*.controller.ts`).
 
-**Total: 122 rutas en 23 controladores** (22 archivos `.controller.ts`;
+**Total: 127 rutas en 23 controladores** (22 archivos `.controller.ts`;
 `instituciones.controller.ts` contiene dos clases). Es la misma cifra que
 documenta el README, y cuadra porque se cuentan igual: cada decorador
 `@Get`, `@Post`, `@Put`, `@Patch` o `@Delete`.
@@ -42,7 +42,7 @@ flowchart TB
     Asign["AsignacionesModule"]
     Inst["InstitucionesModule<br/>2 controladores"]
     Solic["SolicitudesModule<br/>exporta SolicitudesService"]
-    Proy["ProyectosModule<br/>2 controladores · 4 providers"]
+    Proy["ProyectosModule<br/>2 controladores · 5 providers"]
     Record["RecordatoriosModule<br/>+ RecordatoriosScheduler"]
 
     Globales["Los módulos marcados @Global<br/>no se importan: están disponibles en todos"]
@@ -103,7 +103,7 @@ flowchart TB
 | `AsignacionesModule` | `asignaciones/asignaciones.module.ts` | `AuthModule` | Docente ↔ materia por periodo. |
 | `InstitucionesModule` | `instituciones/instituciones.module.ts` | `AuthModule` | `InstitucionesController` (con guardia) y `DirectorioInstitucionesController` (**sin** guardia). |
 | `SolicitudesModule` | `solicitudes/solicitudes.module.ts` | `AuthModule` | **Exporta `SolicitudesService`** para el módulo de recordatorios. |
-| `ProyectosModule` | `proyectos/proyectos.module.ts` | `AuthModule` | `ProyectosService`, `ResumenPdfService`, `ListasAlumnosService` y `DocenteParticipanteGuard`. |
+| `ProyectosModule` | `proyectos/proyectos.module.ts` | `AuthModule` | `ProyectosService`, `ResumenPdfService`, `CalendarioIcsService`, `ListasAlumnosService` y `DocenteParticipanteGuard`. |
 | `RecordatoriosModule` | `recordatorios/recordatorios.module.ts` | **`SolicitudesModule`** | `RecordatoriosService` y `RecordatoriosScheduler` (la caducidad y la agenda). |
 | `CaceModule` | `cace/cace.module.ts` | *(ninguno)* | 7 controladores y 5 servicios; usa `PrismaModule` y `MailModule` globales. |
 | `CertificadosModule` | `certificados/certificados.module.ts` | `AuthModule` | 4 controladores y 4 servicios (plantilla, emisión, PDF, verificación). |
@@ -132,11 +132,11 @@ flowchart TB
 | `AsignacionesModule` | 1 | **4** | `/asignaciones` |
 | `InstitucionesModule` | 2 | **7** | `/instituciones` |
 | `SolicitudesModule` | 1 | **6** | `/solicitudes` |
-| `ProyectosModule` | 2 | **35** | `/proyectos` |
+| `ProyectosModule` | 2 | **37** | `/proyectos` |
 | `RecordatoriosModule` | 1 | **1** | `/recordatorios` |
 | `CaceModule` | 7 | **31** | `/cace` |
 | `CertificadosModule` | 4 | **15** | `/proyectos/:id/certificados`, `/cace/certificados`, `/verificar` |
-| **Total** | **23** | **122** | |
+| **Total** | **23** | **127** | |
 
 **Cómo se cuentan** (el mismo comando sirve para volver a comprobarlo):
 
@@ -238,9 +238,9 @@ propia que se indique.
 | `PATCH` | `/solicitudes/:id` | JWT |
 | `DELETE` | `/solicitudes/:id` | JWT |
 
-### 3.9 `ProyectosModule` — 35 rutas
+### 3.9 `ProyectosModule` — 37 rutas
 
-`ProyectosController` (30):
+`ProyectosController` (32):
 
 | Método | Ruta | Guarda |
 | --- | --- | --- |
@@ -248,6 +248,8 @@ propia que se indique.
 | `GET` | `/proyectos/institucion` | JWT |
 | `GET` | `/proyectos/:id` | JWT |
 | `GET` | `/proyectos/:id/resumen-pdf` | JWT |
+| `GET` | `/proyectos/:id/calendario.ics` | JWT |
+| `POST` | `/proyectos/:id/calendario/enviar` | JWT |
 | `GET` | `/proyectos/:id/mensajes` | JWT |
 | `POST` | `/proyectos/:id/mensajes` | JWT |
 | `PATCH` | `/proyectos/:id` | JWT |
@@ -420,10 +422,10 @@ propia que se indique.
 
 ## 5. Notas
 
-* **Ninguna ruta se documenta dos veces.** Las 122 de este documento son las
+* **Ninguna ruta se documenta dos veces.** Las 127 de este documento son las
   mismas que están en las tablas del README; si se añade una ruta, hay que
   actualizar los dos sitios (y el conteo del README).
-* **Diez de las 122 rutas no llevan JWT**: `/`, `/health`, las cuatro de `auth`
+* **Diez de las 127 rutas no llevan JWT**: `/`, `/health`, las cuatro de `auth`
   (registro, login y la activación, que son la puerta de entrada),
   `GET /instituciones/directorio` (el que se usa **mientras** se está
   registrando), `GET /cace/publico`, `GET /cace/premios-publicos` (lo que la

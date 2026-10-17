@@ -516,7 +516,33 @@ Es el registro formal de lo ocurrido en la sesión y **se firma**.
 > firmado, las firmas se reinician y el reporte vuelve a *Borrador*. Es
 > intencional: nadie firma un texto que después cambió.
 
-### 8.7 Actividades
+### 8.7 El calendario de la clase (por correo o descarga)
+
+**Quién:** docentes participantes (el agente no lo usa: su panel es de consulta).
+
+Con las sesiones ya programadas, el proyecto ofrece **dos formas de llevarte la
+clase a tu calendario** (Google, Outlook, Apple…). Las dos entregan el mismo
+archivo `.ics`:
+
+1. **Enviar el calendario por correo** (la vía cómoda): manda el archivo adjunto
+   a **todos los docentes participantes** de una vez.
+   * La pantalla te dice **a quién le llegó** y, si algo falló, **a quién no y
+     por qué**.
+   * Puedes reenviarlo cuando quieras: el archivo se genera de nuevo con las
+     sesiones de ese momento.
+2. **Descargar para mi calendario (.ics)** (la segunda vía): te lo descargas y lo
+   abres tú. Sirve de respaldo si el correo no funciona para alguien.
+
+> **Quién avisa de las sesiones: tu calendario, no la plataforma.** El archivo
+> lleva dentro los avisos de **1 hora, 30 minutos y 15 minutos** antes de cada
+> sesión. La plataforma no manda recordatorios ni notificaciones. Si vuelves a
+> importar el mismo archivo, se actualizan los eventos que ya tenías en vez de
+> duplicarse.
+
+> **Si la clase está cerrada** (finalizada) los botones siguen disponibles: el
+> calendario no cambia la clase y las sesiones quedan igual en la agenda.
+
+### 8.8 Actividades
 
 **Quién:** docentes.
 
@@ -527,7 +553,7 @@ Es el registro formal de lo ocurrido en la sesión y **se firma**.
 Las actividades son las tareas que los estudiantes (o los docentes) deben
 completar entre sesiones.
 
-### 8.8 Evidencias
+### 8.9 Evidencias
 
 **Quién:** docentes.
 
@@ -548,7 +574,7 @@ completar entre sesiones.
 Si el archivo es rechazado, verás el motivo exacto (por ejemplo, *"Tipo de
 archivo no permitido (.exe)"*).
 
-### 8.9 Evaluación final
+### 8.10 Evaluación final
 
 **Quién:** docentes.
 
@@ -561,7 +587,7 @@ archivo no permitido (.exe)"*).
 Se puede registrar más de una evaluación (por ejemplo, una por docente o una por
 instrumento). **Al menos una es obligatoria para poder cerrar la clase.**
 
-### 8.10 Cierre de la clase espejo
+### 8.11 Cierre de la clase espejo
 
 **Quién:** cualquier docente participante. Es el paso final: el proyecto pasa a
 **Finalizado** y queda en solo lectura.
@@ -582,7 +608,7 @@ falta:
 * *"Cada sesión necesita su reporte de clase confirmado por los docentes"*
 * *"La clase espejo ya está finalizada"*
 
-### 8.11 Alumnos (la base de los certificados)
+### 8.12 Alumnos (la base de los certificados)
 
 **Quién:** el **docente** de cada institución, para **sus** alumnos. El agente no
 ve esta sección: solo acompaña la clase.
@@ -751,7 +777,7 @@ Alguien editó el contenido del reporte después de la firma. Vuelvan a firmarlo
 así las firmas corresponden siempre al texto definitivo.
 
 **No puedo cerrar la clase espejo.**
-Revisa las condiciones del punto 8.10: al menos una evaluación final registrada y
+Revisa las condiciones del punto 8.11: al menos una evaluación final registrada y
 **todos** los reportes de clase de las sesiones (no canceladas) confirmados.
 
 **¿Por qué mi solicitud aparece como "Caducada"?**

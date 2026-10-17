@@ -1222,7 +1222,7 @@ con los mismos estados, está en
 
 # 🌐 Endpoints de la API
 
-El backend expone **122 rutas** repartidas en **23 controladores** (22 archivos
+El backend expone **127 rutas** repartidas en **23 controladores** (22 archivos
 `.controller.ts`; `instituciones.controller.ts` contiene dos clases). Todas cuelgan
 de un prefijo y la lista completa está en las tablas siguientes.
 
@@ -1289,6 +1289,8 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `GET` | `/proyectos/institucion` | Proyectos de la institución del agente | JWT (agente) |
 | `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
 | `GET` | `/proyectos/:id/resumen-pdf` | Descarga el resumen de la clase en PDF | JWT |
+| `GET` | `/proyectos/:id/calendario.ics` | Descarga el archivo `.ics` de la clase y sus sesiones, con los avisos de 1 hora, 30 y 15 minutos dentro | JWT (docente participante) |
+| `POST` | `/proyectos/:id/calendario/enviar` | Manda ese mismo `.ics` por correo a los docentes participantes y devuelve el informe de envíos (`enviados` / `fallidos` con motivo); con la clase cerrada también se permite | JWT (docente participante) |
 | `PATCH` | `/proyectos/:id` | Actualiza fechas, plataforma o estado (solo *En planificación* / *En curso*) | JWT (docente) |
 | `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto (solo de su institución) | JWT (agente) |
 | `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto (solo de su institución) | JWT (agente) |
@@ -1394,9 +1396,9 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `PATCH` | `/cace/configuracion` | Guarda lema, descripción y tema | JWT + `personalizarCace` |
 | `POST` | `/cace/configuracion/logo` | Sube el logo de la CACE (PNG/JPG/WEBP, máx. 2 MB) | JWT + `personalizarCace` |
 | `DELETE` | `/cace/configuracion/logo` | Quita el logo de la CACE | JWT + `personalizarCace` |
-| `GET` | `/cace/paises` | Todos los países de la comunidad (incluidos los inactivos) | JWT + `personalizarCace` |
+| `GET` | `/cace/paises` | Todos los países de la comunidad (incluidos los inactivos), en orden alfabético por nombre (sin acentos ni mayúsculas) | JWT + `personalizarCace` |
 | `POST` | `/cace/paises` | Añade un país (código ISO de dos letras y nombre) | JWT + `personalizarCace` |
-| `PATCH` | `/cace/paises/:id` | Edita un país (nombre, orden o activo) | JWT + `personalizarCace` |
+| `PATCH` | `/cace/paises/:id` | Edita un país (código, nombre o activo). **No hay campo de orden**: la lista se ordena sola por nombre | JWT + `personalizarCace` |
 | `DELETE` | `/cace/paises/:id` | Elimina un país de la comunidad | JWT + `personalizarCace` |
 | `GET` | `/cace/premios` | Todos los premios (publicados y no) y las instituciones del formulario | JWT + `publicarPremios` |
 | `POST` | `/cace/premios` | Crea un premio o reconocimiento | JWT + `publicarPremios` |
@@ -1436,6 +1438,26 @@ de un prefijo y la lista completa está en las tablas siguientes.
 La respuesta incluye `resumen` (vencidas, críticas, próximas, clases y tareas),
 `solicitudes` (con `fechaLimite`, `diasRestantes` y `urgencia`), `clases` y
 `tareas`. Los plazos también viajan en los listados de `/solicitudes`.
+
+### El calendario de la clase: descarga o correo
+
+El `.ics` de una clase espejo lo genera `CalendarioIcsService` (iCalendar,
+RFC 5545) y **la plataforma no programa recordatorios**: cada evento lleva
+dentro sus tres bloques `VALARM` (1 hora, 30 minutos y 15 minutos antes) y quien
+avisa es el calendario de cada quien (Google, Apple, Outlook…) al importarlo.
+El `UID` es estable por sesión (`sesion-<id>@clasesconjuntas`), así que volver a
+importar el archivo **actualiza** los eventos en vez de duplicarlos.
+
+Hay dos formas de entregarlo, y las dos viven en el proyecto:
+
+* **`POST /proyectos/:id/calendario/enviar`** (la cómoda): manda el `.ics`
+  adjunto como `text/calendar` a los docentes participantes con
+  `MailService.sendCalendarioClase` y devuelve `{ total, enviados, fallidos,
+  sesiones, nombreArchivo }`. Cada fallo se recoge con su motivo y **no aborta
+  los demás envíos**: el docente ve a quién le llegó y a quién no. Se permite
+  también con la clase cerrada (enviar no cambia la clase).
+* **`GET /proyectos/:id/calendario.ics`** (la segunda vía): descarga el archivo
+  para abrirlo a mano; sirve de respaldo si el correo falla.
 
 ---
 
@@ -1732,7 +1754,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Autorización por recurso y por capacidad
 * [x] CORS restringido y cabeceras seguras en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (21 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (23 migraciones versionadas en `backend/prisma/migrations/`)
 * [ ] Cobertura de pruebas automatizadas (Jest) del flujo completo
 
 ## Frontend
@@ -1748,6 +1770,14 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Chat entre docentes del proyecto
 * [x] Clases espejo: sesiones, actividades y evidencias
 * [x] Reporte de clase conjunta, evaluación final y cierre
+* [x] **Calendario de la clase por correo o descarga**: «Enviar el calendario por
+  correo» manda el `.ics` adjunto a los docentes participantes y enseña a quién
+  llegó y a quién no (con el motivo), y la descarga queda como segunda vía. Los
+  avisos de 1 hora, 30 y 15 minutos los pone el calendario de cada quien: la
+  plataforma no programa recordatorios
+* [x] Países de la comunidad sin campo de orden: la lista va alfabética por
+  nombre (sin acentos ni mayúsculas) en el panel y en `GET /cace/publico`, y el
+  buscador del panel filtra por nombre o por código ISO («peru» encuentra «Perú»)
 * [x] Calendario mensual **en una ventana emergente** (con el detalle del día
       elegido) y sección de recordatorios con las listas «lo próximo» y «por
       hacer», más las marcas de urgencia (crítica, próxima, vencida)
@@ -1909,7 +1939,7 @@ Las fases posteriores están planificadas en
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
 - Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
 - Autorización por capacidad: `@Requiere('...')` + `CapacidadesGuard` (`backend/src/auth/capacidades.guard.ts`), con la matriz en `backend/src/common/capacidades.ts`. **Añadir un permiso es añadir una fila a la matriz**, no comparar el rol a mano.
-- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (122 rutas).
+- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (127 rutas).
 - Al final de cada semana, hacer un **commit** descriptivo.
 
 ---
