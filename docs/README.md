@@ -34,6 +34,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | [`guias/guia-diseno-certificado.md`](guias/guia-diseno-certificado.md) | **Guía para diseñar el certificado fuera de la aplicación** (medidas, zonas y archivos de ejemplo). |
 | [`guias/respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) | El respaldo de la base (`clasesconjuntas_respaldo_20261013`) y cómo restaurarlo. |
 | [`producto/plan-de-accion.md`](producto/plan-de-accion.md) | El plan por fases de la CACE, las instituciones y los certificados. |
+| [`producto/plan-de-fases-pendientes.md`](producto/plan-de-fases-pendientes.md) | El plan por fases de **lo que falta** para uso real (cuenta, correo, integridad, operación, privacidad y mantenibilidad), con criterios de aceptación. |
 | [`producto/certificados-diseno.md`](producto/certificados-diseno.md) | Las decisiones de diseño de los certificados (plantilla universal, emisión, verificación y entrega). |
 | [`informes/informe-de-actividades.md`](informes/informe-de-actividades.md) | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
 | [`informes/informe-para-el-cliente.md`](informes/informe-para-el-cliente.md) | El informe de entrega para el cliente. |
