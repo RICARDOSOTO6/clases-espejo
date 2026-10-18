@@ -62,6 +62,13 @@ export class UiStateService {
    * La guía interactiva necesita abrir formularios que viven en la pantalla
    * («Nueva solicitud», «Invitar docente»), así que los pide por aquí.
    */
+  /**
+   * Recorrido de la guía pedido desde otra sección. Se guarda aquí porque el
+   * esqueleto se recrea al cambiar de ruta y la petición tiene que sobrevivir a
+   * esa navegación.
+   */
+  readonly guiaPendiente = signal<string | null>(null);
+
   readonly formularioSolicitud = signal<'abrir' | 'cerrar' | null>(null);
   readonly formularioInvitacion = signal<'abrir' | 'cerrar' | null>(null);
 

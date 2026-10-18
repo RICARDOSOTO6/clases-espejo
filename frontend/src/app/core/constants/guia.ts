@@ -652,15 +652,15 @@ export const GUIA_CACE: GuiaSeccion[] = [
           'La lista completa: primero las pendientes, y después las aprobadas, rechazadas y vetadas.',
       },
       {
-        selector: '#personalizacion',
+        selector: 'a[href="/panel/personalizacion"]',
         titulo: 'Personalización',
         texto:
-          'Aquí cambias el logo, los textos y el tema de la CACE. Lo que guardes se ve en toda la aplicación, incluida la pantalla de acceso.',
+          'Aquí cambias el logo, los textos y el tema de la CACE. Lo que guardes se ve en toda la aplicación, incluida la pantalla de acceso. La entrada está en el menú lateral; al pulsarla se abre su página.',
       },
       {
         titulo: 'Cuando quieras seguir',
         texto:
-          'En el menú lateral tienes «Instituciones», «Personalización», «Comunidad» y «Premios», y «Ayuda» vuelve a abrir esta ventana cuando la necesites.',
+          'El menú lateral te muestra lo que tu rol puede hacer: instituciones, miembros, solicitudes de borrado, personalización, comunidad, premios y certificado. «Ayuda» vuelve a abrir esta ventana cuando la necesites.',
       },
     ],
   },
@@ -718,7 +718,7 @@ export const GUIA_CACE: GuiaSeccion[] = [
           'Eliges entre diez paletas institucionales, estacionales y festivas ya probadas. Un color libre rompería el contraste y dejaría texto ilegible sobre el fondo; con temas cerrados eso no puede pasar.',
       },
       {
-        selector: '#personalizacion-vista',
+        selector: '.personalizacion-vista',
         titulo: 'Vista previa',
         texto:
           'Antes de guardar ves cómo queda el tema elegido, con sus botones y sus tarjetas, sin cambiar el resto de la aplicación.',
@@ -734,7 +734,7 @@ export const GUIA_CACE: GuiaSeccion[] = [
         selector: '#comunidad',
         titulo: 'Los países de la comunidad',
         texto:
-          'Son los que aparecen como banderas en la sección «Comunidad» de docentes y agentes. El orden de esta lista es el que se ve allí.',
+          'Son los que aparecen como banderas en la sección «Comunidad» de docentes y agentes. La lista se ordena sola por nombre (sin importar acentos ni mayúsculas) y puedes buscar por nombre o por código ISO.',
       },
       {
         boton: 'Añadir país',
@@ -761,7 +761,6 @@ export const GUIA_CACE: GuiaSeccion[] = [
           'Cada reconocimiento guarda el tipo, el título, el año, la entidad otorgante y una fuente oficial opcional, además de la imagen y el certificado.',
       },
       {
-        boton: 'Guardar premio',
         titulo: 'Borrador o publicado',
         texto:
           'Mientras no lo marques como publicado, el premio solo lo ves tú aquí: no sale ni en la sección «Comunidad» ni en la portada del acceso.',
@@ -770,6 +769,101 @@ export const GUIA_CACE: GuiaSeccion[] = [
         titulo: 'Evidencia y carrusel',
         texto:
           'Después de guardar, añade una imagen, certificado o enlace de fuente oficial desde la ficha. Los reconocimientos publicados avanzan automáticamente en el carrusel y se pueden pausar.',
+      },
+    ],
+  },
+  {
+    id: 'miembros',
+    titulo: 'Miembros',
+    resumen: 'El equipo de la CACE: quién la preside y qué secretarías la ayudan.',
+    pasos: [
+      {
+        selector: '#miembros',
+        titulo: 'El equipo de la CACE',
+        texto:
+          'Aquí están la presidencia y las secretarías, con su cargo y si la cuenta está activa. Cada persona ve y puede hacer lo que le corresponde: la presidencia reparte el trabajo.',
+      },
+      {
+        selector: '#buscar-miembros',
+        titulo: 'Encuentra a cada persona',
+        texto:
+          'Busca por nombre, correo o cargo, y filtra por estado. Así sabes de un vistazo quién tiene acceso y quién no.',
+      },
+      {
+        boton: 'Dar de alta',
+        titulo: 'Crea una secretaría',
+        texto:
+          'La presidencia da de alta la cuenta con el correo de la persona: le llega la invitación para activarla y elegir su contraseña.',
+      },
+      {
+        selector: '#presidencia',
+        titulo: 'Transmitir el cargo',
+        texto:
+          'Solo la presidencia ve esta sección: si cambia el cargo, queda registrado quién se lo pasa a quién y desde cuándo.',
+      },
+    ],
+  },
+  {
+    id: 'solicitudes',
+    titulo: 'Solicitudes de borrado',
+    resumen: 'Pedir el borrado de una institución rechazada y autorizarlo.',
+    pasos: [
+      {
+        selector: '#solicitudes',
+        titulo: 'Instituciones rechazadas',
+        texto:
+          'Una institución rechazada no se borra sola: primero alguien pide el borrado y después la presidencia lo autoriza. Aquí queda el rastro de las dos cosas.',
+      },
+      {
+        titulo: 'Busca la institución o el motivo',
+        texto:
+          'Cuando haya instituciones rechazadas, busca por institución, persona o motivo y filtra por estado para separar las pendientes de las ya resueltas.',
+      },
+      {
+        titulo: 'La secretaría pide',
+        texto:
+          'Con «Pedir borrado» se explica el motivo y se envía la petición. Ojo: pedir el borrado no borra nada todavía; hace falta que la presidencia lo autorice.',
+      },
+      {
+        titulo: 'La presidencia autoriza',
+        texto:
+          'En la lista de solicitudes, «Aprobar» ejecuta el borrado definitivo (solo si la institución no tiene historial) y «Rechazar» pide el motivo por el que no se borra.',
+      },
+      {
+        titulo: 'Queda constancia',
+        texto:
+          'La solicitud guarda quién la pidió, cuándo, por qué, y quién la resolvió. Así el borrado siempre tiene un responsable.',
+      },
+    ],
+  },
+  {
+    id: 'certificado',
+    titulo: 'Certificado',
+    resumen: 'La plantilla universal de los certificados y sus versiones.',
+    pasos: [
+      {
+        selector: '#certificado',
+        titulo: 'La plantilla del certificado',
+        texto:
+          'Una sola plantilla para todos los certificados: el fondo define las zonas y los campos de texto que se rellenan al emitir.',
+      },
+      {
+        selector: '[data-accion="descargar-zonas"]',
+        titulo: 'El fondo y sus zonas',
+        texto:
+          'El fondo es la imagen del diseño. Las zonas marcan dónde va cada campo (nombre, clase, fecha, firma) y se ajustan arrastrando.',
+      },
+      {
+        selector: '[data-accion="guardar"]',
+        titulo: 'Guardar crea una versión',
+        texto:
+          'Cada vez que guardas nace una versión nueva de la plantilla. Los certificados ya emitidos se quedan con la versión con la que se crearon: no cambian retroactivamente.',
+      },
+      {
+        selector: '[data-accion="ayuda"]',
+        titulo: 'La ayuda de esta pantalla',
+        texto:
+          'El botón «?» abre la explicación de esta sección: qué campos puede editar la presidencia, qué textos legales lleva el certificado y qué se puede cambiar sin afectar a los ya emitidos.',
       },
     ],
   },
@@ -822,6 +916,18 @@ export function guiaProyecto(rol: 'DOCENTE' | 'AGENTE'): GuiaSeccion {
         'Cada sesión se programa con su fecha y su enlace. Al terminar se captura el reporte de clase y cada docente lo firma: si alguien cambia el texto, las firmas se reinician.',
     },
     {
+      selector: '[data-accion="enviar-calendario"]',
+      titulo: 'Manda el calendario por correo',
+      texto:
+        'Este botón envía a los docentes participantes el archivo .ics con las sesiones. Los recordatorios (1 hora, 30 y 15 minutos antes) los pone el calendario de cada persona: la plataforma no manda avisos por su cuenta. Al terminar te dice a quién le llegó y si alguno falló.',
+    },
+    {
+      selector: '[data-accion="anadir-calendario"]',
+      titulo: 'O descárgalo para tu calendario',
+      texto:
+        'La segunda opción descarga el mismo .ics sin enviar correos: úsala si prefieres añadirlo a tu calendario o compartirlo por tu cuenta. Las dos rutas usan las mismas sesiones.',
+    },
+    {
       selector: '#actividades',
       titulo: 'Actividades',
       texto:
@@ -838,6 +944,12 @@ export function guiaProyecto(rol: 'DOCENTE' | 'AGENTE'): GuiaSeccion {
       titulo: 'Evaluación final',
       texto:
         'Cómo salió la experiencia: resultados y observaciones. Es uno de los requisitos para poder cerrar.',
+    },
+    {
+      selector: '#certificados',
+      titulo: 'Certificados de la clase',
+      texto:
+        'Cuando la clase se cierra, con la lista de alumnos se emiten los certificados. Aquí ves los de esta clase, con su folio y su enlace de verificación.',
     },
     {
       selector: '#cierre',
@@ -873,7 +985,7 @@ export function guiaProyecto(rol: 'DOCENTE' | 'AGENTE'): GuiaSeccion {
   return {
     id: 'proyecto',
     titulo: 'Esta clase espejo',
-    resumen: 'La pantalla completa de la clase: planificación, sesiones y cierre.',
+    resumen: 'La pantalla completa de la clase: planificación, sesiones, calendario y cierre.',
     pasos,
   };
 }

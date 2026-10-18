@@ -1,14 +1,18 @@
 import {
   Component,
+  DestroyRef,
   EventEmitter,
   HostListener,
   Input,
+  OnInit,
   Output,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { IdentidadCaceService } from '../../../core/services/identidad-cace.service';
@@ -166,8 +170,9 @@ type PanelAbierto = 'notificaciones' | 'mensajes' | 'usuario' | null;
   imports: [RouterLink, ModalComponent, GuiaComponent],
   templateUrl: './layout.component.html',
 })
-export class LayoutComponent {
+export class LayoutComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthService);
   readonly ui = inject(UiStateService);
 
@@ -210,7 +215,7 @@ export class LayoutComponent {
   /** Desplegable abierto de la barra superior. */
   readonly panelAbierto = signal<PanelAbierto>(null);
   /** Último elemento del menú pulsado, para marcarlo como activo. */
-  readonly seccionActiva = signal('inicio');
+  readonly seccionActiva = signal(this.seccionDeUrl(this.router.url));
 
   readonly perfilAbierto = signal(false);
   readonly ayudaAbierta = signal(false);
@@ -225,6 +230,51 @@ export class LayoutComponent {
    */
   private readonly esDetalleDeProyecto = this.router.url.startsWith('/proyectos/');
 
+  constructor() {
+    // La sección no solo cambia cuando se pulsa el menú: también al recargar la
+    // página, al abrir un enlace con ancla o al usar atrás/adelante. Sin esto, la
+    // ayuda ofrecía el recorrido de «Inicio» estando en otra sección.
+    this.router.events
+      .pipe(
+        filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((evento) => {
+        if (this.esDetalleDeProyecto) return;
+        this.seccionActiva.set(this.seccionDeUrl(evento.urlAfterRedirects));
+        this.cambiarRecorrido(this.seccionActiva());
+        this.recogerGuiaPendiente();
+      });
+  }
+
+  ngOnInit(): void {
+    // Si la guía se pidió desde otra sección, el esqueleto nuevo la recoge aquí.
+    this.recogerGuiaPendiente();
+  }
+
+  /** Arranca la guía que otra pantalla dejó pendiente, si hay alguna. */
+  private recogerGuiaPendiente(): void {
+    const pendiente = this.ui.guiaPendiente();
+    if (!pendiente) return;
+    this.ui.guiaPendiente.set(null);
+    this.guiaPedida.set(pendiente);
+    // La sección nueva (por ejemplo Certificado) tarda un instante en pintarse;
+    // si la guía arranca antes, su primer paso no encuentra el elemento.
+    setTimeout(() => this.guiaActiva.set(true), 350);
+  }
+
+  /**
+   * Sección del panel que corresponde a una URL: la ruta (`/panel/personalizacion`,
+   * `/panel/certificado`) o el ancla (`/panel#miembros`). Si no hay ninguna, Inicio.
+   */
+  private seccionDeUrl(url: string): string {
+    const arbol = this.router.parseUrl(url);
+    const segmentos = arbol.root.children['primary']?.segments ?? [];
+    const ultimo = segmentos[segmentos.length - 1]?.path ?? '';
+    if (ultimo === 'personalizacion' || ultimo === 'certificado') return ultimo;
+    return arbol.fragment || 'inicio';
+  }
+
   /** Apartado en el que está el usuario (la clase espejo cuenta como apartado). */
   readonly apartadoActual = computed(() =>
     this.esDetalleDeProyecto ? 'proyecto' : this.seccionActiva(),
@@ -236,7 +286,14 @@ export class LayoutComponent {
       // La clase espejo solo la abren docentes y agentes.
       return [guiaProyecto(this.rol === 'AGENTE' ? 'AGENTE' : 'DOCENTE')];
     }
-    if (this.esCace) return GUIA_CACE;
+    if (this.esCace) {
+      // Solo se ofrecen los recorridos de las secciones que este rol ve en el
+      // menú: la secretaría no tiene «Miembros» ni «Certificado».
+      const visibles = new Set(this.items().map((item) => item.id));
+      return GUIA_CACE.filter(
+        (guia) => guia.id === 'completo' || visibles.has(guia.id),
+      );
+    }
     return this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE;
   });
 
@@ -794,7 +851,37 @@ export class LayoutComponent {
     this.perfilAbierto.set(false);
     this.panelAbierto.set(null);
     this.cerrarSidebar();
-    this.guiaPedida.set(apartado ?? this.apartadoActual());
+
+    const objetivo = apartado ?? this.apartadoActual();
+    this.guiaPedida.set(objetivo);
+
+    // Cada recorrido vive en su apartado: «Personalización» y «Certificado» son
+    // páginas propias y los demás son anclas del panel. Antes de señalar nada
+    // hay que estar en la sección, o la guía no encuentra sus elementos.
+    const item = this.items().find((entrada) => entrada.id === objetivo);
+    if (!item) {
+      this.guiaActiva.set(true);
+      return;
+    }
+    const rutaActual = this.router.url.split(/[?#]/)[0];
+    if (item.ruta) {
+      if (rutaActual !== item.ruta) {
+        this.ui.guiaPendiente.set(objetivo);
+        void this.router.navigateByUrl(item.ruta);
+        return;
+      }
+      this.guiaActiva.set(true);
+      return;
+    }
+    if (item.ancla) {
+      const ancla = item.ancla;
+      if (rutaActual !== this.homeRoute) {
+        this.ui.guiaPendiente.set(objetivo);
+        void this.router.navigate([this.homeRoute], { fragment: ancla });
+        return;
+      }
+      this.bajarA(ancla);
+    }
     this.guiaActiva.set(true);
   }
 

@@ -60,10 +60,22 @@ export class GuiaComponent implements OnInit, OnDestroy, OnChanges {
   private buscando = false;
   private temporizador?: ReturnType<typeof setTimeout>;
 
-  readonly actual = computed<PasoGuia | null>(
-    () => this.pasos[this.indice()] ?? null,
-  );
-  readonly esUltimo = computed(() => this.indice() === this.pasos.length - 1);
+  /**
+   * Los pasos llegan por `@Input` (no son señal), así que el `computed` no se
+   * enteraría de que cambió el recorrido: esta versión lo fuerza. Sin ella, al
+   * cambiar de apartado el panel seguía mostrando el título del recorrido
+   * anterior aunque el contador ya fuera el nuevo.
+   */
+  private readonly versionPasos = signal(0);
+
+  readonly actual = computed<PasoGuia | null>(() => {
+    this.versionPasos();
+    return this.pasos[this.indice()] ?? null;
+  });
+  readonly esUltimo = computed(() => {
+    this.versionPasos();
+    return this.indice() === this.pasos.length - 1;
+  });
   readonly altoPanel = signal(190);
 
   ngOnInit(): void {
@@ -86,6 +98,7 @@ export class GuiaComponent implements OnInit, OnDestroy, OnChanges {
   ngOnChanges(cambios: SimpleChanges): void {
     const nuevoRecorrido = cambios['pasos'];
     if (!nuevoRecorrido || nuevoRecorrido.firstChange) return;
+    this.versionPasos.update((version) => version + 1);
     this.entrarEn(0);
   }
 
