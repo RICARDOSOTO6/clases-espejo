@@ -1,7 +1,21 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { panelDeRol } from './core/guards/panel.guard';
 import { roleGuard } from './core/guards/role.guard';
 
+/**
+ * Rutas de la aplicación.
+ *
+ * **Las URLs del panel no dicen qué rol eres.** Agente, docente y CACE entran
+ * todos por `/panel`, y el router elige la pantalla con `panelDeRol` (tres rutas
+ * con el mismo path: gana la primera cuyo rol coincide). Las secciones que solo
+ * tiene la CACE cuelgan de `/panel/...`; el resto de roles, si las abre, vuelve
+ * a su panel sin ver el login.
+ *
+ * Las rutas viejas (`/agente`, `/docente`, `/cace`…) se quedan como redirección
+ * para que un marcador guardado siga funcionando, pero la aplicación ya no
+ * enlaza a ellas.
+ */
 export const routes: Routes = [
   {
     path: '',
@@ -41,43 +55,63 @@ export const routes: Routes = [
         (m) => m.VerificacionComponent,
       ),
   },
+
+  // --- Secciones de la CACE (páginas propias dentro del mismo panel) ---
   {
-    path: 'agente',
+    path: 'panel/personalizacion',
+    loadComponent: () =>
+      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    canActivate: [authGuard, roleGuard('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
+  },
+  {
+    path: 'panel/certificado',
+    loadComponent: () =>
+      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    canActivate: [authGuard, roleGuard('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
+  },
+
+  // --- Panel único: la URL no revela el rol ---
+  {
+    path: 'panel',
+    pathMatch: 'full',
+    canMatch: [panelDeRol('AGENTE')],
     loadComponent: () =>
       import('./features/agente/agente.component').then(
         (m) => m.AgenteComponent,
       ),
-    canActivate: [authGuard, roleGuard('AGENTE')],
   },
   {
-    path: 'docente',
+    path: 'panel',
+    pathMatch: 'full',
+    canMatch: [panelDeRol('DOCENTE')],
     loadComponent: () =>
       import('./features/docente/docente.component').then(
         (m) => m.DocenteComponent,
       ),
-    canActivate: [authGuard, roleGuard('DOCENTE')],
   },
   {
-    // La presidencia de la CACE tiene su propia pantalla, sin el esqueleto de
-    // agentes y docentes. Solo pide estar autenticado: su primer paso es
-    // cambiar la contraseña provisional.
-    path: 'cace',
+    path: 'panel',
+    pathMatch: 'full',
+    canMatch: [panelDeRol('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
     loadComponent: () =>
       import('./features/cace/cace.component').then((m) => m.CaceComponent),
-    canActivate: [authGuard],
   },
+
+  // --- Compatibilidad con enlaces guardados de antes ---
+  { path: 'agente', redirectTo: 'panel', pathMatch: 'full' },
+  { path: 'docente', redirectTo: 'panel', pathMatch: 'full' },
+  { path: 'cace', redirectTo: 'panel', pathMatch: 'full' },
   {
     path: 'cace/personalizacion',
-    loadComponent: () =>
-      import('./features/cace/cace.component').then((m) => m.CaceComponent),
-    canActivate: [authGuard],
+    redirectTo: 'panel/personalizacion',
+    pathMatch: 'full',
   },
   {
     path: 'cace/certificado',
-    loadComponent: () =>
-      import('./features/cace/cace.component').then((m) => m.CaceComponent),
-    canActivate: [authGuard],
+    redirectTo: 'panel/certificado',
+    pathMatch: 'full',
   },
+
   {
     path: 'proyectos/:id',
     loadComponent: () =>

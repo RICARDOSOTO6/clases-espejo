@@ -187,7 +187,7 @@ export class LayoutComponent {
   /** Texto alternativo de la bandera. */
   @Input() flagAlt = '';
   /** Ruta del panel, usada por el logo y por el elemento "Inicio". */
-  @Input() homeRoute = '/docente';
+  @Input() homeRoute = '/panel';
 
   /**
    * Capacidades del usuario, tal como las devuelve `/cace/capacidades`. Es lo
@@ -320,7 +320,7 @@ export class LayoutComponent {
           id: 'personalizacion',
           etiqueta: 'Personalización',
           icono: 'personalizar',
-          ruta: '/cace/personalizacion',
+          ruta: '/panel/personalizacion',
           capacidades: ['personalizarCace'],
         },
         {
@@ -344,7 +344,7 @@ export class LayoutComponent {
           id: 'certificado',
           etiqueta: 'Certificado',
           icono: 'certificado',
-          ruta: '/cace/certificado',
+          ruta: '/panel/certificado',
           capacidades: ['disenarCertificados', 'firmarCertificados'],
         },
         // El perfil y la ayuda van aquí, y no en el bloque de cuenta, porque el

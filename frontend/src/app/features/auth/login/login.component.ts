@@ -56,7 +56,7 @@ export class LoginComponent implements OnInit {
 
     const user = this.auth.currentUser();
     if (this.auth.isAuthenticated && user) {
-      this.router.navigate([this.destinoPorRol(user.rol)]);
+      this.router.navigate(['/panel']);
     }
   }
 
@@ -86,10 +86,10 @@ export class LoginComponent implements OnInit {
     const { correo, password } = this.form.value;
 
     this.auth.login(correo!, password!).subscribe({
-      next: (res) => {
+      next: () => {
         this.loading.set(false);
         this.form.reset();
-        this.router.navigate([this.destinoPorRol(res.usuario.rol)]);
+        this.router.navigate(['/panel']);
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
@@ -97,17 +97,5 @@ export class LoginComponent implements OnInit {
         this.form.reset();
       },
     });
-  }
-
-  /**
-   * A qué pantalla va cada rol después de entrar.
-   *
-   * La presidencia de la CACE tiene su propia ruta: si cayera en `/docente`, el
-   * guardia de esa ruta la rechazaría y volvería al login en un bucle.
-   */
-  private destinoPorRol(rol: string | null): string {
-    if (rol === 'DOCENTE') return '/docente';
-    if (rol === 'PRESIDENTE_CACE' || rol === 'SECRETARIA_CACE') return '/cace';
-    return '/agente';
   }
 }

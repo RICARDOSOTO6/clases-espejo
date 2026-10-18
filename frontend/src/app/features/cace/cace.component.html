@@ -2,7 +2,7 @@
   [userName]="nombreUsuario"
   [rol]="rolCace()"
   [capacidades]="capacidades()"
-  homeRoute="/cace"
+  homeRoute="/panel"
   (logout)="logout()"
 >
   <!--
@@ -13,7 +13,7 @@
   <main class="content cace-pantalla" [attr.data-capacidades]="capacidadesTexto()">
     @if (soloSeccion()) {
       <p>
-        <a class="link-button" routerLink="/cace">← Volver a la CACE</a>
+        <a class="link-button" routerLink="/panel">← Volver a la CACE</a>
       </p>
     }
 
@@ -1482,7 +1482,7 @@
       @if (mostrarSeccion('comunidad') && puede('personalizarCace')) {
       <section class="card" id="comunidad" data-seccion="comunidad">
         <nav class="cace-breadcrumb" aria-label="Migas de pan">
-          <a routerLink="/cace">Inicio</a>
+          <a routerLink="/panel">Inicio</a>
           <span class="separador" aria-hidden="true">›</span>
           <span>Comunidad</span>
         </nav>

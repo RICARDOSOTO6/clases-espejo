@@ -180,7 +180,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly exito = signal<string | null>(null);
 
   /**
-   * Página dedicada: al entrar por /cace/personalizacion o /cace/certificado
+   * Página dedicada: al entrar por /panel/personalizacion o /panel/certificado
    * se enseña solo esa sección a pantalla completa (la misma lógica y datos,
    * sin mover el estado a otro componente).
    */
@@ -216,7 +216,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       {
         id: 'personalizacion',
         etiqueta: 'Identidad',
-        ruta: '/cace/personalizacion',
+        ruta: '/panel/personalizacion',
         capacidades: ['personalizarCace']
       },
       {
@@ -234,7 +234,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       {
         id: 'certificado',
         etiqueta: 'Certificados',
-        ruta: '/cace/certificado',
+        ruta: '/panel/certificado',
         capacidades: ['disenarCertificados', 'firmarCertificados']
       },
     ];
@@ -727,9 +727,9 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const url = this.router.url;
-    if (url.startsWith('/cace/personalizacion')) {
+    if (url.startsWith('/panel/personalizacion')) {
       this.soloSeccion.set('personalizacion');
-    } else if (url.startsWith('/cace/certificado')) {
+    } else if (url.startsWith('/panel/certificado')) {
       this.soloSeccion.set('certificado');
     }
 

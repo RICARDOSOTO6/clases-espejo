@@ -86,7 +86,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly usuario = this.auth.currentUser();
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
-  readonly panelUrl = this.esAgente ? '/agente' : '/docente';
+  /**
+   * Vuelta al panel. Es la misma URL para todos los roles: `/panel` decide qué
+   * pantalla se pinta según el rol, así que la dirección no delata quién eres.
+   */
+  readonly panelUrl = '/panel';
 
   /** Plantilla de ejemplo para subir la lista (descargable desde la sección). */
   readonly urlPlantillaAlumnos = urlDeArchivo(
