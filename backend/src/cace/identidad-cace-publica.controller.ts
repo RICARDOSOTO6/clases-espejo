@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Header, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { IdentidadCaceService } from './identidad-cace.service';
 import { cabeceraDescarga } from '../common/imagenes';
@@ -19,14 +19,20 @@ import { cabeceraDescarga } from '../common/imagenes';
 export class IdentidadCacePublicaController {
   constructor(private readonly identidad: IdentidadCaceService) {}
 
-  /** Textos, logo, tema y países activos de la comunidad. */
+  /**
+   * Se guarda y se revalida con el ETag (304 cuando no cambió): la portada no
+   * repite el cuerpo en cada visita, pero nunca enseña una identidad vieja
+   * después de que la presidencia cambie el lema o las banderas.
+   */
   @Get('publico')
+  @Header('Cache-Control', 'max-age=0, must-revalidate')
   publico() {
     return this.identidad.configuracionPublica();
   }
 
   /** Premios y reconocimientos publicados, para la sección «Comunidad». */
   @Get('premios-publicos')
+  @Header('Cache-Control', 'max-age=0, must-revalidate')
   premiosPublicos() {
     return this.identidad.listarPremiosPublicados();
   }

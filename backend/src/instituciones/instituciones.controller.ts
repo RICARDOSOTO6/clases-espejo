@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   ParseIntPipe,
   Patch,
@@ -114,7 +115,13 @@ export class InstitucionesController {
 export class DirectorioInstitucionesController {
   constructor(private readonly institucionesService: InstitucionesService) {}
 
+  /**
+   * Se guarda y se revalida con el ETag (304 si no cambió): durante el registro
+   * el navegador no repite el listado en cada búsqueda, pero nunca enseña uno
+   * viejo justo después de crear una institución.
+   */
   @Get('directorio')
+  @Header('Cache-Control', 'max-age=0, must-revalidate')
   directorio(@Query('q') q?: string) {
     return this.institucionesService.directorio(q);
   }
