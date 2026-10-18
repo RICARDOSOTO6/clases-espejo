@@ -40,6 +40,7 @@ model Institucion {
   premios             Premio[]
   solicitudesBorrado  SolicitudBorradoInstitucion[]
 
+  @@index([estadoCace])
   @@map("INSTITUCION")
 }
 
@@ -88,6 +89,8 @@ model Invitacion {
   creadoEn       DateTime    @default(now()) @map("creado_en")
   institucion    Institucion @relation(fields: [institucionId], references: [id])
 
+  @@index([institucionId])
+  @@index([correo])
   @@map("INVITACION")
 }
 
@@ -109,6 +112,7 @@ model AgenteInternacionalizacion {
   actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   revisiones    RevisionSolicitud[]
 
+  @@index([institucionId])
   @@map("AGENTE_INTERNACIONALIZACION")
 }
 
@@ -137,6 +141,8 @@ model DocenteInstitucion {
   docente        Docente             @relation(fields: [docenteId], references: [id])
   institucion    Institucion         @relation(fields: [institucionId], references: [id])
 
+  @@index([docenteId])
+  @@index([institucionId])
   @@map("DOCENTE_INSTITUCION")
 }
 
@@ -154,6 +160,7 @@ model Materia {
   institucion        Institucion            @relation(fields: [institucionId], references: [id])
   solicitudesDestino SolicitudClaseEspejo[]
 
+  @@index([institucionId])
   @@map("MATERIA")
 }
 
@@ -170,6 +177,8 @@ model AsignacionDocente {
   solicitudesOrigen    SolicitudClaseEspejo[] @relation("SolicitudOrigen")
   solicitudesDestino   SolicitudClaseEspejo[] @relation("SolicitudDestino")
 
+  @@index([docenteInstitucionId])
+  @@index([materiaId])
   @@map("ASIGNACION_DOCENTE")
 }
 
@@ -192,6 +201,11 @@ model SolicitudClaseEspejo {
   institucionDestino   Institucion          @relation(fields: [institucionDestinoId], references: [id])
   materiaDestino       Materia?             @relation(fields: [materiaDestinoId], references: [id])
 
+  @@index([institucionDestinoId, estado])
+  @@index([asignacionOrigenId])
+  @@index([asignacionDestinoId])
+  @@index([materiaDestinoId])
+  @@index([fechaPropuesta])
   @@map("SOLICITUD_CLASE_ESPEJO")
 }
 
@@ -208,6 +222,8 @@ model RevisionSolicitud {
   agente        AgenteInternacionalizacion @relation(fields: [agenteId], references: [id])
   solicitud     SolicitudClaseEspejo       @relation(fields: [solicitudId], references: [id])
 
+  @@index([solicitudId])
+  @@index([agenteId])
   @@map("REVISION_SOLICITUD")
 }
 
@@ -231,6 +247,7 @@ model ProyectoClaseEspejo {
   listasAlumnos ListaAlumnos[]
   certificados  Certificado[]
 
+  @@index([estado])
   @@map("PROYECTO_CLASE_ESPEJO")
 }
 
@@ -247,6 +264,8 @@ model ProyectoDocente {
   asignacionDocente   AsignacionDocente            @relation(fields: [asignacionDocenteId], references: [id])
   proyecto            ProyectoClaseEspejo          @relation(fields: [proyectoId], references: [id])
 
+  @@index([proyectoId])
+  @@index([asignacionDocenteId])
   @@map("PROYECTO_DOCENTE")
 }
 
@@ -259,6 +278,8 @@ model Mensaje {
   proyecto          ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
   autor             ProyectoDocente     @relation(fields: [proyectoDocenteId], references: [id])
 
+  @@index([proyectoId, creadoEn])
+  @@index([proyectoDocenteId])
   @@map("MENSAJE")
 }
 
@@ -290,6 +311,8 @@ model ParticipacionPlanificacion {
   planificacion       PlanificacionConjunta @relation(fields: [planificacionId], references: [id])
   proyectoDocente     ProyectoDocente       @relation(fields: [proyectoDocenteId], references: [id])
 
+  @@index([planificacionId])
+  @@index([proyectoDocenteId])
   @@map("PARTICIPACION_PLANIFICACION")
 }
 
@@ -319,6 +342,8 @@ model Sesion {
   actualizadoEn DateTime              @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo   @relation(fields: [proyectoId], references: [id])
 
+  @@index([proyectoId, fechaHora])
+  @@index([fechaHora])
   @@map("SESION")
 }
 
@@ -332,6 +357,8 @@ model Actividad {
   actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
 
+  @@index([proyectoId, fechaLimite])
+  @@index([fechaLimite])
   @@map("ACTIVIDAD")
 }
 
@@ -362,6 +389,8 @@ model ParticipacionReporte {
   proyectoDocente   ProyectoDocente      @relation(fields: [proyectoDocenteId], references: [id])
   reporteClase      ReporteClaseConjunta @relation(fields: [reporteClaseId], references: [id])
 
+  @@index([reporteClaseId])
+  @@index([proyectoDocenteId])
   @@map("PARTICIPACION_REPORTE")
 }
 
@@ -377,6 +406,8 @@ model Evidencia {
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
   sesion        Sesion?             @relation(fields: [sesionId], references: [id])
 
+  @@index([proyectoId])
+  @@index([sesionId])
   @@map("EVIDENCIA")
 }
 
@@ -390,6 +421,7 @@ model Evaluacion {
   actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
   proyecto      ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
 
+  @@index([proyectoId])
   @@map("EVALUACION")
 }
 
@@ -410,6 +442,7 @@ model ListaAlumnos {
   subidaPor          Usuario             @relation(fields: [subidaPorUsuarioId], references: [id])
 
   @@unique([proyectoId, institucionId])
+  @@index([subidaPorUsuarioId])
   @@map("LISTA_ALUMNOS")
 }
 
@@ -430,6 +463,7 @@ model Alumno {
   lista         ListaAlumnos @relation(fields: [listaId], references: [id], onDelete: Cascade)
   certificados  Certificado[]
 
+  @@index([listaId])
   @@map("ALUMNO")
 }
 
@@ -503,6 +537,8 @@ model Premio {
   actualizadoEn DateTime     @default(now()) @updatedAt @map("actualizado_en")
   institucion   Institucion? @relation(fields: [institucionId], references: [id])
 
+  @@index([institucionId])
+  @@index([publicado])
   @@map("PREMIO")
 }
 
@@ -553,6 +589,9 @@ model Certificado {
   plantilla           PlantillaCertificado @relation(fields: [plantillaId], references: [id])
   emitidoPor          Usuario?             @relation("CertificadoEmitido", fields: [emitidoPorUsuarioId], references: [id])
 
+  @@index([proyectoId, estado])
+  @@index([alumnoId])
+  @@index([plantillaId])
   @@map("CERTIFICADO")
 }
 
@@ -574,6 +613,8 @@ model SolicitudBorradoInstitucion {
   solicitadaPor          Usuario     @relation("SolicitudBorradoSolicitante", fields: [solicitadaPorUsuarioId], references: [id])
   resueltaPor            Usuario?    @relation("SolicitudBorradoResolutor", fields: [resueltaPorUsuarioId], references: [id])
 
+  @@index([institucionId])
+  @@index([estado])
   @@map("SOLICITUD_BORRADO_INSTITUCION")
 }
 
