@@ -130,7 +130,7 @@ export const TEMAS_CACE: OpcionTema[] = [
  */
 export const LEMA_CACE_POR_DEFECTO = 'Uniendo mentes, corazones y proyectos';
 export const DESCRIPCION_CACE_POR_DEFECTO = 'Comunidad de Apoyo a Clases Espejo';
-export const LOGO_CACE_POR_DEFECTO = 'logo-cace.png';
+export const LOGO_CACE_POR_DEFECTO = 'logo-cace.webp';
 
 /**
  * Banderas de respaldo: los 18 países que hasta la fase 3 eran una lista fija
