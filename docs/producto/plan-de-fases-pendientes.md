@@ -11,6 +11,13 @@
 >
 > Cada fase termina con un **criterio de aceptación medible**. Si no se puede
 > medir, no es criterio: es deseo.
+>
+> **Actualización (18-oct-2026):** la parte de rendimiento de la Fase 3 ya está
+> hecha (41 índices en 22 modelos, migración
+> `20261018011641_indices_de_rendimiento`, `EXPLAIN` comprobado) y el frontend
+> pasó a servirse comprimido y cacheado (login en frío 1.014.948 → 186.979 B).
+> El detalle está en [`rendimiento.md`](rendimiento.md). Lo que sigue sin hacer de
+> la fase: `ENUM`/`CHECK`, `@@unique` de negocio, paginación y revisión de N+1.
 
 ---
 
@@ -114,7 +121,9 @@ queda registrado con su motivo.
 texto libre (0 `ENUM`, 0 `CHECK`), un solo `@@unique` de negocio y listados sin
 paginación (6 `take` en todo el backend).
 
-- [ ] Una migración con índices en las FKs consultadas: `proyectoId`,
+- [x] **Una migración con índices en las FKs consultadas** (hecho el
+  18-oct-2026: `20261018011641_indices_de_rendimiento`, 41 índices en 22 modelos,
+  con `EXPLAIN` comprobado; ver [`rendimiento.md`](rendimiento.md)): `proyectoId`,
   `institucionId`, `usuarioId`, `solicitudId`, `alumnoId`, y los campos de fecha
   usados en recordatorios.
 - [ ] `ENUM` de Prisma o `CHECK` para los estados (`SESION`, `SOLICITUD`,

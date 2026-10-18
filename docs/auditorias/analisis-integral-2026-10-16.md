@@ -10,6 +10,12 @@
 > (`POST /proyectos/:id/calendario/enviar`, +1 ruta), se quitó el campo de orden de los países de
 > la comunidad y se añadió una prueba de esa ordenación: las cifras de rutas de este documento
 > (126) pasan a 127 en el estado actual del repositorio.
+>
+> **Nota (18-oct-2026):** ya se hizo la optimización de rendimiento que pedía este análisis:
+> estáticos con gzip y caché (login en frío 1.014.948 → 186.979 B), 41 índices de base de datos
+> (migración `20261018011641_indices_de_rendimiento`) y logo del acceso de 532 KB a 15 KB. El
+> detalle está en [`../producto/rendimiento.md`](../producto/rendimiento.md). Las menciones a
+> «0 `@@index`» y al peso de los estáticos de este documento describen el estado del 16-oct-2026.
 
 ---
 

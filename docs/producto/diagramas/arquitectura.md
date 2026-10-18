@@ -106,7 +106,7 @@ flowchart TB
         PL["backend/plantillas/<br/>plantillas descargables (lista de alumnos ·<br/>zonas del certificado · guía de diseño)"]
     end
 
-    PG[("PostgreSQL<br/>:5432 · ClasesconjuntasBD<br/>32 tablas · 21 migraciones")]
+    PG[("PostgreSQL<br/>:5432 · ClasesconjuntasBD<br/>32 tablas · 24 migraciones")]
     BKP[("clasesconjuntas_respaldo_20261013<br/>copia de la base en el mismo servidor")]
     SMTP["Servidor SMTP<br/>SMTP_HOST:SMTP_PORT"]
     TUN["Túnel o proxy inverso<br/>cloudflared · ngrok · nginx · Caddy · IIS"]
@@ -139,9 +139,9 @@ flowchart TB
 | --- | --- | --- |
 | **Aplicación Angular** | `frontend/src/app/**` (features, core y shared). Angular 21 **standalone** con **signals** y modo **zoneless**; sin librería de UI (CSS propio). | Se compila con `ng build` y **no** se despliega aparte: su salida va dentro del backend. |
 | **API NestJS** | `backend/src/**` (13 módulos + `AppModule`). | Un proceso Node. En Linux va con **systemd** (`clasesespejo.service`), en Windows con **NSSM** o **pm2**; el directorio de trabajo es `backend/`. |
-| **Frontend compilado** | `backend/public/` (salida de `ng build`, configurada en `frontend/angular.json` → `outputPath: ../backend/public`). | `main.ts` comprueba **al arrancar** si existe `public/index.html`. Si existe, sirve los estáticos y aplica el *fallback* SPA; si no, solo expone la API. `public/` está en `.gitignore`. |
+| **Frontend compilado** | `backend/public/` (salida de `ng build`, configurada en `frontend/angular.json` → `outputPath: ../backend/public`). | `main.ts` comprueba **al arrancar** si existe `public/index.html`. Si existe, sirve los estáticos y aplica el *fallback* SPA; si no, solo expone la API. Los `.js`/`.css` y el `index.html` se sirven con **gzip** y ETag; los nombres con hash del build, con caché `immutable` de un año (ver [`rendimiento.md`](../rendimiento.md)). `public/` está en `.gitignore`. |
 | **Archivos en disco** | `backend/uploads/**` (datos del usuario, en `.gitignore`) y `backend/plantillas/**` (archivos descargables: la lista de alumnos de ejemplo, la imagen de zonas del certificado y la guía de diseño; **versionados**). | `main.ts` **crea las carpetas de `uploads` al arrancar** (`mkdirSync` recursivo). Los archivos subidos son la única parte del sistema que no se respalda con la base: la guía de despliegue pide copiarlos aparte. |
-| **PostgreSQL** | `backend/prisma/schema.prisma` (32 modelos), `backend/prisma/migrations/` (21 migraciones). | El esquema se aplica con `npx prisma migrate deploy`. El puerto y la base salen de `DATABASE_URL`. |
+| **PostgreSQL** | `backend/prisma/schema.prisma` (32 modelos), `backend/prisma/migrations/` (24 migraciones). | El esquema se aplica con `npx prisma migrate deploy`. El puerto y la base salen de `DATABASE_URL`. La migración de índices (18-oct-2026) es aditiva y cubre las FKs y filtros calientes (ver [`rendimiento.md`](../rendimiento.md)). |
 | **Copia de la base** | No es un contenedor del código: es una operación de administración documentada en `docs/guias/respaldo-y-restauracion.md`. | La copia vigente es **`clasesconjuntas_respaldo_20261013`**, hecha con `CREATE DATABASE … WITH TEMPLATE "ClasesconjuntasBD"`; se compara con la base de trabajo con un script que usa el cliente de Prisma y cuenta filas y huella `md5` por tabla. |
 | **Servidor SMTP** | `backend/src/mail/mail.service.ts` (Nodemailer). | Host, puerto, TLS y credenciales salen de `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` y `MAIL_FROM`. Si el correo falla, **la operación de negocio no se deshace** (la decisión ya está guardada): se anota en el log. |
 | **Túnel o proxy inverso** | No hay código: es infraestructura. | Nginx, Caddy o IIS hacen `reverse_proxy 127.0.0.1:3000`; `cloudflared`/`ngrok` apuntan al **3000**. La regla de oro de la guía: el **3000 no se abre a Internet**, solo el 80/443. |
@@ -214,7 +214,7 @@ tener a mano:
 | Paso | Dónde | Qué hace |
 | --- | --- | --- |
 | 1 | `backend/src/main.ts` | Crea el proceso NestJS, fija CORS, el `ValidationPipe` global y el filtro de errores de Prisma. |
-| 2 | `backend/src/main.ts` | Crea `uploads/` y sus subcarpetas si no existen y monta los estáticos con sus cabeceras. |
+| 2 | `backend/src/main.ts` | Crea `uploads/` y sus subcarpetas si no existen y monta los estáticos con sus cabeceras. Los estáticos de la SPA van con gzip y ETag, y caché larga para los nombres con hash (ver [`rendimiento.md`](../rendimiento.md)). |
 | 3 | `backend/src/main.ts` | Si existe `backend/public/index.html`, monta la SPA y su *fallback*. |
 | 4 | `backend/src/auth/auth.module.ts` | Lee `JWT_SECRET`: **si falta o tiene menos de 16 caracteres, la aplicación no arranca**. |
 | 5 | `backend/src/cace/cace.service.ts` (`OnApplicationBootstrap`) | Si no hay ninguna presidencia y hay `PRESIDENTE_CORREO`, le crea la cuenta con contraseña provisional (cambio obligatorio) y le manda las credenciales. Un fallo aquí **no** impide arrancar. |
@@ -235,10 +235,12 @@ tener a mano:
   `angular.json` y no hay que pasar la opción.
 * **Nada de estado en memoria.** El estado vive en PostgreSQL y en `uploads/`;
   el proceso se puede reiniciar sin perder nada (salvo los envíos de correo en
-  curso).
+  curso). La única memoria propia es la **caché derivada** de estáticos
+  comprimidos, que se reconstruye sola al primer pedido.
 * **Prisma es global.** `PrismaModule` está marcado `@Global()` y también
   `MailModule`, así que la mayoría de los módulos no los importan. La matriz de
   módulos y sus dependencias está en [`modulos_backend.md`](modulos_backend.md).
 * **Lo que el sistema no tiene:** cola de trabajos, caché distribuida, segundo
   proceso y servicio de archivos aparte (S3 o similar). Los PDF y las evidencias
-  se guardan en el disco del propio servidor.
+  se guardan en el disco del propio servidor. La única caché es **en memoria del
+  propio proceso**, para los estáticos comprimidos; no hay CDN ni proxy de caché.

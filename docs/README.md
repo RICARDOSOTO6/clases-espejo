@@ -233,7 +233,7 @@ ClasesEspejo/
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma    # modelo de datos completo (32 tablas)
-│   │   └── migrations/      # 21 migraciones versionadas
+│   │   └── migrations/      # 24 migraciones versionadas
 │   │
 │   ├── generated/
 │   │   └── prisma/          # cliente generado (NO editar a mano)
@@ -351,7 +351,7 @@ ClasesconjuntasBD
 El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
 
 Las tablas se crean con las **migraciones versionadas** que están en
-`backend/prisma/migrations/` (**21 migraciones**):
+`backend/prisma/migrations/` (**24 migraciones**):
 
 ```bash
 npx prisma migrate deploy
@@ -590,6 +590,13 @@ npx ng build
 > Por eso **no hay que pasar `--output-path`**: si se pasa apuntando a
 > `backend/public`, Angular crea una subcarpeta `browser/` y el backend deja de
 > encontrar `index.html`. Tampoco hace falta compilar en `frontend/dist`.
+>
+> **Caché:** los archivos del build llevan un hash en el nombre
+> (`main-ABCD1234.js`, `chunk-XXXX.js`, `styles-XXXX.css`) y el backend los sirve
+> con `Cache-Control: public, max-age=31536000, immutable`; el `index.html` se
+> revalida siempre (304) y las imágenes una semana. Al recompilar, el hash de lo
+> que cambió es nuevo y el navegador lo baja solo: **no hace falta vaciar caché a
+> mano** (ver [`producto/rendimiento.md`](producto/rendimiento.md)).
 
 ## 2. Reiniciar el backend
 
@@ -1493,6 +1500,36 @@ auditorías):
 
 ---
 
+# ⚡ Rendimiento
+
+Desde el 18 de octubre de 2026 el sistema sirve el frontend optimizado y la base
+tiene índices para las consultas calientes. El detalle completo, con las cifras
+medidas y cómo reproducirlas, está en
+[`producto/rendimiento.md`](producto/rendimiento.md).
+
+| Medida | Antes | Después |
+| --- | --- | --- |
+| Login en frío (sin caché) | 1.014.948 B | **186.979 B (−81,6 %)** |
+| Login en segunda visita | ~1 MB otra vez | **650 B** |
+| Logo del acceso | 544.840 B | **15.476 B** (WebP) |
+| Índices de negocio | 0 | **41** en 22 modelos |
+
+**Cómo funciona, para quien toque el servidor:**
+
+- `main.ts` sirve los `.js`, `.css` y el `index.html` **comprimidos con gzip**
+  (buffers en memoria, con `ETag`) y con caché: **1 año `immutable`** para los
+  nombres con hash del build, **1 semana** para imágenes y fuentes, y
+  **revalidación (304)** para el HTML.
+- Las respuestas de la **API no se cachean**: permisos, sesión y datos se
+  validan en cada petición como antes.
+- Tras un `ng build` no hay que vaciar caché ni reiniciar el backend: el hash
+  cambia, el `index.html` se revalida y el navegador pide lo nuevo. Solo se
+  reinicia si cambia código del backend.
+- La migración de índices es **aditiva** (solo `CREATE INDEX`); no toca filas ni
+  datos de demostración.
+
+---
+
 # 🧪 Pruebas de API
 
 Durante el desarrollo se utiliza una herramienta de pruebas HTTP como **Thunder Client** para probar los endpoints del backend.
@@ -1756,7 +1793,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Autorización por recurso y por capacidad
 * [x] CORS restringido y cabeceras seguras en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (23 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (24 migraciones versionadas en `backend/prisma/migrations/`)
 * [ ] Cobertura de pruebas automatizadas (Jest) del flujo completo
 
 ## Frontend
@@ -1868,7 +1905,7 @@ de entorno) y varias reglas CSS y `export` sin uso.
 # 📅 Plan de desarrollo (metas semanales)
 
 > **Meta:** producto terminado en 8 semanas.
-> El **modelo de datos ya está completo** (32 tablas) y el esquema está **migrado y versionado** (21 migraciones). Cada semana termina con un entregable **probable y visible**.
+> El **modelo de datos ya está completo** (32 tablas) y el esquema está **migrado y versionado** (24 migraciones). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
 ## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅
