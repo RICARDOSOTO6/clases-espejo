@@ -1,0 +1,128 @@
+# Integración continua de Clases Conjuntas.
+#
+# Qué comprueba en cada push y en cada pull request:
+#   - Backend: lint (sin --fix), tipos en modo strict, esquema de Prisma,
+#     pruebas unitarias, pruebas e2e contra un PostgreSQL real y build.
+#   - Frontend: tipos, plantillas (ngc) y build contra backend/public.
+#
+# No necesita secretos: usa valores de ejemplo para JWT, correo y presidente.
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+# Un push nuevo cancela la ejecución anterior de la misma rama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (lint, tipos, unitarias, e2e, build)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clasesconjuntas_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/clasesconjuntas_ci?schema=public
+      JWT_SECRET: secreto-solo-para-ci-de-32-caracteres
+      JWT_EXPIRES_IN: 1d
+      INVITATION_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:3000
+      URL_PUBLICA: http://localhost:3000
+      PRESIDENTE_CORREO: presidencia@example.org
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      MAIL_FROM: no-reply@example.org
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar el cliente de Prisma
+        run: npx prisma generate
+
+      - name: Lint (sin modificar archivos)
+        run: npm run lint:ci
+
+      - name: Tipos en modo strict
+        run: npx tsc -p tsconfig.json --noEmit
+
+      - name: Validar el esquema de Prisma
+        run: npx prisma validate
+
+      - name: Aplicar las migraciones
+        run: npx prisma migrate deploy
+
+      - name: Pruebas unitarias
+        run: npm test -- --runInBand
+
+      - name: Pruebas e2e
+        run: npm run test:e2e -- --runInBand
+
+      - name: Compilar el backend
+        run: npm run build
+
+  frontend:
+    name: Frontend (tipos, plantillas, build)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Tipos de TypeScript
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+      - name: Plantillas de Angular
+        run: npx ngc -p tsconfig.app.json --noEmit
+
+      # El build escribe en backend/public (es lo que sirve NestJS), así que
+      # también comprueba que la ruta de salida configurada sigue siendo válida.
+      - name: Compilar el frontend
+        run: npm run build
