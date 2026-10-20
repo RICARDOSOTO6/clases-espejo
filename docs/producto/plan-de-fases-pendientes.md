@@ -1,7 +1,8 @@
 # Plan de fases — lo que falta para poner la plataforma en uso real
 
 > **Escrito el 17 de octubre de 2026**, con el repositorio en `master` (96 commits,
-> 127 rutas, 32 modelos, 23 migraciones) y los datos de demostración cargados
+> 127 rutas, 32 modelos, 23 migraciones —24 desde la migración de índices del
+> 18-oct-2026—) y los datos de demostración cargados
 > (2 instituciones, 6 usuarios, 2 proyectos, 19 países, 0 certificados).
 >
 > No repite lo que ya está hecho (permisos por capacidad, doble revisión,

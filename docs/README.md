@@ -359,7 +359,7 @@ npx prisma migrate deploy
 
 > `db push` sincroniza el esquema sin dejar historial y dejó de ser el modo de
 > trabajo: el esquema ya está **migrado y versionado**, y la última migración es
-> `20261011173930_cambio_presidencia`.
+> `20261018011641_indices_de_rendimiento`.
 >
 > `prisma db push` sigue sirviendo solo para una base de pruebas desechable. En
 > una base con datos, usar `migrate deploy`.
@@ -530,14 +530,14 @@ npx prisma validate
 ## Aplicar las migraciones
 
 ```bash
-npx prisma migrate deploy   # aplica las pendientes (21 en total)
+npx prisma migrate deploy   # aplica las pendientes (24 en total)
 npx prisma migrate status   # dice qué está aplicado y qué falta
 npx prisma migrate dev --name <nombre>   # crea una migración nueva (desarrollo)
 ```
 
 > El proyecto pasó de `db push` a **migraciones versionadas**: el historial está
 > en `backend/prisma/migrations/` y la última es
-> `20261011173930_cambio_presidencia`.
+> `20261018011641_indices_de_rendimiento`.
 
 ## Consultar la base de datos
 
@@ -724,7 +724,8 @@ Contraseña común: `Demo1234`
 | Rol | Correo |
 | --- | --- |
 | Agente (México) | `agente.calkini@clasesespejo.mx` |
-| Agente (Colombia) | `agente.colombia@clasesespejo.co` || Docente (México) | `roberto.perez@clasesespejo.mx` |
+| Agente (Colombia) | `agente.colombia@clasesespejo.co` |
+| Docente (México) | `roberto.perez@clasesespejo.mx` |
 | Docente (México) | `sofia.gomez@clasesespejo.mx` |
 | Docente (México) | `carlos.hernandez@clasesespejo.mx` |
 | Docente (México) | `ana.sanchez@clasesespejo.mx` |
@@ -1242,7 +1243,7 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `GET` | `/` | Estado del servicio (con el frontend compilado, devuelve el `index.html`) | No |
 | `GET` | `/health` | Health check del servicio | No |
 | `POST` | `/auth/register` | Registra un agente: se **une** a una institución del directorio (`institucionId`) o crea una nueva | No |
-| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` + rol (y `debeCambiarPassword`) | No *(limitado a 10 intentos/min)* |
+| `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` y un objeto `usuario` con sus datos, su `rol` y `debeCambiarPassword` | No *(limitado a 10 intentos/min)* |
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
 | `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No *(limitado a 10 intentos/min)* |
 | `GET` | `/usuarios/me` | Perfil del usuario autenticado (rol, institución o cargo en la CACE) | JWT |
@@ -1974,7 +1975,7 @@ Las fases posteriores están planificadas en
 
 - **Backend:** NestJS 11 + Prisma + PostgreSQL. Módulos en `backend/src/`.
 - **Frontend:** Angular 21 standalone + **signals** (modo zoneless) + guards. En `frontend/src/app/`.
-- El **schema** (`backend/prisma/schema.prisma`) ya contiene todas las tablas (32) y su historial de migraciones está en `backend/prisma/migrations/` (21).
+- El **schema** (`backend/prisma/schema.prisma`) ya contiene todas las tablas (32) y su historial de migraciones está en `backend/prisma/migrations/` (24).
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
 - Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
 - Autorización por capacidad: `@Requiere('...')` + `CapacidadesGuard` (`backend/src/auth/capacidades.guard.ts`), con la matriz en `backend/src/common/capacidades.ts`. **Añadir un permiso es añadir una fila a la matriz**, no comparar el rol a mano.
