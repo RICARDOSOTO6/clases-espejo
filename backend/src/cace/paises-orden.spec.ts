@@ -42,8 +42,8 @@ describe('Orden alfabético de los países de la comunidad', () => {
     expect(claveAlfabeticaPais('PERU')).toBe('peru');
     expect(claveAlfabeticaPais('ÁFRICA')).toBe('africa');
     // Lo que usa el buscador del panel: comparar la clave del país con el texto.
-    expect(claveAlfabeticaPais('Perú').includes(claveAlfabeticaPais('peru'))).toBe(
-      true,
-    );
+    expect(
+      claveAlfabeticaPais('Perú').includes(claveAlfabeticaPais('peru')),
+    ).toBe(true);
   });
 });

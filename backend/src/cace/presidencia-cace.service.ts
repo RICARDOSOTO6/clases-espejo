@@ -200,7 +200,10 @@ export class PresidenciaCaceService {
 
     const entranteUsuarioId =
       entrante.forma === 'nueva' ? null : entrante.usuarioId;
-    if (entranteUsuarioId !== null && entranteUsuarioId === saliente.usuarioId) {
+    if (
+      entranteUsuarioId !== null &&
+      entranteUsuarioId === saliente.usuarioId
+    ) {
       throw new BadRequestException(
         'Ya presides la CACE: elige a otra persona para transmitirle el cargo.',
       );
@@ -211,9 +214,7 @@ export class PresidenciaCaceService {
     // El DNI se busca **fuera** de la transacción, como en el alta de
     // secretarías: es único y hace falta consultar la base para no chocar.
     const dniNuevo =
-      entrante.forma === 'nueva'
-        ? await generarDniUnico(this.prisma)
-        : null;
+      entrante.forma === 'nueva' ? await generarDniUnico(this.prisma) : null;
 
     const resultado = await this.prisma.$transaction(async (tx) => {
       let usuarioIdEntrante: number;
@@ -318,10 +319,18 @@ export class PresidenciaCaceService {
     // --- Los dos avisos, fuera de la transacción ---
     // Un correo que no sale no puede deshacer la transmisión: queda hecha,
     // escrita en el historial y dicha en la respuesta.
-    const avisos = await this.avisar(entrante.correo, entrante.nombre, nombreSaliente, saliente.usuario.correo, resultado.passwordProvisional, motivo);
+    const avisos = await this.avisar(
+      entrante.correo,
+      entrante.nombre,
+      nombreSaliente,
+      saliente.usuario.correo,
+      resultado.passwordProvisional,
+      motivo,
+    );
 
     const entranteEsSecretaria =
-      entrante.forma === 'miembro' && entrante.cargoAnterior === CARGO_SECRETARIA;
+      entrante.forma === 'miembro' &&
+      entrante.cargoAnterior === CARGO_SECRETARIA;
 
     this.logger.warn(
       `Cambio de presidencia de la CACE (lo pidió el usuario ${usuarioId}): ` +
@@ -436,7 +445,12 @@ export class PresidenciaCaceService {
     try {
       await this.mail.sendCambioPresidenciaEntrante(
         correoEntrante,
-        { nombreEntrante, nombreSaliente, password: passwordProvisional ?? undefined, motivo },
+        {
+          nombreEntrante,
+          nombreSaliente,
+          password: passwordProvisional ?? undefined,
+          motivo,
+        },
         urlPublica,
       );
     } catch (error) {

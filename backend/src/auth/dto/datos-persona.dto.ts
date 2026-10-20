@@ -13,23 +13,23 @@ export class DatosPersonaDto {
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  nombres: string;
+  nombres!: string;
 
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  apellidoPaterno: string;
+  apellidoPaterno!: string;
 
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  apellidoMaterno: string;
+  apellidoMaterno!: string;
 
   @IsString()
   @IsNotEmpty()
-  tipoDocumento: string;
+  tipoDocumento!: string;
 
   @IsString()
   @IsNotEmpty()
-  dni: string;
+  dni!: string;
 }

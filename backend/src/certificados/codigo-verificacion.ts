@@ -91,7 +91,10 @@ export function codigoValido(
 ): boolean {
   const recibido = normalizarCodigo(codigo);
   if (recibido.length !== LONGITUD) return false;
-  return timingSafeEqual(Buffer.from(recibido), Buffer.from(codigoVerificacion(folio)));
+  return timingSafeEqual(
+    Buffer.from(recibido),
+    Buffer.from(codigoVerificacion(folio)),
+  );
 }
 
 /**

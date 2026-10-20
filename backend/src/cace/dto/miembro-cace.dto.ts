@@ -17,17 +17,17 @@ import {
  */
 export class CrearMiembroCaceDto {
   @IsEmail({}, { message: 'Escribe un correo válido' })
-  correo: string;
+  correo!: string;
 
   @IsString()
   @MinLength(2, { message: 'El nombre es obligatorio' })
   @MaxLength(80, { message: 'El nombre no puede pasar de 80 caracteres' })
-  nombres: string;
+  nombres!: string;
 
   @IsString()
   @MinLength(2, { message: 'El apellido paterno es obligatorio' })
   @MaxLength(80, { message: 'El apellido no puede pasar de 80 caracteres' })
-  apellidoPaterno: string;
+  apellidoPaterno!: string;
 
   @IsOptional()
   @IsString()
@@ -45,5 +45,5 @@ export class CrearMiembroCaceDto {
  */
 export class ActualizarMiembroCaceDto {
   @IsBoolean()
-  activo: boolean;
+  activo!: boolean;
 }

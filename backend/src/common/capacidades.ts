@@ -15,7 +15,7 @@ const ROLES = [
 ] as const;
 export type Rol = (typeof ROLES)[number];
 
-const CAPACIDADES = [
+export const CAPACIDADES = [
   /** Aprobar, rechazar y vetar instituciones. */
   'aprobarInstituciones',
   /**

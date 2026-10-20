@@ -11,13 +11,17 @@ import { ESTADOS_SESION } from '../../common/estados';
 export class CreateSesionDto {
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  titulo!: string;
 
   @IsDateString()
-  fechaHora: string;
+  fechaHora!: string;
 
-  @IsUrl({ require_protocol: true, protocols: ['http', 'https'], require_tld: false })
-  enlaceVirtual: string;
+  @IsUrl({
+    require_protocol: true,
+    protocols: ['http', 'https'],
+    require_tld: false,
+  })
+  enlaceVirtual!: string;
 
   @IsString()
   @IsIn(ESTADOS_SESION)

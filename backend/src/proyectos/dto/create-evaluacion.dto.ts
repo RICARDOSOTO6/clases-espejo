@@ -3,13 +3,13 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CreateEvaluacionDto {
   @IsString()
   @IsNotEmpty()
-  instrumento: string;
+  instrumento!: string;
 
   @IsString()
   @IsNotEmpty()
-  resultado: string;
+  resultado!: string;
 
   @IsString()
   @IsNotEmpty()
-  observaciones: string;
+  observaciones!: string;
 }

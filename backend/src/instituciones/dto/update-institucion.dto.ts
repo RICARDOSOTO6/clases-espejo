@@ -5,30 +5,30 @@ export class UpdateInstitucionDto {
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  nombre: string;
+  nombre!: string;
 
   @IsString()
   @IsNotEmpty()
-  pais: string;
+  pais!: string;
 
   @IsString()
   @IsNotEmpty()
-  codigoPais: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @EsTextoValido()
-  estado: string;
+  codigoPais!: string;
 
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  ciudad: string;
+  estado!: string;
 
   @IsString()
   @IsNotEmpty()
-  telefono: string;
+  @EsTextoValido()
+  ciudad!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  telefono!: string;
 
   @IsEmail()
-  correoInstitucional: string;
+  correoInstitucional!: string;
 }

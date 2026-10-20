@@ -94,7 +94,8 @@ function limpiar(texto: string): string {
 function textoDeCelda(valor: unknown): string {
   if (valor === null || valor === undefined) return '';
   if (typeof valor === 'string') return valor;
-  if (typeof valor === 'number' || typeof valor === 'boolean') return String(valor);
+  if (typeof valor === 'number' || typeof valor === 'boolean')
+    return String(valor);
   if (valor instanceof Date) return valor.toISOString().slice(0, 10);
   const objeto = valor as Record<string, unknown>;
   if (Array.isArray(objeto['richText'])) {
@@ -204,7 +205,9 @@ export class ListasAlumnosService {
     const hoja =
       libro.getWorksheet('Alumnos') ?? libro.worksheets[0] ?? undefined;
     if (!hoja) {
-      throw new BadRequestException('El archivo no tiene ninguna hoja con datos.');
+      throw new BadRequestException(
+        'El archivo no tiene ninguna hoja con datos.',
+      );
     }
 
     const matriz: string[][] = [];
@@ -441,7 +444,8 @@ export class ListasAlumnosService {
       }
       datos['nombre'] = nombre;
     }
-    if (dto.matricula !== undefined) datos['matricula'] = limpiar(dto.matricula);
+    if (dto.matricula !== undefined)
+      datos['matricula'] = limpiar(dto.matricula);
     if (dto.correo !== undefined) {
       const correo = limpiar(dto.correo);
       if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
@@ -458,7 +462,11 @@ export class ListasAlumnosService {
     return this.deLista(alumno.listaId);
   }
 
-  async eliminarAlumno(usuarioId: number, proyectoId: number, alumnoId: number) {
+  async eliminarAlumno(
+    usuarioId: number,
+    proyectoId: number,
+    alumnoId: number,
+  ) {
     const alumno = await this.alumnoDeMiLista(usuarioId, proyectoId, alumnoId);
     await this.prisma.alumno.delete({ where: { id: alumno.id } });
     return this.deLista(alumno.listaId);
@@ -541,7 +549,8 @@ export class ListasAlumnosService {
       origen: lista.origen,
       actualizadoEn: lista.actualizadoEn,
       institucion: lista.institucion,
-      subidaPor: `${lista.subidaPor.nombres} ${lista.subidaPor.apellidoPaterno}`.trim(),
+      subidaPor:
+        `${lista.subidaPor.nombres} ${lista.subidaPor.apellidoPaterno}`.trim(),
       alumnos,
       resumen: {
         total: alumnos.length,

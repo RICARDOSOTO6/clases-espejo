@@ -160,9 +160,7 @@ export class SolicitudesService {
   } {
     const fechaLimite = fechaLimiteRevision(solicitud.fechaPropuesta);
     const diasRestantes = diasHasta(fechaLimite);
-    const enRevision = ESTADOS_SOLICITUD_EN_REVISION.includes(
-      solicitud.estado,
-    );
+    const enRevision = ESTADOS_SOLICITUD_EN_REVISION.includes(solicitud.estado);
     return {
       ...solicitud,
       fechaLimite,
@@ -479,7 +477,10 @@ export class SolicitudesService {
     if (esOrigen && solicitud.estado === ESTADO_SOLICITUD_PENDIENTE) {
       return this.revisarOrigen(agente.id, solicitud.id, dto);
     }
-    if (esDestino && solicitud.estado === ESTADO_SOLICITUD_APROBADA_POR_ORIGEN) {
+    if (
+      esDestino &&
+      solicitud.estado === ESTADO_SOLICITUD_APROBADA_POR_ORIGEN
+    ) {
       return this.revisarDestino(agente, solicitud, dto);
     }
 
@@ -637,7 +638,10 @@ export class SolicitudesService {
   }
 
   private exigirMotivoSiRechaza(dto: RevisarSolicitudDto): void {
-    if (dto.decision === ESTADO_SOLICITUD_RECHAZADA && !dto.comentario?.trim()) {
+    if (
+      dto.decision === ESTADO_SOLICITUD_RECHAZADA &&
+      !dto.comentario?.trim()
+    ) {
       throw new BadRequestException(
         'Indica el motivo del rechazo en el comentario',
       );
@@ -732,7 +736,8 @@ export class SolicitudesService {
     }
   }
 
-  private async obtenerPropia(docenteId: number, id: number) {    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
+  private async obtenerPropia(docenteId: number, id: number) {
+    const solicitud = await this.prisma.solicitudClaseEspejo.findFirst({
       where: {
         id,
         asignacionOrigen: { docenteInstitucion: { docenteId } },

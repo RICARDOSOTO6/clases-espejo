@@ -8,5 +8,5 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class DecisionInstitucionDto {
   @IsString()
   @IsNotEmpty({ message: 'Indica el motivo de la decisión' })
-  motivo: string;
+  motivo!: string;
 }

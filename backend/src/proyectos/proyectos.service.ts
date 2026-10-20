@@ -114,7 +114,7 @@ export class ProyectosService {
       include: this.includeProyectoCompleto(),
     });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
-    await this.verificarAcceso(usuarioId, proyecto as any);
+    await this.verificarAcceso(usuarioId, proyecto);
     return proyecto;
   }
 
@@ -156,7 +156,9 @@ export class ProyectosService {
    */
   async enviarCalendarioPorCorreo(usuarioId: number, id: number) {
     const proyecto = await this.obtenerParaCalendario(usuarioId, id);
-    await this.exigirDocenteParticipante(usuarioId, id, { exigirAbierto: false });
+    await this.exigirDocenteParticipante(usuarioId, id, {
+      exigirAbierto: false,
+    });
 
     const sesiones = proyecto.sesiones.length;
     if (sesiones === 0) {
@@ -247,9 +249,7 @@ export class ProyectosService {
         ...(dto.fechaFin !== undefined
           ? { fechaFin: new Date(dto.fechaFin) }
           : {}),
-        ...(dto.plataforma !== undefined
-          ? { plataforma: dto.plataforma }
-          : {}),
+        ...(dto.plataforma !== undefined ? { plataforma: dto.plataforma } : {}),
       },
       include: this.includeProyecto(),
     });
@@ -423,14 +423,13 @@ export class ProyectosService {
       throw new ForbiddenException('No participas en este proyecto');
     }
 
-    const participacion = await this.prisma.participacionPlanificacion.findFirst(
-      {
+    const participacion =
+      await this.prisma.participacionPlanificacion.findFirst({
         where: {
           planificacionId: proyecto.planificacion.id,
           proyectoDocenteId: proyectoDocente.id,
         },
-      },
-    );
+      });
     if (!participacion) {
       throw new NotFoundException('Participación no encontrada');
     }
@@ -1107,7 +1106,9 @@ export class ProyectosService {
       where: { usuarioId },
     });
     if (!docente) {
-      throw new UnauthorizedException('Solo un docente puede ver sus proyectos');
+      throw new UnauthorizedException(
+        'Solo un docente puede ver sus proyectos',
+      );
     }
     return docente;
   }

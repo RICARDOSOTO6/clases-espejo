@@ -26,12 +26,12 @@ export class CrearPaisComunidadDto {
   @Matches(/^[A-Za-z]{2}$/, {
     message: 'El código debe ser ISO de dos letras (por ejemplo MX)',
   })
-  codigo: string;
+  codigo!: string;
 
   @IsString()
   @MinLength(2, { message: 'El nombre del país es obligatorio' })
   @MaxLength(80, { message: 'El nombre no puede pasar de 80 caracteres' })
-  nombre: string;
+  nombre!: string;
 
   @IsOptional()
   @IsBoolean()

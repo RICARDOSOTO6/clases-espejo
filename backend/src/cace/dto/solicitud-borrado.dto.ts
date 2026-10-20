@@ -17,7 +17,7 @@ export class SolicitarBorradoInstitucionDto {
     message: 'Indica el motivo por el que hay que borrar la institución',
   })
   @MaxLength(1000, { message: 'El motivo no puede pasar de 1000 caracteres' })
-  motivo: string;
+  motivo!: string;
 }
 
 /**
@@ -28,7 +28,7 @@ export class SolicitarBorradoInstitucionDto {
  */
 export class ResolverSolicitudBorradoDto {
   @IsBoolean({ message: 'Indica si apruebas o rechazas la solicitud' })
-  aprobar: boolean;
+  aprobar!: boolean;
 
   @IsOptional()
   @IsString()

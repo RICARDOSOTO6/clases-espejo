@@ -16,7 +16,11 @@ export class UpdateSesionDto {
   @IsOptional()
   fechaHora?: string;
 
-  @IsUrl({ require_protocol: true, protocols: ['http', 'https'], require_tld: false })
+  @IsUrl({
+    require_protocol: true,
+    protocols: ['http', 'https'],
+    require_tld: false,
+  })
   @IsOptional()
   enlaceVirtual?: string;
 

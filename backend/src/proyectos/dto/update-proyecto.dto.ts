@@ -1,4 +1,10 @@
-import { IsDateString, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ESTADOS_PROYECTO_EDITABLES } from '../../common/estados';
 
 export class UpdateProyectoDto {

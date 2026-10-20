@@ -19,6 +19,8 @@ export class AnularCertificadoDto {
     message:
       'El motivo de la anulación es obligatorio y tiene que explicar qué pasó',
   })
-  @MaxLength(300, { message: 'El motivo es demasiado largo (máximo 300 caracteres)' })
+  @MaxLength(300, {
+    message: 'El motivo es demasiado largo (máximo 300 caracteres)',
+  })
   motivo!: string;
 }

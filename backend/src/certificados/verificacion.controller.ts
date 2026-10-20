@@ -27,10 +27,7 @@ export class VerificacionController {
   /** El estado de un certificado, con el código que va dentro del QR. */
   @Get(':folio')
   @Header('Cache-Control', 'no-store')
-  verificar(
-    @Param('folio') folio: string,
-    @Query('c') codigo?: string,
-  ) {
+  verificar(@Param('folio') folio: string, @Query('c') codigo?: string) {
     return this.verificacion.verificar(folio, codigo);
   }
 }

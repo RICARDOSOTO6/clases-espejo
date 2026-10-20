@@ -14,7 +14,10 @@ import {
   TAMANO_MINIMO,
   TAMANO_MINIMO_NOMBRE,
 } from './campos-certificado';
-import { FONDOS_CERTIFICADO_DIR, direccionVerificacion } from './rutas-certificado';
+import {
+  FONDOS_CERTIFICADO_DIR,
+  direccionVerificacion,
+} from './rutas-certificado';
 
 /**
  * Genera el PDF de un certificado: el diseño (la imagen que subió la
@@ -84,7 +87,8 @@ const FUENTES_UNICODE: {
     normal: '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
     negrita: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
     cursiva: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf',
-    negritaCursiva: '/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf',
+    negritaCursiva:
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf',
   },
   {
     normal: '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
@@ -295,13 +299,21 @@ export class CertificadoPdfService {
       // ojo con otra proporción no saca un QR deformado que ningún teléfono
       // leería.
       const lado = Math.min(caja.ancho, caja.alto);
-      const png = await this.generarQr(folio, Math.max(300, Math.round(lado * 2)));
+      const png = await this.generarQr(
+        folio,
+        Math.max(300, Math.round(lado * 2)),
+      );
       doc.save();
       doc.rect(caja.x, caja.y, caja.ancho, caja.alto).fill('#ffffff');
-      doc.image(png, caja.x + (caja.ancho - lado) / 2, caja.y + (caja.alto - lado) / 2, {
-        width: lado,
-        height: lado,
-      });
+      doc.image(
+        png,
+        caja.x + (caja.ancho - lado) / 2,
+        caja.y + (caja.alto - lado) / 2,
+        {
+          width: lado,
+          height: lado,
+        },
+      );
       doc.restore();
     } catch (error) {
       const aviso =
@@ -354,7 +366,10 @@ export class CertificadoPdfService {
     };
 
     // 1) Una línea, del tamaño de partida hacia abajo.
-    const inicio = Math.max(suelo, Math.round(tamanoDePartida / PASO_AJUSTE) * PASO_AJUSTE);
+    const inicio = Math.max(
+      suelo,
+      Math.round(tamanoDePartida / PASO_AJUSTE) * PASO_AJUSTE,
+    );
     for (let tamano = inicio; tamano >= suelo; tamano -= PASO_AJUSTE) {
       if (cabeUnaLinea(tamano)) {
         return { lineas: [texto], tamano: redondear(tamano), desborda: false };
@@ -365,7 +380,9 @@ export class CertificadoPdfService {
     const partes = this.partirEnDos(texto);
     if (partes) {
       doc.fontSize(suelo);
-      const caben = partes.every((parte) => doc.widthOfString(parte) <= caja.ancho + 0.5);
+      const caben = partes.every(
+        (parte) => doc.widthOfString(parte) <= caja.ancho + 0.5,
+      );
       const dosLineas = suelo * INTERLINEADO * 2 <= caja.alto + 0.5;
       if (caben && dosLineas) {
         return { lineas: partes, tamano: redondear(suelo), desborda: false };
@@ -428,7 +445,12 @@ export class CertificadoPdfService {
     caja: { x: number; y: number; ancho: number; alto: number },
     lineas: string[],
     tamano: number,
-    estilo: { alineacion: string; color: string; negrita: boolean; cursiva?: boolean },
+    estilo: {
+      alineacion: string;
+      color: string;
+      negrita: boolean;
+      cursiva?: boolean;
+    },
   ): void {
     doc
       .font(this.fuente(doc, estilo.negrita, estilo.cursiva ?? false))

@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { basename, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  TEMA_CACE_POR_DEFECTO,
-  esTemaCaceValido,
-} from '../common/temas-cace';
+import { TEMA_CACE_POR_DEFECTO, esTemaCaceValido } from '../common/temas-cace';
 import {
   borrarImagen,
   nombreArchivoLegible,
@@ -81,7 +82,6 @@ export function ordenarPaises<T extends { nombre: string }>(paises: T[]): T[] {
       : a.nombre.localeCompare(b.nombre, 'es');
   });
 }
-
 
 /** Premios: los más recientes primero y luego la prioridad que elige la CACE. */
 const ORDEN_PREMIOS = [

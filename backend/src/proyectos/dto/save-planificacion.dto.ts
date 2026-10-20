@@ -4,19 +4,19 @@ import { ESTADOS_PLANIFICACION } from '../../common/estados';
 export class SavePlanificacionDto {
   @IsString()
   @IsNotEmpty()
-  objetivosAcordados: string;
+  objetivosAcordados!: string;
 
   @IsString()
   @IsNotEmpty()
-  temasAcordados: string;
+  temasAcordados!: string;
 
   @IsString()
   @IsNotEmpty()
-  metodologia: string;
+  metodologia!: string;
 
   @IsString()
   @IsNotEmpty()
-  plataforma: string;
+  plataforma!: string;
 
   @IsString()
   @IsIn(ESTADOS_PLANIFICACION)

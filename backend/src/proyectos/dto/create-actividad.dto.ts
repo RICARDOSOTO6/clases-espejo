@@ -3,12 +3,12 @@ import { IsDateString, IsNotEmpty, IsString } from 'class-validator';
 export class CreateActividadDto {
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  titulo!: string;
 
   @IsString()
   @IsNotEmpty()
-  instrucciones: string;
+  instrucciones!: string;
 
   @IsDateString()
-  fechaLimite: string;
+  fechaLimite!: string;
 }

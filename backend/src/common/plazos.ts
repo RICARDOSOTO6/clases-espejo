@@ -11,7 +11,7 @@
  */
 
 /** Niveles de urgencia, de más a menos apremiante. */
-const URGENCIAS = ['VENCIDA', 'CRITICA', 'PROXIMA', 'NORMAL'] as const;
+export const URGENCIAS = ['VENCIDA', 'CRITICA', 'PROXIMA', 'NORMAL'] as const;
 export type Urgencia = (typeof URGENCIAS)[number];
 
 /**
@@ -61,7 +61,10 @@ export function diasHasta(fecha: Date, ahora: Date = new Date()): number {
  * Días enteros que faltan hasta un instante (columna `TIMESTAMP`, como la hora
  * de una sesión): aquí el día que cuenta es el local.
  */
-export function diasHastaInstante(fecha: Date, ahora: Date = new Date()): number {
+export function diasHastaInstante(
+  fecha: Date,
+  ahora: Date = new Date(),
+): number {
   const MS_DIA = 24 * 60 * 60 * 1000;
   return Math.round(
     (new Date(

@@ -14,10 +14,21 @@ const GRIS = '#555555';
 /** Deja solo caracteres que la fuente estándar del PDF (WinAnsi) puede dibujar. */
 function seguro(texto: unknown): string {
   if (texto === null || texto === undefined) return '';
+  // El resumen se arma con cadenas (y números) de la base; un objeto acabaría
+  // como "[object Object]" en el PDF, así que se descarta.
+  if (
+    typeof texto !== 'string' &&
+    typeof texto !== 'number' &&
+    typeof texto !== 'boolean'
+  )
+    return '';
   return String(texto)
     .replace(/\u2192/g, '->') // flecha →
     .replace(/\u2713/g, '[x]') // ✓
-    .replace(/[^\x20-\x7E\xA0-\xFF\u2013\u2014\u2018\u2019\u201C\u201D\u00A1\u00BF]/g, '');
+    .replace(
+      /[^\x20-\x7E\xA0-\xFF\u2013\u2014\u2018\u2019\u201C\u201D\u00A1\u00BF]/g,
+      '',
+    );
 }
 
 function fecha(d: Date | string | null | undefined): string {
@@ -214,10 +225,17 @@ export class ResumenPdfService {
           .font('Helvetica')
           .fontSize(9)
           .fillColor(GRIS)
-          .text(`    ${fechaHora(ses.fechaHora)}  ·  enlace: ${seguro(ses.enlaceVirtual)}`);
+          .text(
+            `    ${fechaHora(ses.fechaHora)}  ·  enlace: ${seguro(ses.enlaceVirtual)}`,
+          );
         if (rep) {
           this.campo(doc, 'Reporte', estado(rep.estado), '    ');
-          this.campo(doc, 'Asistentes', String(rep.totalAsistentes ?? '—'), '    ');
+          this.campo(
+            doc,
+            'Asistentes',
+            String(rep.totalAsistentes ?? '—'),
+            '    ',
+          );
           this.campo(doc, 'Incidencias', seguro(rep.incidencias), '    ');
           this.campo(
             doc,
@@ -225,7 +243,12 @@ export class ResumenPdfService {
             seguro(rep.acuerdosSiguienteSesion),
             '    ',
           );
-          this.campo(doc, 'Firmas', `${firmas}/${(rep?.participaciones ?? []).length}`, '    ');
+          this.campo(
+            doc,
+            'Firmas',
+            `${firmas}/${(rep?.participaciones ?? []).length}`,
+            '    ',
+          );
         } else {
           doc
             .font('Helvetica')
@@ -336,17 +359,15 @@ export class ResumenPdfService {
     doc.moveDown(0.6);
   }
 
-  private campo(
-    doc: any,
-    etiqueta: string,
-    valor: string,
-    sangria = '',
-  ): void {
+  private campo(doc: any, etiqueta: string, valor: string, sangria = ''): void {
     doc
       .font('Helvetica-Bold')
       .fontSize(9.5)
       .fillColor('#333333')
       .text(`${sangria}${etiqueta}: `, { continued: true });
-    doc.font('Helvetica').fillColor('#000000').text(valor || '—');
+    doc
+      .font('Helvetica')
+      .fillColor('#000000')
+      .text(valor || '—');
   }
 }

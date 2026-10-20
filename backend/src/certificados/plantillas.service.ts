@@ -299,7 +299,7 @@ export class PlantillasService {
           // los tres huecos y `textosLegales` va vacío, porque los textos
           // legales van dibujados dentro del diseño.
           campos: datos.campos as unknown as Prisma.InputJsonValue,
-          textosLegales: [] as unknown as Prisma.InputJsonValue,
+          textosLegales: [],
           creadaPorUsuarioId: usuarioId,
         },
         include: {

@@ -1,4 +1,12 @@
-import { IsInt, IsObject, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 /** Tope de la hoja, en píxeles de la plantilla. */
 const MAXIMO_LADO = 6000;

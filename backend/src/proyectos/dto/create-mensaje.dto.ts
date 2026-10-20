@@ -4,5 +4,5 @@ export class CreateMensajeDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(1000)
-  contenido: string;
+  contenido!: string;
 }

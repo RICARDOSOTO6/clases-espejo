@@ -5,18 +5,18 @@ import { DatosPersonaDto } from './datos-persona.dto';
 export class ActivateAccountDto extends DatosPersonaDto {
   @IsString()
   @IsNotEmpty()
-  token: string;
+  token!: string;
 
   @IsString()
   @IsNotEmpty()
-  gradoAcademico: string;
+  gradoAcademico!: string;
 
   @IsString()
   @IsNotEmpty()
   @EsTextoValido()
-  especialidad: string;
+  especialidad!: string;
 
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 }

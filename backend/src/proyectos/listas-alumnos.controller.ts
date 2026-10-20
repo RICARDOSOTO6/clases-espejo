@@ -72,7 +72,8 @@ export class ListasAlumnosController {
   previsualizar(
     @CurrentUser('sub') usuarioId: number,
     @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() archivo: { buffer: Buffer; originalname: string } | undefined,
+    @UploadedFile()
+    archivo: { buffer: Buffer; originalname: string } | undefined,
     @Body() dto: PrevisualizarListaDto,
   ) {
     return this.listas.previsualizar(usuarioId, id, archivo, dto.texto);

@@ -88,9 +88,7 @@ export class CapacidadesGuard implements CanActivate {
       (capacidad) => !puede(cuenta.rol, capacidad),
     );
     if (faltantes.length > 0) {
-      throw new ForbiddenException(
-        'Tu rol no tiene permiso para esta acción.',
-      );
+      throw new ForbiddenException('Tu rol no tiene permiso para esta acción.');
     }
     return true;
   }

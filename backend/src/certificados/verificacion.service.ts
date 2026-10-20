@@ -7,11 +7,7 @@ import {
 } from './codigo-verificacion';
 
 /** Los cuatro desenlaces que puede tener una consulta pública. */
-type EstadoVerificacion =
-  | 'VALIDO'
-  | 'ANULADO'
-  | 'NO_ENCONTRADO'
-  | 'INVALIDO';
+type EstadoVerificacion = 'VALIDO' | 'ANULADO' | 'NO_ENCONTRADO' | 'INVALIDO';
 
 /**
  * Lo que se enseña de un certificado en la página pública. **Solo esto**: el
@@ -143,8 +139,7 @@ export class VerificacionService {
 
     return {
       estado: 'VALIDO',
-      mensaje:
-        'Certificado auténtico: lo emitió la CACE y está vigente.',
+      mensaje: 'Certificado auténtico: lo emitió la CACE y está vigente.',
       certificado: datos,
     };
   }

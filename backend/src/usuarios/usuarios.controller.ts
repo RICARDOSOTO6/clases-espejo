@@ -72,7 +72,10 @@ export class UsuariosController {
   @Post('me/foto')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('foto', FOTO_MULTER))
-  subirFoto(@CurrentUser('sub') usuarioId: number, @UploadedFile() archivo: any) {
+  subirFoto(
+    @CurrentUser('sub') usuarioId: number,
+    @UploadedFile() archivo: any,
+  ) {
     if (!archivo) {
       throw new BadRequestException(
         'Adjunta una imagen en el campo «foto» (PNG, JPG o WEBP, hasta 2 MB)',

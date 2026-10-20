@@ -77,7 +77,11 @@ export class AgentesService {
     }
 
     const pendiente = await this.prisma.invitacion.findFirst({
-      where: { correo: dto.correo, usadaEn: null, expiracion: { gt: new Date() } },
+      where: {
+        correo: dto.correo,
+        usadaEn: null,
+        expiracion: { gt: new Date() },
+      },
     });
     if (pendiente) {
       throw new ConflictException(
@@ -202,7 +206,9 @@ export class AgentesService {
         const docente = await tx.docente.findUnique({
           where: { id: docenteInstitucion.docenteId },
         });
-        await tx.docente.delete({ where: { id: docenteInstitucion.docenteId } });
+        await tx.docente.delete({
+          where: { id: docenteInstitucion.docenteId },
+        });
         if (docente) {
           await tx.usuario.delete({ where: { id: docente.usuarioId } });
         }
@@ -297,9 +303,8 @@ export class AgentesService {
         total: clases.length,
         finalizadas: clases.filter((c) => c.estado === 'FINALIZADO').length,
         enCurso: clases.filter((c) => c.estado === 'EN_CURSO').length,
-        enPlanificacion: clases.filter(
-          (c) => c.estado === 'EN_PLANIFICACION',
-        ).length,
+        enPlanificacion: clases.filter((c) => c.estado === 'EN_PLANIFICACION')
+          .length,
         canceladas: clases.filter((c) => c.estado === 'CANCELADO').length,
       },
       clases,
@@ -361,18 +366,15 @@ export class AgentesService {
       cargo: alta.cargo,
       creadoEn: alta.creadoEn,
       usuarioId: alta.usuario.id,
-      nombre: `${alta.usuario.nombres} ${alta.usuario.apellidoPaterno} ${alta.usuario.apellidoMaterno}`.trim(),
+      nombre:
+        `${alta.usuario.nombres} ${alta.usuario.apellidoPaterno} ${alta.usuario.apellidoMaterno}`.trim(),
       correo: alta.usuario.correo,
       documento: `${alta.usuario.tipoDocumento} ${alta.usuario.dni}`,
     }));
   }
 
   /** Da por bueno el alta: desde ese momento el agente puede operar. */
-  async confirmarAlta(
-    usuarioId: number,
-    id: number,
-    peticion?: Request,
-  ) {
+  async confirmarAlta(usuarioId: number, id: number, peticion?: Request) {
     const { alta, institucion } = await this.altaDeMiInstitucion(usuarioId, id);
     if (alta.confirmadoEn) {
       throw new BadRequestException('Esa alta ya estaba confirmada');

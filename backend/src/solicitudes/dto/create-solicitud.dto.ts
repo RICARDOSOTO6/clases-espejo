@@ -8,10 +8,10 @@ import {
 
 export class CreateSolicitudDto {
   @IsInt()
-  asignacionOrigenId: number;
+  asignacionOrigenId!: number;
 
   @IsInt()
-  institucionDestinoId: number;
+  institucionDestinoId!: number;
 
   @IsInt()
   @IsOptional()
@@ -19,12 +19,12 @@ export class CreateSolicitudDto {
 
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  titulo!: string;
 
   @IsString()
   @IsNotEmpty()
-  objetivo: string;
+  objetivo!: string;
 
   @IsDateString()
-  fechaPropuesta: string;
+  fechaPropuesta!: string;
 }

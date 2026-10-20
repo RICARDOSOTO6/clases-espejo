@@ -2,12 +2,12 @@ import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateAsignacionDto {
   @IsInt()
-  docenteInstitucionId: number;
+  docenteInstitucionId!: number;
 
   @IsInt()
-  materiaId: number;
+  materiaId!: number;
 
   @IsString()
   @IsNotEmpty()
-  periodoEscolar: string;
+  periodoEscolar!: string;
 }

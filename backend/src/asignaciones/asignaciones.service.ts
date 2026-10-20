@@ -36,9 +36,13 @@ export class AsignacionesService {
     if (!materia) throw new NotFoundException('Materia no encontrada');
 
     const docenteInstitucion = await this.prisma.docenteInstitucion.findFirst({
-      where: { id: dto.docenteInstitucionId, institucionId: agente.institucionId },
+      where: {
+        id: dto.docenteInstitucionId,
+        institucionId: agente.institucionId,
+      },
     });
-    if (!docenteInstitucion) throw new NotFoundException('Docente no encontrado');
+    if (!docenteInstitucion)
+      throw new NotFoundException('Docente no encontrado');
 
     return this.prisma.asignacionDocente.create({
       data: {
@@ -66,7 +70,9 @@ export class AsignacionesService {
     // Sin esto, la base de datos rechaza el borrado y el usuario ve un error 500.
     const [solicitudes, proyectos] = await Promise.all([
       this.prisma.solicitudClaseEspejo.count({
-        where: { OR: [{ asignacionOrigenId: id }, { asignacionDestinoId: id }] },
+        where: {
+          OR: [{ asignacionOrigenId: id }, { asignacionDestinoId: id }],
+        },
       }),
       this.prisma.proyectoDocente.count({
         where: { asignacionDocenteId: id },

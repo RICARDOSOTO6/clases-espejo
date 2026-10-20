@@ -23,11 +23,11 @@ import { DatosPersonaDto } from './datos-persona.dto';
  */
 export class RegisterDto extends DatosPersonaDto {
   @IsEmail()
-  correo: string;
+  correo!: string;
 
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   /** Institución existente a la que se une el agente (buscar antes de crear). */
   @IsOptional()
@@ -69,5 +69,5 @@ export class RegisterDto extends DatosPersonaDto {
 
   @IsString()
   @IsNotEmpty()
-  cargo: string;
+  cargo!: string;
 }

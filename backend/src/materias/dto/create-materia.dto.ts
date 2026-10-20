@@ -3,19 +3,19 @@ import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class CreateMateriaDto {
   @IsString()
   @IsNotEmpty()
-  clave: string;
+  clave!: string;
 
   @IsString()
   @IsNotEmpty()
-  nombre: string;
+  nombre!: string;
 
   @IsString()
   @IsNotEmpty()
-  programaEducativo: string;
+  programaEducativo!: string;
 
   @IsString()
   @IsNotEmpty()
-  descripcion: string;
+  descripcion!: string;
 
   @IsBoolean()
   @IsOptional()

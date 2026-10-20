@@ -3,7 +3,7 @@ import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 export class RevisarSolicitudDto {
   @IsString()
   @IsIn(['APROBADA', 'RECHAZADA'])
-  decision: string;
+  decision!: string;
 
   @IsString()
   @IsOptional()

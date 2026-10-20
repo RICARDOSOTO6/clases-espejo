@@ -29,7 +29,10 @@ export class AsignacionesController {
   }
 
   @Post()
-  crear(@CurrentUser('sub') agenteId: number, @Body() dto: CreateAsignacionDto) {
+  crear(
+    @CurrentUser('sub') agenteId: number,
+    @Body() dto: CreateAsignacionDto,
+  ) {
     return this.asignacionesService.crear(agenteId, dto);
   }
 

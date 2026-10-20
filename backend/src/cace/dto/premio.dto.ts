@@ -26,10 +26,12 @@ export class CrearPremioDto {
   @IsString()
   @MinLength(3, { message: 'El título es obligatorio' })
   @MaxLength(160, { message: 'El título no puede pasar de 160 caracteres' })
-  titulo: string;
+  titulo!: string;
 
   @IsOptional()
-  @IsIn(TIPOS_RECONOCIMIENTO, { message: 'El tipo de reconocimiento no es válido' })
+  @IsIn(TIPOS_RECONOCIMIENTO, {
+    message: 'El tipo de reconocimiento no es válido',
+  })
   tipo?: (typeof TIPOS_RECONOCIMIENTO)[number];
 
   @IsOptional()
@@ -42,14 +44,14 @@ export class CrearPremioDto {
   @IsInt({ message: 'El año es obligatorio' })
   @Min(1900, { message: 'El año no parece válido' })
   @Max(2100, { message: 'El año no parece válido' })
-  anio: number;
+  anio!: number;
 
   @IsString()
   @MinLength(2, { message: 'Indica a quién se le otorgó' })
   @MaxLength(200, {
     message: '«Otorgado a» no puede pasar de 200 caracteres',
   })
-  otorgadoA: string;
+  otorgadoA!: string;
 
   @IsOptional()
   @IsString()
@@ -87,7 +89,9 @@ export class ActualizarPremioDto {
   titulo?: string;
 
   @IsOptional()
-  @IsIn(TIPOS_RECONOCIMIENTO, { message: 'El tipo de reconocimiento no es válido' })
+  @IsIn(TIPOS_RECONOCIMIENTO, {
+    message: 'El tipo de reconocimiento no es válido',
+  })
   tipo?: (typeof TIPOS_RECONOCIMIENTO)[number];
 
   @IsOptional()

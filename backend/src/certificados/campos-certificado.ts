@@ -294,8 +294,14 @@ function encajarEnLienzo<
     ...caja,
     ancho,
     alto,
-    x: Math.min(Math.max(0, Math.round(caja.x)), Math.max(0, lienzo.anchoPx - ancho)),
-    y: Math.min(Math.max(0, Math.round(caja.y)), Math.max(0, lienzo.altoPx - alto)),
+    x: Math.min(
+      Math.max(0, Math.round(caja.x)),
+      Math.max(0, lienzo.anchoPx - ancho),
+    ),
+    y: Math.min(
+      Math.max(0, Math.round(caja.y)),
+      Math.max(0, lienzo.altoPx - alto),
+    ),
   };
 }
 
@@ -356,7 +362,9 @@ export function normalizarCampos(
         // ningún teléfono lo leería).
         alto: aNumero(
           campo['alto'],
-          clave === 'qr' ? ancho : altoDeLineas(tamano, LINEAS_CAJA_POR_DEFECTO, lienzo),
+          clave === 'qr'
+            ? ancho
+            : altoDeLineas(tamano, LINEAS_CAJA_POR_DEFECTO, lienzo),
           ALTO_MINIMO,
           6000,
         ),

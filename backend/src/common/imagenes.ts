@@ -37,10 +37,7 @@ const TAMANO_MAXIMO_DOCUMENTO = 8 * 1024 * 1024;
 
 /** Los cuatro tipos reales que se admiten como documento de un premio. */
 export type TipoDocumento =
-  | 'image/png'
-  | 'image/jpeg'
-  | 'image/webp'
-  | 'application/pdf';
+  'image/png' | 'image/jpeg' | 'image/webp' | 'application/pdf';
 
 /** Extensiones que corresponden a cada tipo real. */
 const EXTENSIONES_POR_TIPO: Record<TipoDocumento, string[]> = {
@@ -199,7 +196,10 @@ export function nombreArchivoLegible(original: string): string {
   const enUtf8 = Buffer.from(recortado, 'latin1').toString('utf8');
   const legible = enUtf8.includes('\uFFFD') ? recortado : enUtf8;
 
-  const limpio = legible.replace(/[\\/"\r\n\t]/g, '').trim().slice(0, 200);
+  const limpio = legible
+    .replace(/[\\/"\r\n\t]/g, '')
+    .trim()
+    .slice(0, 200);
   return limpio || 'certificado';
 }
 

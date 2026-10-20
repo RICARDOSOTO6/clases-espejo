@@ -14,8 +14,8 @@ describe('PrismaService', () => {
 
   it('should be defined and expose prisma methods', () => {
     expect(service).toBeDefined();
-    expect(service.$connect).toBeDefined();
-    expect(service.$disconnect).toBeDefined();
+    expect(typeof service.$connect).toBe('function');
+    expect(typeof service.$disconnect).toBe('function');
     expect(service.usuario).toBeDefined();
   });
 });

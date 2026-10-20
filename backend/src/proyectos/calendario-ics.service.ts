@@ -91,6 +91,15 @@ export interface SesionCalendario {
  */
 export function escaparTexto(valor: unknown): string {
   if (valor === null || valor === undefined) return '';
+  // Solo se escapan valores que de verdad se pueden escribir en una línea de
+  // texto (el `.ics` y el PDF los llaman con cadenas). Un objeto nunca debe
+  // acabar como "[object Object]" dentro de un certificado o un evento.
+  if (
+    typeof valor !== 'string' &&
+    typeof valor !== 'number' &&
+    typeof valor !== 'boolean'
+  )
+    return '';
   return String(valor)
     .replace(/\\/g, '\\\\')
     .replace(/\r\n|\r|\n/g, '\\n')
@@ -268,7 +277,7 @@ export class CalendarioIcsService {
 
     return [origen, destino]
       .filter(Boolean)
-      .map((i) => `${i!.nombre} (${i!.pais})`)
+      .map((i) => `${i.nombre} (${i.pais})`)
       .join(' · ');
   }
 

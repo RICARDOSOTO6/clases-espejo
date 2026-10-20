@@ -6,26 +6,26 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs';
 import { basename, join } from 'path';
 import JSZip from 'jszip';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { ESTADO_PROYECTO_FINALIZADO } from '../common/estados';
-import {
-  CAMPOS_POR_DEFECTO,
-  normalizarCampos,
-} from './campos-certificado';
+import { CAMPOS_POR_DEFECTO, normalizarCampos } from './campos-certificado';
 import {
   CertificadoPdfService,
   DatosCertificado,
 } from './certificado-pdf.service';
 import { codigoVerificacion as codigoDeVerificacion } from './codigo-verificacion';
 import { PlantillasService } from './plantillas.service';
-import {
-  CERTIFICADOS_DIR,
-  direccionVerificacion,
-} from './rutas-certificado';
+import { CERTIFICADOS_DIR, direccionVerificacion } from './rutas-certificado';
 import { EmitirCertificadosDto } from './dto/emitir-certificados.dto';
 import { EnviarCertificadosDto } from './dto/enviar-certificado.dto';
 
@@ -172,7 +172,9 @@ export class CertificadosService {
 
     const certificados = await this.prisma.certificado.findMany({
       where: { proyectoId, alumno: { lista: { institucionId } } },
-      include: { alumno: { select: { nombre: true, matricula: true, correo: true } } },
+      include: {
+        alumno: { select: { nombre: true, matricula: true, correo: true } },
+      },
       orderBy: { emitidoEn: 'desc' },
     });
 
@@ -234,7 +236,11 @@ export class CertificadosService {
    * docente. Devuelve qué se emitió, qué se reemitió y qué se dejó pasar, con
    * el motivo: nunca falla entera porque un alumno ya tuviera certificado.
    */
-  async emitir(usuarioId: number, proyectoId: number, dto: EmitirCertificadosDto) {
+  async emitir(
+    usuarioId: number,
+    proyectoId: number,
+    dto: EmitirCertificadosDto,
+  ) {
     const { institucionId } = await this.contexto(usuarioId, proyectoId);
 
     const proyecto = await this.proyectoParaCertificado(proyectoId);
@@ -327,7 +333,11 @@ export class CertificadosService {
     }
 
     return {
-      mensaje: this.mensajeDeEmision(emitidos.length, reemitidos.length, omitidos.length),
+      mensaje: this.mensajeDeEmision(
+        emitidos.length,
+        reemitidos.length,
+        omitidos.length,
+      ),
       emitidos,
       reemitidos,
       omitidos,
@@ -541,7 +551,11 @@ export class CertificadosService {
         continue;
       }
       if (!correo) {
-        resultado.sinCorreo.push({ certificadoId: certificado.id, folio, alumno });
+        resultado.sinCorreo.push({
+          certificadoId: certificado.id,
+          folio,
+          alumno,
+        });
         continue;
       }
       if (certificado.enviadoEn && !reenviar) {
@@ -561,7 +575,8 @@ export class CertificadosService {
           folio,
           alumno,
           correo,
-          motivo: 'El PDF del certificado no está en el servidor. Vuelve a emitirlo.',
+          motivo:
+            'El PDF del certificado no está en el servidor. Vuelve a emitirlo.',
         });
         continue;
       }
@@ -628,7 +643,9 @@ export class CertificadosService {
         : `${resultado.enviados.length} certificados enviados por correo`,
     );
     if (resultado.omitidos.length > 0) {
-      partes.push(`${resultado.omitidos.length} sin enviar (ya se le había enviado)`);
+      partes.push(
+        `${resultado.omitidos.length} sin enviar (ya se le había enviado)`,
+      );
     }
     if (resultado.sinCorreo.length > 0) {
       partes.push(`${resultado.sinCorreo.length} sin correo en la lista`);
@@ -673,7 +690,11 @@ export class CertificadosService {
   // --- Descargas (siempre con sesión) ---
 
   /** El PDF de un certificado concreto, comprobando que es de mi lista. */
-  async descargar(usuarioId: number, proyectoId: number, certificadoId: number) {
+  async descargar(
+    usuarioId: number,
+    proyectoId: number,
+    certificadoId: number,
+  ) {
     const certificado = await this.certificadoDeMiLista(
       usuarioId,
       proyectoId,
@@ -749,7 +770,9 @@ export class CertificadosService {
   /** Genera el PDF, lo archiva y guarda la fila del certificado. */
   private async emitirUno(entrada: {
     alumno: { id: number; nombre: string; matricula: string };
-    proyecto: Awaited<ReturnType<CertificadosService['proyectoParaCertificado']>>;
+    proyecto: Awaited<
+      ReturnType<CertificadosService['proyectoParaCertificado']>
+    >;
     plantilla: NonNullable<Awaited<ReturnType<PlantillasService['activa']>>>;
     usuarioId: number;
     avisos: string[];
@@ -867,7 +890,11 @@ export class CertificadosService {
    * presidencia también puede anular (desde su panel) y su mensaje tiene que
    * decirle por dónde.
    */
-  private async contexto(usuarioId: number, proyectoId: number, aviso?: string) {
+  private async contexto(
+    usuarioId: number,
+    proyectoId: number,
+    aviso?: string,
+  ) {
     const docente = await this.prisma.docente.findUnique({
       where: { usuarioId },
     });

@@ -125,7 +125,7 @@ export class RecordatoriosService {
     const mias = await this.solicitudes.listarMias(usuarioId);
     return mias
       .filter((s) => s.enRevision)
-      .map((s) => ({
+      .map((s): SolicitudAgenda => ({
         id: s.id,
         titulo: s.titulo,
         estado: s.estado,
@@ -133,9 +133,7 @@ export class RecordatoriosService {
         fechaLimite: s.fechaLimite,
         diasRestantes: s.diasRestantes,
         urgencia: s.urgencia,
-        etapa: (s.estado === 'PENDIENTE' ? 'ORIGEN' : 'DESTINO') as
-          | 'ORIGEN'
-          | 'DESTINO',
+        etapa: s.estado === 'PENDIENTE' ? 'ORIGEN' : 'DESTINO',
         meToca: false,
         contraparte: s.institucionDestino?.nombre ?? '',
         docente: '',
@@ -156,7 +154,7 @@ export class RecordatoriosService {
     const entrantes = await this.solicitudes.listarEntrantes(usuarioId);
     return entrantes
       .filter((s) => s.enRevision)
-      .map((s) => {
+      .map((s): SolicitudAgenda => {
         const etapa = s.estado === 'PENDIENTE' ? 'ORIGEN' : 'DESTINO';
         const meToca =
           etapa === 'ORIGEN'
@@ -171,7 +169,7 @@ export class RecordatoriosService {
           fechaLimite: s.fechaLimite,
           diasRestantes: s.diasRestantes,
           urgencia: s.urgencia,
-          etapa: etapa as 'ORIGEN' | 'DESTINO',
+          etapa: etapa,
           meToca,
           contraparte: s.institucionDestino?.nombre ?? '',
           docente: this.nombreDelDocenteOrigen(s),
@@ -304,7 +302,9 @@ export class RecordatoriosService {
             proyectoDocente: {
               include: {
                 asignacionDocente: {
-                  include: { docenteInstitucion: { include: { docente: true } } },
+                  include: {
+                    docenteInstitucion: { include: { docente: true } },
+                  },
                 },
               },
             },
@@ -334,8 +334,8 @@ export class RecordatoriosService {
       });
     }
 
-    const participaciones = await this.prisma.participacionPlanificacion.findMany(
-      {
+    const participaciones =
+      await this.prisma.participacionPlanificacion.findMany({
         where: {
           estatusConfirmacion: ESTATUS_PENDIENTE,
           proyectoDocente: {
@@ -343,7 +343,9 @@ export class RecordatoriosService {
               docenteInstitucion: { docente: { usuarioId } },
             },
           },
-          planificacion: { proyecto: { estado: { in: ESTADOS_PROYECTO_EDITABLES } } },
+          planificacion: {
+            proyecto: { estado: { in: ESTADOS_PROYECTO_EDITABLES } },
+          },
         },
         take: 20,
         include: {
@@ -353,8 +355,7 @@ export class RecordatoriosService {
             },
           },
         },
-      },
-    );
+      });
 
     for (const participacion of participaciones) {
       const proyecto = participacion.planificacion.proyecto;
@@ -368,9 +369,7 @@ export class RecordatoriosService {
       });
     }
 
-    return tareas.sort(
-      (a, b) => this.peso(a.urgencia) - this.peso(b.urgencia),
-    );
+    return tareas.sort((a, b) => this.peso(a.urgencia) - this.peso(b.urgencia));
   }
 
   /** Agente: clases de su institución cuya planificación sigue sin aprobarse. */
@@ -423,9 +422,11 @@ export class RecordatoriosService {
   private etiquetaPlanificacion(estado?: string): string {
     if (!estado) return 'sin crear';
     return (
-      { BORRADOR: 'en borrador', EN_REVISION: 'en revisión', APROBADA: 'aprobada' }[
-        estado
-      ] ?? estado
+      {
+        BORRADOR: 'en borrador',
+        EN_REVISION: 'en revisión',
+        APROBADA: 'aprobada',
+      }[estado] ?? estado
     );
   }
 

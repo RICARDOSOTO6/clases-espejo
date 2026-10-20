@@ -29,6 +29,8 @@ type TemaCace = (typeof TEMAS_CACE)[number];
 /** Tema por defecto: el azul actual, para que nada cambie si no se elige otro. */
 export const TEMA_CACE_POR_DEFECTO: TemaCace = 'AZUL';
 
-export function esTemaCaceValido(tema: string | null | undefined): tema is TemaCace {
+export function esTemaCaceValido(
+  tema: string | null | undefined,
+): tema is TemaCace {
   return !!tema && (TEMAS_CACE as readonly string[]).includes(tema);
 }
