@@ -274,6 +274,20 @@ PORT="3000"
 
 Si usas Gmail, necesitas una **contraseña de aplicación** (no la de tu cuenta):
 se genera en la configuración de seguridad de la cuenta Google.
+### Correo masivo y buen nombre (Fase 2)
+
+- **La cola no cambia los límites del proveedor.** Gmail admite unos 500
+  correos al día; con un dominio propio o un proveedor transaccional el límite
+  es mayor. La cola reintenta y registra el rebote, pero si el proveedor rechaza
+  por cuota el envío queda `FALLIDO` con ese motivo.
+- **SPF, DKIM y DMARC**: si el remitente es de un dominio propio, publica los
+  tres registros DNS. Sin ellos muchos destinatarios marcan el correo como spam
+  o lo rechazan.
+- **Remitente**: hoy `MAIL_FROM` es el mismo para invitaciones y certificados.
+  Separar el de certificados es una tarea pendiente de la Fase 2.
+- **Worker**: vacía la cola cada 60 segundos; `ENVIOS_INTERVALO_MS` permite
+  cambiarlo (solo para pruebas). No ejecutes dos instancias del backend contra
+  la misma base sin coordinarlo: no hay bloqueo distribuido.
 
 ### Permisos del archivo (Linux)
 

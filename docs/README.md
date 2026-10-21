@@ -160,7 +160,8 @@ Las versiones de esta sección salen de `backend/package.json` y
 | PostgreSQL | — | Base de datos (`DATABASE_URL`). |
 | `bcrypt` | `^6.0.0` | Hash de contraseñas. |
 | `class-validator` / `class-transformer` | `^0.15.1` / `^0.5.1` | Validación y transformación de DTO. |
-| `nodemailer` | `^9.1.0` | Correo saliente (invitaciones, avisos de la CACE, certificados). |
+| 
+odemailer` | `^9.1.0` | Correo saliente (invitaciones, avisos de la CACE, certificados). |
 | `pdfkit` | `^0.20.2` | Generación de los PDF (certificados y resumen de la clase). |
 | `qrcode` | `^1.5.4` | El QR de verificación que va estampado en el certificado. |
 | `jszip` | `^3.10.2` | La descarga de certificados en ZIP. |
@@ -174,10 +175,13 @@ Las versiones de esta sección salen de `backend/package.json` y
 | Dependencia | Versión declarada | Para qué |
 | --- | --- | --- |
 | `@angular/core`, `@angular/common`, `@angular/forms`, `@angular/router`, `@angular/platform-browser` | `^21.2.0` | Angular 21 con **componentes standalone**, **signals** y modo **zoneless**. |
-| `@angular/cli` / `@angular/build` | `^21.2.21` | Compilación (`ng build`) y servidor de desarrollo (`ng serve`). |
+| `@angular/cli` / `@angular/build` | `^21.2.21` | Compilación (
+g build`) y servidor de desarrollo (
+g serve`). |
 | `@angular/ssr` | `^21.2.21` | Presente por el andamiaje de Angular; **la aplicación se sirve como SPA** desde `backend/public`. |
 | `express` | `^5.1.0` | Dependencia del andamiaje de SSR. |
-| `vitest` | `^4.0.8` | Pruebas unitarias del frontend (`npm test` usa el runner de Angular sobre Vitest). |
+| `vitest` | `^4.0.8` | Pruebas unitarias del frontend (
+pm test` usa el runner de Angular sobre Vitest). |
 | TypeScript | `~5.9.2` | Lenguaje. |
 
 Notas de diseño del frontend:
@@ -364,7 +368,8 @@ npx prisma migrate deploy
 > `prisma db push` sigue sirviendo solo para una base de pruebas desechable. En
 > una base con datos, usar `migrate deploy`.
 >
-> Para ver el historial de migraciones aplicadas: `npx prisma migrate status`.
+> Para ver el historial de migraciones aplicadas: 
+px prisma migrate status`.
 
 ---
 
@@ -452,7 +457,8 @@ URLS_PERMITIDAS=""
 
 El correo de invitación lleva un enlace del tipo `<url-pública>/activate?token=…`.
 Si esa URL fuera siempre `localhost`, el docente **no podría abrirlo desde su
-equipo**; pasa con un túnel (`cloudflared`, `ngrok`), con un proxy inverso nuevo
+equipo**; pasa con un túnel (`cloudflared`, 
+grok`), con un proxy inverso nuevo
 o al probar desde otra máquina de la red.
 
 Por eso la URL se resuelve en este orden (`backend/src/common/url-publica.ts`):
@@ -472,7 +478,8 @@ los demás se descartan y se usa `FRONTEND_URL`.
 > **Consejo con túneles:** apunta el túnel al **puerto 3000** (`cloudflared tunnel
 > --url http://localhost:3000`). Al servir ahí el frontend compilado y la API, todo
 > queda en el mismo origen y no hay que tocar CORS. Si en cambio apuntas el túnel
-> al `4200` (`ng serve`), el servidor de desarrollo de Angular bloquea los hosts
+> al `4200` (
+g serve`), el servidor de desarrollo de Angular bloquea los hosts
 > desconocidos: habría que añadirlos en `angular.json`
 > (`projects.frontend.architect.build.options.security.allowedHosts`).
 
@@ -636,7 +643,8 @@ como red de seguridad), así que **un módulo nuevo no queda "tapado" por el
 | Plantillas descargables (lista de alumnos, zonas, guía) | `http://localhost:3000/plantillas/<archivo>` |
 | Certificados emitidos | **No** son estáticos: `/uploads/certificados/…` responde 404 y el PDF se descarga por `/proyectos/:id/certificados/:id/pdf` con sesión |
 
-En desarrollo se puede trabajar con dos servidores (`ng serve` en `4200` +
+En desarrollo se puede trabajar con dos servidores (
+g serve` en `4200` +
 NestJS en `3000`): los servicios del frontend detectan el puerto y apuntan al
 backend automáticamente.
 
@@ -648,36 +656,61 @@ Desde `backend/`:
 
 | Comando               | Función                           |
 | --------------------- | --------------------------------- |
-| `npm install`         | Instala dependencias              |
-| `npm run start:dev`   | Ejecuta el servidor en desarrollo |
-| `npm run build`       | Compila el backend                |
-| `npm run start`       | Ejecuta NestJS                    |
-| `npm run start:prod`  | Ejecuta la versión compilada      |
-| `npx prisma generate` | Genera el cliente Prisma          |
-| `npx prisma validate` | Valida el esquema Prisma          |
-| `npx prisma migrate deploy` | Aplica las migraciones pendientes |
-| `npx prisma migrate status` | Estado del historial de migraciones |
-| `npx prisma studio`   | Abre la interfaz de Prisma        |
-| `npm run lint`        | Ejecuta ESLint (y `--fix`)        |
-| `npm run lint:ci`     | ESLint sin `--fix` ni avisos (el que usa el CI) |
-| `npm test`            | Ejecuta pruebas unitarias         |
-| `npm run test:e2e -- --runInBand` | Pruebas e2e contra una base de prueba (ver abajo) |
-| `node scripts/seed-demo.js` | Limpia y siembra los datos base de demostración |
-| `node scripts/seed-demo-clases.js` | Simula clases espejo (proyectos y solicitudes) |
-| `node scripts/borrar-demo-clases.js` | Elimina la simulación de clases |
-| `node scripts/verificar-flujo.js` | Comprueba el flujo completo por API |
-| `node scripts/verificar-navegador.js` | Comprueba la interfaz con un navegador automatizado |
+| 
+pm install`         | Instala dependencias              |
+| 
+pm run start:dev`   | Ejecuta el servidor en desarrollo |
+| 
+pm run build`       | Compila el backend                |
+| 
+pm run start`       | Ejecuta NestJS                    |
+| 
+pm run start:prod`  | Ejecuta la versión compilada      |
+| 
+px prisma generate` | Genera el cliente Prisma          |
+| 
+px prisma validate` | Valida el esquema Prisma          |
+| 
+px prisma migrate deploy` | Aplica las migraciones pendientes |
+| 
+px prisma migrate status` | Estado del historial de migraciones |
+| 
+px prisma studio`   | Abre la interfaz de Prisma        |
+| 
+pm run lint`        | Ejecuta ESLint (y `--fix`)        |
+| 
+pm run lint:ci`     | ESLint sin `--fix` ni avisos (el que usa el CI) |
+| 
+pm test`            | Ejecuta pruebas unitarias         |
+| 
+pm run test:e2e -- --runInBand` | Pruebas e2e contra una base de prueba (ver abajo) |
+| 
+ode scripts/seed-demo.js` | Limpia y siembra los datos base de demostración |
+| 
+ode scripts/seed-demo-clases.js` | Simula clases espejo (proyectos y solicitudes) |
+| 
+ode scripts/borrar-demo-clases.js` | Elimina la simulación de clases |
+| 
+ode scripts/verificar-flujo.js` | Comprueba el flujo completo por API |
+| 
+ode scripts/verificar-navegador.js` | Comprueba la interfaz con un navegador automatizado |
 
 Desde `frontend/`:
 
 | Comando | Función |
 | --- | --- |
-| `npm install` | Instala dependencias |
-| `npm start` | Servidor de desarrollo en `http://localhost:4200` |
-| `npm run build` | Compila para producción |
-| `npm run lint` | ESLint de `.ts` y plantillas |
-| `npm run lint:ci` | ESLint sin `--fix` ni avisos (el que usa el CI) |
-| `npm test` | Ejecuta las pruebas unitarias |
+| 
+pm install` | Instala dependencias |
+| 
+pm start` | Servidor de desarrollo en `http://localhost:4200` |
+| 
+pm run build` | Compila para producción |
+| 
+pm run lint` | ESLint de `.ts` y plantillas |
+| 
+pm run lint:ci` | ESLint sin `--fix` ni avisos (el que usa el CI) |
+| 
+pm test` | Ejecuta las pruebas unitarias |
 
 ### Pruebas e2e y base de prueba
 
@@ -777,7 +810,7 @@ Contraseña común: `Demo1234`
 
 # 🗃 Modelo de datos
 
-El esquema tiene **34 tablas** (`backend/prisma/schema.prisma`, 34 modelos con su
+El esquema tiene **35 tablas** (`backend/prisma/schema.prisma`, 35 modelos con su
 `@@map`). En este mapa se ven las relaciones principales:
 
 ```text
@@ -831,6 +864,7 @@ CAMBIO_PRESIDENCIA      (historial de transmisiones de la presidencia)
 SOLICITUD_BORRADO_INSTITUCION (la secretaría pide, la presidencia autoriza)
 RECUPERACION_PASSWORD (enlaces de recuperación: solo el hash del token)
 VERIFICACION_CORREO (confirmación de correo: solo el hash del token)
+ENVIO_CORREO (cola de correo: lote, estado, intentos, último error y adjunto)
 ```
 
 Notas sobre el modelo:
@@ -1020,7 +1054,8 @@ El estado de una institución ante la CACE vive en `INSTITUCION.estadoCace` y es
   (`POST /cace/instituciones/:id/solicitud-borrado`), y la presidencia lo
   autoriza (`PATCH /cace/solicitudes-borrado/:id`). Al aprobar, el borrado se
   ejecuta y queda registrado quién lo autorizó. La solicitud sobrevive al
-  borrado (`institucionId` puede quedar en `null`).
+  borrado (`institucionId` puede quedar en 
+ull`).
 * **El catálogo de destinos solo muestra aprobadas.** `GET /instituciones` filtra
   por `activa`, `registroCompleto` y `estadoCace = APROBADA`: ofrecer como destino
   una institución que no puede operar sería dejar al docente proponer algo
@@ -1053,7 +1088,8 @@ la CACE (capacidades `personalizarCace` y `publicarPremios`):
   imágenes de los premios (`/premios/…`), los logos de institución (`/logos/…`),
   las fotos de perfil (`/avatares/…`) y los fondos de la plantilla
   (`/certificado-fondo/…`) se sirven **en línea** (para pintarlos con `<img>`) con
-  `nosniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: nunca SVG, que
+  
+osniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: nunca SVG, que
   puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación.
 
 ---
@@ -1069,7 +1105,8 @@ dentro de esa imagen. La plataforma solo **estampa los tres datos que cambian**:
 
 | Dato | Detalle |
 | --- | --- |
-| **`nombre`** | El nombre del alumno, con **autoajuste** de tamaño. |
+| **
+ombre`** | El nombre del alumno, con **autoajuste** de tamaño. |
 | **`folio`** | El código único del certificado. |
 | **`qr`** | El código QR que abre la verificación pública. |
 
@@ -1261,7 +1298,7 @@ con los mismos estados, está en
 
 # 🌐 Endpoints de la API
 
-El backend expone **135 rutas** repartidas en **23 controladores** (22 archivos
+El backend expone **136 rutas** repartidas en **24 controladores** (23 archivos
 `.controller.ts`; `instituciones.controller.ts` contiene dos clases). Todas cuelgan
 de un prefijo y la lista completa está en las tablas siguientes.
 
@@ -1337,7 +1374,7 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `GET` | `/proyectos/:id` | Detalle del proyecto (docentes y planificación) | JWT |
 | `GET` | `/proyectos/:id/resumen-pdf` | Descarga el resumen de la clase en PDF | JWT |
 | `GET` | `/proyectos/:id/calendario.ics` | Descarga el archivo `.ics` de la clase y sus sesiones, con los avisos de 1 hora, 30 y 15 minutos dentro | JWT (docente participante) |
-| `POST` | `/proyectos/:id/calendario/enviar` | Manda ese mismo `.ics` por correo a los docentes participantes y devuelve el informe de envíos (`enviados` / `fallidos` con motivo); con la clase cerrada también se permite | JWT (docente participante) |
+| `POST` | `/proyectos/:id/calendario/enviar` | **Encuela** ese mismo `.ics` para los docentes participantes y devuelve el `loteId`; el envío lo hace el worker y el progreso se consulta en `/envios/lotes/:loteId`. Con la clase cerrada también se permite | JWT (docente participante) |
 | `PATCH` | `/proyectos/:id` | Actualiza fechas, plataforma o estado (solo *En planificación* / *En curso*) | JWT (docente) |
 | `POST` | `/proyectos/:id/docentes` | Agrega un docente al proyecto (solo de su institución) | JWT (agente) |
 | `DELETE` | `/proyectos/:id/docentes/:proyectoDocenteId` | Quita un docente del proyecto (solo de su institución) | JWT (agente) |
@@ -1379,7 +1416,8 @@ de un prefijo y la lista completa está en las tablas siguientes.
 
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
-| `GET` | `/proyectos/:id/listas-alumnos` | La lista guardada de la institución del docente (o `null`) | JWT |
+| `GET` | `/proyectos/:id/listas-alumnos` | La lista guardada de la institución del docente (o 
+ull`) | JWT |
 | `POST` | `/proyectos/:id/listas-alumnos/previsualizar` | Lee el archivo `.xlsx`/`.csv` o el texto pegado y devuelve la **vista previa**, sin guardar (avisos de repetidos, nombres imposibles y correos mal escritos) | JWT (docente participante) |
 | `PUT` | `/proyectos/:id/listas-alumnos` | Guarda la lista revisada (reemplaza la anterior) | JWT (docente participante) |
 | `PATCH` | `/proyectos/:id/listas-alumnos/alumnos/:alumnoId` | Corrige un alumno (nombre, matrícula, correo o si entra en los certificados) | JWT (docente participante) |
@@ -1395,8 +1433,8 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `GET` | `/proyectos/:id/certificados` | Estado de la sección: si se puede emitir, qué falta, la lista, los emitidos y el resumen | JWT + `emitirCertificados` |
 | `POST` | `/proyectos/:id/certificados/emitir` | Emite uno (`alumnoId`) o todos los alumnos incluidos de mi lista | JWT + `emitirCertificados` |
 | `GET` | `/proyectos/:id/certificados/zip` | Todos los certificados vigentes de mi lista, en un ZIP | JWT + `emitirCertificados` |
-| `POST` | `/proyectos/:id/certificados/enviar` | Envía por correo a los alumnos (a todos o a los indicados) | JWT + `emitirCertificados` |
-| `POST` | `/proyectos/:id/certificados/:certificadoId/enviar` | Envía el certificado de un alumno, con el PDF adjunto | JWT + `emitirCertificados` |
+| `POST` | `/proyectos/:id/certificados/enviar` | **Encuela** los certificados de los alumnos (todos o los indicados) y devuelve el `loteId`; el PDF se adjunta desde la cola | JWT + `emitirCertificados` |
+| `POST` | `/proyectos/:id/certificados/:certificadoId/enviar` | **Encuela** el certificado de un alumno, con el PDF adjunto, y devuelve el `loteId` | JWT + `emitirCertificados` |
 | `POST` | `/proyectos/:id/certificados/:certificadoId/anular` | Anula un certificado de la lista de mi institución, con motivo obligatorio | JWT + `anularCertificados` |
 | `GET` | `/proyectos/:id/certificados/:certificadoId/pdf` | Descarga el PDF de un certificado | JWT + `emitirCertificados` |
 
@@ -1405,11 +1443,23 @@ de un prefijo y la lista completa está en las tablas siguientes.
 > comprueba que el certificado sea de la lista de la institución de quien lo pide.
 > `main.ts` corta expresamente cualquier petición a `/uploads/certificados/…`.
 
+## Cola de correo (Fase 2)
+
+Los envíos de certificados y del calendario **no esperan al SMTP**: se guardan en
+`ENVIO_CORREO` y un worker los manda cada minuto, con reintentos (1, 5, 15 y 60
+minutos) y el motivo de cada fallo. Así un lote de 300 responde al instante y un
+corte del proceso no pierde correos.
+
+| Método | Ruta | Descripción | Autenticación |
+| --- | --- | --- | --- |
+| `GET` | `/envios/lotes/:loteId` | Progreso del lote (total, pendientes, enviados, fallidos y errores). Solo lo ve quien lo pidió | JWT |
+
 ## Verificación pública
 
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
-| `GET` | `/verificar/:folio?c=<código>` | Estado de un certificado: `VALIDO`, `ANULADO`, `NO_ENCONTRADO` o `INVALIDO`. Siempre responde 200 y con `no-store` | **No** (la abre el QR) |
+| `GET` | `/verificar/:folio?c=<código>` | Estado de un certificado: `VALIDO`, `ANULADO`, `NO_ENCONTRADO` o `INVALIDO`. Siempre responde 200 y con 
+o-store` | **No** (la abre el QR) |
 
 ## Panel de la CACE: instituciones
 
@@ -1533,7 +1583,8 @@ auditorías):
 | **Lista blanca de archivos** | Las evidencias aceptan solo PDF, imágenes, Office, texto y ZIP; **se rechazan `.html`, `.svg` y `.js`**, que servidos desde el mismo origen podrían ejecutar código. Las listas de alumnos solo aceptan `.xlsx` y `.csv` y se leen en memoria. |
 | **Descarga forzada de archivos** | `/uploads` responde con `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff` y `Content-Security-Policy: default-src 'none'`. |
 | **Los certificados no son estáticos** | `/uploads/certificados/…` responde 404 por diseño: los PDF emitidos llevan el nombre de una persona y se descargan solo por su ruta de la API, con sesión y comprobando la institución. |
-| **Imágenes en línea, pero sin SVG** | Avatares (`/avatares`), logos de institución (`/logos`), logo de la CACE (`/cace-logo`), premios (`/premios`) y fondos de la plantilla (`/certificado-fondo`) se sirven con `Content-Disposition: inline` (para pintarlos con `<img>`), `nosniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación. La utilidad `urlDeArchivo()` completa la ruta con el host del backend cuando el frontend corre en `:4200`. |
+| **Imágenes en línea, pero sin SVG** | Avatares (`/avatares`), logos de institución (`/logos`), logo de la CACE (`/cace-logo`), premios (`/premios`) y fondos de la plantilla (`/certificado-fondo`) se sirven con `Content-Disposition: inline` (para pintarlos con `<img>`), 
+osniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede llevar código dentro y se ejecutaría en el mismo origen que la aplicación. La utilidad `urlDeArchivo()` completa la ruta con el host del backend cuando el frontend corre en `:4200`. |
 | **Contraseñas provisionales** | Las de la presidencia y las secretarías se generan con `randomInt` criptográfico (12 caracteres, sin caracteres ambiguos) y obligan a cambiarla al entrar (`debeCambiarPassword`). Si el correo no sale, la contraseña se escribe en el log en vez de dejar la cuenta inaccesible, y el DNI provisional se comprueba para que no choque. |
 | **Sin archivos huérfanos** | Al cambiar o quitar una foto, un logo o una imagen de premio se borra la anterior del disco, y el nombre del archivo es aleatorio. |
 | **Autorización antes de escribir** | En `POST /proyectos/:id/evidencias`, el `DocenteParticipanteGuard` valida el permiso **antes** de que multer escriba el archivo en disco. |
@@ -1565,7 +1616,8 @@ medidas y cómo reproducirlas, está en
   **revalidación (304)** para el HTML.
 - Las respuestas de la **API no se cachean**: permisos, sesión y datos se
   validan en cada petición como antes.
-- Tras un `ng build` no hay que vaciar caché ni reiniciar el backend: el hash
+- Tras un 
+g build` no hay que vaciar caché ni reiniciar el backend: el hash
   cambia, el `index.html` se revalida y el navegador pide lo nuevo. Solo se
   reinicia si cambia código del backend.
 - La migración de índices es **aditiva** (solo `CREATE INDEX`); no toca filas ni
@@ -1623,7 +1675,8 @@ Los endpoints disponibles pueden cambiar conforme avance el desarrollo.
 > Para **unirse** a una institución que ya existe (el caso normal, que evita
 > duplicados) se manda su `institucionId` —el que devuelve
 > `GET /instituciones/directorio?q=...`— y se omiten los campos de la institución
-> (`nombreInstitucion`, `pais`, `codigoPais`, `estado`, `ciudad`, `telefono` y
+> (
+ombreInstitucion`, `pais`, `codigoPais`, `estado`, `ciudad`, `telefono` y
 > `correoInstitucional`), que en ese caso no se usan.
 >
 > Si la institución está **aprobada**, la respuesta trae
@@ -1841,12 +1894,14 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Autorización por recurso y por capacidad
 * [x] CORS restringido y cabeceras seguras en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (26 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (27 migraciones versionadas en `backend/prisma/migrations/`)
 * [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
   `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
   e2e y build
-* [x] **64 pruebas e2e** de los seis flujos críticos contra una base de prueba
+* [x] **108 pruebas e2e** de los flujos críticos contra una base de prueba
   real (`clasesconjuntasbd_test`), con el correo simulado
+* [x] **Cola de correo con worker** (Fase 2): certificados y calendario se
+  encolan, se reintentan con espera creciente y el progreso se consulta por lote
 * [x] **Backend en `strict`** y `.env.example` con todas las variables
 * [x] **ESLint en el frontend** (`.ts` y plantillas, `angular-eslint`)
 * [ ] Cobertura de pruebas **unitarias** de los servicios (las e2e ya están)
@@ -1968,7 +2023,7 @@ de entorno) y varias reglas CSS y `export` sin uso.
 # 📅 Plan de desarrollo (metas semanales)
 
 > **Meta:** producto terminado en 8 semanas.
-> El **modelo de datos ya está completo** (34 tablas) y el esquema está **migrado y versionado** (26 migraciones). Cada semana termina con un entregable **probable y visible**.
+> El **modelo de datos ya está completo** (35 tablas) y el esquema está **migrado y versionado** (27 migraciones). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
 ## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅
@@ -2041,7 +2096,7 @@ Las fases posteriores están planificadas en
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
 - Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
 - Autorización por capacidad: `@Requiere('...')` + `CapacidadesGuard` (`backend/src/auth/capacidades.guard.ts`), con la matriz en `backend/src/common/capacidades.ts`. **Añadir un permiso es añadir una fila a la matriz**, no comparar el rol a mano.
-- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (135 rutas).
+- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (136 rutas).
 - Al final de cada semana, hacer un **commit** descriptivo.
 
 ---
@@ -2151,15 +2206,18 @@ Antes de realizar cambios importantes:
 4. Mantener separada la lógica de controladores y servicios.
 5. No almacenar contraseñas directamente.
 6. No subir archivos `.env`.
-7. Ejecutar `npm run build` después de cambios importantes.
-8. Ejecutar `npx prisma validate` después de modificar el esquema.
+7. Ejecutar 
+pm run build` después de cambios importantes.
+8. Ejecutar 
+px prisma validate` después de modificar el esquema.
 9. Generar nuevamente Prisma después de modificar `schema.prisma` (con el backend detenido).
 10. Recompilar el frontend contra `backend/public` si se cambió el cliente.
 11. Crear commits pequeños y descriptivos.
 12. Usar las constantes de `common/estados.ts` en lugar de cadenas de estado sueltas.
 13. Recordar que el frontend es **zoneless**: el estado asíncrono va en `signal()`.
 14. Pedir los permisos por **capacidad** (`@Requiere(...)`), no comparando el rol a mano.
-15. Aplicar las migraciones con `npx prisma migrate deploy` (no `db push`) en cualquier base con datos.
+15. Aplicar las migraciones con 
+px prisma migrate deploy` (no `db push`) en cualquier base con datos.
 
 ---
 

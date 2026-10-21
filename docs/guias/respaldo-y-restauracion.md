@@ -46,8 +46,10 @@ DETAIL: There is 1 other session using the database.
 Antes de copiar, por tanto:
 
 1. **Para el backend** (el del puerto 3000 y cualquier servidor de pruebas o
-   `npm run start:dev` que esté levantado).
-2. **Cierra Prisma Studio** (`npx prisma studio`), pgAdmin, DBeaver o cualquier
+   
+pm run start:dev` que esté levantado).
+2. **Cierra Prisma Studio** (
+px prisma studio`), pgAdmin, DBeaver o cualquier
    consola SQL que esté conectada a la base de trabajo.
 3. Comprueba que no queda ninguna conexión:
 
@@ -73,8 +75,8 @@ Un respaldo que no se ha probado no es un respaldo. La comprobación es comparar
 * **Huella del contenido** (`md5` de todas las filas), para asegurar que no solo
   coincide la cantidad, sino **el contenido exacto**.
 
-El esquema tiene **34 tablas** (`backend/prisma/schema.prisma`, 34 modelos con su
-`@@map`), así que la base tiene esas **34 tablas de datos más `_prisma_migrations`**
+El esquema tiene **35 tablas** (`backend/prisma/schema.prisma`, 35 modelos con su
+`@@map`), así que la base tiene esas **35 tablas de datos más `_prisma_migrations`**
 (la tabla interna de Prisma).
 
 > **A propósito no se dejan escritos aquí los conteos de filas del estado actual:**
@@ -102,7 +104,7 @@ const HOST = 'postgresql://postgres:root@localhost:5432';
 const BD_TRABAJO = 'ClasesconjuntasBD';
 const BD_RESPALDO = 'clasesconjuntas_respaldo_20261013';
 
-// Las 34 tablas del esquema, más la de Prisma.
+// Las 35 tablas del esquema, más la de Prisma.
 const TABLAS = [
   'INSTITUCION', 'USUARIO', 'INVITACION', 'AGENTE_INTERNACIONALIZACION', 'DOCENTE',
   'DOCENTE_INSTITUCION', 'MATERIA', 'ASIGNACION_DOCENTE', 'SOLICITUD_CLASE_ESPEJO',
@@ -278,8 +280,9 @@ de las dos opciones (A o B) de arriba.
 
 ## 5. Cómo comprobar que la restauración fue bien
 
-1. **Cuenta las filas** de las 34 tablas del respaldo restaurado con el script de
-   la sección 3 (`node scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
+1. **Cuenta las filas** de las 35 tablas del respaldo restaurado con el script de
+   la sección 3 (
+ode scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
    tienen que coincidir **tabla por tabla**.
 2. **Aplica las migraciones** por si acaso, que no debería hacer nada:
 

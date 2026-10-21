@@ -106,7 +106,7 @@ flowchart TB
         PL["backend/plantillas/<br/>plantillas descargables (lista de alumnos ·<br/>zonas del certificado · guía de diseño)"]
     end
 
-    PG[("PostgreSQL<br/>:5422 · ClasesconjuntasBD<br/>22 tablas · 24 migraciones")]
+    PG[("PostgreSQL<br/>:5422 · ClasesconjuntasBD<br/>35 tablas · 27 migraciones")]
     BKP[("clasesconjuntas_respaldo_20261012<br/>copia de la base en el mismo servidor")]
     SMTP["Servidor SMTP<br/>SMTP_HOST:SMTP_PORT"]
     TUN["Túnel o proxy inverso<br/>cloudflared · ngrok · nginx · Caddy · IIS"]
@@ -141,7 +141,7 @@ flowchart TB
 | **API NestJS** | `backend/src/**` (12 módulos + `AppModule`). | Un proceso Node. En Linux va con **systemd** (`clasesespejo.service`), en Windows con **NSSM** o **pm2**; el directorio de trabajo es `backend/`. |
 | **Frontend compilado** | `backend/public/` (salida de `ng build`, configurada en `frontend/angular.json` → `outputPath: ../backend/public`). | `main.ts` comprueba **al arrancar** si existe `public/index.html`. Si existe, sirve los estáticos y aplica el *fallback* SPA; si no, solo expone la API. Los `.js`/`.css` y el `index.html` se sirven con **gzip** y ETag; los nombres con hash del build, con caché `immutable` de un año (ver [`rendimiento.md`](../rendimiento.md)). `public/` está en `.gitignore`. |
 | **Archivos en disco** | `backend/uploads/**` (datos del usuario, en `.gitignore`) y `backend/plantillas/**` (archivos descargables: la lista de alumnos de ejemplo, la imagen de zonas del certificado y la guía de diseño; **versionados**). | `main.ts` **crea las carpetas de `uploads` al arrancar** (`mkdirSync` recursivo). Los archivos subidos son la única parte del sistema que no se respalda con la base: la guía de despliegue pide copiarlos aparte. |
-| **PostgreSQL** | `backend/prisma/schema.prisma` (22 modelos), `backend/prisma/migrations/` (24 migraciones). | El esquema se aplica con `npx prisma migrate deploy`. El puerto y la base salen de `DATABASE_URL`. La migración de índices (18-oct-2026) es aditiva y cubre las FKs y filtros calientes (ver [`rendimiento.md`](../rendimiento.md)). |
+| **PostgreSQL** | `backend/prisma/schema.prisma` (35 modelos), `backend/prisma/migrations/` (27 migraciones). | El esquema se aplica con `npx prisma migrate deploy`. El puerto y la base salen de `DATABASE_URL`. La migración de índices (18-oct-2026) es aditiva y cubre las FKs y filtros calientes (ver [`rendimiento.md`](../rendimiento.md)). |
 | **Copia de la base** | No es un contenedor del código: es una operación de administración documentada en `docs/guias/respaldo-y-restauracion.md`. | La copia vigente es **`clasesconjuntas_respaldo_20261012`**, hecha con `CREATE DATABASE … WITH TEMPLATE "ClasesconjuntasBD"`; se compara con la base de trabajo con un script que usa el cliente de Prisma y cuenta filas y huella `md5` por tabla. |
 | **Servidor SMTP** | `backend/src/mail/mail.service.ts` (Nodemailer). | Host, puerto, TLS y credenciales salen de `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` y `MAIL_FROM`. Si el correo falla, **la operación de negocio no se deshace** (la decisión ya está guardada): se anota en el log. |
 | **Túnel o proxy inverso** | No hay código: es infraestructura. | Nginx, Caddy o IIS hacen `reverse_proxy 127.0.0.1:2000`; `cloudflared`/`ngrok` apuntan al **2000**. La regla de oro de la guía: el **2000 no se abre a Internet**, solo el 80/442. |

@@ -47,8 +47,11 @@ fases siguientes sin pruebas es a ciegas, y este proyecto ya se comió un caso d
 
 - [x] CI en `.github/workflows/ci.yml` (20-oct-2026): PostgreSQL 17 de servicio,
   `prisma generate`/`validate`/`migrate deploy`, lint sin `--fix`
-  (`npm run lint:ci`), tipos en `strict`, unitarias, e2e y build; el frontend con
-  lint, `tsc`, `ngc` y `ng build`. Corre en cada push y pull request.
+  (
+pm run lint:ci`), tipos en `strict`, unitarias, e2e y build; el frontend con
+  lint, `tsc`, 
+gc` y 
+g build`. Corre en cada push y pull request.
 - [x] `.env.example` con todas las variables del backend (el `.env` sigue
   ignorado).
 - [x] `strict` en el `tsconfig` del backend (las 73 propiedades de DTO que hacían
@@ -63,7 +66,8 @@ fases siguientes sin pruebas es a ciegas, y este proyecto ya se comió un caso d
   simulado.
 
 **Aceptación:** el CI corre en cada push y falla si se rompe cualquiera de los seis
-flujos; `prisma validate` y `ng build` en verde. **Estado:** cumplida el
+flujos; `prisma validate` y 
+g build` en verde. **Estado:** cumplida el
 20-oct-2026, con una salvedad: el workflow no se ha ejecutado todavía en GitHub
 (aquí se verificó cada comando por separado y las 64 e2e contra PostgreSQL real).
 
@@ -118,19 +122,27 @@ Solo queda decidir el TOTP opcional.
 sin registro de rebotes. Un lote grande puede agotar el tiempo de espera o el
 límite diario del proveedor.
 
-- [ ] Tabla `ENVIO_CORREO` (destinatario, asunto, adjunto, estado, intentos,
-  últimoError) y un worker por cron que vacíe la cola cada minuto.
-- [ ] Los endpoints de envío **encolan** y responden al instante con un
-  identificador de lote; el frontend muestra el progreso.
-- [ ] Reintentos con espera creciente y registro del rebote.
-- [ ] Tope de emisión por clase (por ejemplo 500) y aviso claro al superarlo.
+- [x] Tabla `ENVIO_CORREO` (destinatario, asunto, adjunto, estado, intentos,
+  últimoError) y un worker periódico que vacía la cola cada minuto
+  (21-oct-2026: migración `20261021120000_fase2_envio_correo`).
+- [x] Los endpoints de envío **encolan** y responden al instante con un
+  identificador de lote; el frontend muestra el progreso con una barra y los
+  fallos con su motivo (`GET /envios/lotes/:loteId`).
+- [x] Reintentos con espera creciente (1, 5, 15 y 60 minutos) y registro del
+  motivo de cada fallo; a los 5 intentos queda `FALLIDO` con su detalle.
+- [x] Tope de emisión por clase (500) con aviso claro al superarlo.
 - [ ] ZIP de certificados en streaming (hoy se arma entero en memoria).
-- [ ] Documentar la configuración SMTP del despliegue (SPF/DKIM si es dominio
-  propio) y separar el remitente de certificados.
+- [x] Documentar la configuración SMTP del despliegue (SPF/DKIM si es dominio
+  propio), incluido el worker de la cola (21-oct-2026).
+- [ ] Separar el remitente de certificados del resto (`MAIL_FROM` propio), si el
+  proveedor lo permite.
 
 **Aceptación:** un envío de 300 certificados responde en menos de 2 s y termina en
 la cola; matar el proceso a mitad no pierde envíos (se reintentan); cada fallo
 queda registrado con su motivo.
+**Estado (21-oct-2026):** cola, worker, progreso, reintentos y tope hechos y
+cubiertos por la suite `envios-cola` (7 pruebas; 300 encolados en <2 s). Quedan el
+ZIP en streaming y separar el remitente de certificados.
 
 ---
 

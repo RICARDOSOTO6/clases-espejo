@@ -4,7 +4,7 @@ Los módulos de NestJS leídos de `backend/src/**/*.module.ts`, con sus
 dependencias, y la lista completa de rutas leída de los controladores
 (`backend/src/**/*.controller.ts`).
 
-**Total: 135 rutas en 23 controladores** (22 archivos `.controller.ts`;
+**Total: 136 rutas en 24 controladores** (23 archivos `.controller.ts`;
 `instituciones.controller.ts` contiene dos clases). Es la misma cifra que
 documenta el README, y cuadra porque se cuentan igual: cada decorador
 `@Get`, `@Post`, `@Put`, `@Patch` o `@Delete`.
@@ -30,6 +30,7 @@ flowchart TB
 
     Prisma["PrismaModule @Global<br/>PrismaService"]
     Mail["MailModule @Global<br/>MailService (Nodemailer)"]
+    Envios["EnviosModule<br/>cola de correo · worker de 1 minuto"]
 
     Auth["AuthModule<br/>JwtModule.register (global)<br/>AuthService · JwtAuthGuard"]
 
@@ -49,6 +50,8 @@ flowchart TB
 
     App --> Prisma
     App --> Mail
+    App --> Envios
+    Envios -.-> Mail
     App --> Auth
     App --> Cace
     App --> Cert
@@ -93,9 +96,10 @@ flowchart TB
 
 | Módulo | Archivo | Importa | Exporta / aporta |
 | --- | --- | --- | --- |
-| `AppModule` | `app.module.ts` | los 13 módulos restantes | `AppController` (2 rutas) y `AppService`. |
+| `AppModule` | `app.module.ts` | los 14 módulos restantes | `AppController` (2 rutas) y `AppService`. |
 | `PrismaModule` | `prisma/prisma.module.ts` | — | `PrismaService` **`@Global`**: es el acceso a la base y omite `passwordHash` salvo que se pida. |
 | `MailModule` | `mail/mail.module.ts` | — | `MailService` **`@Global`** (Nodemailer). |
+| `EnviosModule` | `envios/envios.module.ts` | — (Prisma y Mail globales) | `EnviosCorreoService` (cola y worker de 1 minuto) y `EnviosController` (progreso del lote). |
 | `AuthModule` | `auth/auth.module.ts` | `JwtModule.register` (global) | `AuthService` y `JwtAuthGuard`. **Sin `JWT_SECRET` de 16+ caracteres el módulo lanza y el servidor no arranca.** |
 | `UsuariosModule` | `usuarios/usuarios.module.ts` | `AuthModule` | Perfil, contraseña y foto. |
 | `AgentesModule` | `agentes/agentes.module.ts` | `AuthModule` | Docentes de la institución y confirmaciones de alta. |
@@ -103,10 +107,10 @@ flowchart TB
 | `AsignacionesModule` | `asignaciones/asignaciones.module.ts` | `AuthModule` | Docente ↔ materia por periodo. |
 | `InstitucionesModule` | `instituciones/instituciones.module.ts` | `AuthModule` | `InstitucionesController` (con guardia) y `DirectorioInstitucionesController` (**sin** guardia). |
 | `SolicitudesModule` | `solicitudes/solicitudes.module.ts` | `AuthModule` | **Exporta `SolicitudesService`** para el módulo de recordatorios. |
-| `ProyectosModule` | `proyectos/proyectos.module.ts` | `AuthModule` | `ProyectosService`, `ResumenPdfService`, `CalendarioIcsService`, `ListasAlumnosService` y `DocenteParticipanteGuard`. |
+| `ProyectosModule` | `proyectos/proyectos.module.ts` | `AuthModule`, `EnviosModule` | `ProyectosService`, `ResumenPdfService`, `CalendarioIcsService`, `ListasAlumnosService` y `DocenteParticipanteGuard`. |
 | `RecordatoriosModule` | `recordatorios/recordatorios.module.ts` | **`SolicitudesModule`** | `RecordatoriosService` y `RecordatoriosScheduler` (la caducidad y la agenda). |
 | `CaceModule` | `cace/cace.module.ts` | *(ninguno)* | 7 controladores y 5 servicios; usa `PrismaModule` y `MailModule` globales. |
-| `CertificadosModule` | `certificados/certificados.module.ts` | `AuthModule` | 4 controladores y 4 servicios (plantilla, emisión, PDF, verificación). |
+| `CertificadosModule` | `certificados/certificados.module.ts` | `AuthModule`, `EnviosModule` | 4 controladores y 4 servicios (plantilla, emisión, PDF, verificación). |
 
 > **CaceModule no importa `AuthModule`** a propósito y no es un olvido: sus
 > controladores usan `JwtAuthGuard` y `CapacidadesGuard` directamente, y
@@ -136,7 +140,8 @@ flowchart TB
 | `RecordatoriosModule` | 1 | **1** | `/recordatorios` |
 | `CaceModule` | 7 | **31** | `/cace` |
 | `CertificadosModule` | 4 | **15** | `/proyectos/:id/certificados`, `/cace/certificados`, `/verificar` |
-| **Total** | **23** | **135** | |
+| `EnviosModule` | 1 | **1** | `/envios` |
+| **Total** | **24** | **136** | |
 
 **Cómo se cuentan** (el mismo comando sirve para volver a comprobarlo):
 
@@ -422,10 +427,10 @@ propia que se indique.
 
 ## 5. Notas
 
-* **Ninguna ruta se documenta dos veces.** Las 135 de este documento son las
+* **Ninguna ruta se documenta dos veces.** Las 136 de este documento son las
   mismas que están en las tablas del README; si se añade una ruta, hay que
   actualizar los dos sitios (y el conteo del README).
-* **Quince de las 135 rutas no llevan JWT**: `/`, `/health`, las nueve de `auth`
+* **Quince de las 136 rutas no llevan JWT**: `/`, `/health`, las nueve de `auth`
   (registro, login, activación y recuperación de contraseña),
   `GET /instituciones/directorio` (el que se usa **mientras** se está
   registrando), `GET /cace/publico`, `GET /cace/premios-publicos` (lo que la
