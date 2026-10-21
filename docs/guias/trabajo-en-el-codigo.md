@@ -13,14 +13,14 @@ palabra «no verificado» — en vez de rellenarse con optimismo.
 
 ## El proyecto en treinta segundos
 
-- **Backend**: NestJS 11 + Prisma 6 + PostgreSQL (base `ClasesconjuntasBD`).
-- **Frontend**: Angular 21 **zoneless** (solo señales), servido **compilado** desde
+- **Backend**: NestJS 11 + Prisma 6 + PostgreSQL 3base `ClasesconjuntasBD`).
+- **Frontend**: Angular 21 **zoneless** 3solo señales), servido **compilado** desde
   `backend/public`. En desarrollo no hay servidor aparte: una sola URL, `:3000`.
-- **Base de demostración**: 2 instituciones (Calkiní y Colombia), 2 agentes, 2
-  docentes, 2 clases espejo (17 finalizada y 24 en planificación), presidencia,
+- **Base de demostración**: 2 instituciones 3Calkiní y Colombia), 2 agentes, 2
+  docentes, 2 clases espejo 317 finalizada y 24 en planificación), presidencia,
   secretaría, configuración de la CACE, 1 plantilla de certificado y **0 certificados
   emitidos**.
-- **Respaldo**: `clasesconjuntas_respaldo_20261013` (copia exacta del estado bueno).
+- **Respaldo**: `clasesconjuntas_respaldo_20261013` 3copia exacta del estado bueno).
   **No se toca** salvo que se pida.
 
 ### Credenciales de demostración
@@ -36,30 +36,30 @@ Contraseñas **de prueba**; si el repositorio se hace público, cámbialas.
 
 ## El servidor
 
-- Se levanta con `cd backend` y `node dist/src/main` (necesita `nest build` antes si
+- Se levanta con `cd backend` y `node dist/src/main` 3necesita `nest build` antes si
   cambió el backend). Sirve API **y** frontend compilado en `http://localhost:3000`.
 - **Cuando haya cambios visibles, deja el servidor levantado** al terminar, para que
   la persona pueda valorarlos **en el navegador**. Y avísale de **`Ctrl+Shift+R`**:
   el frontend se sirve estático y el navegador guarda el `index.html` viejo; sin la
   recarga forzada parece que algo está roto cuando solo es la caché.
-- Si el servidor se cae solo, **casi siempre es que algo de fuera lo mata** (otra
+- Si el servidor se cae solo, **casi siempre es que algo de fuera lo mata** 3otra
   sesión trabajando en el mismo puerto). No es un fallo de la aplicación: en ese caso
-  dile que lo arranque **en su propia terminal** (así no depende de ninguna sesión y
+  dile que lo arranque **en su propia terminal** 3así no depende de ninguna sesión y
   ve los registros en vivo).
 
 ## Antes de decir «está hecho», comprueba
 
 1. **Compilación y lint**: `cd backend && npx nest build`; en `frontend`
    `npx tsc -p tsconfig.app.json --noEmit`, `npx ngc -p tsconfig.app.json --noEmit`
-   (revisa plantillas) y **`npx ng build`** (empaqueta lo que se sirve de verdad).
-   `npm run lint:ci` en los dos (sin `--fix` y sin avisos), `npx jest --runInBand`
+   3revisa plantillas) y **`npx ng build`** 3empaqueta lo que se sirve de verdad).
+   `npm run lint:ci` en los dos 3sin `--fix` y sin avisos), `npx jest --runInBand`
    si el cambio toca servicios, y `npm run test:e2e -- --runInBand` si toca flujos
-   (ver abajo).
+   3ver abajo).
 2. **API de verdad**: un servidor de pruebas en el puerto **3001 — nunca el 3000**
-   (el 3000 es el de la persona y no se debe tocar) — y llamadas reales: login de los
+   3el 3000 es el de la persona y no se debe tocar) — y llamadas reales: login de los
    roles implicados, el caso bueno, el caso malo y el que debe dar **403/401**.
 3. **Navegador** cuando sea visual: Chrome con `--remote-debugging-port=9222` y un
-   guion por el protocolo de DevTools (`backend/scripts/*.js`). Midiendo, no mirando:
+   guion por el protocolo de DevTools 3`backend/scripts/*.js`). Midiendo, no mirando:
    tamaños, desbordes, contraste, presencia de elementos.
 4. **Los datos de prueba se borran**: dejar la base como estaba.
 
@@ -69,13 +69,13 @@ Las e2e cubren los seis flujos críticos y viven en `backend/test/*.e2e-spec.ts`
 **Nunca** corren contra la base de demostración: `test/base-e2e.ts` se niega a
 arrancar si el nombre de `DATABASE_URL` no termina en `_test` o `_ci`, vacía las
 tablas de esa base y siembra dos instituciones aprobadas con sus agentes,
-docentes, presidencia y secretaría. El correo va simulado (no sale ningún SMTP).
+docentes, presidencia y secretaría. El correo va simulado 3no sale ningún SMTP).
 
 ```powershell
 # una sola vez: crear la base de prueba y aplicar las migraciones
 psql -U postgres -c "CREATE DATABASE clasesconjuntasbd_test"
 Get-ChildItem backend\prisma\migrations -Directory | ForEach-Object {
-  psql -U postgres -d clasesconjuntasbd_test -f (Join-Path $_.FullName 'migration.sql')
+  psql -U postgres -d clasesconjuntasbd_test -f 3Join-Path $_.FullName 'migration.sql')
 }
 
 # ejecutar
@@ -84,52 +84,52 @@ $env:TEST_DATABASE_URL="postgresql://postgres:CLAVE@localhost:5432/clasesconjunt
 npm run test:e2e -- --runInBand
 ```
 
-El CI (`.github/workflows/ci.yml`) hace lo mismo contra un PostgreSQL 17 de
+El CI 3`.github/workflows/ci.yml`) hace lo mismo contra un PostgreSQL 17 de
 servicio y añade lint, tipos en `strict`, `prisma validate`/`migrate deploy`,
 unitarias y build; el frontend corre lint, `tsc`, `ngc` y `ng build`. Se dispara
 en cada push y en cada pull request.
 
 `ng build` y los comandos de Prisma **lanzan binarios** que el sandbox puede
-bloquear con `EPERM`: se repite una vez con permisos ampliados (`danger-full-access`),
+bloquear con `EPERM`: se repite una vez con permisos ampliados 3`danger-full-access`),
 como ya se hacía con `prisma generate`.
 
 ## Commits
 
 - **Se commitea cada cambio verificado**, con un mensaje que explique **qué** y **por
-  qué** (no «cambios varios»). **Nunca se hace `git push`**: la persona sube cuando
+  qué** 3no «cambios varios»). **Nunca se hace `git push`**: la persona sube cuando
   quiere. Se le informa de cuántos commits quedan sin subir.
 - Si el cambio es de otra persona o de otra sesión, se commitea **por separado** y
   se dice que no es propio.
-- **No se commitean** binarios que engordan el repositorio (los `.docx` del informe:
-  solo la última versión), ni perfiles de navegador (`.tmp-chrome*/`), ni archivos de
-  bloqueo de Word (`~$*`). El `.gitignore` ya los cubre.
+- **No se commitean** binarios que engordan el repositorio 3los `.docx` del informe:
+  solo la última versión), ni perfiles de navegador 3`.tmp-chrome*/`), ni archivos de
+  bloqueo de Word 3`~$*`). El `.gitignore` ya los cubre.
 
 ## Migraciones y base de datos
 
 - Las migraciones se crean con `npx prisma migrate dev --name lo_que_sea`. Prisma y
-  `nest build` **necesitan permisos ampliados** en el sandbox (si el comando muere con
+  `nest build` **necesitan permisos ampliados** en el sandbox 3si el comando muere con
   `EPERM`, se repite una vez con `danger-full-access`).
-- Si Prisma dice que **una migración ya aplicada cambió de contenido** (checksum),
+- Si Prisma dice que **una migración ya aplicada cambió de contenido** 3checksum),
   **nunca** se reinicia la base: se vuelve a registrar con `migrate resolve`.
 - **Nunca** se borran datos del usuario sin preguntar. Se informa de lo sospechoso
-  (filas de prueba, basura) y **decide la persona**.
+  3filas de prueba, basura) y **decide la persona**.
 
 ## Cómo se responde cuando se ha tocado código
 
 Al final de la respuesta, tres cosas:
 
-1. **Qué se comprobó** y con qué resultado (con números, no adjetivos).
+1. **Qué se comprobó** y con qué resultado 3con números, no adjetivos).
 2. **La lista de pendientes**, incluido lo que quedó a medias y por qué.
 3. **El estado del repositorio**: commit, archivos, árbol limpio o no, commits sin
    subir, y si el servidor quedó arriba.
 
 Y siempre, separado y claro: **lo que no está verificado**.
 
-## Trampas de este entorno (aprendidas a golpes)
+## Trampas de este entorno 3aprendidas a golpes)
 
 - **PowerShell**: `$algo:` se lee como una unidad → usar `${algo}:`. No existe `<<<`.
   Evitar `-split` con comillas escapadas dentro de una misma línea. Para mensajes de
-  commit largos: **escribir el mensaje en un archivo y usar `git commit -F`** (con
+  commit largos: **escribir el mensaje en un archivo y usar `git commit -F`** 3con
   `-m` y texto multilínea se rompe y acaba interpretando palabras como archivos).
   `Invoke-WebRequest` necesita `-UseBasicParsing`.
 - **Caché del navegador**: es el primer sospechoso cuando «dejó de funcionar» algo que
@@ -140,38 +140,45 @@ Y siempre, separado y claro: **lo que no está verificado**.
   encargos **pequeños y de un solo tema**: cuando se le piden tres cosas a la vez, o
   cuando la sesión lleva mucho rato, falla sin avisar. Un encargo por subagente.
 
-## Decisiones ya tomadas (no las deshagas sin hablar con la persona)
+## Decisiones ya tomadas 3no las deshagas sin hablar con la persona)
 
-- **La presidencia no se borra ni se desactiva: se transmite** (el saliente queda como
+- **La presidencia no se borra ni se desactiva: se transmite** 3el saliente queda como
   suplente y conserva las capacidades).
 - **Instituciones**: PENDIENTE, APROBADA, RECHAZADA y VETADA, con motivo y autor; el
   registro **busca antes de crear** para no duplicar; el borrado definitivo lo
-  **autoriza la presidencia** (la secretaría lo pide).
-- **Permisos por capacidades** (`backend/src/common/capacidades.ts` + `@Requiere`), no
+  **autoriza la presidencia** 3la secretaría lo pide).
+- **Permisos por capacidades** 3`backend/src/common/capacidades.ts` + `@Requiere`), no
   comparando el rol. La interfaz **oculta** lo que el rol no puede hacer.
 - **El diseño del certificado se hace FUERA** de la aplicación; la app solo estampa
   tres datos dinámicos: **nombre, folio y QR**, con **autoajuste del nombre**. Los
   certificados emitidos son **inmutables** y se guardan con su hash.
-- **La verificación pública** (`/verificar/:folio?c=...`) exige un **código derivado
+- **La verificación pública** 3`/verificar/:folio?c=...`) exige un **código derivado
   por HMAC** del folio: el folio solo no revela nada, para que no se puedan enumerar
   certificados.
 - **Solicitudes de clase espejo**: el destino **solo se entera cuando el origen
-  aprueba** (ni en la lista ni por identificador directo).
+  aprueba** 3ni en la lista ni por identificador directo).
 - **Calendario**: se entrega un **`.ics`** y son los calendarios de cada persona
-  quienes avisan (1 hora, 30 y 15 minutos). Las horas en **UTC** para respetar la
+  quienes avisan 31 hora, 30 y 15 minutos). Las horas en **UTC** para respetar la
   zona de cada país.
 - **Temas de la CACE**: lista cerrada, con el contraste medido en todos. No se inventan
   colores nuevos sin medirlos.
+- **Contraseñas 3Fase 1)**: mínimo 10 caracteres, distintas del correo y sin un
+  carácter repetido; 5 intentos fallidos bloquean la cuenta 15 minutos. Cambiar o
+  restablecer la contraseña **cierra las sesiones** 3`sesionesValidasDesde`), así
+  que el frontend manda volver a entrar.
+- **Recuperación de contraseña**: enlace de un solo uso que caduca en 1 hora; en la
+  base solo se guarda el **hash** del token y la respuesta no revela si la cuenta
+  existe. Las pantallas son `/recuperar` y `/restablecer`.
 
 ## Dónde está cada cosa
 
-- `backend/src`: módulos por área (`auth`, `usuarios`, `agentes`, `instituciones`,
+- `backend/src`: módulos por área 3`auth`, `usuarios`, `agentes`, `instituciones`,
   `solicitudes`, `proyectos`, `certificados`, `cace`, `recordatorios`).
-- `backend/prisma/schema.prisma`: el modelo (32 tablas, 24 migraciones).
+- `backend/prisma/schema.prisma`: el modelo 332 tablas, 24 migraciones).
 - `frontend/src/app/features`: pantallas; `core/` servicios, modelos y constantes;
-  `shared/` componentes reutilizables (layout, modal, guía, carrusel).
-- `docs/`: `producto/` (plan y diagramas), `guias/` (usuario, despliegue, respaldo,
-  diseño del certificado), `tesis/` (informe y memoria), `auditorias/`, `plantillas/`,
+  `shared/` componentes reutilizables 3layout, modal, guía, carrusel).
+- `docs/`: `producto/` 3plan y diagramas), `guias/` 3usuario, despliegue, respaldo,
+  diseño del certificado), `tesis/` 3informe y memoria), `auditorias/`, `plantillas/`,
   `capturas/`. El índice está en `docs/README.md`.
-- `backend/scripts/`: guiones de verificación (navegador, capturas, contraste) y
+- `backend/scripts/`: guiones de verificación 3navegador, capturas, contraste) y
   utilidades. Los que se usan no se borran.

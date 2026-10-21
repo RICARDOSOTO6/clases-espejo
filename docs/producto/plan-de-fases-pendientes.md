@@ -1,8 +1,8 @@
 # Plan de fases — lo que falta para poner la plataforma en uso real
 
 > **Escrito el 17 de octubre de 2026**, con el repositorio en `master` (96 commits,
-> 127 rutas, 32 modelos, 23 migraciones —24 desde la migración de índices del
-> 18-oct-2026—) y los datos de demostración cargados
+> 127 rutas —hoy 130—, 32 modelos —hoy 33—, 23 migraciones —hoy 25—) y los
+> datos de demostración cargados
 > (2 instituciones, 6 usuarios, 2 proyectos, 19 países, 0 certificados).
 >
 > No repite lo que ya está hecho (permisos por capacidad, doble revisión,
@@ -76,26 +76,33 @@ flujos; `prisma validate` y `ng build` en verde. **Estado:** cumplida el
 comprobarlo), cambiar la contraseña no cierra las sesiones (JWT de 1 día sin
 versión ni refresh) y la invitación caducada no se puede reenviar.
 
-- [ ] **Recuperar contraseña** (`POST /auth/recuperar`, `POST /auth/restablecer`):
-  token de un solo uso con caducidad y consumo atómico, reutilizando el patrón de
-  `Invitacion` (`updateMany` con `usadaEn: null`). Pantallas en el frontend.
-  La respuesta es siempre la misma exista o no la cuenta (no revelar correos).
-- [ ] **Invalidar sesiones** al cambiar o restablecer la contraseña: columna
-  `tokenVersion` (o `passwordActualizadoEn`) que viaje en el JWT y se compare en
-  `JwtAuthGuard`. Con esto, un token robado muere al cambiar la contraseña.
+- [x] **Recuperar contraseña** (20-oct-2026): `POST /auth/recuperar`,
+  `GET /auth/recuperar/validar` y `POST /auth/restablecer`. Token de 32 bytes
+  del que solo se guarda el hash SHA-256, un solo uso con consumo atómico,
+  caducidad de 1 hora y un único enlace válido por cuenta. La respuesta es
+  siempre la misma exista o no la cuenta. Pantallas `/recuperar` y
+  `/restablecer` en el frontend.
+- [x] **Invalidar sesiones** al cambiar o restablecer la contraseña
+  (`USUARIO.sesionesValidasDesde` comparada con el `iat` del JWT en
+  `JwtAuthGuard`). Con esto, un token robado muere al cambiar la contraseña.
 - [ ] **Verificación de correo al registrarse**: cuenta en estado «pendiente» +
   correo con token; sin verificar no se puede operar. Añadir «reenviar
   verificación».
 - [ ] **Reenviar invitación** de docente desde el panel del agente (hoy hay que
   borrar y volver a invitar), mostrando la caducidad.
-- [ ] **Política de contraseña**: mínimo 10, sin ser la del correo, y bloqueo
-  temporal tras N intentos fallidos (además del rate limit).
+- [x] **Política de contraseña** (20-oct-2026): mínimo 10, sin ser la del correo
+  y sin un carácter repetido, más bloqueo temporal de 15 minutos tras 5 intentos
+  fallidos (además del rate limit).
 - [ ] **Cambio de correo** con verificación en la dirección nueva.
 - [ ] *(Opcional, a decidir)* segundo factor TOTP para presidencia y secretaría.
 
 **Aceptación:** un usuario que olvida su contraseña la recupera solo, sin tocar la
 base; un token robado deja de valer en cuanto se cambia la contraseña; ninguna
 cuenta nueva opera sin correo verificado. Todo con e2e de la fase 0.
+**Estado (20-oct-2026):** recuperación, cierre de sesiones y política hechos y
+cubiertos por la suite `cuenta.e2e-spec.ts` (12 pruebas). Quedan la verificación
+de correo, reenviar invitación y el cambio de correo; la aceptación completa
+espera a la verificación de correo.
 
 ---
 
