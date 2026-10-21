@@ -75,6 +75,22 @@
 
       @if (error()) {
         <div class="alert alert-error" role="alert">{{ error() }}</div>
+        @if (error()!.includes('confirma tu correo')) {
+          <button
+            type="button"
+            class="link-button"
+            [disabled]="reenviando()"
+            (click)="reenviarConfirmacion()"
+          >
+            {{ reenviando() ? 'Enviando…' : 'Reenviar el correo de confirmación' }}
+          </button>
+        }
+      }
+
+      @if (avisoConfirmacion()) {
+        <div class="alert alert-success" role="status">
+          {{ avisoConfirmacion() }}
+        </div>
       }
 
       <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading()">

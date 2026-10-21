@@ -1,9 +1,11 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -29,6 +31,7 @@ import {
 } from '../common/politica-password';
 import {
   VIGENCIA_RECUPERACION_MS,
+  VIGENCIA_VERIFICACION_MS,
   generarTokenRecuperacion,
   hashTokenRecuperacion,
 } from '../common/token-recuperacion';
@@ -83,9 +86,29 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    return dto.institucionId != null
-      ? this.unirseAInstitucion(dto, passwordHash, peticion)
-      : this.crearInstitucionPropia(dto, passwordHash);
+    const resultado =
+      dto.institucionId != null
+        ? await this.unirseAInstitucion(dto, passwordHash, peticion)
+        : await this.crearInstitucionPropia(dto, passwordHash);
+
+    // La cuenta nace sin correo confirmado: se manda el enlace y hasta abrirlo
+    // no se puede entrar (login responde 403).
+    const enviado = await this.enviarVerificacionCorreo(
+      resultado.usuario.id,
+      dto.correo,
+      peticion,
+      'registro',
+    );
+
+    return {
+      ...resultado,
+      mensaje:
+        `Registro exitoso. Te enviamos un correo a ${dto.correo} para confirmar tu cuenta; hasta que lo confirmes no podrás entrar.` +
+        (enviado
+          ? ''
+          : ' No se pudo enviar el correo ahora: pide que te lo reenvíen desde el acceso.') +
+        ` ${resultado.mensaje}`,
+    };
   }
 
   /** El agente eligió una institución que ya existe en el directorio. */
@@ -125,6 +148,8 @@ export class AuthService {
           correo: dto.correo,
           passwordHash,
           activo: true,
+          // Nace sin confirmar: el enlace del correo lo pone en verdadero.
+          correoVerificado: false,
         },
       });
 
@@ -194,6 +219,8 @@ export class AuthService {
             correo: dto.correo,
             passwordHash,
             activo: true,
+            // Nace sin confirmar: el enlace del correo lo pone en verdadero.
+            correoVerificado: false,
           },
         });
 
@@ -405,6 +432,14 @@ export class AuthService {
     if (vinculos.length > 0 && !vinculos.some((v) => v.activo)) {
       throw new UnauthorizedException(
         'Tu cuenta de docente está desactivada por tu institución.',
+      );
+    }
+
+    // Fase 1: sin correo confirmado no se entra (la contraseña ya se comprobó,
+    // así que esto no revela correos que no existan).
+    if (!usuario.correoVerificado) {
+      throw new ForbiddenException(
+        'Antes de entrar, confirma tu correo: revisa el enlace que te enviamos al registrarte. Si no lo encuentras, pide que te lo reenvíen desde el acceso.',
       );
     }
 
@@ -623,6 +658,8 @@ export class AuthService {
           correo: invitacion.correo,
           passwordHash,
           activo: true,
+          // La invitación llegó a ese correo: queda confirmado de origen.
+          correoVerificado: true,
         },
       });
 
@@ -649,6 +686,198 @@ export class AuthService {
     return {
       mensaje: 'Cuenta activada correctamente',
       correo: usuario.correo,
+    };
+  }
+
+  /**
+   * Crea un token de confirmación de correo y lo manda. Devuelve si el correo
+   * salió: un fallo no rompe el registro (la cuenta ya existe y el enlace se
+   * puede pedir otra vez desde el acceso).
+   */
+  private async enviarVerificacionCorreo(
+    usuarioId: number,
+    correo: string,
+    peticion: Request | undefined,
+    motivo: 'registro' | 'cambio',
+  ): Promise<boolean> {
+    const token = generarTokenRecuperacion();
+    const ahora = new Date();
+    await this.prisma.$transaction([
+      // Un solo enlace vivo por cuenta.
+      this.prisma.verificacionCorreo.updateMany({
+        where: { usuarioId, usadoEn: null },
+        data: { usadoEn: ahora },
+      }),
+      this.prisma.verificacionCorreo.create({
+        data: {
+          usuarioId,
+          correo,
+          tokenHash: hashTokenRecuperacion(token),
+          expira: new Date(ahora.getTime() + VIGENCIA_VERIFICACION_MS),
+        },
+      }),
+    ]);
+
+    const url = peticion
+      ? resolverUrlPublica(peticion)
+      : (process.env.FRONTEND_URL ?? 'http://localhost:3000');
+    try {
+      await this.mail.sendConfirmacionCorreo(correo, token, url, motivo);
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo enviar la confirmación de correo a ${correo}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Confirma un correo desde el enlace (alta o cambio de dirección).
+   *
+   * Si el correo del token no es el actual de la cuenta, es un **cambio**: se
+   * actualiza `USUARIO.correo` y se cierran las sesiones abiertas. El token es
+   * de un solo uso (consumo atómico).
+   */
+  async confirmarCorreo(token: string) {
+    const registro = await this.prisma.verificacionCorreo.findUnique({
+      where: { tokenHash: hashTokenRecuperacion(token) },
+      include: { usuario: { select: { id: true, correo: true } } },
+    });
+
+    if (!registro || registro.usadoEn || registro.expira <= new Date()) {
+      throw new BadRequestException(
+        'El enlace de confirmación no es válido o caducó. Pide uno nuevo desde el acceso.',
+      );
+    }
+
+    const esCambio =
+      registro.correo.toLowerCase() !== registro.usuario.correo.toLowerCase();
+    if (esCambio) {
+      const ocupado = await this.prisma.usuario.findUnique({
+        where: { correo: registro.correo },
+        select: { id: true },
+      });
+      if (ocupado && ocupado.id !== registro.usuario.id) {
+        throw new ConflictException(
+          'Ese correo ya está en uso por otra cuenta.',
+        );
+      }
+    }
+
+    const ahora = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const uso = await tx.verificacionCorreo.updateMany({
+        where: { id: registro.id, usadoEn: null },
+        data: { usadoEn: ahora },
+      });
+      if (uso.count === 0) {
+        throw new BadRequestException(
+          'Ese enlace ya se usó. Pide uno nuevo desde el acceso.',
+        );
+      }
+
+      await tx.usuario.update({
+        where: { id: registro.usuario.id },
+        data: {
+          correo: registro.correo,
+          correoVerificado: true,
+          // Un cambio de correo cierra las sesiones: se vuelve a entrar.
+          ...(esCambio ? { sesionesValidasDesde: ahora } : {}),
+        },
+      });
+    });
+
+    return {
+      mensaje: esCambio
+        ? 'Correo cambiado. Vuelve a entrar con la dirección nueva.'
+        : 'Correo confirmado. Ya puedes entrar.',
+      tipo: esCambio ? 'CAMBIO' : 'REGISTRO',
+      correo: registro.correo,
+    };
+  }
+
+  /**
+   * Reenvía la confirmación a una cuenta que aún no la tiene.
+   *
+   * La respuesta es siempre la misma: no se revela si el correo existe ni si
+   * está pendiente de confirmar.
+   */
+  async reenviarVerificacionCorreo(correo: string, peticion?: Request) {
+    const normalizado = (correo ?? '').trim().toLowerCase();
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { correo: normalizado },
+      select: {
+        id: true,
+        correo: true,
+        correoVerificado: true,
+        activo: true,
+      },
+    });
+
+    if (usuario?.activo && !usuario.correoVerificado) {
+      await this.enviarVerificacionCorreo(
+        usuario.id,
+        usuario.correo,
+        peticion,
+        'registro',
+      );
+    }
+
+    return {
+      mensaje:
+        'Si ese correo tiene una cuenta sin confirmar, te enviamos un enlace nuevo. Revisa también la carpeta de spam.',
+    };
+  }
+
+  /**
+   * Pide cambiar el correo de la cuenta. No se cambia nada todavía: se manda un
+   * enlace a la **dirección nueva** y el cambio se aplica al abrirlo.
+   */
+  async solicitarCambioCorreo(
+    usuarioId: number,
+    correoNuevo: string,
+    peticion?: Request,
+  ) {
+    const nuevo = (correoNuevo ?? '').trim().toLowerCase();
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { correo: true, correoVerificado: true },
+    });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+    if (!usuario.correoVerificado) {
+      throw new ForbiddenException(
+        'Confirma tu correo actual antes de cambiarlo.',
+      );
+    }
+    if (nuevo === usuario.correo.toLowerCase()) {
+      throw new BadRequestException('Ese ya es tu correo actual.');
+    }
+
+    const ocupado = await this.prisma.usuario.findUnique({
+      where: { correo: nuevo },
+      select: { id: true },
+    });
+    if (ocupado) {
+      throw new ConflictException('Ese correo ya está en uso por otra cuenta.');
+    }
+
+    const enviado = await this.enviarVerificacionCorreo(
+      usuarioId,
+      nuevo,
+      peticion,
+      'cambio',
+    );
+    if (!enviado) {
+      throw new ServiceUnavailableException(
+        'No se pudo enviar el correo de confirmación. Revisa la configuración de correo e inténtalo de nuevo.',
+      );
+    }
+
+    return {
+      mensaje: `Te enviamos un correo a ${nuevo} para confirmarlo. Tu correo actual sigue siendo el de acceso hasta que lo confirmes.`,
     };
   }
 

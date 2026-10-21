@@ -1,0 +1,38 @@
+<div class="auth-layout">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-logo-chip">
+        <img [src]="logo()" alt="Logo de Clases Espejo" />
+      </div>
+      <p class="auth-hero-lema">{{ lema() }}</p>
+      <p class="auth-hero-tag">{{ descripcion() }}</p>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <section class="auth-card">
+      <h1 class="auth-title">Confirmar correo</h1>
+
+      @if (estado() === 'comprobando') {
+        <p class="auth-subtitle">Comprobando el enlace…</p>
+      }
+
+      @if (estado() === 'hecho') {
+        <div class="alert alert-success" role="status">{{ mensaje() }}</div>
+        <p class="auth-subtitle">
+          Correo confirmado: <strong>{{ correo() }}</strong>
+        </p>
+        <p class="auth-alt">
+          <a routerLink="/login">Iniciar sesión</a>
+        </p>
+      }
+
+      @if (estado() === 'error') {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+        <p class="auth-alt">
+          <a routerLink="/login">Volver al acceso</a>
+        </p>
+      }
+    </section>
+  </main>
+</div>

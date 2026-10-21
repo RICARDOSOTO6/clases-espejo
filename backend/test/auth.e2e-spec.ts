@@ -36,6 +36,20 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
 
   const correoAgenteNuevo = 'nuevo.agente@prueba.mx';
   const correoDocenteNuevo = 'nuevo.docente@prueba.mx';
+
+  /** Token del correo de confirmación que se habría enviado a esa dirección. */
+  const tokenConfirmacionDe = (destinatario: string): string => {
+    const llamada = [...correo.llamadas]
+      .reverse()
+      .find(
+        (l) =>
+          l.metodo === 'sendConfirmacionCorreo' &&
+          l.argumentos[0] === destinatario,
+      );
+    const valor = llamada?.argumentos[1];
+    return typeof valor === 'string' ? valor : '';
+  };
+
   const altaAgente = {
     nombres: 'Nuevo',
     apellidoPaterno: 'Agente',
@@ -79,7 +93,21 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
     expect(institucionId).toBeGreaterThan(0);
   });
 
-  it('2. el agente inicia sesión y su institución aparece sin registro completo', async () => {
+  it('2. sin confirmar el correo no se puede entrar; con el enlace, sí', async () => {
+    // La cuenta nace pendiente de confirmar: el login responde 403.
+    const bloqueado = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ correo: correoAgenteNuevo, password: PASSWORD_PRUEBA })
+      .expect(403);
+    expect(String(bloqueado.body.message)).toContain('confirma tu correo');
+
+    const token = tokenConfirmacionDe(correoAgenteNuevo);
+    expect(token.length).toBeGreaterThan(20);
+    await request(app.getHttpServer())
+      .get('/auth/confirmar-correo')
+      .query({ token })
+      .expect(200);
+
     const respuesta = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ correo: correoAgenteNuevo, password: PASSWORD_PRUEBA })

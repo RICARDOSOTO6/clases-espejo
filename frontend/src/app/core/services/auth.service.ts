@@ -92,6 +92,31 @@ export class AuthService {
     );
   }
 
+  /** Confirma el correo con el token del enlace (registro o cambio de correo). */
+  confirmarCorreo(
+    token: string,
+  ): Observable<{ mensaje: string; tipo: string; correo: string }> {
+    return this.http.get<{ mensaje: string; tipo: string; correo: string }>(
+      `${API_URL}/auth/confirmar-correo`,
+      { params: { token } },
+    );
+  }
+
+  /** Pide otro enlace de confirmación de correo. */
+  reenviarConfirmacion(correo: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${API_URL}/auth/confirmar-correo/reenviar`,
+      { correo },
+    );
+  }
+
+  /** Pide cambiar el correo de la cuenta (se confirma en la dirección nueva). */
+  solicitarCambioCorreo(correo: string): Observable<{ mensaje: string }> {
+    return this.http.put<{ mensaje: string }>(`${API_URL}/auth/correo`, {
+      correo,
+    });
+  }
+
   /**
    * Sube la foto de perfil y actualiza la sesión en memoria y en el navegador,
    * para que la barra superior muestre la imagen sin recargar.

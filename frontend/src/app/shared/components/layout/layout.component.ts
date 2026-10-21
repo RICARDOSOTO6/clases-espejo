@@ -325,6 +325,11 @@ export class LayoutComponent implements OnInit {
   readonly perfil = signal<Perfil | null>(null);
   readonly cargandoPerfil = signal(false);
   readonly errorPerfil = signal<string | null>(null);
+  /** Cambio de correo desde «Mi perfil» (Fase 1). */
+  readonly correoNuevo = signal('');
+  readonly cambiandoCorreo = signal(false);
+  readonly avisoCorreo = signal<string | null>(null);
+  readonly errorCorreo = signal<string | null>(null);
 
   /**
    * La presidencia y la secretaría de la CACE usan la misma pantalla, así que
@@ -812,6 +817,9 @@ export class LayoutComponent implements OnInit {
     this.perfilAbierto.set(true);
     this.errorFoto.set(null);
     this.okFoto.set(null);
+    this.avisoCorreo.set(null);
+    this.errorCorreo.set(null);
+    this.correoNuevo.set('');
     if (this.perfil() || this.cargandoPerfil()) return;
 
     this.cargandoPerfil.set(true);
@@ -824,6 +832,32 @@ export class LayoutComponent implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.errorPerfil.set(extraerMensajeError(error, 'No se pudo cargar tu perfil'));
         this.cargandoPerfil.set(false);
+      },
+    });
+  }
+
+  /** Pide el cambio de correo: se confirma desde la dirección nueva. */
+  pedirCambioCorreo(): void {
+    const nuevo = this.correoNuevo().trim();
+    if (!nuevo) {
+      this.errorCorreo.set('Escribe el correo nuevo.');
+      return;
+    }
+
+    this.cambiandoCorreo.set(true);
+    this.avisoCorreo.set(null);
+    this.errorCorreo.set(null);
+    this.auth.solicitarCambioCorreo(nuevo).subscribe({
+      next: (res) => {
+        this.cambiandoCorreo.set(false);
+        this.avisoCorreo.set(res.mensaje);
+        this.correoNuevo.set('');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.cambiandoCorreo.set(false);
+        this.errorCorreo.set(
+          extraerMensajeError(error, 'No se pudo pedir el cambio de correo'),
+        );
       },
     });
   }

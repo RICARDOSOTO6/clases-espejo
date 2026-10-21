@@ -47,6 +47,9 @@ export class LoginComponent implements OnInit {
   success = false;
   /** Mensaje del registro, cuando tiene algo que explicar (alta pendiente…). */
   avisoRegistro = '';
+  /** Aviso tras pedir de nuevo el correo de confirmación. */
+  avisoConfirmacion = signal<string | null>(null);
+  reenviando = signal(false);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -64,6 +67,30 @@ export class LoginComponent implements OnInit {
       required: 'Este campo es obligatorio',
       email: 'Introduce un correo válido',
       minlength: 'Mínimo 6 caracteres',
+    });
+  }
+
+  /** Pide otro enlace de confirmación para el correo escrito en el formulario. */
+  reenviarConfirmacion(): void {
+    const correo = this.form.value.correo ?? '';
+    if (!correo) {
+      this.error.set('Escribe tu correo para reenviar la confirmación.');
+      return;
+    }
+
+    this.reenviando.set(true);
+    this.avisoConfirmacion.set(null);
+    this.auth.reenviarConfirmacion(correo).subscribe({
+      next: (res) => {
+        this.reenviando.set(false);
+        this.avisoConfirmacion.set(res.mensaje);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.reenviando.set(false);
+        this.error.set(
+          extraerMensajeError(err, 'No se pudo reenviar la confirmación'),
+        );
+      },
     });
   }
 

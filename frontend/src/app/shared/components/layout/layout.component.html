@@ -425,6 +425,39 @@
             </dd>
           </div>
         </dl>
+
+        <div class="perfil-correo">
+          <h3>Cambiar el correo</h3>
+          <p class="muted text-sm">
+            Te enviaremos un enlace a la dirección nueva. Hasta que lo confirmes,
+            el acceso sigue siendo con el correo actual.
+          </p>
+          <div class="form-field">
+            <label for="correo-nuevo">Correo nuevo</label>
+            <input
+              id="correo-nuevo"
+              type="email"
+              [value]="correoNuevo()"
+              (input)="correoNuevo.set($any($event.target).value)"
+              placeholder="nuevo@institucion.edu"
+              autocomplete="email"
+            />
+          </div>
+          @if (avisoCorreo()) {
+            <div class="alert alert-success" role="status">{{ avisoCorreo() }}</div>
+          }
+          @if (errorCorreo()) {
+            <div class="alert alert-error" role="alert">{{ errorCorreo() }}</div>
+          }
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="cambiandoCorreo() || !correoNuevo().trim()"
+            (click)="pedirCambioCorreo()"
+          >
+            {{ cambiandoCorreo() ? 'Enviando…' : 'Enviar enlace de confirmación' }}
+          </button>
+        </div>
       }
     </div>
   </app-modal>

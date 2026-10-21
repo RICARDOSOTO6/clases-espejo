@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -11,11 +12,14 @@ import {
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from './current-user.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
 import { RecuperarPasswordDto } from './dto/recuperar-password.dto';
 import { RestablecerPasswordDto } from './dto/restablecer-password.dto';
+import { CambiarCorreoDto } from './dto/cambiar-correo.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -77,5 +81,41 @@ export class AuthController {
   @UseGuards(RateLimitGuard)
   restablecer(@Body() dto: RestablecerPasswordDto) {
     return this.authService.restablecerPassword(dto.token, dto.password);
+  }
+
+  /** Confirma el correo con el enlace (registro o cambio de dirección). */
+  @Get('confirmar-correo')
+  confirmarCorreo(@Query('token') token?: string) {
+    if (!token?.trim()) {
+      throw new BadRequestException(
+        'Falta el código del enlace de confirmación.',
+      );
+    }
+    return this.authService.confirmarCorreo(token);
+  }
+
+  /** Reenvía el enlace de confirmación a una cuenta sin confirmar. */
+  @Post('confirmar-correo/reenviar')
+  @UseGuards(RateLimitGuard)
+  reenviarConfirmacion(
+    @Body() dto: RecuperarPasswordDto,
+    @Req() peticion: Request,
+  ) {
+    return this.authService.reenviarVerificacionCorreo(dto.correo, peticion);
+  }
+
+  /** Pide cambiar el correo de la cuenta (se confirma en la dirección nueva). */
+  @Put('correo')
+  @UseGuards(JwtAuthGuard)
+  cambiarCorreo(
+    @CurrentUser('sub') usuarioId: number,
+    @Body() dto: CambiarCorreoDto,
+    @Req() peticion: Request,
+  ) {
+    return this.authService.solicitarCambioCorreo(
+      usuarioId,
+      dto.correo,
+      peticion,
+    );
   }
 }

@@ -71,6 +71,41 @@ export class MailService {
   }
 
   /**
+   * Confirmación de correo (Fase 1): al registrarse y al cambiar de dirección.
+   *
+   * El mismo enlace sirve para las dos cosas; el servidor distingue si el correo
+   * del token es el actual (verificación de la cuenta) o uno nuevo (cambio de
+   * correo). Se avisa de que si no fue la persona, no pasa nada.
+   */
+  async sendConfirmacionCorreo(
+    to: string,
+    token: string,
+    urlPublica: string,
+    motivo: 'registro' | 'cambio',
+  ): Promise<void> {
+    const link = `${urlPublica}/confirmar-correo?token=${encodeURIComponent(token)}`;
+    const esCambio = motivo === 'cambio';
+    const asunto = esCambio
+      ? 'Confirma tu nuevo correo - Clases Espejo'
+      : 'Confirma tu cuenta - Clases Espejo';
+    const intro = esCambio
+      ? 'Recibimos una solicitud para cambiar el correo de tu cuenta en <strong>Clases Espejo</strong>.'
+      : 'Gracias por registrarte en <strong>Clases Espejo</strong>.';
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: asunto,
+      text: `${intro} Confirma el correo con este enlace: ${link}\nEl enlace caduca en 48 horas. Si no lo pediste, puedes ignorarlo.`,
+      html: `
+        <p>${intro}</p>
+        <p><a href="${link}">Confirmar el correo</a></p>
+        <p>El enlace caduca en 48 horas. Si no lo pediste, puedes ignorar este correo.</p>
+      `,
+    });
+  }
+
+  /**
    * Envía al presidente de la CACE sus datos de acceso. A diferencia de la
    * invitación, la cuenta ya existe (la crea el propio servidor al arrancar):
    * aquí no hay token de activación, sino una contraseña provisional que el

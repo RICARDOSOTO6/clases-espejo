@@ -60,6 +60,14 @@ export const routes: Routes = [
       ),
   },
   {
+    // Enlace de confirmación de correo (registro y cambio de dirección).
+    path: 'confirmar-correo',
+    loadComponent: () =>
+      import('./features/auth/confirmar-correo/confirmar-correo.component').then(
+        (m) => m.ConfirmarCorreoComponent,
+      ),
+  },
+  {
     // Verificación pública de un certificado: es lo que abre el QR impreso.
     // Va **sin guardia y fuera del esqueleto con menú** a propósito: la abre
     // cualquiera que tenga el certificado en la mano (un alumno, un empleador),

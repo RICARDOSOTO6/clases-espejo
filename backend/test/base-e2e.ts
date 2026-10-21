@@ -70,6 +70,7 @@ export function exigirBaseDePrueba(): void {
 const METODOS_CORREO = [
   'sendInvitation',
   'sendRecuperacionPassword',
+  'sendConfirmacionCorreo',
   'sendCredencialesPresidente',
   'sendCredencialesSecretaria',
   'sendCambioPresidenciaEntrante',

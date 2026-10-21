@@ -10,6 +10,9 @@ import { createHash, randomBytes } from 'crypto';
  */
 export const VIGENCIA_RECUPERACION_MS = 60 * 60 * 1000; // 1 hora
 
+/** El correo de confirmación de la cuenta dura más: se revisa con calma. */
+export const VIGENCIA_VERIFICACION_MS = 48 * 60 * 60 * 1000; // 48 horas
+
 /** Token nuevo, imposible de adivinar, apto para ir en una URL. */
 export function generarTokenRecuperacion(): string {
   return randomBytes(32).toString('base64url');

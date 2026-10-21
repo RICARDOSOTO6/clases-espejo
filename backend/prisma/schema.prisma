@@ -67,7 +67,11 @@ model Usuario {
   /// Momento del último cambio de contraseña. Los tokens de sesión emitidos
   /// antes de esta marca dejan de valer (cerrar sesiones de la Fase 1).
   sesionesValidasDesde DateTime               @default(now()) @map("sesiones_validas_desde")
+  /// Correo confirmado (Fase 1). Las cuentas que ya existían quedan verificadas;
+  /// los registros nuevos nacen en `false` hasta abrir el enlace del correo.
+  correoVerificado Boolean                    @default(true) @map("correo_verificado")
   recuperaciones  RecuperacionPassword[]
+  verificacionesCorreo VerificacionCorreo[]
   creadoEn        DateTime                    @default(now()) @map("creado_en")
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
@@ -656,4 +660,23 @@ model RecuperacionPassword {
 
   @@index([usuarioId])
   @@map("RECUPERACION_PASSWORD")
+}
+
+/// Confirmación de correo (Fase 1): sirve tanto para verificar la cuenta recién
+/// registrada como para confirmar una dirección nueva al cambiar de correo. Se
+/// guarda el hash del token, nunca el token en claro.
+model VerificacionCorreo {
+  id        Int       @id @default(autoincrement())
+  usuarioId Int       @map("usuario_id")
+  /// Correo que se está confirmando (el nuevo, cuando es un cambio).
+  correo    String
+  tokenHash String    @unique @map("token_hash")
+  expira    DateTime
+  usadoEn   DateTime? @map("usado_en")
+  creadoEn  DateTime  @default(now()) @map("creado_en")
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([correo])
+  @@map("VERIFICACION_CORREO")
 }
