@@ -233,7 +233,7 @@ ClasesEspejo/
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma    # modelo de datos completo (33 tablas)
-│   │   └── migrations/      # 25 migraciones versionadas
+│   │   └── migrations/      # 26 migraciones versionadas
 │   │
 │   ├── generated/
 │   │   └── prisma/          # cliente generado (NO editar a mano)
@@ -351,7 +351,7 @@ ClasesconjuntasBD
 El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
 
 Las tablas se crean con las **migraciones versionadas** que están en
-`backend/prisma/migrations/` (**25 migraciones**):
+`backend/prisma/migrations/` (**26 migraciones**):
 
 ```bash
 npx prisma migrate deploy
@@ -777,7 +777,7 @@ Contraseña común: `Demo1234`
 
 # 🗃 Modelo de datos
 
-El esquema tiene **33 tablas** (`backend/prisma/schema.prisma`, 33 modelos con su
+El esquema tiene **34 tablas** (`backend/prisma/schema.prisma`, 34 modelos con su
 `@@map`). En este mapa se ven las relaciones principales:
 
 ```text
@@ -830,6 +830,7 @@ PREMIO                  (premios y reconocimientos, publicados o en borrador)
 CAMBIO_PRESIDENCIA      (historial de transmisiones de la presidencia)
 SOLICITUD_BORRADO_INSTITUCION (la secretaría pide, la presidencia autoriza)
 RECUPERACION_PASSWORD (enlaces de recuperación: solo el hash del token)
+VERIFICACION_CORREO (confirmación de correo: solo el hash del token)
 ```
 
 Notas sobre el modelo:
@@ -1260,7 +1261,7 @@ con los mismos estados, está en
 
 # 🌐 Endpoints de la API
 
-El backend expone **132 rutas** repartidas en **23 controladores** (22 archivos
+El backend expone **135 rutas** repartidas en **23 controladores** (22 archivos
 `.controller.ts`; `instituciones.controller.ts` contiene dos clases). Todas cuelgan
 de un prefijo y la lista completa está en las tablas siguientes.
 
@@ -1274,6 +1275,9 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `POST` | `/auth/login` | Inicia sesión y devuelve `access_token` y un objeto `usuario` con sus datos, su `rol` y `debeCambiarPassword` | No *(limitado a 10 intentos/min)* |
 | `GET` | `/auth/activate?token=...` | Valida un token de invitación | No |
 | `POST` | `/auth/activate` | Activa la cuenta del docente (crea credenciales) | No *(limitado a 10 intentos/min)* |
+| `GET` | `/auth/confirmar-correo?token=...` | Confirma el correo (alta nueva o cambio de dirección) | No |
+| `POST` | `/auth/confirmar-correo/reenviar` | Reenvía el enlace de confirmación (misma respuesta exista o no la cuenta) | No *(limitado a 10 intentos/min)* |
+| `PUT` | `/auth/correo` | Pide cambiar el correo; el enlace llega a la dirección nueva | JWT |
 | `POST` | `/auth/recuperar` | Pide el enlace de recuperación de contraseña (la respuesta es idéntica exista o no la cuenta) | No *(limitado a 10 intentos/min)* |
 | `GET` | `/auth/recuperar/validar?token=...` | Comprueba un enlace de recuperación antes de usarlo | No |
 | `POST` | `/auth/restablecer` | Restablece la contraseña con el token del correo (un solo uso, caduca en 1 hora) | No *(limitado a 10 intentos/min)* |
@@ -1520,6 +1524,8 @@ auditorías):
 | **Recuperación de contraseña con hash** | El enlace lleva un token de 32 bytes aleatorios; en la base se guarda **solo su hash SHA-256**, caduca en 1 hora y es de un solo uso (consumo atómico). La respuesta de `/auth/recuperar` es idéntica exista o no la cuenta. |
 | **Política de contraseñas y bloqueo** | Mínimo 10 caracteres, distinta del correo y sin un carácter repetido. Cinco intentos fallidos bloquean la cuenta 15 minutos (aunque después se escriba la contraseña correcta); el bloqueo se limpia al entrar bien o al restablecer. |
 | **Sesiones cerradas al cambiar la contraseña** | `USUARIO.sesionesValidasDesde` invalida en `JwtAuthGuard` los tokens emitidos antes del cambio: cambiar o restablecer la contraseña cierra las sesiones abiertas. |
+| **Correo confirmado para entrar** | Las cuentas nuevas nacen con `correoVerificado` en falso y el login responde **403** hasta abrir el enlace (caduca en 48 h). Los enlaces guardan solo el hash y son de un solo uso. |
+| **Cambio de correo en dos pasos** | El correo no cambia al pedirlo: se manda un enlace a la **dirección nueva** y el cambio se aplica al confirmarlo; entonces se cierran las sesiones. Un correo ya usado por otra cuenta responde 409. |
 | **Código de verificación del certificado** | Se **deriva** del folio con HMAC-SHA256 (nunca se guarda), con alfabeto de 32 símbolos sin caracteres confundibles, y se compara en **tiempo constante** (`timingSafeEqual`). Sin el código correcto, la página pública no distingue un folio real de uno inventado. |
 | **Formatos antes de consultar** | La verificación comprueba el formato del folio (`CACE-AAAA-0000`) **antes** de tocar la base, así que un folio inventado ni provoca una consulta. |
 | **Verificación sin caché** | La respuesta de `/verificar/:folio` va con `Cache-Control: no-store`: el estado de un certificado puede cambiar (se anula) y la página tiene que decir la verdad de hoy. |
@@ -1760,6 +1766,8 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] **Recuperación de contraseña** con enlace de un solo uso (1 hora; en la base solo el hash)
 * [x] **Política de contraseñas** (mínimo 10, distinta del correo) y bloqueo temporal por intentos
 * [x] **Cierre de sesiones** al cambiar o restablecer la contraseña
+* [x] **Verificación de correo al registrarse**: la cuenta no entra hasta confirmar el enlace (48 h, reenvío disponible)
+* [x] **Cambio de correo** con confirmación desde la dirección nueva
 * [x] Invitación de docentes por correo (Nodemailer)
 * [x] Activación de cuenta con token de invitación de un solo uso (auto-registro del docente)
 * [x] Gate de "completar institución" + institución aprobada por la CACE + alta confirmada
@@ -1833,7 +1841,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Autorización por recurso y por capacidad
 * [x] CORS restringido y cabeceras seguras en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (25 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (26 migraciones versionadas en `backend/prisma/migrations/`)
 * [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
   `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
   e2e y build
@@ -1907,6 +1915,11 @@ en el puerto `3000` seguirá mostrando la versión anterior.
       `features/auth/restablecer/`): «¿Olvidaste tu contraseña?» pide el correo y
       el enlace del correo abre la pantalla de nueva contraseña (valida el token
       antes de mostrarla y avisa si caducó o ya se usó)
+* [x] **Confirmación de correo** (`features/auth/confirmar-correo/`): el enlace
+      del correo confirma la cuenta o la dirección nueva; desde el acceso se
+      puede pedir que lo reenvíen
+* [x] **Cambiar el correo desde «Mi perfil»**: el enlace se manda a la dirección
+      nueva y el cambio se aplica al abrirlo
 
 ---
 
@@ -1955,7 +1968,7 @@ de entorno) y varias reglas CSS y `export` sin uso.
 # 📅 Plan de desarrollo (metas semanales)
 
 > **Meta:** producto terminado en 8 semanas.
-> El **modelo de datos ya está completo** (33 tablas) y el esquema está **migrado y versionado** (25 migraciones). Cada semana termina con un entregable **probable y visible**.
+> El **modelo de datos ya está completo** (34 tablas) y el esquema está **migrado y versionado** (26 migraciones). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
 ## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅
@@ -2028,7 +2041,7 @@ Las fases posteriores están planificadas en
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
 - Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
 - Autorización por capacidad: `@Requiere('...')` + `CapacidadesGuard` (`backend/src/auth/capacidades.guard.ts`), con la matriz en `backend/src/common/capacidades.ts`. **Añadir un permiso es añadir una fila a la matriz**, no comparar el rol a mano.
-- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (132 rutas).
+- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (135 rutas).
 - Al final de cada semana, hacer un **commit** descriptivo.
 
 ---

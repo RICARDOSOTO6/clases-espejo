@@ -1,7 +1,7 @@
 # Plan de fases — lo que falta para poner la plataforma en uso real
 
 > **Escrito el 17 de octubre de 2026**, con el repositorio en `master` (96 commits,
-> 127 rutas —hoy 132—, 32 modelos —hoy 33—, 23 migraciones —hoy 25—) y los
+> 127 rutas —hoy 135—, 32 modelos —hoy 34—, 23 migraciones —hoy 26—) y los
 > datos de demostración cargados
 > (2 instituciones, 6 usuarios, 2 proyectos, 19 países, 0 certificados).
 >
@@ -85,9 +85,10 @@ versión ni refresh) y la invitación caducada no se puede reenviar.
 - [x] **Invalidar sesiones** al cambiar o restablecer la contraseña
   (`USUARIO.sesionesValidasDesde` comparada con el `iat` del JWT en
   `JwtAuthGuard`). Con esto, un token robado muere al cambiar la contraseña.
-- [ ] **Verificación de correo al registrarse**: cuenta en estado «pendiente» +
-  correo con token; sin verificar no se puede operar. Añadir «reenviar
-  verificación».
+- [x] **Verificación de correo al registrarse** (20-oct-2026): la cuenta nace
+  con `correoVerificado` en falso, recibe un enlace de 48 h (solo el hash en la
+  base) y el login responde 403 hasta abrirlo; hay reenvío desde el acceso.
+  Las cuentas que ya existían y las de docentes invitados quedan verificadas.
 - [x] **Reenviar invitación** de docente desde el panel del agente
   (20-oct-2026): el agente ve las invitaciones pendientes (también las
   caducadas, con su fecha) y las reenvía generando un **token nuevo** —el
@@ -95,16 +96,18 @@ versión ni refresh) y la invitación caducada no se puede reenviar.
 - [x] **Política de contraseña** (20-oct-2026): mínimo 10, sin ser la del correo
   y sin un carácter repetido, más bloqueo temporal de 15 minutos tras 5 intentos
   fallidos (además del rate limit).
-- [ ] **Cambio de correo** con verificación en la dirección nueva.
+- [x] **Cambio de correo** (20-oct-2026): se pide desde «Mi perfil», el enlace
+  llega a la **dirección nueva** y el cambio se aplica al confirmarlo (con
+  cierre de sesiones); un correo ya usado responde 409.
 - [ ] *(Opcional, a decidir)* segundo factor TOTP para presidencia y secretaría.
 
 **Aceptación:** un usuario que olvida su contraseña la recupera solo, sin tocar la
 base; un token robado deja de valer en cuanto se cambia la contraseña; ninguna
 cuenta nueva opera sin correo verificado. Todo con e2e de la fase 0.
-**Estado (20-oct-2026):** recuperación, cierre de sesiones, política y reenvío
-de invitaciones hechos y cubiertos por las suites `cuenta.e2e-spec.ts` (12) e
-`invitaciones.e2e-spec.ts` (6). Quedan la verificación de correo y el cambio de
-correo; la aceptación completa espera a la verificación de correo.
+**Estado (20-oct-2026):** recuperación, cierre de sesiones, política, reenvío de
+invitaciones, verificación de correo y cambio de correo hechos y cubiertos por
+las suites `cuenta`, `invitaciones` y `verificacion-correo` (26 pruebas e2e).
+Solo queda decidir el TOTP opcional.
 
 ---
 

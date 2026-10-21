@@ -4,7 +4,7 @@ Los módulos de NestJS leídos de `backend/src/**/*.module.ts`, con sus
 dependencias, y la lista completa de rutas leída de los controladores
 (`backend/src/**/*.controller.ts`).
 
-**Total: 132 rutas en 23 controladores** (22 archivos `.controller.ts`;
+**Total: 135 rutas en 23 controladores** (22 archivos `.controller.ts`;
 `instituciones.controller.ts` contiene dos clases). Es la misma cifra que
 documenta el README, y cuadra porque se cuentan igual: cada decorador
 `@Get`, `@Post`, `@Put`, `@Patch` o `@Delete`.
@@ -125,7 +125,7 @@ flowchart TB
 | Módulo | Controladores (clases) | Rutas | Prefijos |
 | --- | --- | ---: | --- |
 | `AppModule` | 1 (`AppController`) | **2** | `/`, `/health` |
-| `AuthModule` | 1 | **7** | `/auth` |
+| `AuthModule` | 1 | **10** | `/auth` |
 | `UsuariosModule` | 1 | **4** | `/usuarios` |
 | `AgentesModule` | 1 | **10** | `/agentes` |
 | `MateriasModule` | 1 | **5** | `/materias` |
@@ -136,7 +136,7 @@ flowchart TB
 | `RecordatoriosModule` | 1 | **1** | `/recordatorios` |
 | `CaceModule` | 7 | **31** | `/cace` |
 | `CertificadosModule` | 4 | **15** | `/proyectos/:id/certificados`, `/cace/certificados`, `/verificar` |
-| **Total** | **23** | **132** | |
+| **Total** | **23** | **135** | |
 
 **Cómo se cuentan** (el mismo comando sirve para volver a comprobarlo):
 
@@ -422,10 +422,10 @@ propia que se indique.
 
 ## 5. Notas
 
-* **Ninguna ruta se documenta dos veces.** Las 132 de este documento son las
+* **Ninguna ruta se documenta dos veces.** Las 135 de este documento son las
   mismas que están en las tablas del README; si se añade una ruta, hay que
   actualizar los dos sitios (y el conteo del README).
-* **Trece de las 132 rutas no llevan JWT**: `/`, `/health`, las siete de `auth`
+* **Quince de las 135 rutas no llevan JWT**: `/`, `/health`, las nueve de `auth`
   (registro, login, activación y recuperación de contraseña),
   `GET /instituciones/directorio` (el que se usa **mientras** se está
   registrando), `GET /cace/publico`, `GET /cace/premios-publicos` (lo que la
