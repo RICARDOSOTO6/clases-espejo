@@ -622,7 +622,6 @@ export class CaceComponent implements OnInit, OnDestroy {
       // servidor busca el que falte (verificado en `paises-iso.ts`).
       codigo: ['', [Validators.pattern(/^[A-Za-z]{2}$/)]],
       nombre: ['', [Validators.minLength(2)]],
-      activo: this.fb.nonNullable.control(true),
     },
     { validators: [algunoDeDosCampos] },
   );
@@ -1697,7 +1696,6 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.formPais.reset({
       codigo: '',
       nombre: '',
-      activo: true,
     });
     this.errorPaises.set(null);
     this.avisoPaises.set(null);
@@ -1708,7 +1706,6 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.formPais.reset({
       codigo: pais.codigo,
       nombre: pais.nombre,
-      activo: pais.activo,
     });
     this.errorPaises.set(null);
     this.avisoPaises.set(null);
@@ -1727,14 +1724,13 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { codigo, nombre, activo } = this.formPais.getRawValue();
+    const { codigo, nombre } = this.formPais.getRawValue();
     const id = this.paisEnEdicion();
     const codigoLimpio = (codigo ?? '').trim().toUpperCase();
     const nombreLimpio = (nombre ?? '').trim();
     // Solo se manda lo que se escribió: si falta el código lo busca el servidor
-    // por el nombre (y al revés).
+    // por el nombre (y al revés). El estado visible se cambia desde la lista.
     const dto = {
-      activo,
       ...(codigoLimpio ? { codigo: codigoLimpio } : {}),
       ...(nombreLimpio ? { nombre: nombreLimpio } : {}),
     };

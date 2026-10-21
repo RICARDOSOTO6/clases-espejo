@@ -1503,14 +1503,6 @@
           </div>
         </div>
 
-        <p class="text-sm muted">
-          Estos son los países que aparecen como banderas en la sección «Comunidad»
-          de docentes y agentes. La lista va siempre en orden alfabético por nombre
-          (sin distinguir mayúsculas ni acentos), tanto aquí como en la web pública:
-          no hay ningún número de orden que mantener. Si un país deja la comunidad,
-          desactívalo: desaparece de la web sin perder la fila.
-        </p>
-
         @if (errorPaises()) {
           <div class="alert alert-error" role="alert">{{ errorPaises() }}</div>
         }
@@ -1519,11 +1511,6 @@
         }
 
         <form class="form-pais" [formGroup]="formPais" (ngSubmit)="guardarPais()" novalidate>
-          <p class="muted text-sm">
-            Escribe el país o su código ISO: con uno de los dos basta. Si no
-            sabes el código, escribe solo el nombre (por ejemplo México) y el
-            servidor lo busca.
-          </p>
           <div class="form-field">
             <label for="pais-codigo">Código ISO (opcional)</label>
             <input
@@ -1546,17 +1533,6 @@
             }
           </div>
 
-          @if (faltaPais) {
-            <p class="field-error">Escribe el nombre del país o su código ISO.</p>
-          }
-
-          <div class="form-field">
-            <label for="pais-activo">
-              <input id="pais-activo" type="checkbox" formControlName="activo" />
-              <span>Visible en la web</span>
-            </label>
-          </div>
-
           <div class="form-field acciones-pais">
             <button type="submit" class="btn btn-primary" [disabled]="cargandoPaises()">
               {{ paisEnEdicion() ? 'Guardar país' : 'Añadir país' }}
@@ -1572,7 +1548,44 @@
               </button>
             }
           </div>
+
+          @if (faltaPais) {
+            <p class="field-error">Escribe el nombre del país o su código ISO.</p>
+          }
         </form>
+
+        <!-- Pista a todo el ancho y destacada: es la única ayuda que explica que
+             el nombre basta, y no debe pasar desapercibida al añadir una bandera. -->
+        <p class="pista-pais" role="note">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          <span>
+            Escribe <strong>el país</strong> o <strong>su código ISO</strong>: con
+            uno de los dos basta. Si no sabes el código, escribe solo el nombre
+            (por ejemplo <strong>México</strong>) y el servidor lo busca.
+          </span>
+        </p>
+
+        <p class="text-sm muted">
+          Estos son los países que aparecen como banderas en la sección «Comunidad»
+          de docentes y agentes. La lista va siempre en orden alfabético por nombre
+          (sin distinguir mayúsculas ni acentos), tanto aquí como en la web pública:
+          no hay ningún número de orden que mantener. Si un país deja la comunidad,
+          desactívalo desde la lista: desaparece de la web sin perder la fila.
+        </p>
 
         @if (paises().length > 0) {
           <div class="cace-filtros" role="search" aria-label="Buscar país">
