@@ -33,8 +33,10 @@
 | **4** | Operación: backups automáticos, monitorización, `helmet`, API documentada | 1 semana | Fase 0 |
 | **5** | Producto y confianza: privacidad, exportar/eliminar cuenta, correos de hitos | 1–2 semanas | Fases 1 y 2 |
 | **6** | Mantenibilidad: duplicación, componentes gigantes, despliegue reproducible | continuo | — |
+| **7** | Nuevas funciones: plazos configurables, evidencias por enlace, documento internacional y clases con N instituciones | 6–8 semanas | Fases 2 y 3 |
 
-**Total realista:** 6–8 semanas de una persona a tiempo parcial. Las fases 1 y 3
+**Total realista:** 6–8 semanas de una persona a tiempo parcial para las fases 0–6.
+La Fase 7 añade 6–8 semanas más y no está incluida en ese total. Las fases 1 y 3
 pueden ir en paralelo si hay dos personas (tocan archivos distintos).
 
 ---
@@ -230,6 +232,131 @@ pedir la baja; los correos de hitos se pueden desactivar por preferencia.
   `@angular/ssr`) y el resto de residuos de la QA 5.
 - [ ] Repasar los `.docx` del repositorio: ya están fuera del control de versiones
   (política de octubre); mantenerlo así.
+
+
+---
+
+## Fase 7 — Nuevas funciones pedidas (21-oct-2026)
+
+**Por qué:** la CACE pidió cuatro cambios que no estaban en las fases 0–6. Se
+planifican aparte para no mezclarlos con la integridad y la operación, y porque
+la multi-institución toca el modelo de solicitudes, revisiones y certificados.
+
+### Decisiones ya tomadas (21-oct-2026)
+
+- **Plazos:** **8 días** como mínimo para proponer una clase y **7 días** para
+  revisarla. Los dos los configura la presidencia desde el panel (no una variable
+  de entorno). Hoy el código usa un único valor por entorno, 7 por defecto.
+- **Mínimo de participantes:** **2 instituciones en total** (la de origen cuenta
+  como participante). Si una institución rechaza y todavía quedan 2 o más, la
+  clase sigue adelante; si se baja de 2, no se crea (o no continúa) la clase.
+- **Evidencias por enlace:** solo se aceptan enlaces de una **lista blanca
+  reducida** para evitar enlaces maliciosos; nada de URL libres.
+- **Multi-institución:** la clase sigue siendo **una sola** (un proyecto) aunque
+  participen más de dos instituciones; no se duplica en varias clases.
+
+### 7.1 Plazos configurables por la presidencia
+
+- [ ] Añadir a `CONFIGURACION_CACE` dos campos: `diasMinimosPropuesta` (8 por
+  defecto) y `diasRevision` (7 por defecto), con rango válido (2–60) y auditoría
+  de quién los cambia.
+- [ ] Pantalla de la presidencia en «Comunidad/Configuración» para editarlos, con
+  la fecha mínima resultante a la vista. La secretaría no puede cambiarlos.
+- [ ] Usar esos valores en: alta y edición de solicitud, fecha mínima del
+  formulario, caducidad de la revisión, recordatorios y textos de la pantalla.
+- [ ] Mantener `REVISION_DIAS_ANTELACION` solo como respaldo de instalación.
+- [ ] e2e: 7 días rechaza, 8 acepta; el cambio de la presidencia se aplica a la
+  siguiente solicitud; la secretaría recibe 403.
+
+**Esfuerzo:** 1–2 días. **Riesgo:** bajo. **Aceptación:** un cambio en el panel
+cambia la fecha mínima real sin reiniciar el servidor y queda registrado.
+
+### 7.2 Evidencias por enlace (lista blanca)
+
+- [ ] `EVIDENCIA`: `archivoUrl` pasa a opcional y se añade `enlaceUrl`; `tipo`
+  distingue `ARCHIVO`, `ENLACE` y `VIDEO`. Al menos uno de los dos debe existir.
+- [ ] Lista blanca inicial (pendiente de confirmar los dos últimos): YouTube
+  (`youtube.com`, `youtu.be`), Vimeo (`vimeo.com`), Google Drive
+  (`drive.google.com`), OneDrive (`1drv.ms`, `onedrive.live.com`).
+- [ ] Validar `https` (y `http` solo si se decide), longitud máxima, sin
+  credenciales embebidas y sin `javascript:` ni `data:`; **no** descargar el
+  enlace en el servidor (evita SSRF).
+- [ ] Endpoint de alta por JSON (o campo opcional en el formulario multipart) y
+  UI con «Subir archivo / Pegar enlace», mostrando el proveedor reconocido.
+- [ ] Abrir en pestaña nueva con `rel="noopener noreferrer"`; no incrustar
+  iframes de dominios no previstos.
+- [ ] e2e: enlace de YouTube aceptado; dominio fuera de la lista → 400; enlace
+  inválido o `javascript:` → 400; una evidencia antigua de archivo sigue viéndose.
+
+**Esfuerzo:** 3–5 días. **Riesgo:** bajo. **Aceptación:** se puede registrar una
+evidencia de vídeo por enlace sin subir el archivo y el archivo ya no es
+obligatorio.
+
+### 7.3 Identificador internacional del alumno
+
+- [ ] `ALUMNO`: añadir `tipoDocumento` (DNI, Pasaporte, Cédula, RUT, CURP, Otro) y
+  `numeroDocumento`, normalizados; `@@unique([listaId, tipoDocumento, numeroDocumento])`
+  (la matrícula puede repetirse entre instituciones, el documento no dentro de
+  una lista).
+- [ ] Aviso si un mismo documento aparece en listas de instituciones distintas.
+- [ ] Plantilla de importación y formulario de lista con los dos campos; tabla
+  del panel con tipo y número.
+- [ ] Emisión: exigir documento en las listas nuevas; las antiguas se pueden
+  completar o marcar como «sin documento».
+- [ ] Certificado: hueco opcional `documento` en el editor de plantilla (o debajo
+  del nombre), sin romper los diseños actuales.
+- [ ] Verificación pública: decidir si se muestra el tipo y los últimos 4 dígitos
+  o nada (privacidad); el número completo se queda en el panel.
+- [ ] e2e: documento duplicado en la misma lista → 400; falta de documento en
+  emisión nueva → 400; el certificado lo imprime si el diseño lo activa.
+
+**Esfuerzo:** 5–7 días con el campo del certificado; 2–3 días si solo es registro
+interno. **Riesgo:** medio (importación y privacidad).
+
+### 7.4 Clases con múltiples instituciones
+
+- [ ] Nueva tabla `PARTICIPANTE_SOLICITUD`: solicitud, institución, docente,
+  materia, rol (`ORIGEN`/`DESTINO`), estado (`PENDIENTE`, `ACEPTADA`, `RECHAZADA`,
+  `CADUCADA`), quién revisó y cuándo. La institución de origen también es
+  participante.
+- [ ] Migrar el destino actual de cada solicitud a una fila de participante;
+  mantener las columnas viejas como compatibilidad mientras se termina la
+  migración (aditiva).
+- [ ] Flujo: el docente de origen elige N instituciones (cada una con su
+  docente/materia opcional); el agente de origen revisa una vez; **cada destino
+  acepta o rechaza por separado**. La clase se crea cuando hay **2 participantes
+  aceptados en total**; un rechazo no la tumba si aún quedan 2 o más.
+- [ ] Si se baja de 2, la solicitud no se convierte en proyecto (o se cancela con
+  motivo) y el origen puede volver a invitar; decidir si se permite incorporar
+  instituciones después de crear el proyecto y hasta qué fecha.
+- [ ] `ProyectoClaseEspejo`: un solo proyecto con N participantes; listas por
+  institución (ya existen), `ProyectoDocente` por docente, calendario a todos y
+  reportes por docente. Certificados: un certificado por alumno y el texto de
+  **todas** las instituciones; verificación pública con todas.
+- [ ] UI: selector múltiple de instituciones, panel de respuestas por destino y
+  vista del proyecto con N instituciones.
+- [ ] e2e: 3 instituciones (origen + 2 destinos) con un rechazo y quórum de 2;
+  certificado con tres instituciones; calendario a todos los docentes.
+
+**Esfuerzo:** 3–5 semanas. **Riesgo:** alto (modelo, revisiones, certificados y
+calendario). **Aceptación:** una clase con tres instituciones participantes se
+crea, se planifica, se certifica y se verifica sin duplicar proyectos.
+
+### Orden recomendado dentro de la fase
+
+1. Evidencias por enlace (rápida e independiente).
+2. Plazos configurables (rápida, alto valor).
+3. Identificador internacional (media; depende de si se imprime).
+4. Múltiples instituciones (la grande; cerrar antes las preguntas de abajo).
+
+### Decisiones que faltan para cerrar la Fase 7
+
+- ¿El documento internacional se **imprime** en el certificado y se muestra
+  **enmascarado** en la verificación pública, o queda solo como registro interno?
+- ¿La lista blanca incluye Google Drive y OneDrive desde el principio, y qué
+  proveedor se añadiría después?
+- En multi-institución: ¿se pueden añadir instituciones **después** de crear el
+  proyecto? ¿Hasta cuándo? ¿Quién cierra la clase con N participantes?
 
 ---
 
