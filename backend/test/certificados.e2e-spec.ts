@@ -20,6 +20,8 @@ import {
 } from './base-e2e';
 import type { PrismaService } from '../src/prisma/prisma.service';
 import { codigoVerificacion } from '../src/certificados/codigo-verificacion';
+import type { Response as RespuestaSuperagent } from 'superagent';
+import JSZip from 'jszip';
 
 jest.setTimeout(90000);
 
@@ -153,6 +155,36 @@ describe('Flujo 4: certificados y verificación pública', () => {
     expect(Number(respuesta.headers['content-length'] ?? 0)).toBeGreaterThan(
       1000,
     );
+  });
+
+  it('5b. el ZIP viaja en streaming y trae un PDF por certificado', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoId}/certificados/zip`)
+      .set(autenticado(tokenDocenteA))
+      .buffer(true)
+      .parse(
+        (
+          res: RespuestaSuperagent,
+          callback: (error: Error | null, body?: Buffer) => void,
+        ) => {
+          const partes: Buffer[] = [];
+          res.on('data', (trozo: Buffer) => partes.push(trozo));
+          res.on('end', () => callback(null, Buffer.concat(partes)));
+        },
+      )
+      .expect(200);
+
+    expect(String(respuesta.headers['content-type'])).toContain(
+      'application/zip',
+    );
+    const buffer = respuesta.body as Buffer;
+    expect(buffer.subarray(0, 2).toString()).toBe('PK');
+
+    const zip = await JSZip.loadAsync(buffer);
+    const pdfs = Object.keys(zip.files).filter((nombre) =>
+      nombre.endsWith('.pdf'),
+    );
+    expect(pdfs).toHaveLength(2);
   });
 
   it('6. la página pública valida el certificado con su código HMAC', async () => {

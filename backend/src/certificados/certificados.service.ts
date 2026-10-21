@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'crypto';
 import {
+  createReadStream,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -732,11 +733,11 @@ export class CertificadosService {
         where: { id: certificado.alumnoId },
         select: { nombre: true },
       });
-      // El folio va delante para que el ZIP salga ordenado y no se repita un
-      // nombre (dos alumnos que se llamen igual tendrían el mismo archivo).
+      // El PDF se lee como flujo: el ZIP no se arma entero en memoria y la
+      // descarga empieza a salir mientras se empaqueta.
       zip.file(
         `${certificado.folio} - ${this.nombreDeArchivo(alumno?.nombre ?? 'alumno')}.pdf`,
-        readFileSync(ruta),
+        createReadStream(ruta),
       );
       incluidos += 1;
     }
@@ -749,7 +750,12 @@ export class CertificadosService {
 
     return {
       nombre: `certificados-clase-espejo-${proyectoId}.zip`,
-      buffer: await zip.generateAsync({ type: 'nodebuffer' }),
+      // `streamFiles` escribe la cabecera con tamaños desconocidos y va
+      // mandando cada PDF según se lee; el buffer final del ZIP ya no existe.
+      stream: zip.generateNodeStream({
+        streamFiles: true,
+        compression: 'DEFLATE',
+      }),
     };
   }
 

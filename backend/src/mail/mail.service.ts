@@ -33,16 +33,17 @@ export class MailService {
    * Envío genérico: el contenido ya viene escrito y el adjunto resuelto.
    *
    * Lo usan los envíos directos (invitaciones, avisos…) y el worker de la cola
-   * de la Fase 2, que lee el contenido guardado en `ENVIO_CORREO`. Así hay un
-   * solo sitio que habla con el SMTP y un solo remitente.
+   * de la Fase 2. `remitente` permite que los certificados salgan desde otra
+   * dirección (`MAIL_FROM_CERTIFICADOS`); si no llega, se usa `MAIL_FROM`.
    */
   async enviarCorreo(
     to: string,
     contenido: ContenidoCorreo,
     adjunto?: AdjuntoCorreo,
+    remitente?: string,
   ): Promise<void> {
     await this.transporter.sendMail({
-      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      from: remitente ?? process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
       to,
       subject: contenido.asunto,
       text: contenido.texto,

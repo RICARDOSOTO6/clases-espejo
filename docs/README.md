@@ -1902,6 +1902,8 @@ en el puerto `3000` seguirá mostrando la versión anterior.
   real (`clasesconjuntasbd_test`), con el correo simulado
 * [x] **Cola de correo con worker** (Fase 2): certificados y calendario se
   encolan, se reintentan con espera creciente y el progreso se consulta por lote
+* [x] **ZIP de certificados en streaming**: los PDF se empaquetan según se leen
+  (JSZip `generateNodeStream`), sin el buffer completo en memoria
 * [x] **Backend en `strict`** y `.env.example` con todas las variables
 * [x] **ESLint en el frontend** (`.ts` y plantillas, `angular-eslint`)
 * [ ] Cobertura de pruebas **unitarias** de los servicios (las e2e ya están)

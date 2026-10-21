@@ -68,10 +68,14 @@ export class CertificadosController {
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
-    const { nombre, buffer } = await this.certificados.zip(usuarioId, id);
+    const { nombre, stream } = await this.certificados.zip(usuarioId, id);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
-    res.send(buffer);
+    res.setHeader('Cache-Control', 'no-store');
+    // Si el flujo falla a mitad, se corta la respuesta: no se puede volver a
+    // escribir una cabecera después de haberla enviado.
+    stream.on('error', (error) => res.destroy(error));
+    stream.pipe(res);
   }
 
   // --- Envío por correo a los alumnos (fase 5) ---

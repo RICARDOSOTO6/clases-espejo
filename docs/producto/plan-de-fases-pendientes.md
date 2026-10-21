@@ -131,18 +131,19 @@ límite diario del proveedor.
 - [x] Reintentos con espera creciente (1, 5, 15 y 60 minutos) y registro del
   motivo de cada fallo; a los 5 intentos queda `FALLIDO` con su detalle.
 - [x] Tope de emisión por clase (500) con aviso claro al superarlo.
-- [ ] ZIP de certificados en streaming (hoy se arma entero en memoria).
+- [x] ZIP de certificados en streaming (21-oct-2026): los PDF se leen como
+  flujos y el ZIP sale con `generateNodeStream`, sin armarlo entero en memoria.
 - [x] Documentar la configuración SMTP del despliegue (SPF/DKIM si es dominio
   propio), incluido el worker de la cola (21-oct-2026).
-- [ ] Separar el remitente de certificados del resto (`MAIL_FROM` propio), si el
-  proveedor lo permite.
+- [x] Separar el remitente de certificados del resto: `MAIL_FROM_CERTIFICADOS`
+  opcional; si no está, se usa `MAIL_FROM`.
 
 **Aceptación:** un envío de 300 certificados responde en menos de 2 s y termina en
 la cola; matar el proceso a mitad no pierde envíos (se reintentan); cada fallo
 queda registrado con su motivo.
 **Estado (21-oct-2026):** cola, worker, progreso, reintentos y tope hechos y
-cubiertos por la suite `envios-cola` (7 pruebas; 300 encolados en <2 s). Quedan el
-ZIP en streaming y separar el remitente de certificados.
+cubiertos por la suite `envios-cola` (7 pruebas; 300 encolados en <2 s), el ZIP en
+streaming y el remitente propio de certificados. La fase queda cerrada.
 
 ---
 

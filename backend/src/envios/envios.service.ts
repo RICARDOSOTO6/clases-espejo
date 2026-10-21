@@ -237,6 +237,11 @@ export class EnviosCorreoService implements OnModuleInit, OnModuleDestroy {
           html: fila.cuerpoHtml,
         },
         adjunto,
+        // Los certificados pueden salir desde una dirección propia; el resto
+        // (calendario, avisos) usa MAIL_FROM.
+        fila.certificadoId !== null
+          ? process.env.MAIL_FROM_CERTIFICADOS
+          : undefined,
       );
 
       const enviadoEn = new Date();
