@@ -59,6 +59,15 @@ model Usuario {
   /// Se pone en `true` al crear una cuenta con contraseña provisional (por
   /// ejemplo el presidente de la CACE): el primer acceso obliga a cambiarla.
   debeCambiarPassword Boolean                @default(false) @map("debe_cambiar_password")
+  /// Intentos fallidos seguidos de inicio de sesión; al llegar al máximo la
+  /// cuenta queda bloqueada un rato (política de contraseñas de la Fase 1).
+  intentosFallidos Int                        @default(0) @map("intentos_fallidos")
+  /// Hasta cuándo está bloqueado el acceso por intentos fallidos (null = libre).
+  bloqueadoHasta  DateTime?                   @map("bloqueado_hasta")
+  /// Momento del último cambio de contraseña. Los tokens de sesión emitidos
+  /// antes de esta marca dejan de valer (cerrar sesiones de la Fase 1).
+  sesionesValidasDesde DateTime               @default(now()) @map("sesiones_validas_desde")
+  recuperaciones  RecuperacionPassword[]
   creadoEn        DateTime                    @default(now()) @map("creado_en")
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
@@ -631,4 +640,20 @@ model CambioPresidencia {
   entrante          Usuario  @relation("CambioPresidenciaEntrante", fields: [entranteUsuarioId], references: [id])
 
   @@map("CAMBIO_PRESIDENCIA")
+}
+
+/// Enlace de recuperación de contraseña (Fase 1). Se guarda el **hash** del
+/// token, nunca el token en claro: una copia de la base no sirve para
+/// restablecer contraseñas. Cada enlace es de un solo uso y caduca.
+model RecuperacionPassword {
+  id         Int       @id @default(autoincrement())
+  usuarioId  Int       @map("usuario_id")
+  tokenHash  String    @unique @map("token_hash")
+  expira     DateTime
+  usadoEn    DateTime? @map("usado_en")
+  creadoEn   DateTime  @default(now()) @map("creado_en")
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("RECUPERACION_PASSWORD")
 }

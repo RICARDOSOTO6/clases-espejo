@@ -43,6 +43,34 @@ export class MailService {
   }
 
   /**
+   * Enlace para restablecer la contraseña (Fase 1).
+   *
+   * El token solo viaja en el enlace del correo (en la base se guarda su hash),
+   * y caduca en una hora. Se avisa también de que si no lo pidió, no haga nada:
+   * el enlace no se usa solo.
+   */
+  async sendRecuperacionPassword(
+    to: string,
+    token: string,
+    urlPublica: string,
+  ): Promise<void> {
+    const link = `${urlPublica}/restablecer?token=${encodeURIComponent(token)}`;
+
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: 'Restablece tu contraseña - Clases Espejo',
+      text: `Para restablecer tu contraseña entra en: ${link}\nEl enlace caduca en una hora y solo se puede usar una vez. Si no lo pediste, puedes ignorar este correo: tu contraseña no cambia.`,
+      html: `
+        <p>Recibimos una solicitud para restablecer tu contraseña en <strong>Clases Espejo</strong>.</p>
+        <p><a href="${link}">Restablecer mi contraseña</a></p>
+        <p>El enlace caduca en una hora y solo se puede usar una vez.</p>
+        <p>Si no lo pediste, puedes ignorar este correo: tu contraseña no cambia.</p>
+      `,
+    });
+  }
+
+  /**
    * Envía al presidente de la CACE sus datos de acceso. A diferencia de la
    * invitación, la cuenta ya existe (la crea el propio servidor al arrancar):
    * aquí no hay token de activación, sino una contraseña provisional que el

@@ -22,6 +22,16 @@ import {
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+import {
+  BLOQUEO_MINUTOS,
+  INTENTOS_MAXIMOS,
+  exigirPoliticaPassword,
+} from '../common/politica-password';
+import {
+  VIGENCIA_RECUPERACION_MS,
+  generarTokenRecuperacion,
+  hashTokenRecuperacion,
+} from '../common/token-recuperacion';
 
 type UsuarioSeguro = {
   id: number;
@@ -62,6 +72,8 @@ export class AuthService {
    *   como fundador.
    */
   async register(dto: RegisterDto, peticion?: Request) {
+    exigirPoliticaPassword(dto.password, dto.correo);
+
     const existente = await this.prisma.usuario.findFirst({
       where: { OR: [{ correo: dto.correo }, { dni: dto.dni }] },
     });
@@ -341,9 +353,46 @@ export class AuthService {
       throw new UnauthorizedException('Correo o contraseña incorrectos');
     }
 
+    // Bloqueo temporal por intentos fallidos (política de la Fase 1): ni con la
+    // contraseña correcta se entra hasta que pase el plazo.
+    if (usuario.bloqueadoHasta && usuario.bloqueadoHasta > new Date()) {
+      const minutos = Math.max(
+        1,
+        Math.ceil((usuario.bloqueadoHasta.getTime() - Date.now()) / 60_000),
+      );
+      throw new UnauthorizedException(
+        `La cuenta está bloqueada temporalmente por intentos fallidos. Inténtalo de nuevo en ${minutos} minuto(s) o restablece tu contraseña.`,
+      );
+    }
+
     const coincide = await bcrypt.compare(dto.password, usuario.passwordHash);
     if (!coincide) {
+      const intentos = usuario.intentosFallidos + 1;
+      if (intentos >= INTENTOS_MAXIMOS) {
+        await this.prisma.usuario.update({
+          where: { id: usuario.id },
+          data: {
+            intentosFallidos: 0,
+            bloqueadoHasta: new Date(Date.now() + BLOQUEO_MINUTOS * 60_000),
+          },
+        });
+        throw new UnauthorizedException(
+          `Demasiados intentos fallidos: la cuenta queda bloqueada ${BLOQUEO_MINUTOS} minutos por seguridad. Puedes restablecer tu contraseña.`,
+        );
+      }
+      await this.prisma.usuario.update({
+        where: { id: usuario.id },
+        data: { intentosFallidos: intentos },
+      });
       throw new UnauthorizedException('Correo o contraseña incorrectos');
+    }
+
+    // Entró con la contraseña correcta: se limpia cualquier resto de bloqueo.
+    if (usuario.intentosFallidos > 0 || usuario.bloqueadoHasta) {
+      await this.prisma.usuario.update({
+        where: { id: usuario.id },
+        data: { intentosFallidos: 0, bloqueadoHasta: null },
+      });
     }
 
     if (!usuario.activo) {
@@ -369,6 +418,136 @@ export class AuthService {
     return {
       access_token,
       usuario: this.toUsuarioSeguro(usuario, rol),
+    };
+  }
+
+  /**
+   * Solicita un enlace de recuperación de contraseña (Fase 1).
+   *
+   * **La respuesta es siempre la misma**, exista o no la cuenta: este
+   * formulario no debe servir para averiguar qué correos están registrados. Si
+   * la cuenta existe, se crea un token nuevo (se invalida cualquier enlace
+   * anterior sin usar), se guarda solo su hash y se envía por correo.
+   */
+  async recuperarPassword(correo: string, peticion?: Request) {
+    const normalizado = (correo ?? '').trim().toLowerCase();
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { correo: normalizado },
+      // Para decidir si se puede enviar hace falta saber si tiene contraseña.
+      omit: { passwordHash: false },
+    });
+
+    if (usuario?.activo && usuario.passwordHash) {
+      const token = generarTokenRecuperacion();
+      const ahora = new Date();
+      await this.prisma.$transaction([
+        // Un solo enlace válido por cuenta: el anterior deja de servir.
+        this.prisma.recuperacionPassword.updateMany({
+          where: { usuarioId: usuario.id, usadoEn: null },
+          data: { usadoEn: ahora },
+        }),
+        this.prisma.recuperacionPassword.create({
+          data: {
+            usuarioId: usuario.id,
+            tokenHash: hashTokenRecuperacion(token),
+            expira: new Date(ahora.getTime() + VIGENCIA_RECUPERACION_MS),
+          },
+        }),
+      ]);
+
+      const url = peticion
+        ? resolverUrlPublica(peticion)
+        : (process.env.FRONTEND_URL ?? 'http://localhost:3000');
+      try {
+        await this.mail.sendRecuperacionPassword(usuario.correo, token, url);
+      } catch (error) {
+        // Un fallo de correo no puede revelar si la cuenta existe; se registra
+        // y la respuesta sigue siendo la misma.
+        this.logger.warn(
+          `No se pudo enviar el correo de recuperación a ${usuario.correo}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    return {
+      mensaje:
+        'Si ese correo tiene cuenta, te hemos enviado un enlace para restablecer la contraseña. Revisa también la carpeta de spam.',
+    };
+  }
+
+  /** Comprueba un enlace de recuperación antes de mostrar el formulario. */
+  async validarTokenRecuperacion(token: string) {
+    const registro = await this.prisma.recuperacionPassword.findUnique({
+      where: { tokenHash: hashTokenRecuperacion(token) },
+      select: {
+        expira: true,
+        usadoEn: true,
+        usuario: { select: { correo: true } },
+      },
+    });
+
+    const valido =
+      !!registro && !registro.usadoEn && registro.expira > new Date();
+    if (!valido) {
+      throw new BadRequestException(
+        'El enlace no es válido o caducó. Pide otro correo de recuperación.',
+      );
+    }
+    return { valido: true, correo: registro.usuario.correo };
+  }
+
+  /**
+   * Restablece la contraseña con un enlace de recuperación.
+   *
+   * El token es de **un solo uso**: se «gasta» con una actualización
+   * condicional y, si otra petición se adelantó, esta no cambia nada. Al
+   * cambiar la contraseña se cierran las sesiones abiertas
+   * (`sesionesValidasDesde`) y se limpia cualquier bloqueo por intentos.
+   */
+  async restablecerPassword(token: string, password: string) {
+    const registro = await this.prisma.recuperacionPassword.findUnique({
+      where: { tokenHash: hashTokenRecuperacion(token) },
+      include: { usuario: { select: { id: true, correo: true } } },
+    });
+
+    if (!registro || registro.usadoEn || registro.expira <= new Date()) {
+      throw new BadRequestException(
+        'El enlace no es válido o caducó. Pide otro correo de recuperación.',
+      );
+    }
+
+    exigirPoliticaPassword(password, registro.usuario.correo);
+    const passwordHash = await bcrypt.hash(password, 10);
+    const ahora = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      const consumo = await tx.recuperacionPassword.updateMany({
+        where: { id: registro.id, usadoEn: null },
+        data: { usadoEn: ahora },
+      });
+      if (consumo.count === 0) {
+        throw new BadRequestException(
+          'Ese enlace ya se usó. Pide otro correo de recuperación.',
+        );
+      }
+
+      await tx.usuario.update({
+        where: { id: registro.usuario.id },
+        data: {
+          passwordHash,
+          debeCambiarPassword: false,
+          // Cierra las sesiones abiertas antes del cambio.
+          sesionesValidasDesde: ahora,
+          intentosFallidos: 0,
+          bloqueadoHasta: null,
+        },
+      });
+    });
+
+    return {
+      mensaje: 'Contraseña restablecida. Ya puedes entrar con la nueva.',
     };
   }
 
@@ -412,6 +591,8 @@ export class AuthService {
     if (invitacion.expiracion < new Date()) {
       throw new BadRequestException('La invitación ha expirado');
     }
+
+    exigirPoliticaPassword(dto.password, invitacion.correo);
 
     const existente = await this.prisma.usuario.findFirst({
       where: { OR: [{ correo: invitacion.correo }, { dni: dto.dni }] },

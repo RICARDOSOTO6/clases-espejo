@@ -14,6 +14,8 @@ import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+import { RecuperarPasswordDto } from './dto/recuperar-password.dto';
+import { RestablecerPasswordDto } from './dto/restablecer-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,5 +49,33 @@ export class AuthController {
   @UseGuards(RateLimitGuard)
   activarCuenta(@Body() dto: ActivateAccountDto) {
     return this.authService.activarCuenta(dto);
+  }
+
+  /**
+   * Pide el enlace de recuperación. Responde siempre lo mismo, exista o no la
+   * cuenta, y va limitado para que no se pueda usar para inundar de correos.
+   */
+  @Post('recuperar')
+  @UseGuards(RateLimitGuard)
+  recuperar(@Body() dto: RecuperarPasswordDto, @Req() peticion: Request) {
+    return this.authService.recuperarPassword(dto.correo, peticion);
+  }
+
+  /** Comprueba el enlace antes de enseñar el formulario de nueva contraseña. */
+  @Get('recuperar/validar')
+  validarRecuperacion(@Query('token') token?: string) {
+    if (!token?.trim()) {
+      throw new BadRequestException(
+        'Falta el código del enlace de recuperación.',
+      );
+    }
+    return this.authService.validarTokenRecuperacion(token);
+  }
+
+  /** Restablece la contraseña con el token del correo (un solo uso). */
+  @Post('restablecer')
+  @UseGuards(RateLimitGuard)
+  restablecer(@Body() dto: RestablecerPasswordDto) {
+    return this.authService.restablecerPassword(dto.token, dto.password);
   }
 }

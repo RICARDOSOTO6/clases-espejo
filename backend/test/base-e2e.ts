@@ -25,7 +25,7 @@ import { MailService } from '../src/mail/mail.service';
 import { PrismaExceptionFilter } from '../src/common/filters/prisma-exception.filter';
 
 /** Contraseña común de todas las cuentas sembradas. */
-export const PASSWORD_PRUEBA = 'Demo1234';
+export const PASSWORD_PRUEBA = 'Demo12345x';
 
 export interface LlamadaCorreo {
   metodo: string;
@@ -69,6 +69,7 @@ export function exigirBaseDePrueba(): void {
 /** Métodos de `MailService` que la aplicación puede llamar. */
 const METODOS_CORREO = [
   'sendInvitation',
+  'sendRecuperacionPassword',
   'sendCredencialesPresidente',
   'sendCredencialesSecretaria',
   'sendCambioPresidenciaEntrante',

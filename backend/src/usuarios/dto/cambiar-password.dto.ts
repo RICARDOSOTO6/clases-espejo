@@ -1,9 +1,10 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { PASSWORD_MINIMO } from '../../common/politica-password';
 
 /**
- * Cambio de contraseña del propio usuario. El mínimo de la nueva son 8
- * caracteres (más que los 6 de la invitación): la provisional que genera el
- * sistema dura un solo acceso, pero la definitiva es la que protege la cuenta.
+ * Cambio de contraseña del propio usuario. Desde la Fase 1 la nueva debe
+ * cumplir la política: mínimo 10 caracteres y distinta del correo (esa segunda
+ * comprobación la hace el servicio, que conoce el correo de la cuenta).
  */
 export class CambiarPasswordDto {
   @IsString()
@@ -11,8 +12,8 @@ export class CambiarPasswordDto {
   actual!: string;
 
   @IsString()
-  @MinLength(8, {
-    message: 'La nueva contraseña debe tener al menos 8 caracteres',
+  @MinLength(PASSWORD_MINIMO, {
+    message: `La nueva contraseña debe tener al menos ${PASSWORD_MINIMO} caracteres`,
   })
   nueva!: string;
 }

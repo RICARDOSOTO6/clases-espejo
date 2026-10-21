@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { EsTextoValido } from '../../common/validators/es-texto-valido';
 import { DatosPersonaDto } from './datos-persona.dto';
+import { PASSWORD_MINIMO } from '../../common/politica-password';
 
 /**
  * Alta de un agente de internacionalización.
@@ -26,7 +27,9 @@ export class RegisterDto extends DatosPersonaDto {
   correo!: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(PASSWORD_MINIMO, {
+    message: `La contraseña debe tener al menos ${PASSWORD_MINIMO} caracteres`,
+  })
   password!: string;
 
   /** Institución existente a la que se une el agente (buscar antes de crear). */

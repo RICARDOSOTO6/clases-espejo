@@ -7,6 +7,7 @@ import {
 import { basename, join } from 'path';
 import { existsSync, unlinkSync } from 'fs';
 import * as bcrypt from 'bcrypt';
+import { exigirPoliticaPassword } from '../common/politica-password';
 import { PrismaService } from '../prisma/prisma.service';
 import { rolDeVinculos } from '../common/capacidades';
 import { CambiarPasswordDto } from './dto/cambiar-password.dto';
@@ -109,6 +110,9 @@ export class UsuariosService {
       );
     }
 
+    // Política de la Fase 1: mínimo 10 y distinta del correo.
+    exigirPoliticaPassword(dto.nueva, usuario.correo);
+
     const passwordHash = await bcrypt.hash(dto.nueva, 10);
     await this.prisma.usuario.update({
       where: { id: usuarioId },
@@ -116,10 +120,18 @@ export class UsuariosService {
         passwordHash,
         // Cumplido el cambio, el primer acceso deja de estar pendiente.
         debeCambiarPassword: false,
+        // Cierra las sesiones abiertas: el token de esta misma petición deja
+        // de valer, así que el frontend debe volver a entrar.
+        sesionesValidasDesde: new Date(),
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
       },
     });
 
-    return { mensaje: 'Contraseña actualizada correctamente' };
+    return {
+      mensaje:
+        'Contraseña actualizada. Por seguridad se cerraron las demás sesiones: vuelve a entrar con la nueva contraseña.',
+    };
   }
 
   /**

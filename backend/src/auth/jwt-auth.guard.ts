@@ -25,25 +25,29 @@ export class JwtAuthGuard implements CanActivate {
 
     const token = authorization.slice(7);
 
-    let payload: { sub?: number };
+    let payload: { sub?: number; iat?: number };
     try {
       payload = await this.jwtService.verifyAsync(token);
     } catch {
       throw new UnauthorizedException('Token de autenticación inválido');
     }
 
-    await this.verificarCuentaVigente(payload?.sub);
+    await this.verificarCuentaVigente(payload?.sub, payload?.iat);
 
     request.user = payload;
     return true;
   }
 
   /**
-   * Comprueba en cada petición que la cuenta siga vigente: el usuario activo y,
-   * si es docente, al menos un vínculo activo con su institución — que es lo que
-   * controla el botón "Activar / Desactivar" del agente.
+   * Comprueba en cada petición que la cuenta siga vigente: el usuario activo,
+   * el vínculo del docente y, desde la Fase 1, que el token se emitiera
+   * **después** del último cambio de contraseña. Lo último cierra las sesiones
+   * abiertas al cambiarla o restablecerla.
    */
-  private async verificarCuentaVigente(usuarioId?: number): Promise<void> {
+  private async verificarCuentaVigente(
+    usuarioId?: number,
+    emitidoEn?: number,
+  ): Promise<void> {
     if (usuarioId == null) {
       throw new UnauthorizedException('Token de autenticación inválido');
     }
@@ -59,6 +63,18 @@ export class JwtAuthGuard implements CanActivate {
     if (!usuario.activo) {
       throw new UnauthorizedException(
         'Tu cuenta está desactivada. Contacta a tu institución.',
+      );
+    }
+
+    // `iat` va en segundos: se compara al segundo para que un token emitido en
+    // el mismo segundo del cambio siga valiendo (por ejemplo, justo después de
+    // restablecer la contraseña).
+    if (
+      emitidoEn != null &&
+      Math.floor(usuario.sesionesValidasDesde.getTime() / 1000) > emitidoEn
+    ) {
+      throw new UnauthorizedException(
+        'Tu sesión se cerró al cambiar la contraseña. Vuelve a entrar.',
       );
     }
 
