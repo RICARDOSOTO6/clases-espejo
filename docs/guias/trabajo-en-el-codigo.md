@@ -49,10 +49,12 @@ Contraseñas **de prueba**; si el repositorio se hace público, cámbialas.
 
 ## Antes de decir «está hecho», comprueba
 
-1. **Compilación**: `cd backend && npx nest build`; en `frontend`
+1. **Compilación y lint**: `cd backend && npx nest build`; en `frontend`
    `npx tsc -p tsconfig.app.json --noEmit`, `npx ngc -p tsconfig.app.json --noEmit`
    (revisa plantillas) y **`npx ng build`** (empaqueta lo que se sirve de verdad).
-   `npx jest --runInBand` si el cambio toca servicios.
+   `npm run lint:ci` en los dos (sin `--fix` y sin avisos), `npx jest --runInBand`
+   si el cambio toca servicios, y `npm run test:e2e -- --runInBand` si toca flujos
+   (ver abajo).
 2. **API de verdad**: un servidor de pruebas en el puerto **3001 — nunca el 3000**
    (el 3000 es el de la persona y no se debe tocar) — y llamadas reales: login de los
    roles implicados, el caso bueno, el caso malo y el que debe dar **403/401**.
@@ -60,6 +62,36 @@ Contraseñas **de prueba**; si el repositorio se hace público, cámbialas.
    guion por el protocolo de DevTools (`backend/scripts/*.js`). Midiendo, no mirando:
    tamaños, desbordes, contraste, presencia de elementos.
 4. **Los datos de prueba se borran**: dejar la base como estaba.
+
+## Pruebas e2e y CI
+
+Las e2e cubren los seis flujos críticos y viven en `backend/test/*.e2e-spec.ts`.
+**Nunca** corren contra la base de demostración: `test/base-e2e.ts` se niega a
+arrancar si el nombre de `DATABASE_URL` no termina en `_test` o `_ci`, vacía las
+tablas de esa base y siembra dos instituciones aprobadas con sus agentes,
+docentes, presidencia y secretaría. El correo va simulado (no sale ningún SMTP).
+
+```powershell
+# una sola vez: crear la base de prueba y aplicar las migraciones
+psql -U postgres -c "CREATE DATABASE clasesconjuntasbd_test"
+Get-ChildItem backend\prisma\migrations -Directory | ForEach-Object {
+  psql -U postgres -d clasesconjuntasbd_test -f (Join-Path $_.FullName 'migration.sql')
+}
+
+# ejecutar
+cd backend
+$env:TEST_DATABASE_URL="postgresql://postgres:CLAVE@localhost:5432/clasesconjuntasbd_test?schema=public"
+npm run test:e2e -- --runInBand
+```
+
+El CI (`.github/workflows/ci.yml`) hace lo mismo contra un PostgreSQL 17 de
+servicio y añade lint, tipos en `strict`, `prisma validate`/`migrate deploy`,
+unitarias y build; el frontend corre lint, `tsc`, `ngc` y `ng build`. Se dispara
+en cada push y en cada pull request.
+
+`ng build` y los comandos de Prisma **lanzan binarios** que el sandbox puede
+bloquear con `EPERM`: se repite una vez con permisos ampliados (`danger-full-access`),
+como ya se hacía con `prisma generate`.
 
 ## Commits
 

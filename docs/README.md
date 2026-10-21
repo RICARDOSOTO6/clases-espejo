@@ -658,8 +658,10 @@ Desde `backend/`:
 | `npx prisma migrate deploy` | Aplica las migraciones pendientes |
 | `npx prisma migrate status` | Estado del historial de migraciones |
 | `npx prisma studio`   | Abre la interfaz de Prisma        |
-| `npm run lint`        | Ejecuta ESLint                    |
-| `npm test`            | Ejecuta pruebas                   |
+| `npm run lint`        | Ejecuta ESLint (y `--fix`)        |
+| `npm run lint:ci`     | ESLint sin `--fix` ni avisos (el que usa el CI) |
+| `npm test`            | Ejecuta pruebas unitarias         |
+| `npm run test:e2e -- --runInBand` | Pruebas e2e contra una base de prueba (ver abajo) |
 | `node scripts/seed-demo.js` | Limpia y siembra los datos base de demostración |
 | `node scripts/seed-demo-clases.js` | Simula clases espejo (proyectos y solicitudes) |
 | `node scripts/borrar-demo-clases.js` | Elimina la simulación de clases |
@@ -673,7 +675,32 @@ Desde `frontend/`:
 | `npm install` | Instala dependencias |
 | `npm start` | Servidor de desarrollo en `http://localhost:4200` |
 | `npm run build` | Compila para producción |
+| `npm run lint` | ESLint de `.ts` y plantillas |
+| `npm run lint:ci` | ESLint sin `--fix` ni avisos (el que usa el CI) |
 | `npm test` | Ejecuta las pruebas unitarias |
+
+### Pruebas e2e y base de prueba
+
+Las e2e necesitan una base **aparte** (nunca la de demostración): la
+infraestructura de `backend/test/base-e2e.ts` se niega a correr si el nombre de
+`DATABASE_URL` no termina en `_test` o `_ci`. En local:
+
+```bash
+# 1) crear la base y aplicarle las migraciones (una sola vez)
+psql -U postgres -c "CREATE DATABASE clasesconjuntasbd_test"
+for f in backend/prisma/migrations/*/migration.sql; do
+  psql -U postgres -d clasesconjuntasbd_test -f "$f"
+done
+
+# 2) ejecutar las suites con esa base
+cd backend
+$env:TEST_DATABASE_URL="postgresql://postgres:CLAVE@localhost:5432/clasesconjuntasbd_test?schema=public"  # PowerShell
+npm run test:e2e -- --runInBand
+```
+
+Cada suite vacía las tablas y siembra dos instituciones aprobadas con sus
+agentes, docentes, presidencia y secretaría; el correo se sustituye por un doble
+que apunta los envíos. El CI hace lo mismo contra su PostgreSQL de servicio.
 
 ---
 
@@ -1795,7 +1822,14 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] CORS restringido y cabeceras seguras en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
 * [x] **Migraciones formales de Prisma** (24 migraciones versionadas en `backend/prisma/migrations/`)
-* [ ] Cobertura de pruebas automatizadas (Jest) del flujo completo
+* [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
+  `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
+  e2e y build
+* [x] **64 pruebas e2e** de los seis flujos críticos contra una base de prueba
+  real (`clasesconjuntasbd_test`), con el correo simulado
+* [x] **Backend en `strict`** y `.env.example` con todas las variables
+* [x] **ESLint en el frontend** (`.ts` y plantillas, `angular-eslint`)
+* [ ] Cobertura de pruebas **unitarias** de los servicios (las e2e ya están)
 
 ## Frontend
 

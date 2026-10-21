@@ -45,21 +45,27 @@ pueden ir en paralelo si hay dos personas (tocan archivos distintos).
 fases siguientes sin pruebas es a ciegas, y este proyecto ya se comió un caso de
 «corregido» que volvió a abrirse (fechas).
 
-- [ ] CI en `.github/workflows/`: `npm run lint`, `npx tsc --noEmit`,
-  `npx jest --runInBand`, `npx prisma validate`, `ng build` en cada push.
-- [ ] `.env.example` con todas las variables (hoy solo existe `.env`, ignorado).
-- [ ] `strict` en el `tsconfig` del backend (hoy `noImplicitAny: false`) y ESLint
-  en el frontend (hoy no tiene).
-- [ ] 20–30 pruebas e2e de los seis flujos críticos, con una base de prueba:
-  1. registro → aprobación de institución → invitación → activación;
-  2. doble revisión de una solicitud y creación atómica del proyecto;
-  3. matriz de capacidades: una prueba por rol × ruta sensible (401/403);
-  4. emisión, reemisión, anulación y verificación de un certificado (incluye HMAC);
-  5. cierre de la clase con sus reglas;
-  6. envío del calendario (éxito, fallo parcial y 403 del agente).
+- [x] CI en `.github/workflows/ci.yml` (20-oct-2026): PostgreSQL 17 de servicio,
+  `prisma generate`/`validate`/`migrate deploy`, lint sin `--fix`
+  (`npm run lint:ci`), tipos en `strict`, unitarias, e2e y build; el frontend con
+  lint, `tsc`, `ngc` y `ng build`. Corre en cada push y pull request.
+- [x] `.env.example` con todas las variables del backend (el `.env` sigue
+  ignorado).
+- [x] `strict` en el `tsconfig` del backend (las 73 propiedades de DTO que hacían
+  falta llevan asignación definida) y ESLint en el frontend
+  (`frontend/eslint.config.mjs` con `angular-eslint`, scripts `lint` y `lint:ci`).
+- [x] **64 pruebas e2e** en 7 suites contra una base de prueba real
+  (`clasesconjuntasbd_test`, PostgreSQL): 14 de registro → aprobación →
+  invitación → activación; 10 de doble revisión y proyecto; 7 de la matriz de
+  capacidades; 12 de certificados, HMAC y verificación pública; 11 del cierre de
+  la clase; 6 del calendario `.ics` y su envío; 4 de humo. La infraestructura se
+  niega a correr si `DATABASE_URL` no termina en `_test` o `_ci`, y el correo va
+  simulado.
 
 **Aceptación:** el CI corre en cada push y falla si se rompe cualquiera de los seis
-flujos; `prisma validate` y `ng build` en verde.
+flujos; `prisma validate` y `ng build` en verde. **Estado:** cumplida el
+20-oct-2026, con una salvedad: el workflow no se ha ejecutado todavía en GitHub
+(aquí se verificó cada comando por separado y las 64 e2e contra PostgreSQL real).
 
 ---
 
