@@ -18,6 +18,7 @@ import 'dotenv/config';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { MailService } from '../src/mail/mail.service';
@@ -149,6 +150,10 @@ export interface Semilla {
   usuarioDocenteB: number;
   usuarioPresidencia: number;
   usuarioSecretaria: number;
+  materiaAId: number;
+  materiaBId: number;
+  asignacionAId: number;
+  asignacionBId: number;
   correos: {
     agenteA: string;
     agenteB: string;
@@ -284,7 +289,7 @@ export async function sembrarBase(prisma: PrismaService): Promise<Semilla> {
     },
   });
 
-  await prisma.docenteInstitucion.create({
+  const docenteInstitucionA = await prisma.docenteInstitucion.create({
     data: {
       docenteId: docenteRegistroA.id,
       institucionId: institucionA.id,
@@ -292,12 +297,49 @@ export async function sembrarBase(prisma: PrismaService): Promise<Semilla> {
       activo: true,
     },
   });
-  await prisma.docenteInstitucion.create({
+  const docenteInstitucionB = await prisma.docenteInstitucion.create({
     data: {
       docenteId: docenteRegistroB.id,
       institucionId: institucionB.id,
       numeroEmpleado: 'DOC-B-001',
       activo: true,
+    },
+  });
+
+  // Materias y asignaciones: sin una asignación docente ↔ materia no se puede
+  // proponer una clase espejo ni aprobarla del lado del destino.
+  const materiaA = await prisma.materia.create({
+    data: {
+      institucionId: institucionA.id,
+      clave: 'PRU-A-101',
+      nombre: 'Materia de prueba A',
+      programaEducativo: 'Ingeniería de Software',
+      descripcion: 'Materia sembrada para las pruebas e2e',
+      activa: true,
+    },
+  });
+  const materiaB = await prisma.materia.create({
+    data: {
+      institucionId: institucionB.id,
+      clave: 'PRU-B-101',
+      nombre: 'Materia de prueba B',
+      programaEducativo: 'Ciencias de la Computación',
+      descripcion: 'Materia sembrada para las pruebas e2e',
+      activa: true,
+    },
+  });
+  const asignacionA = await prisma.asignacionDocente.create({
+    data: {
+      docenteInstitucionId: docenteInstitucionA.id,
+      materiaId: materiaA.id,
+      periodoEscolar: '2026-2027',
+    },
+  });
+  const asignacionB = await prisma.asignacionDocente.create({
+    data: {
+      docenteInstitucionId: docenteInstitucionB.id,
+      materiaId: materiaB.id,
+      periodoEscolar: '2026-2027',
     },
   });
 
@@ -317,6 +359,10 @@ export async function sembrarBase(prisma: PrismaService): Promise<Semilla> {
     usuarioDocenteB: docenteB.id,
     usuarioPresidencia: presidencia.id,
     usuarioSecretaria: secretaria.id,
+    materiaAId: materiaA.id,
+    materiaBId: materiaB.id,
+    asignacionAId: asignacionA.id,
+    asignacionBId: asignacionB.id,
     correos: {
       agenteA: agenteA.correo,
       agenteB: agenteB.correo,
@@ -326,4 +372,129 @@ export async function sembrarBase(prisma: PrismaService): Promise<Semilla> {
       secretaria: secretaria.correo,
     },
   };
+}
+
+/** Fecha (día) dentro de N días, como la esperan las columnas `DATE`. */
+export function fechaFutura(dias: number): Date {
+  const fecha = new Date();
+  fecha.setUTCDate(fecha.getUTCDate() + dias);
+  fecha.setUTCHours(0, 0, 0, 0);
+  return fecha;
+}
+
+/** Token de sesión de una cuenta sembrada. */
+export async function iniciarSesion(
+  app: INestApplication,
+  correo: string,
+  password: string = PASSWORD_PRUEBA,
+): Promise<string> {
+  const respuesta = await request(app.getHttpServer())
+    .post('/auth/login')
+    .send({ correo, password })
+    .expect(201);
+  return respuesta.body.access_token as string;
+}
+
+/** Cabecera `Authorization` para las peticiones autenticadas. */
+export function autenticado(token: string): { Authorization: string } {
+  return { Authorization: `Bearer ${token}` };
+}
+
+export interface ProyectoPrueba {
+  solicitudId: number;
+  proyectoId: number;
+  sesionId: number | null;
+}
+
+/**
+ * Siembra una solicitud **ya aprobada** con su proyecto y sus dos docentes
+ * (origen y destino). Sirve para las suites de calendario, cierre y
+ * certificados, que no necesitan recorrer la doble revisión otra vez.
+ */
+export async function crearProyectoDePrueba(
+  prisma: PrismaService,
+  semilla: Semilla,
+  opciones: { estado?: string; conSesion?: boolean } = {},
+): Promise<ProyectoPrueba> {
+  const fechaInicio = fechaFutura(30);
+  const fechaFin = new Date(fechaInicio);
+  fechaFin.setUTCDate(fechaFin.getUTCDate() + 14);
+
+  const solicitud = await prisma.solicitudClaseEspejo.create({
+    data: {
+      asignacionOrigenId: semilla.asignacionAId,
+      asignacionDestinoId: semilla.asignacionBId,
+      institucionDestinoId: semilla.institucionBId,
+      materiaDestinoId: semilla.materiaBId,
+      titulo: 'Clase espejo de prueba',
+      objetivo: 'Objetivo de la clase espejo de prueba',
+      fechaPropuesta: fechaInicio,
+      estado: 'APROBADA',
+    },
+  });
+
+  const proyecto = await prisma.proyectoClaseEspejo.create({
+    data: {
+      solicitudId: solicitud.id,
+      estado: opciones.estado ?? 'EN_PLANIFICACION',
+      fechaInicio,
+      fechaFin,
+      plataforma: 'Zoom',
+    },
+  });
+
+  await prisma.proyectoDocente.createMany({
+    data: [
+      {
+        proyectoId: proyecto.id,
+        asignacionDocenteId: semilla.asignacionAId,
+        rol: 'ORIGEN',
+      },
+      {
+        proyectoId: proyecto.id,
+        asignacionDocenteId: semilla.asignacionBId,
+        rol: 'DESTINO',
+      },
+    ],
+  });
+
+  let sesionId: number | null = null;
+  if (opciones.conSesion) {
+    const sesion = await prisma.sesion.create({
+      data: {
+        proyectoId: proyecto.id,
+        titulo: 'Sesión 1',
+        fechaHora: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        enlaceVirtual: 'https://meet.example.com/clase-espejo',
+        estado: 'PROGRAMADA',
+      },
+    });
+    sesionId = sesion.id;
+  }
+
+  return { solicitudId: solicitud.id, proyectoId: proyecto.id, sesionId };
+}
+
+/**
+ * Plantilla del certificado activa. El diseño se hace fuera de la aplicación;
+ * para las pruebas basta con una fila válida: `campos` y `textosLegales` vacíos
+ * los completa `normalizarCampos` con los valores por defecto.
+ */
+export function crearPlantillaDePrueba(
+  prisma: PrismaService,
+  usuarioId: number,
+): Promise<{ id: number }> {
+  return prisma.plantillaCertificado.create({
+    data: {
+      version: 1,
+      activa: true,
+      anchoPx: 2480,
+      altoPx: 1748,
+      campos: {},
+      textosLegales: {},
+      firmaNombre: 'Presidencia de Prueba',
+      creadaPorUsuarioId: usuarioId,
+    },
+    select: { id: true },
+  });
 }
