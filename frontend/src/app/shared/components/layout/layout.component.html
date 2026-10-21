@@ -318,7 +318,7 @@
 
 <!-- Perfil: datos reales de /usuarios/me -->
 @if (perfilAbierto()) {
-  <app-modal title="Mi perfil" size="sm" (close)="cerrarPerfil()">
+  <app-modal title="Mi perfil" size="sm" (cerrado)="cerrarPerfil()">
     <div class="perfil">
       <div class="perfil-head">
         @if (foto(); as imagen) {
@@ -432,7 +432,7 @@
 
 <!-- Ayuda: guía corta según el rol -->
 @if (ayudaAbierta()) {
-  <app-modal title="Ayuda" size="md" (close)="cerrarAyuda()">
+  <app-modal title="Ayuda" size="md" (cerrado)="cerrarAyuda()">
     <div class="ayuda">
       @if (rol === 'AGENTE') {
         <p class="ayuda-intro">

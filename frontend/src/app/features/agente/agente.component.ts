@@ -27,7 +27,6 @@ import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
 import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { Institucion, InviteDocenteDto, AltaPendiente } from '../../core/models/auth.models';
-import { Premio } from '../../core/models/cace-identidad.models';
 import {
   RevisarSolicitudDto,
   SolicitudEntrante,

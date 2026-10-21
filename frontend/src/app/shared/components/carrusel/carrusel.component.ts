@@ -12,7 +12,7 @@ import { NgTemplateOutlet } from '@angular/common';
  * Lo que recibe la plantilla de cada diapositiva. `$implicit` es el elemento,
  * así que en la plantilla se escribe `<ng-template let-elemento>`.
  */
-export interface CarruselContexto<T = any> {
+export interface CarruselContexto<T = unknown> {
   $implicit: T;
   indice: number;
 }
@@ -62,7 +62,7 @@ const INTERVALO_AUTOMATICO_MS = 6500;
   templateUrl: './carrusel.component.html',
   styleUrl: './carrusel.component.css',
 })
-export class CarruselComponent<T = any> {
+export class CarruselComponent<T = unknown> {
   /** Elementos que se exhiben, uno por diapositiva. */
   readonly items = input<readonly T[]>([]);
 

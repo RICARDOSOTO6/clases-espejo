@@ -309,7 +309,6 @@ export class DocenteComponent implements OnInit, OnDestroy {
    * menú lateral, avisos de la campana y clases espejo con chat.
    */
   private publicarEnLayout(): void {
-    const solicitudes = this.solicitudes();
     const proyectos = this.proyectos();
     const activos = proyectos.filter(
       (p) => p.estado === 'EN_PLANIFICACION' || p.estado === 'EN_CURSO',

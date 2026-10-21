@@ -26,7 +26,7 @@ export class ModalComponent implements AfterViewInit, OnDestroy {
   @Input() size: 'xs' | 'sm' | 'md' | 'lg' = 'md';
   /** En formularios conviene desactivarlo para no perder lo escrito. */
   @Input() cerrarConFondo = true;
-  @Output() close = new EventEmitter<void>();
+  @Output() cerrado = new EventEmitter<void>();
 
   readonly idTitulo = `modal-title-${++contadorModales}`;
 
@@ -74,7 +74,7 @@ export class ModalComponent implements AfterViewInit, OnDestroy {
   }
 
   closeModal(): void {
-    this.close.emit();
+    this.cerrado.emit();
   }
 
   private enfocables(): HTMLElement[] {

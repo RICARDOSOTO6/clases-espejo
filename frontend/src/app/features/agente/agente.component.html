@@ -782,7 +782,7 @@
 }
 
 @if (showInviteModal) {
-  <app-modal title="Invitar docente" (close)="closeInvite()">
+  <app-modal title="Invitar docente" (cerrado)="closeInvite()">
     <form [formGroup]="inviteForm" (ngSubmit)="submitInvite()">
       <div class="form-field">
         <label for="d-correo">Correo del docente</label>
@@ -815,7 +815,7 @@
 @if (showMateriaModal) {
   <app-modal
     [title]="editandoMateria ? 'Editar materia' : 'Nueva materia'"
-    (close)="closeMateriaModal()"
+    (cerrado)="closeMateriaModal()"
   >
     <form [formGroup]="materiaForm" (ngSubmit)="submitMateria()">
       <div class="form-field">
@@ -858,7 +858,7 @@
 @if (showAsignarModal) {
   <app-modal
     [title]="'Asignar docente · ' + (materiaAsignar?.nombre ?? '')"
-    (close)="closeAsignarModal()"
+    (cerrado)="closeAsignarModal()"
   >
     <form [formGroup]="asignarForm" (ngSubmit)="submitAsignar()">
       <div class="form-field">
@@ -897,7 +897,7 @@
 }
 
 @if (showInstitucionModal) {
-  <app-modal title="Editar institución" (close)="closeInstitucionModal()">
+  <app-modal title="Editar institución" (cerrado)="closeInstitucionModal()">
     <form [formGroup]="institucionForm" (ngSubmit)="submitInstitucion()">
       <div class="form-field">
         <label for="i-nombre">Nombre</label>
@@ -991,7 +991,7 @@
 @if (showRevisionModal) {
   <app-modal
     [title]="'Revisar solicitud · ' + (solicitudARevisar?.titulo ?? '')"
-    (close)="closeRevision()"
+    (cerrado)="closeRevision()"
   >
     <form [formGroup]="revisionForm" (ngSubmit)="submitRevision()">
       @if (etapaSolicitudARevisar(); as etapa) {
@@ -1054,7 +1054,7 @@
   <app-modal
     title="Historial de clases espejo"
     size="lg"
-    (close)="cerrarHistorial()"
+    (cerrado)="cerrarHistorial()"
   >
     @if (historialLoading()) {
       <p class="muted">Cargando historial…</p>
@@ -1126,7 +1126,7 @@
 }
 
 @if (confirmacion(); as c) {
-  <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+  <app-modal [title]="c.titulo" size="xs" (cerrado)="cerrarConfirmacion()">
     <p>{{ c.mensaje }}</p>
     <div class="form-grid-actions">
       <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">

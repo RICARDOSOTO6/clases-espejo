@@ -8,6 +8,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "lint": "eslint .",
+    "lint:ci": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs"
   },
   "private": true,
@@ -31,9 +34,12 @@
     "@angular/compiler-cli": "^21.2.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "angular-eslint": "^21.4.0",
+    "eslint": "^9.39.5",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
+    "typescript-eslint": "^8.72.0",
     "vitest": "^4.0.8"
   }
 }

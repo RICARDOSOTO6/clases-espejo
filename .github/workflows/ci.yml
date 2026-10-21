@@ -116,6 +116,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Lint (sin modificar archivos)
+        run: npm run lint:ci
+
       - name: Tipos de TypeScript
         run: npx tsc -p tsconfig.app.json --noEmit
 

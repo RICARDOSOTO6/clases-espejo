@@ -277,7 +277,7 @@
 @if (showSolicitudModal()) {
   <app-modal
     [title]="editandoSolicitud ? 'Editar solicitud' : 'Nueva solicitud'"
-    (close)="closeSolicitudModal()"
+    (cerrado)="closeSolicitudModal()"
   >
     <form [formGroup]="solicitudForm" (ngSubmit)="submitSolicitud()">
       <div class="form-field">
@@ -345,7 +345,7 @@
 }
 
 @if (confirmacion(); as c) {
-  <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+  <app-modal [title]="c.titulo" size="xs" (cerrado)="cerrarConfirmacion()">
     <p>{{ c.mensaje }}</p>
     <div class="form-grid-actions">
       <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">

@@ -324,7 +324,7 @@
             <button
               type="button"
               class="btn btn-primary"
-              [disabled]="asignacionSeleccionada.value == null || agregandoDocente() || miInstitucionId() == null"
+              [disabled]="asignacionSeleccionada.value === null || agregandoDocente() || miInstitucionId() === null"
               (click)="agregarDocente()"
             >
               {{ agregandoDocente() ? 'Agregando...' : 'Agregar' }}
@@ -1362,7 +1362,7 @@
             (mensajes().length > 0 ? ' · ' + mensajes().length + ' msj' : '')
           "
           size="xs"
-          (close)="cerrarChat()"
+          (cerrado)="cerrarChat()"
         >
           <div class="chat" #chatScroll>
             @if (mensajes().length === 0) {
@@ -1449,7 +1449,7 @@
       }
 
       @if (confirmacion(); as c) {
-        <app-modal [title]="c.titulo" size="xs" (close)="cerrarConfirmacion()">
+        <app-modal [title]="c.titulo" size="xs" (cerrado)="cerrarConfirmacion()">
           <p>{{ c.mensaje }}</p>
           <div class="form-grid-actions">
             <button type="button" class="btn btn-primary" (click)="ejecutarConfirmacion()">
@@ -1469,7 +1469,7 @@
           title="Anular certificado"
           size="sm"
           [cerrarConFondo]="false"
-          (close)="cerrarAnulacion()"
+          (cerrado)="cerrarAnulacion()"
         >
           <p>
             El certificado <strong>{{ c.folio }}</strong> de
