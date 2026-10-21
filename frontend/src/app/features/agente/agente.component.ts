@@ -20,6 +20,7 @@ import {
   AgentesService,
   HistorialClase,
   HistorialDocente,
+  InvitacionPendiente,
 } from '../../core/services/agentes.service';
 import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
@@ -160,6 +161,9 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   // --- Datos ---
   docentes = signal<DocenteInstitucion[]>([]);
+  /** Invitaciones que aún no se han activado (incluidas las caducadas). */
+  invitacionesPendientes = signal<InvitacionPendiente[]>([]);
+  reenviandoId = signal<number | null>(null);
   materias = signal<Materia[]>([]);
   asignaciones = signal<Asignacion[]>([]);
   institucion = signal<Institucion | null>(null);
@@ -341,6 +345,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   cargarDatos(): void {
     this.cargarAgenda();
     this.cargarDocentes();
+    this.cargarInvitaciones();
     this.cargarMaterias();
     this.cargarAsignaciones();
     this.cargarSolicitudes();
@@ -498,6 +503,38 @@ export class AgenteComponent implements OnInit, OnDestroy {
         this.docentes.set([]);
         this.publicarEnLayout();
         this.avisarErrorCarga(err);
+      },
+    });
+  }
+
+  /**
+   * Invitaciones todavía sin activar. Se muestran también las caducadas: son
+   * justo las que el agente necesita reenviar.
+   */
+  cargarInvitaciones(): void {
+    this.agentes.listarInvitaciones().subscribe({
+      next: (lista) => this.invitacionesPendientes.set(lista),
+      error: () => this.invitacionesPendientes.set([]),
+    });
+  }
+
+  /** Reenvía una invitación pendiente con un enlace nuevo. */
+  reenviarInvitacion(invitacion: InvitacionPendiente): void {
+    if (this.reenviandoId() !== null) return;
+    this.reenviandoId.set(invitacion.id);
+
+    this.agentes.reenviarInvitacion(invitacion.id).subscribe({
+      next: (res) => {
+        this.reenviandoId.set(null);
+        this.avisar('ok', `${res.mensaje} (${res.correo})`);
+        this.cargarInvitaciones();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.reenviandoId.set(null);
+        this.avisar(
+          'error',
+          extraerMensajeError(err, 'No se pudo reenviar la invitación'),
+        );
       },
     });
   }
@@ -967,6 +1004,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
           this.inviteForm.reset();
           this.showInviteModal = false;
           this.cargarDocentes();
+          this.cargarInvitaciones();
           this.avisar('ok', `Invitación enviada a ${res.correo}`);
         },
         error: (err: HttpErrorResponse) => {

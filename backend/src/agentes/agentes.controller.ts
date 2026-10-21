@@ -46,6 +46,28 @@ export class AgentesController {
     return this.agentesService.listarDocentes(agenteId);
   }
 
+  /** Invitaciones pendientes (incluidas las caducadas) para poder reenviarlas. */
+  @Get('invitaciones')
+  @UseGuards(JwtAuthGuard)
+  listarInvitaciones(@CurrentUser('sub') agenteId: number) {
+    return this.agentesService.listarInvitaciones(agenteId);
+  }
+
+  /** Reenvía una invitación pendiente con un enlace nuevo. */
+  @Post('invitaciones/:id/reenviar')
+  @UseGuards(JwtAuthGuard)
+  reenviarInvitacion(
+    @CurrentUser('sub') agenteId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Req() peticion: Request,
+  ) {
+    return this.agentesService.reenviarInvitacion(
+      agenteId,
+      id,
+      resolverUrlPublica(peticion),
+    );
+  }
+
   @Patch('docentes/:id/estado')
   @UseGuards(JwtAuthGuard)
   cambiarEstado(

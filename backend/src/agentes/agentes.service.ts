@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'crypto';
 import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -122,6 +123,111 @@ export class AgentesService {
     return {
       mensaje: 'Invitación enviada al docente',
       correo: dto.correo,
+    };
+  }
+
+  /**
+   * Invitaciones pendientes de la institución del agente.
+   *
+   * Se devuelven también las caducadas (`caducada: true`): son las que más
+   * interesa reenviar, y esconderlas dejaría al agente sin forma de saber que
+   * hay un docente esperando un enlace que ya no sirve.
+   */
+  async listarInvitaciones(agenteId: number) {
+    const agente = await this.getAgente(agenteId);
+    const invitaciones = await this.prisma.invitacion.findMany({
+      where: { institucionId: agente.institucionId, usadaEn: null },
+      orderBy: { creadoEn: 'desc' },
+      select: {
+        id: true,
+        correo: true,
+        numeroEmpleado: true,
+        expiracion: true,
+        creadoEn: true,
+      },
+    });
+
+    return invitaciones.map((invitacion) => ({
+      ...invitacion,
+      caducada: invitacion.expiracion.getTime() < Date.now(),
+    }));
+  }
+
+  /**
+   * Reenvía una invitación pendiente (Fase 1).
+   *
+   * Genera un token **nuevo**: el anterior deja de valer en el acto, que es lo
+   * que se quiere si el primero pudo acabar en una bandeja equivocada. Si el
+   * correo no sale, se restaura el token anterior para no dejar la invitación
+   * con un enlace que nadie ha recibido.
+   */
+  async reenviarInvitacion(
+    agenteId: number,
+    invitacionId: number,
+    urlPublica: string,
+  ) {
+    const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
+
+    const invitacion = await this.prisma.invitacion.findFirst({
+      where: { id: invitacionId, institucionId: agente.institucionId },
+    });
+    if (!invitacion) {
+      throw new NotFoundException('Invitación no encontrada');
+    }
+    if (invitacion.usadaEn) {
+      throw new BadRequestException(
+        'Esa invitación ya se usó: la cuenta del docente ya existe.',
+      );
+    }
+
+    const yaEsUsuario = await this.prisma.usuario.findUnique({
+      where: { correo: invitacion.correo },
+    });
+    if (yaEsUsuario) {
+      throw new ConflictException(
+        'Ese correo ya tiene cuenta: no hace falta reenviar la invitación.',
+      );
+    }
+
+    const expiraEn = process.env.INVITATION_EXPIRES_IN ?? '7d';
+    // `jti` único: sin él, un reenvío dentro del mismo segundo produce el mismo
+    // token y el enlace viejo seguiría valiendo.
+    const token = await this.jwtService.signAsync(
+      { correo: invitacion.correo, type: 'invitacion', jti: randomUUID() },
+      { expiresIn: expiraEn as any },
+    );
+    const expiracion = new Date(Date.now() + duracionEnMs(expiraEn));
+    const anterior = {
+      token: invitacion.token,
+      expiracion: invitacion.expiracion,
+    };
+
+    await this.prisma.invitacion.update({
+      where: { id: invitacion.id },
+      data: { token, expiracion },
+    });
+
+    try {
+      await this.mailService.sendInvitation(
+        invitacion.correo,
+        token,
+        urlPublica,
+      );
+    } catch {
+      await this.prisma.invitacion.update({
+        where: { id: invitacion.id },
+        data: anterior,
+      });
+      throw new ServiceUnavailableException(
+        'No se pudo enviar el correo de invitación. Revisa la configuración de correo e inténtalo de nuevo.',
+      );
+    }
+
+    return {
+      mensaje: 'Invitación reenviada al docente',
+      correo: invitacion.correo,
+      expiracion,
     };
   }
 

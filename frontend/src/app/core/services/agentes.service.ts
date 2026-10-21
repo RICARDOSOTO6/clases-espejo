@@ -8,6 +8,16 @@ import {
 } from '../models/auth.models';
 import { API_URL } from '../api-url';
 
+/** Invitación pendiente de un docente (incluye las caducadas, para reenviarlas). */
+export interface InvitacionPendiente {
+  id: number;
+  correo: string;
+  numeroEmpleado: string;
+  expiracion: string;
+  creadoEn: string;
+  caducada: boolean;
+}
+
 export interface HistorialClase {
   proyectoId: number;
   titulo: string;
@@ -57,6 +67,24 @@ export class AgentesService {
       `${API_URL}/agentes/invitar-docente`,
       dto,
     );
+  }
+
+  /** Invitaciones pendientes de mi institución (también las caducadas). */
+  listarInvitaciones(): Observable<InvitacionPendiente[]> {
+    return this.http.get<InvitacionPendiente[]>(
+      `${API_URL}/agentes/invitaciones`,
+    );
+  }
+
+  /** Reenvía una invitación con un enlace nuevo: el anterior deja de valer. */
+  reenviarInvitacion(
+    id: number,
+  ): Observable<{ mensaje: string; correo: string; expiracion: string }> {
+    return this.http.post<{
+      mensaje: string;
+      correo: string;
+      expiracion: string;
+    }>(`${API_URL}/agentes/invitaciones/${id}/reenviar`, {});
   }
 
   /** Historial de clases espejo de un docente (archivero digital). */

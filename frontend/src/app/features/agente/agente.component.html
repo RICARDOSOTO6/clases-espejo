@@ -448,6 +448,45 @@
         </button>
       </div>
       @if (mostrarDocentes()) {
+        @if (invitacionesPendientes().length > 0) {
+          <div class="invitaciones-pendientes">
+            <h3 class="subtitulo">Invitaciones pendientes</h3>
+            <p class="muted text-sm">
+              Si un docente no recibió el correo o el enlace caducó, reenvíalo:
+              se genera un enlace nuevo y el anterior deja de valer.
+            </p>
+            <ul class="lista">
+              @for (i of invitacionesPendientes(); track i.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ i.correo }}</strong>
+                    <span class="muted">
+                      · empleado {{ i.numeroEmpleado }} · caduca el
+                      {{ formatearFecha(i.expiracion) }}
+                    </span>
+                    @if (i.caducada) {
+                      <span class="estado pendiente">Caducada</span>
+                    }
+                  </div>
+                  <div class="lista-acciones">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="reenviandoId() === i.id"
+                      (click)="reenviarInvitacion(i)"
+                    >
+                      @if (reenviandoId() === i.id) {
+                        <span class="spinner" aria-hidden="true"></span>
+                      }
+                      {{ reenviandoId() === i.id ? 'Reenviando…' : 'Reenviar' }}
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
         @if (docentesFiltrados().length === 0) {
           <p class="muted">
             @if (docentes().length === 0) {
