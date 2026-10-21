@@ -16,8 +16,9 @@ import {
 import { basename, join } from 'path';
 import JSZip from 'jszip';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
 import { ESTADO_PROYECTO_FINALIZADO } from '../common/estados';
+import { contenidoCertificadoAlumno } from '../mail/contenido-correo';
+import { CorreoEncolado, EnviosCorreoService } from '../envios/envios.service';
 import { CAMPOS_POR_DEFECTO, normalizarCampos } from './campos-certificado';
 import {
   CertificadoPdfService,
@@ -28,6 +29,7 @@ import { PlantillasService } from './plantillas.service';
 import { CERTIFICADOS_DIR, direccionVerificacion } from './rutas-certificado';
 import { EmitirCertificadosDto } from './dto/emitir-certificados.dto';
 import { EnviarCertificadosDto } from './dto/enviar-certificado.dto';
+import { TOPE_EMISION_POR_CLASE, mensajeTopeEmision } from './limites';
 
 /** Estado de un certificado anulado: se conserva, pero ya no vale. */
 const ESTADO_EMITIDO = 'EMITIDO';
@@ -112,6 +114,10 @@ interface EnvioFallido {
 export interface ResultadoEnvio {
   mensaje: string;
   total: number;
+  /** Lote de la cola de correo (Fase 2); con esto se consulta el progreso. */
+  loteId?: string;
+  /** Cuántos correos quedaron encolados en este lote. */
+  encolados?: number;
   enviados: EnvioCertificado[];
   omitidos: EnvioOmitido[];
   fallidos: EnvioFallido[];
@@ -142,7 +148,7 @@ export class CertificadosService {
     private readonly prisma: PrismaService,
     private readonly pdf: CertificadoPdfService,
     private readonly plantillas: PlantillasService,
-    private readonly mail: MailService,
+    private readonly envios: EnviosCorreoService,
   ) {
     // La carpeta tiene que existir antes de la primera emisión.
     mkdirSync(CERTIFICADOS_DIR, { recursive: true });
@@ -282,6 +288,9 @@ export class CertificadosService {
       throw new BadRequestException(
         'La lista no tiene ningún alumno incluido en los certificados.',
       );
+    }
+    if (alumnos.length > TOPE_EMISION_POR_CLASE) {
+      throw new BadRequestException(mensajeTopeEmision(alumnos.length));
     }
 
     const avisos: string[] = [];
@@ -469,7 +478,12 @@ export class CertificadosService {
       );
     }
 
-    return this.enviarLote(proyectoId, certificados, dto.reenviar === true);
+    return this.enviarLote(
+      usuarioId,
+      proyectoId,
+      certificados,
+      dto.reenviar === true,
+    );
   }
 
   /**
@@ -504,7 +518,12 @@ export class CertificadosService {
       throw new NotFoundException('Ese certificado no existe.');
     }
 
-    return this.enviarLote(proyectoId, [completo], dto.reenviar === true);
+    return this.enviarLote(
+      usuarioId,
+      proyectoId,
+      [completo],
+      dto.reenviar === true,
+    );
   }
 
   /**
@@ -516,6 +535,7 @@ export class CertificadosService {
    * servidor acepte el envío, que es lo que evita repetirlo por descuido.
    */
   private async enviarLote(
+    usuarioId: number,
     proyectoId: number,
     certificados: {
       id: number;
@@ -535,6 +555,8 @@ export class CertificadosService {
       fallidos: [],
       sinCorreo: [],
     };
+    /** Correos ya escritos que se guardarán en la cola al terminar. */
+    const encolar: CorreoEncolado[] = [];
 
     for (const certificado of certificados) {
       const folio = certificado.folio;
@@ -581,79 +603,45 @@ export class CertificadosService {
         continue;
       }
 
-      try {
-        await this.mail.sendCertificadoAlumno(correo, {
+      // La cola guarda el contenido ya escrito y la ruta del PDF: no se lee el
+      // archivo aquí, para que encolar 300 certificados sea rápido.
+      encolar.push({
+        destinatario: correo,
+        ...contenidoCertificadoAlumno({
           alumno,
           titulo: clase.titulo,
           folio,
           instituciones: clase.instituciones,
           enlaceVerificacion: direccionVerificacion(folio),
-          pdf: readFileSync(ruta),
-          nombreArchivo: `certificado-${folio}.pdf`,
-        });
-
-        const enviadoEn = new Date();
-        await this.prisma.certificado.update({
-          where: { id: certificado.id },
-          data: { enviadoEn, enviadoA: correo },
-        });
-        resultado.enviados.push({
-          certificadoId: certificado.id,
-          folio,
-          alumno,
-          correo,
-          enviadoEn,
-        });
-      } catch (error) {
-        // El detalle técnico va al registro; a la pantalla, algo que se entienda.
-        this.logger.warn(
-          `No se pudo enviar el certificado ${folio} a ${correo}: ${(error as Error)?.message ?? error}`,
-        );
-        resultado.fallidos.push({
-          certificadoId: certificado.id,
-          folio,
-          alumno,
-          correo,
-          motivo: 'El servidor de correo no aceptó el envío.',
-        });
-      }
+        }),
+        adjuntoNombre: `certificado-${folio}.pdf`,
+        adjuntoRuta: ruta,
+        certificadoId: certificado.id,
+      });
     }
+
+    if (encolar.length === 0) {
+      return {
+        mensaje:
+          'No hay certificados que enviar: revisa los motivos de cada uno.',
+        total: certificados.length,
+        ...resultado,
+      };
+    }
+
+    const { loteId, total } = await this.envios.encolar(usuarioId, encolar);
+    const avisoFallidos =
+      resultado.fallidos.length > 0
+        ? ` ${resultado.fallidos.length} no se pudieron preparar.`
+        : '';
 
     return {
-      mensaje: this.mensajeDeEnvio(resultado),
+      mensaje: `${total === 1 ? '1 certificado' : `${total} certificados`} en cola para enviar. Puedes cerrar la pantalla: se envían igual y verás el progreso aquí.${avisoFallidos}`,
       total: certificados.length,
+      loteId,
+      encolados: total,
       ...resultado,
     };
-  }
-
-  /**
-   * La explicación del envío, con las cifras delante. Es lo que lee el docente:
-   * «3 enviados, 1 sin correo, 1 falló».
-   */
-  private mensajeDeEnvio(resultado: {
-    enviados: unknown[];
-    omitidos: unknown[];
-    fallidos: unknown[];
-    sinCorreo: unknown[];
-  }): string {
-    const partes: string[] = [];
-    partes.push(
-      resultado.enviados.length === 1
-        ? '1 certificado enviado por correo'
-        : `${resultado.enviados.length} certificados enviados por correo`,
-    );
-    if (resultado.omitidos.length > 0) {
-      partes.push(
-        `${resultado.omitidos.length} sin enviar (ya se le había enviado)`,
-      );
-    }
-    if (resultado.sinCorreo.length > 0) {
-      partes.push(`${resultado.sinCorreo.length} sin correo en la lista`);
-    }
-    if (resultado.fallidos.length > 0) {
-      partes.push(`${resultado.fallidos.length} con error de envío`);
-    }
-    return `${partes.join(' · ')}.`;
   }
 
   /** El título de la clase y las dos instituciones, para el correo del alumno. */

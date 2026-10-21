@@ -14,11 +14,13 @@ import { ProyectosModule } from './proyectos/proyectos.module';
 import { RecordatoriosModule } from './recordatorios/recordatorios.module';
 import { CaceModule } from './cace/cace.module';
 import { CertificadosModule } from './certificados/certificados.module';
+import { EnviosModule } from './envios/envios.module';
 
 @Module({
   imports: [
     PrismaModule,
     MailModule,
+    EnviosModule,
     CaceModule,
     CertificadosModule,
     AuthModule,

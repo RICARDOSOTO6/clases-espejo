@@ -1,6 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import {
+  ContenidoCorreo,
+  contenidoCalendarioClase,
+  contenidoCertificadoAlumno,
+} from './contenido-correo';
+
+/** Adjunto ya resuelto en memoria, listo para `enviarCorreo`. */
+export interface AdjuntoCorreo {
+  nombre: string;
+  contenido: Buffer;
+  tipo: string;
+}
 
 @Injectable()
 export class MailService {
@@ -14,6 +26,38 @@ export class MailService {
       auth: process.env.SMTP_USER
         ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS ?? '' }
         : undefined,
+    });
+  }
+
+  /**
+   * Envío genérico: el contenido ya viene escrito y el adjunto resuelto.
+   *
+   * Lo usan los envíos directos (invitaciones, avisos…) y el worker de la cola
+   * de la Fase 2, que lee el contenido guardado en `ENVIO_CORREO`. Así hay un
+   * solo sitio que habla con el SMTP y un solo remitente.
+   */
+  async enviarCorreo(
+    to: string,
+    contenido: ContenidoCorreo,
+    adjunto?: AdjuntoCorreo,
+  ): Promise<void> {
+    await this.transporter.sendMail({
+      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
+      to,
+      subject: contenido.asunto,
+      text: contenido.texto,
+      html: contenido.html,
+      ...(adjunto
+        ? {
+            attachments: [
+              {
+                filename: adjunto.nombre,
+                content: adjunto.contenido,
+                contentType: adjunto.tipo,
+              },
+            ],
+          }
+        : {}),
     });
   }
 
@@ -413,35 +457,11 @@ export class MailService {
       nombreArchivo: string;
     },
   ): Promise<void> {
-    const {
-      alumno,
-      titulo,
-      folio,
-      instituciones,
-      enlaceVerificacion,
-      pdf,
-      nombreArchivo,
-    } = datos;
-
-    await this.transporter.sendMail({
-      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
-      to,
-      subject: `Clases Espejo - Tu certificado de «${titulo}» (${folio})`,
-      text: `Hola ${alumno}: te adjuntamos el certificado de la clase espejo «${titulo}», que emitieron ${instituciones}. Folio: ${folio}. Puedes comprobar que es auténtico en: ${enlaceVerificacion} (no hace falta crear ninguna cuenta).`,
-      html: `
-        <p>Hola <strong>${alumno}</strong>:</p>
-        <p>Te adjuntamos el certificado de la clase espejo <strong>«${titulo}»</strong>, emitido por la CACE con la participación de ${instituciones}.</p>
-        <p><strong>Folio:</strong> ${folio}</p>
-        <p>Puedes comprobar que el certificado es auténtico —y ver su estado— en <a href="${enlaceVerificacion}">${enlaceVerificacion}</a>. No hace falta crear ninguna cuenta: el enlace abre la página de verificación directamente.</p>
-        <p>El certificado va adjunto en este correo en PDF.</p>
-      `,
-      attachments: [
-        {
-          filename: nombreArchivo,
-          content: pdf,
-          contentType: 'application/pdf',
-        },
-      ],
+    // El contenido vive en `contenido-correo.ts`: la cola encola el mismo texto.
+    await this.enviarCorreo(to, contenidoCertificadoAlumno(datos), {
+      nombre: datos.nombreArchivo,
+      contenido: datos.pdf,
+      tipo: 'application/pdf',
     });
   }
 
@@ -478,37 +498,11 @@ export class MailService {
       nombreArchivo: string;
     },
   ): Promise<void> {
-    const {
-      destinatario,
-      titulo,
-      instituciones,
-      sesiones,
-      archivo,
-      nombreArchivo,
-    } = datos;
-
-    const cuantas = sesiones === 1 ? 'una sesión' : `${sesiones} sesiones`;
-
-    await this.transporter.sendMail({
-      from: process.env.MAIL_FROM ?? 'no-reply@clasesespejo.local',
-      to,
-      subject: `Clases Espejo - Calendario de «${titulo}»`,
-      text: `Hola ${destinatario}: te adjuntamos el calendario de la clase espejo «${titulo}» (${instituciones}), con ${cuantas}. Ábrelo con tu calendario (Google, Outlook, Apple…) para añadir las sesiones. Los recordatorios los pone tu calendario: el archivo ya trae avisos 1 hora, 30 minutos y 15 minutos antes de cada sesión, y la plataforma no envía recordatorios ni notificaciones. Si vuelves a importar el mismo archivo más adelante, se actualizan los mismos eventos en vez de duplicarse.`,
-      html: `
-        <p>Hola <strong>${destinatario}</strong>:</p>
-        <p>Te adjuntamos el calendario de la clase espejo <strong>«${titulo}»</strong> (${instituciones}), con ${cuantas}.</p>
-        <p>Abre el archivo con tu calendario (Google, Outlook, Apple…) para añadir las sesiones.</p>
-        <p><strong>Los recordatorios los pone tu calendario, no la plataforma.</strong> El archivo ya trae avisos <strong>1 hora, 30 minutos y 15 minutos</strong> antes de cada sesión. La plataforma no envía recordatorios ni notificaciones: el aviso lo da el calendario de cada quien al importarlo.</p>
-        <p>Si vuelves a importar el mismo archivo más adelante, se actualizan los mismos eventos en vez de duplicarse.</p>
-        <p>El calendario va adjunto en este correo.</p>
-      `,
-      attachments: [
-        {
-          filename: nombreArchivo,
-          content: archivo,
-          contentType: 'text/calendar; charset=utf-8',
-        },
-      ],
+    // El contenido vive en `contenido-correo.ts`: la cola encola el mismo texto.
+    await this.enviarCorreo(to, contenidoCalendarioClase(datos), {
+      nombre: datos.nombreArchivo,
+      contenido: datos.archivo,
+      tipo: 'text/calendar; charset=utf-8',
     });
   }
 }

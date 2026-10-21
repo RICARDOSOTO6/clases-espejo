@@ -210,7 +210,13 @@ export interface EnvioCalendarioFallido extends EnvioCalendarioEntregado {
  * llegó y a quién no.
  */
 export interface EnvioCalendario {
+  /** Texto de la respuesta: con la cola, explica que queda encolado. */
+  mensaje?: string;
   total: number;
+  /** Lote de la cola de correo (Fase 2); se consulta su progreso. */
+  loteId?: string;
+  /** Cuántos correos quedaron encolados en este lote. */
+  encolados?: number;
   enviados: EnvioCalendarioEntregado[];
   fallidos: EnvioCalendarioFallido[];
   /** Sesiones que lleva el archivo, para poder decirlo en la pantalla. */

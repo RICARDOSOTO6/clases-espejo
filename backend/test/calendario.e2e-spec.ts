@@ -22,6 +22,7 @@ import {
   type Semilla,
 } from './base-e2e';
 import type { PrismaService } from '../src/prisma/prisma.service';
+import { EnviosCorreoService } from '../src/envios/envios.service';
 
 jest.setTimeout(60000);
 
@@ -30,6 +31,7 @@ describe('Flujo 6: calendario de la clase', () => {
   let prisma: PrismaService;
   let correo: CorreoSimulado;
   let semilla: Semilla;
+  let envios: EnviosCorreoService;
   let proyectoId = 0;
 
   let tokenDocenteA = '';
@@ -42,6 +44,7 @@ describe('Flujo 6: calendario de la clase', () => {
     app = e2e.app;
     prisma = e2e.prisma;
     correo = e2e.correo;
+    envios = app.get(EnviosCorreoService);
     await limpiarBase(prisma);
     semilla = await sembrarBase(prisma);
 
@@ -106,24 +109,36 @@ describe('Flujo 6: calendario de la clase', () => {
       .expect(403);
   });
 
-  it('5. el envío por correo responde con el informe de envíos', async () => {
+  it('5. el envío por correo encola el lote y el worker lo manda', async () => {
     const respuesta = await request(app.getHttpServer())
       .post(`/proyectos/${proyectoId}/calendario/enviar`)
       .set(autenticado(tokenDocenteA))
       .expect(201);
 
     expect(respuesta.body.total).toBeGreaterThanOrEqual(1);
-    const enviados = respuesta.body.enviados as Array<{ correo: string }>;
-    const fallidos = respuesta.body.fallidos as Array<{ motivo: string }>;
-    expect(Array.isArray(enviados)).toBe(true);
-    expect(enviados.length).toBeGreaterThanOrEqual(1);
-    expect(fallidos).toHaveLength(0);
+    expect(respuesta.body.loteId).toBeTruthy();
+    expect(respuesta.body.encolados).toBeGreaterThanOrEqual(1);
     expect(respuesta.body.nombreArchivo).toContain('.ics');
+    // Todavía no salió nada: el endpoint solo encola.
+    expect(respuesta.body.enviados).toHaveLength(0);
 
-    const envios = correo.llamadas.filter(
-      (l) => l.metodo === 'sendCalendarioClase',
+    const procesado = await envios.procesarPendientes();
+    expect(procesado.enviados).toBeGreaterThanOrEqual(1);
+
+    const progreso = await request(app.getHttpServer())
+      .get(`/envios/lotes/${respuesta.body.loteId as string}`)
+      .set(autenticado(tokenDocenteA))
+      .expect(200);
+    expect(progreso.body.completado).toBe(true);
+    expect(progreso.body.enviados).toBeGreaterThanOrEqual(1);
+    expect(progreso.body.fallidos).toBe(0);
+
+    const enviosCorreo = correo.llamadas.filter(
+      (l) => l.metodo === 'enviarCorreo',
     );
-    expect(envios.length).toBeGreaterThanOrEqual(1);
+    expect(enviosCorreo.length).toBeGreaterThanOrEqual(1);
+    const contenido = enviosCorreo[0].argumentos[1] as { asunto: string };
+    expect(contenido.asunto).toContain('Calendario');
   });
 
   it('6. el .ics incluye la sesión programada con su enlace', async () => {

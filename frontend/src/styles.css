@@ -4656,3 +4656,23 @@ textarea.ng-invalid.ng-touched:focus {
     justify-content: flex-end;
   }
 }
+
+/* --- Cola de correo (Fase 2): progreso del lote --- */
+.envio-progreso {
+  margin-top: var(--space-3);
+}
+
+.progreso-barra {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--neutral-200);
+  margin: var(--space-2) 0;
+}
+
+.progreso-barra span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}

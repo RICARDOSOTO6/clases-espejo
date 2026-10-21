@@ -10,6 +10,50 @@
       <a class="link-button" [routerLink]="panelUrl">← Volver al panel</a>
     </p>
 
+    <!-- Progreso de la cola de correo (Fase 2): los envíos de certificados y del
+         calendario se mandan en segundo plano, así que aquí se ve cómo avanzan. -->
+    @if (progresoEnvio(); as progreso) {
+      <section class="card envio-progreso" aria-live="polite">
+        <p class="text-sm">
+          <strong>{{ progreso.enviados }} de {{ progreso.total }} correos enviados</strong>
+          @if (progreso.pendientes > 0) {
+            · {{ progreso.pendientes }} en cola
+          }
+          @if (progreso.fallidos > 0) {
+            · {{ progreso.fallidos }} fallaron
+          }
+          @if (progreso.completado) {
+            · completado
+          }
+        </p>
+        <div
+          class="progreso-barra"
+          role="progressbar"
+          [attr.aria-valuenow]="progreso.enviados + progreso.fallidos"
+          [attr.aria-valuemin]="0"
+          [attr.aria-valuemax]="progreso.total"
+        >
+          <span
+            [style.width.%]="
+              progreso.total > 0
+                ? ((progreso.enviados + progreso.fallidos) / progreso.total) * 100
+                : 0
+            "
+          ></span>
+        </div>
+        @if (progreso.errores.length > 0) {
+          <div class="alert alert-error" role="alert">
+            <strong>Correos que no salieron:</strong>
+            <ul class="alumnos-avisos">
+              @for (error of progreso.errores; track error.destinatario) {
+                <li>{{ error.destinatario }}: {{ error.ultimoError }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+    }
+
     @if (cargando()) {
       <section class="card">
         <p class="muted">Cargando proyecto…</p>

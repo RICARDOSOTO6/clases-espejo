@@ -21,6 +21,8 @@ const PREFIJOS_API_CONOCIDOS = [
   '/recordatorios',
   '/cace',
   '/health',
+  // Cola de correo (Fase 2): el progreso de un lote también es API.
+  '/envios',
   // La verificación pública de un certificado se llama igual que su página
   // (`/verificar/<folio>`), así que tiene que estar aquí: si no, la llamada de
   // la propia página recibiría el `index.html` en lugar del JSON. La navegación

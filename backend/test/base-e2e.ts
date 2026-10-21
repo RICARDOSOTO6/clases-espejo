@@ -68,6 +68,7 @@ export function exigirBaseDePrueba(): void {
 
 /** Métodos de `MailService` que la aplicación puede llamar. */
 const METODOS_CORREO = [
+  'enviarCorreo',
   'sendInvitation',
   'sendRecuperacionPassword',
   'sendConfirmacionCorreo',

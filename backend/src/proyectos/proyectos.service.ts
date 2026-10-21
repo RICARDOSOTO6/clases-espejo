@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CalendarioIcsService } from './calendario-ics.service';
-import { MailService } from '../mail/mail.service';
+import { contenidoCalendarioClase } from '../mail/contenido-correo';
+import { CorreoEncolado, EnviosCorreoService } from '../envios/envios.service';
 import { nombreCompleto } from '../common/nombre-completo';
 import { UpdateProyectoDto } from './dto/update-proyecto.dto';
 import { CreateProyectoDocenteDto } from './dto/create-proyecto-docente.dto';
@@ -55,7 +56,7 @@ export class ProyectosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly calendarioIcs: CalendarioIcsService,
-    private readonly mail: MailService,
+    private readonly envios: EnviosCorreoService,
   ) {}
 
   // --- Listados ---
@@ -189,38 +190,38 @@ export class ProyectosService {
       );
     }
 
-    const enviados: { nombre: string; correo: string }[] = [];
-    const fallidos: { nombre: string; correo: string; motivo: string }[] = [];
-
+    // La cola guarda el `.ics` pequeño en base64: no hay archivo temporal que
+    // limpiar si el proceso se reinicia antes de enviarlo.
+    const encolar: CorreoEncolado[] = [];
     for (const [correo, nombre] of destinatarios) {
-      try {
-        await this.mail.sendCalendarioClase(correo, {
+      encolar.push({
+        destinatario: correo,
+        ...contenidoCalendarioClase({
           destinatario: nombre,
           titulo,
           instituciones,
           sesiones,
-          archivo,
-          nombreArchivo,
-        });
-        enviados.push({ nombre, correo });
-      } catch (error) {
-        fallidos.push({ nombre, correo, motivo: this.motivoDeFallo(error) });
-      }
+        }),
+        adjuntoNombre: nombreArchivo,
+        adjuntoBase64: archivo.toString('base64'),
+      });
     }
 
+    const { loteId, total } = await this.envios.encolar(usuarioId, encolar);
+
     return {
-      total: destinatarios.size,
-      enviados,
-      fallidos,
+      mensaje:
+        total === 1
+          ? 'El calendario quedó en cola para 1 docente. Puedes cerrar la pantalla: se envía igual y verás el progreso aquí.'
+          : `El calendario quedó en cola para ${total} docentes. Puedes cerrar la pantalla: se envía igual y verás el progreso aquí.`,
+      loteId,
+      total,
+      encolados: total,
       sesiones,
       nombreArchivo,
+      enviados: [],
+      fallidos: [],
     };
-  }
-
-  /** Motivo legible de un fallo de correo, sin arrastrar objetos raros. */
-  private motivoDeFallo(error: unknown): string {
-    if (error instanceof Error && error.message) return error.message;
-    return 'Error desconocido al enviar el correo';
   }
 
   // --- Proyecto ---

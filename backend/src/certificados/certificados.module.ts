@@ -8,6 +8,7 @@ import { PlantillasCertificadoController } from './plantillas.controller';
 import { PlantillasService } from './plantillas.service';
 import { VerificacionController } from './verificacion.controller';
 import { VerificacionService } from './verificacion.service';
+import { EnviosModule } from '../envios/envios.module';
 
 /**
  * Certificados de la clase espejo (fases 4 y 5).
@@ -27,7 +28,7 @@ import { VerificacionService } from './verificacion.service';
  * `PrismaModule` y `MailModule` son globales, así que no hay que importarlos.
  */
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, EnviosModule],
   controllers: [
     PlantillasCertificadoController,
     CertificadosCaceController,

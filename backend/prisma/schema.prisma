@@ -72,6 +72,7 @@ model Usuario {
   correoVerificado Boolean                    @default(true) @map("correo_verificado")
   recuperaciones  RecuperacionPassword[]
   verificacionesCorreo VerificacionCorreo[]
+  enviosCorreo   EnvioCorreo[]
   creadoEn        DateTime                    @default(now()) @map("creado_en")
   actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
   agente          AgenteInternacionalizacion?
@@ -601,6 +602,7 @@ model Certificado {
   proyecto            ProyectoClaseEspejo  @relation(fields: [proyectoId], references: [id])
   plantilla           PlantillaCertificado @relation(fields: [plantillaId], references: [id])
   emitidoPor          Usuario?             @relation("CertificadoEmitido", fields: [emitidoPorUsuarioId], references: [id])
+  envios              EnvioCorreo[]
 
   @@index([proyectoId, estado])
   @@index([alumnoId])
@@ -679,4 +681,45 @@ model VerificacionCorreo {
   @@index([usuarioId])
   @@index([correo])
   @@map("VERIFICACION_CORREO")
+}
+/// Cola de correo de la Fase 2. Cada fila es un correo pendiente de salir: los
+/// endpoints de envio solo encolan y responden al instante con un `loteId`; el
+/// worker periodico se encarga de mandarlos, reintentar los fallos con espera
+/// creciente y dejar registro del motivo. Asi, matar el proceso a mitad no
+/// pierde envios: las filas siguen en `PENDIENTE` hasta que salgan.
+model EnvioCorreo {
+  id                     Int          @id @default(autoincrement())
+  /// Identificador comun de todos los correos pedidos en la misma accion.
+  loteId                 String       @map("lote_id")
+  /// Quien lo pidio (para que solo esa persona vea el progreso del lote).
+  solicitadoPorUsuarioId Int          @map("solicitado_por_usuario_id")
+  destinatario           String
+  asunto                 String
+  cuerpoTexto            String       @map("cuerpo_texto")
+  cuerpoHtml             String       @map("cuerpo_html")
+  adjuntoNombre          String?      @map("adjunto_nombre")
+  /// Ruta en disco del adjunto (certificados): el archivo no se borra.
+  adjuntoRuta            String?      @map("adjunto_ruta")
+  /// Adjunto pequeno en base64 (el .ics del calendario).
+  adjuntoBase64          String?      @map("adjunto_base64")
+  /// PENDIENTE, ENVIADO o FALLIDO.
+  estado                 String       @default("PENDIENTE")
+  /// Fallos acumulados. A los MAX_INTENTOS la fila pasa a FALLIDO.
+  intentos               Int          @default(0)
+  /// Cuando toca el siguiente intento (espera creciente entre reintentos).
+  proximoIntento         DateTime     @default(now()) @map("proximo_intento")
+  ultimoError            String       @default("") @map("ultimo_error")
+  enviadoEn              DateTime?    @map("enviado_en")
+  fallidoEn              DateTime?    @map("fallido_en")
+  /// Certificado que actualiza al salir (marca `enviadoEn`/`enviadoA`).
+  certificadoId          Int?         @map("certificado_id")
+  creadoEn               DateTime     @default(now()) @map("creado_en")
+  actualizadoEn          DateTime     @default(now()) @updatedAt @map("actualizado_en")
+  solicitadoPor          Usuario      @relation(fields: [solicitadoPorUsuarioId], references: [id])
+  certificado            Certificado? @relation(fields: [certificadoId], references: [id], onDelete: SetNull)
+
+  @@index([estado, proximoIntento])
+  @@index([loteId])
+  @@index([solicitadoPorUsuarioId])
+  @@map("ENVIO_CORREO")
 }

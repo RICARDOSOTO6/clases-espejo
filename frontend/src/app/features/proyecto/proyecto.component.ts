@@ -12,7 +12,10 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subscription, switchMap, takeWhile, timer } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { EnviosService } from '../../core/services/envios.service';
+import { ProgresoLote } from '../../core/models/envios.models';
 import { ProyectosService } from '../../core/services/proyectos.service';
 import { ListasAlumnosService } from '../../core/services/listas-alumnos.service';
 import { CertificadosService } from '../../core/services/certificados.service';
@@ -67,6 +70,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly instituciones = inject(InstitucionesService);
   private readonly listasService = inject(ListasAlumnosService);
   private readonly certificadosService = inject(CertificadosService);
+  private readonly envios = inject(EnviosService);
   private readonly fb = inject(FormBuilder);
   /** Estado compartido con el esqueleto (campana y contadores). */
   readonly ui = inject(UiStateService);
@@ -140,6 +144,12 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly envioSinCorreo = signal<
     { certificadoId: number; folio: string; alumno: string }[]
   >([]);
+
+  // --- Cola de correo (Fase 2) ---
+  /** Progreso del lote en curso o del último terminado. */
+  readonly progresoEnvio = signal<ProgresoLote | null>(null);
+  readonly loteEnvio = signal<string | null>(null);
+  private loteSub?: Subscription;
 
   // --- Anulación (fase 5) ---
   /** Certificado que se está anulando y el motivo que se está escribiendo. */
@@ -339,6 +349,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.loteSub?.unsubscribe();
     if (this.mensajesInterval) clearInterval(this.mensajesInterval);
     // Al salir no se dejan avisos de esta clase espejo en la barra superior.
     this.ui.limpiarPantalla();
@@ -923,6 +934,74 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.envioOmitidos.set(resultado.omitidos);
     this.envioFallidos.set(resultado.fallidos);
     this.envioSinCorreo.set(resultado.sinCorreo);
+    if (resultado.loteId) {
+      this.seguirLote(resultado.loteId, 'certificados');
+    }
+  }
+
+  /**
+   * Sigue el lote de la cola cada 2 s hasta que termina. Al completarse deja el
+   * resultado final en pantalla: cuántos salieron y cuántos fallaron con su
+   * motivo. El docente puede cerrar la página: la cola sigue en el servidor.
+   */
+  private seguirLote(
+    loteId: string,
+    contexto: 'certificados' | 'calendario',
+  ): void {
+    this.loteSub?.unsubscribe();
+    this.loteEnvio.set(loteId);
+    this.progresoEnvio.set(null);
+
+    this.loteSub = timer(0, 2000)
+      .pipe(
+        switchMap(() => this.envios.progreso(loteId)),
+        takeWhile((progreso) => !progreso.completado, true),
+      )
+      .subscribe({
+        next: (progreso) => {
+          this.progresoEnvio.set(progreso);
+          if (!progreso.completado) return;
+
+          const resumen = this.resumenDeLote(progreso, contexto);
+          if (contexto === 'certificados') {
+            this.avisoCertificados.set(resumen);
+            this.cargarCertificados();
+          } else if (progreso.fallidos > 0) {
+            this.error.set(resumen);
+          } else {
+            this.ok.set(resumen);
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          const mensaje = extraerMensajeError(
+            err,
+            'No se pudo consultar el progreso del envío',
+          );
+          if (contexto === 'certificados') {
+            this.errorCertificados.set(mensaje);
+          } else {
+            this.error.set(mensaje);
+          }
+        },
+      });
+  }
+
+  private resumenDeLote(
+    progreso: ProgresoLote,
+    contexto: 'certificados' | 'calendario',
+  ): string {
+    const cosa =
+      contexto === 'certificados'
+        ? progreso.total === 1
+          ? 'certificado enviado'
+          : 'certificados enviados'
+        : progreso.total === 1
+          ? 'correo enviado'
+          : 'correos enviados';
+    const base = `Envío completado: ${progreso.enviados} de ${progreso.total} ${cosa}`;
+    return progreso.fallidos > 0
+      ? `${base}; ${progreso.fallidos} fallaron (mira el detalle).`
+      : `${base}.`;
   }
 
   private limpiarResultadoEnvio(): void {
@@ -1675,6 +1754,14 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       next: (resultado) => {
         this.enviandoCalendario.set(false);
         this.envioCalendario.set(resultado);
+        if (resultado.loteId) {
+          this.ok.set(
+            resultado.mensaje ??
+              'El calendario quedó en cola. Puedes cerrar la pantalla: se envía igual y verás el progreso aquí.',
+          );
+          this.seguirLote(resultado.loteId, 'calendario');
+          return;
+        }
         const enviados = resultado.enviados.length;
         const fallidos = resultado.fallidos.length;
         if (fallidos === 0) {

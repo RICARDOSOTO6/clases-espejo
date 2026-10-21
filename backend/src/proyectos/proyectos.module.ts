@@ -7,9 +7,10 @@ import { DocenteParticipanteGuard } from './guards/docente-participante.guard';
 import { ListasAlumnosController } from './listas-alumnos.controller';
 import { ListasAlumnosService } from './listas-alumnos.service';
 import { AuthModule } from '../auth/auth.module';
+import { EnviosModule } from '../envios/envios.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, EnviosModule],
   controllers: [ProyectosController, ListasAlumnosController],
   providers: [
     ProyectosService,
