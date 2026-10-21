@@ -1260,7 +1260,7 @@ con los mismos estados, está en
 
 # 🌐 Endpoints de la API
 
-El backend expone **130 rutas** repartidas en **23 controladores** (22 archivos
+El backend expone **132 rutas** repartidas en **23 controladores** (22 archivos
 `.controller.ts`; `instituciones.controller.ts` contiene dos clases). Todas cuelgan
 de un prefijo y la lista completa está en las tablas siguientes.
 
@@ -1287,6 +1287,8 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | Método | Ruta | Descripción | Autenticación |
 | --- | --- | --- | --- |
 | `POST` | `/agentes/invitar-docente` | El agente invita a un docente (envía correo) | JWT (agente) |
+| `GET` | `/agentes/invitaciones` | Invitaciones pendientes de la institución (también las caducadas, con `caducada`) | JWT (agente) |
+| `POST` | `/agentes/invitaciones/:id/reenviar` | Reenvía una invitación con un enlace nuevo (el anterior deja de valer) | JWT (agente) |
 | `GET` | `/agentes/docentes` | Lista los docentes de la institución | JWT (agente) |
 | `PATCH` | `/agentes/docentes/:id/estado` | Activa/desactiva un docente | JWT (agente) |
 | `DELETE` | `/agentes/docentes/:id` | Elimina un docente | JWT (agente) |
@@ -2026,7 +2028,7 @@ Las fases posteriores están planificadas en
 - Patrón de cada módulo backend: `dto/`, `*.service.ts`, `*.controller.ts`, `*.module.ts`.
 - Guard de autorización por recurso: `backend/src/proyectos/guards/docente-participante.guard.ts`.
 - Autorización por capacidad: `@Requiere('...')` + `CapacidadesGuard` (`backend/src/auth/capacidades.guard.ts`), con la matriz en `backend/src/common/capacidades.ts`. **Añadir un permiso es añadir una fila a la matriz**, no comparar el rol a mano.
-- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (130 rutas).
+- Endpoints ya existentes: ver la sección **"Endpoints de la API"** (132 rutas).
 - Al final de cada semana, hacer un **commit** descriptivo.
 
 ---

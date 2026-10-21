@@ -1,7 +1,7 @@
 # Plan de fases — lo que falta para poner la plataforma en uso real
 
 > **Escrito el 17 de octubre de 2026**, con el repositorio en `master` (96 commits,
-> 127 rutas —hoy 130—, 32 modelos —hoy 33—, 23 migraciones —hoy 25—) y los
+> 127 rutas —hoy 132—, 32 modelos —hoy 33—, 23 migraciones —hoy 25—) y los
 > datos de demostración cargados
 > (2 instituciones, 6 usuarios, 2 proyectos, 19 países, 0 certificados).
 >
@@ -88,8 +88,10 @@ versión ni refresh) y la invitación caducada no se puede reenviar.
 - [ ] **Verificación de correo al registrarse**: cuenta en estado «pendiente» +
   correo con token; sin verificar no se puede operar. Añadir «reenviar
   verificación».
-- [ ] **Reenviar invitación** de docente desde el panel del agente (hoy hay que
-  borrar y volver a invitar), mostrando la caducidad.
+- [x] **Reenviar invitación** de docente desde el panel del agente
+  (20-oct-2026): el agente ve las invitaciones pendientes (también las
+  caducadas, con su fecha) y las reenvía generando un **token nuevo** —el
+  enlace anterior deja de valer— sin borrar y volver a invitar.
 - [x] **Política de contraseña** (20-oct-2026): mínimo 10, sin ser la del correo
   y sin un carácter repetido, más bloqueo temporal de 15 minutos tras 5 intentos
   fallidos (además del rate limit).
@@ -99,10 +101,10 @@ versión ni refresh) y la invitación caducada no se puede reenviar.
 **Aceptación:** un usuario que olvida su contraseña la recupera solo, sin tocar la
 base; un token robado deja de valer en cuanto se cambia la contraseña; ninguna
 cuenta nueva opera sin correo verificado. Todo con e2e de la fase 0.
-**Estado (20-oct-2026):** recuperación, cierre de sesiones y política hechos y
-cubiertos por la suite `cuenta.e2e-spec.ts` (12 pruebas). Quedan la verificación
-de correo, reenviar invitación y el cambio de correo; la aceptación completa
-espera a la verificación de correo.
+**Estado (20-oct-2026):** recuperación, cierre de sesiones, política y reenvío
+de invitaciones hechos y cubiertos por las suites `cuenta.e2e-spec.ts` (12) e
+`invitaciones.e2e-spec.ts` (6). Quedan la verificación de correo y el cambio de
+correo; la aceptación completa espera a la verificación de correo.
 
 ---
 
