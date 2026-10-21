@@ -13,6 +13,7 @@ import {
   tipoDocumentoReal,
 } from '../common/imagenes';
 import { ActualizarConfiguracionCaceDto } from './dto/configuracion-cace.dto';
+import { resolverPaisIso } from '../common/paises-iso';
 import {
   ActualizarPaisComunidadDto,
   CrearPaisComunidadDto,
@@ -251,11 +252,12 @@ export class IdentidadCaceService {
   }
 
   async crearPais(dto: CrearPaisComunidadDto) {
+    const { codigo, nombre } = this.datosDePais(dto.codigo, dto.nombre);
     return this.prisma.paisComunidad.create({
       data: {
         // Se guarda en mayúsculas porque el código arma la bandera.
-        codigo: dto.codigo.trim().toUpperCase(),
-        nombre: dto.nombre.trim(),
+        codigo,
+        nombre,
         activo: dto.activo ?? true,
       },
     });
@@ -263,16 +265,79 @@ export class IdentidadCaceService {
 
   async actualizarPais(id: number, dto: ActualizarPaisComunidadDto) {
     await this.exigirPais(id);
+
+    // Si solo cambia la visibilidad no hay que resolver código ni nombre.
+    const datos =
+      dto.codigo !== undefined || dto.nombre !== undefined
+        ? this.datosDePais(dto.codigo, dto.nombre)
+        : {};
+
     return this.prisma.paisComunidad.update({
       where: { id },
       data: {
-        ...(dto.codigo !== undefined
-          ? { codigo: dto.codigo.trim().toUpperCase() }
-          : {}),
-        ...(dto.nombre !== undefined ? { nombre: dto.nombre.trim() } : {}),
+        ...datos,
         ...(dto.activo !== undefined ? { activo: dto.activo } : {}),
       },
     });
+  }
+
+  /**
+   * Acepta el código ISO, el nombre, o los dos, y devuelve la pareja completa.
+   *
+   * - Solo nombre conocido (`México`): se busca su código (`MX`) y se guarda el
+   *   nombre canónico, con tildes.
+   * - Solo código (`mx`): se completa el nombre desde el catálogo.
+   * - Los dos: si el catálogo conoce ambos, tienen que coincidir.
+   * - Código y nombre desconocidos a la vez: se aceptan tal cual, para no cerrar
+   *   la puerta a países que no estén en la lista (el formulario ya sabía cuál
+   *   era).
+   */
+  private datosDePais(
+    codigo: string | undefined,
+    nombre: string | undefined,
+  ): { codigo: string; nombre: string } {
+    const codigoEscrito = (codigo ?? '').trim().toUpperCase();
+    const nombreEscrito = (nombre ?? '').trim();
+
+    if (!codigoEscrito && !nombreEscrito) {
+      throw new BadRequestException(
+        'Escribe el nombre del país o su código ISO de dos letras (por ejemplo México o MX).',
+      );
+    }
+
+    const porCodigo = codigoEscrito ? resolverPaisIso(codigoEscrito) : null;
+    const porNombre = nombreEscrito ? resolverPaisIso(nombreEscrito) : null;
+
+    if (porCodigo && porNombre && porCodigo.codigo !== porNombre.codigo) {
+      throw new BadRequestException(
+        `El código ${porCodigo.codigo} no corresponde a «${nombreEscrito}»: ese nombre es ${porNombre.codigo}.`,
+      );
+    }
+
+    if (codigoEscrito && !porCodigo && porNombre) {
+      throw new BadRequestException(
+        `No reconozco el código «${codigoEscrito}»: «${nombreEscrito}» es ${porNombre.codigo}.`,
+      );
+    }
+
+    const resuelto = porCodigo ?? porNombre;
+    if (resuelto) {
+      return {
+        codigo: resuelto.codigo,
+        // Si el nombre lo reconocemos, se guarda el del catálogo (con tildes).
+        nombre: porNombre ? porNombre.nombre : nombreEscrito || resuelto.nombre,
+      };
+    }
+
+    if (codigoEscrito && nombreEscrito) {
+      return { codigo: codigoEscrito, nombre: nombreEscrito };
+    }
+
+    throw new BadRequestException(
+      nombreEscrito
+        ? `No reconozco «${nombreEscrito}» como país. Escribe el código ISO de dos letras (por ejemplo MX) o el nombre en español tal como aparece en la lista.`
+        : `No reconozco el código «${codigoEscrito}». Escribe el nombre del país (por ejemplo México) o un código ISO válido.`,
+    );
   }
 
   async eliminarPais(id: number) {

@@ -1,5 +1,11 @@
 import { Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -610,11 +616,16 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** País cuyo borrado se está confirmando: es irreversible. */
   readonly paisAEliminar = signal<PaisComunidad | null>(null);
 
-  formPais = this.fb.group({
-    codigo: ['', [Validators.required, Validators.pattern(/^[A-Za-z]{2}$/)]],
-    nombre: ['', [Validators.required, Validators.minLength(2)]],
-    activo: this.fb.nonNullable.control(true),
-  });
+  formPais = this.fb.group(
+    {
+      // Los dos son opcionales: basta con el nombre o con el código ISO. El
+      // servidor busca el que falte (verificado en `paises-iso.ts`).
+      codigo: ['', [Validators.pattern(/^[A-Za-z]{2}$/)]],
+      nombre: ['', [Validators.minLength(2)]],
+      activo: this.fb.nonNullable.control(true),
+    },
+    { validators: [algunoDeDosCampos] },
+  );
 
   // --- Premios y reconocimientos ---
 
@@ -1718,10 +1729,14 @@ export class CaceComponent implements OnInit, OnDestroy {
 
     const { codigo, nombre, activo } = this.formPais.getRawValue();
     const id = this.paisEnEdicion();
+    const codigoLimpio = (codigo ?? '').trim().toUpperCase();
+    const nombreLimpio = (nombre ?? '').trim();
+    // Solo se manda lo que se escribió: si falta el código lo busca el servidor
+    // por el nombre (y al revés).
     const dto = {
-      codigo: (codigo ?? '').toUpperCase(),
-      nombre: (nombre ?? '').trim(),
       activo,
+      ...(codigoLimpio ? { codigo: codigoLimpio } : {}),
+      ...(nombreLimpio ? { nombre: nombreLimpio } : {}),
     };
 
     this.cargandoPaises.set(true);
@@ -1831,10 +1846,17 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   mensajePais(campo: 'codigo' | 'nombre'): string | null {
     return mensajeDeControl(this.formPais, campo, {
-      required: 'Este campo es obligatorio',
       pattern: 'Dos letras, por ejemplo PT',
       minlength: 'Escribe el nombre del país',
     });
+  }
+
+  /** Aviso cuando el formulario no tiene ni nombre ni código. */
+  get faltaPais(): boolean {
+    return (
+      this.formPais.hasError('paisRequerido') &&
+      (this.formPais.touched || this.formPais.dirty)
+    );
   }
 
   /** Bandera de un país: la arma el código ISO, igual que en docente y agente. */
@@ -2564,4 +2586,14 @@ function copiaDeCampos(campos: CamposCertificado): CamposCertificado {
     copia[clave] = { ...campos[clave] };
   }
   return copia;
+}
+
+/**
+ * El formulario de país pide al menos una de las dos cosas: el nombre o el
+ * código ISO. El servidor completa la que falte.
+ */
+function algunoDeDosCampos(group: AbstractControl): ValidationErrors | null {
+  const codigo = String(group.get('codigo')?.value ?? '').trim();
+  const nombre = String(group.get('nombre')?.value ?? '').trim();
+  return codigo || nombre ? null : { paisRequerido: true };
 }

@@ -1519,8 +1519,13 @@
         }
 
         <form class="form-pais" [formGroup]="formPais" (ngSubmit)="guardarPais()" novalidate>
+          <p class="muted text-sm">
+            Escribe el país o su código ISO: con uno de los dos basta. Si no
+            sabes el código, escribe solo el nombre (por ejemplo México) y el
+            servidor lo busca.
+          </p>
           <div class="form-field">
-            <label for="pais-codigo">Código (ISO)</label>
+            <label for="pais-codigo">Código ISO (opcional)</label>
             <input
               id="pais-codigo"
               type="text"
@@ -1534,12 +1539,16 @@
           </div>
 
           <div class="form-field">
-            <label for="pais-nombre">País</label>
+            <label for="pais-nombre">País (opcional)</label>
             <input id="pais-nombre" type="text" formControlName="nombre" placeholder="México" />
             @if (mensajePais('nombre'); as msg) {
               <p class="field-error">{{ msg }}</p>
             }
           </div>
+
+          @if (faltaPais) {
+            <p class="field-error">Escribe el nombre del país o su código ISO.</p>
+          }
 
           <div class="form-field">
             <label for="pais-activo">

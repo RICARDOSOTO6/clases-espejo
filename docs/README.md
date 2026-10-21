@@ -1444,8 +1444,8 @@ de un prefijo y la lista completa está en las tablas siguientes.
 | `POST` | `/cace/configuracion/logo` | Sube el logo de la CACE (PNG/JPG/WEBP, máx. 2 MB) | JWT + `personalizarCace` |
 | `DELETE` | `/cace/configuracion/logo` | Quita el logo de la CACE | JWT + `personalizarCace` |
 | `GET` | `/cace/paises` | Todos los países de la comunidad (incluidos los inactivos), en orden alfabético por nombre (sin acentos ni mayúsculas) | JWT + `personalizarCace` |
-| `POST` | `/cace/paises` | Añade un país (código ISO de dos letras y nombre) | JWT + `personalizarCace` |
-| `PATCH` | `/cace/paises/:id` | Edita un país (código, nombre o activo). **No hay campo de orden**: la lista se ordena sola por nombre | JWT + `personalizarCace` |
+| `POST` | `/cace/paises` | Añade un país con el **nombre o el código ISO** (basta uno de los dos; el servidor busca el otro) | JWT + `personalizarCace` |
+| `PATCH` | `/cace/paises/:id` | Edita un país (nombre, código o activo; como en el alta, basta uno de los dos). **No hay campo de orden**: la lista se ordena sola por nombre | JWT + `personalizarCace` |
 | `DELETE` | `/cace/paises/:id` | Elimina un país de la comunidad | JWT + `personalizarCace` |
 | `GET` | `/cace/premios` | Todos los premios (publicados y no) y las instituciones del formulario | JWT + `publicarPremios` |
 | `POST` | `/cace/premios` | Crea un premio o reconocimiento | JWT + `publicarPremios` |
