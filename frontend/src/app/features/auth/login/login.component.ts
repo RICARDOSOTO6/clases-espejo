@@ -45,7 +45,6 @@ export class LoginComponent implements OnInit {
   loading = signal(false);
   showPassword = false;
   success = false;
-  showRecoveryHint = false;
   /** Mensaje del registro, cuando tiene algo que explicar (alta pendiente…). */
   avisoRegistro = '';
 
@@ -66,10 +65,6 @@ export class LoginComponent implements OnInit {
       email: 'Introduce un correo válido',
       minlength: 'Mínimo 6 caracteres',
     });
-  }
-
-  toggleRecoveryHint(): void {
-    this.showRecoveryHint = !this.showRecoveryHint;
   }
 
   submit(): void {

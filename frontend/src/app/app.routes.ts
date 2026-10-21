@@ -44,6 +44,22 @@ export const routes: Routes = [
       ),
   },
   {
+    // Recuperación de contraseña (Fase 1): pedir el enlace y usarlo. Son
+    // pantallas públicas: quien las usa no tiene sesión.
+    path: 'recuperar',
+    loadComponent: () =>
+      import('./features/auth/recuperar/recuperar.component').then(
+        (m) => m.RecuperarComponent,
+      ),
+  },
+  {
+    path: 'restablecer',
+    loadComponent: () =>
+      import('./features/auth/restablecer/restablecer.component').then(
+        (m) => m.RestablecerComponent,
+      ),
+  },
+  {
     // Verificación pública de un certificado: es lo que abre el QR impreso.
     // Va **sin guardia y fuera del esqueleto con menú** a propósito: la abre
     // cualquiera que tenga el certificado en la mano (un alumno, un empleador),

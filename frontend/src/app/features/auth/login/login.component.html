@@ -90,16 +90,8 @@
     </p>
 
     <p class="auth-alt">
-      <button type="button" class="link-button" (click)="toggleRecoveryHint()">
-        ¿Olvidaste tu contraseña?
-      </button>
+      <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
     </p>
-
-    @if (showRecoveryHint) {
-      <div class="alert alert-warning" role="status">
-        Contacta a tu agente de internacionalización para restablecer tu contraseña.
-      </div>
-    }
     </section>
   </main>
 </div>

@@ -797,9 +797,12 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         this.exito.set(res.mensaje);
         this.form.reset();
-        // Ya se puede usar el panel: se piden las capacidades y, con ellas, las
-        // secciones que le toquen a este rol.
-        this.cargarCapacidades();
+        // El servidor cerró la sesión al cambiar la contraseña (Fase 1): se
+        // sale a propósito y se vuelve a entrar con la nueva clave.
+        this.auth.logout();
+        void this.router.navigate(['/login'], {
+          queryParams: { aviso: res.mensaje },
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

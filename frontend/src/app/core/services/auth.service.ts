@@ -49,19 +49,47 @@ export class AuthService {
   }
 
   /**
-   * Cambia la contraseña del usuario autenticado. Al terminar se refresca la
-   * sesión, para que la pantalla deje de pedir el cambio sin recargar.
+   * Cambia la contraseña. El servidor **cierra las sesiones** al hacerlo
+   * (Fase 1), así que quien la cambia debe volver a entrar; eso lo hace la
+   * pantalla que llama.
    */
   cambiarPassword(
     actual: string,
     nueva: string,
   ): Observable<{ mensaje: string }> {
-    return this.http
-      .post<{ mensaje: string }>(`${API_URL}/usuarios/me/password`, {
-        actual,
-        nueva,
-      })
-      .pipe(tap(() => this.guardarUsuario({ debeCambiarPassword: false })));
+    return this.http.post<{ mensaje: string }>(
+      `${API_URL}/usuarios/me/password`,
+      { actual, nueva },
+    );
+  }
+
+  /** Pide el enlace de recuperación (la respuesta no revela si la cuenta existe). */
+  recuperarPassword(correo: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${API_URL}/auth/recuperar`,
+      { correo },
+    );
+  }
+
+  /** Comprueba el enlace del correo antes de mostrar el formulario. */
+  validarRecuperacion(
+    token: string,
+  ): Observable<{ valido: boolean; correo: string }> {
+    return this.http.get<{ valido: boolean; correo: string }>(
+      `${API_URL}/auth/recuperar/validar`,
+      { params: { token } },
+    );
+  }
+
+  /** Restablece la contraseña con el token del correo (de un solo uso). */
+  restablecerPassword(
+    token: string,
+    password: string,
+  ): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${API_URL}/auth/restablecer`,
+      { token, password },
+    );
   }
 
   /**

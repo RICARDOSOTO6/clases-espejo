@@ -1,0 +1,89 @@
+<div class="auth-layout">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-logo-chip">
+        <img [src]="logo()" alt="Logo de Clases Espejo" />
+      </div>
+      <p class="auth-hero-lema">{{ lema() }}</p>
+      <p class="auth-hero-tag">{{ descripcion() }}</p>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <section class="auth-card">
+      <h1 class="auth-title">Nueva contraseña</h1>
+
+      @if (estado() === 'validando') {
+        <p class="auth-subtitle">Comprobando el enlace…</p>
+      }
+
+      @if (estado() === 'invalido') {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+        <p class="auth-alt">
+          <a routerLink="/recuperar">Pedir otro enlace</a>
+        </p>
+      }
+
+      @if (estado() === 'listo') {
+        <p class="auth-subtitle">
+          Restableciendo la contraseña de <strong>{{ correo() }}</strong>
+        </p>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="form-field">
+            <label for="password">Nueva contraseña</label>
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="••••••••••"
+              autocomplete="new-password"
+            />
+            @if (mensajeDe('password'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+            <p class="muted text-sm">
+              Al menos {{ minimo }} caracteres y distinta de tu correo.
+            </p>
+          </div>
+
+          <div class="form-field">
+            <label for="confirmar">Repite la contraseña</label>
+            <input
+              id="confirmar"
+              type="password"
+              formControlName="confirmar"
+              placeholder="••••••••••"
+              autocomplete="new-password"
+            />
+            @if (mensajeDe('confirmar'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          @if (error()) {
+            <div class="alert alert-error" role="alert">{{ error() }}</div>
+          }
+
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="form.invalid || loading()"
+          >
+            @if (loading()) {
+              <span class="spinner" aria-hidden="true"></span>
+            }
+            {{ loading() ? 'Guardando…' : 'Guardar contraseña' }}
+          </button>
+        </form>
+      }
+
+      @if (estado() === 'hecho') {
+        <div class="alert alert-success" role="status">{{ mensaje() }}</div>
+        <p class="auth-alt">
+          <a routerLink="/login">Iniciar sesión</a>
+        </p>
+      }
+    </section>
+  </main>
+</div>
