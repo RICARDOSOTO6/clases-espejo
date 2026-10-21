@@ -33,7 +33,7 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
-import { fechaLarga, fechaTexto } from '../../core/utils/fecha.util';
+import { fechaLarga, fechaTexto, instanteDesdeLocal } from '../../core/utils/fecha.util';
 import { descargarBlob } from '../../core/utils/descarga.util';
 import { estadoProyectoLabel as etiquetaEstadoProyecto } from '../../core/constants/catalogos';
 import { Asignacion } from '../../core/models/materia.models';
@@ -88,6 +88,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   readonly usuario = this.auth.currentUser();
+  /** Zona horaria del navegador, para avisar en qué hora se ven las sesiones. */
+  readonly zonaHoraria =
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'tu zona';
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
   /**
@@ -1361,7 +1366,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.proyectos
       .crearSesion(this.proyectoId, {
         titulo: v.titulo ?? '',
-        fechaHora: v.fechaHora ?? '',
+        // El campo viene en la zona del navegador; la API guarda el instante.
+        fechaHora: instanteDesdeLocal(v.fechaHora ?? ''),
         enlaceVirtual: v.enlaceVirtual ?? '',
       })
       .subscribe({

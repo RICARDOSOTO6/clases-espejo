@@ -24,6 +24,22 @@ export function hoyTexto(ahora: Date = new Date()): string {
   return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Convierte el valor de un `<input type="datetime-local">` al instante ISO en
+ * UTC que guarda la API.
+ *
+ * El campo trae «2026-10-15T18:00» **en la zona del navegador**; si se manda
+ * tal cual, el servidor lo interpretaría en *su* zona y una clase acordada a
+ * las 18:00 en México saldría a otra hora para el docente de Colombia. Al
+ * pasarlo a `toISOString()` el instante queda fijado y cada persona lo ve en la
+ * suya (y el `.ics` lo lleva en UTC, que es lo que espera su calendario).
+ */
+export function instanteDesdeLocal(valor: string): string {
+  if (!valor) return '';
+  const fecha = new Date(valor);
+  return isNaN(fecha.getTime()) ? valor : fecha.toISOString();
+}
+
 /** Clave `YYYY-MM-DD` del día **local** en el que cae un instante. */
 export function claveLocal(instante: string | Date): string {
   const d = new Date(instante);

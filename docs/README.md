@@ -1545,6 +1545,11 @@ avisa es el calendario de cada quien (Google, Apple, Outlook…) al importarlo.
 El `UID` es estable por sesión (`sesion-<id>@clasesconjuntas`), así que volver a
 importar el archivo **actualiza** los eventos en vez de duplicarlos.
 
+Las horas viajan en **UTC** y el calendario del docente las muestra en su zona.
+En la pantalla, cada sesión se ve en la zona del navegador y el alta convierte la
+hora escrita (`datetime-local`) a un instante UTC antes de guardarla, para que una
+clase acordada no cambie según dónde esté el servidor.
+
 Hay dos formas de entregarlo, y las dos viven en el proyecto:
 
 * **`POST /proyectos/:id/calendario/enviar`** (la cómoda): manda el `.ics`
