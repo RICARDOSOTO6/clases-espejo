@@ -33,11 +33,13 @@
 | **4** | Operación: backups automáticos, monitorización, `helmet`, API documentada | 1 semana | Fase 0 |
 | **5** | Producto y confianza: privacidad, exportar/eliminar cuenta, correos de hitos | 1–2 semanas | Fases 1 y 2 |
 | **6** | Mantenibilidad: duplicación, componentes gigantes, despliegue reproducible | continuo | — |
-| **7** | Nuevas funciones: plazos configurables, evidencias por enlace, documento internacional y clases con N instituciones | 6–8 semanas | Fases 2 y 3 |
+| **7** | Nuevas funciones: plazos configurables, evidencias por enlace, identificador interno y clases con N instituciones | 5–7 semanas | Fases 2 y 3 |
+| **8** | Panel de desempeño de instituciones y comunicación CACE–agentes | 2–3 semanas | Fases 2 y 3 |
 
 **Total realista:** 6–8 semanas de una persona a tiempo parcial para las fases 0–6.
-La Fase 7 añade 6–8 semanas más y no está incluida en ese total. Las fases 1 y 3
-pueden ir en paralelo si hay dos personas (tocan archivos distintos).
+La Fase 7 añade 5–7 semanas y la Fase 8 otras 2–3; no están incluidas en ese
+total. Las fases 1 y 3 pueden ir en paralelo si hay dos personas (tocan archivos
+distintos).
 
 ---
 
@@ -102,6 +104,9 @@ versión ni refresh) y la invitación caducada no se puede reenviar.
 - [x] **Política de contraseña** (20-oct-2026): mínimo 10, sin ser la del correo
   y sin un carácter repetido, más bloqueo temporal de 15 minutos tras 5 intentos
   fallidos (además del rate limit).
+- [ ] **Endurecer la política** (decisión 22-oct-2026): mínimo **12**, sin la
+  regla del carácter repetido, comprobación de contraseñas comunes/filtradas,
+  aviso al usuario y desbloqueo administrativo; se mantiene 5 intentos/15 min.
 - [x] **Cambio de correo** (20-oct-2026): se pide desde «Mi perfil», el enlace
   llega a la **dirección nueva** y el cambio se aplica al confirmarlo (con
   cierre de sesiones); un correo ya usado responde 409.
@@ -207,11 +212,14 @@ notificaciones solo viven dentro de la aplicación.
 
 - [ ] Páginas de **aviso de privacidad y términos**, con enlace desde el registro y
   el pie; registro de la aceptación (fecha y versión del aviso).
-- [ ] **Exportar mis datos** (usuario/institución) y **solicitar baja** con
-  borrado o anonimización según la política que se decida.
-- [ ] Correos de hitos (a decidir): solicitud aprobada/rechazada, sesión próxima,
-  certificado disponible. Hoy solo hay agenda interna; el análisis de la QA 3 lo
-  dejó fuera a propósito, pero con usuarios reales se espera.
+- [ ] **Exportar mis datos** y **solicitar baja**: la institución queda
+  **inoperable y archivada**, conservando su historial (clases, certificados y
+  fechas) para consulta de la CACE; no se borra en cascada.
+- [ ] Correos de hitos: solicitud aprobada/rechazada, certificado disponible y
+  seguridad; los recordatorios de 1 h/30/15 min siguen en el `.ics` y no se
+  duplican. Preferencias para lo no esencial.
+- [ ] **Historial de instituciones inoperables**: estado `ARCHIVADA`, sin acceso
+  de sus agentes y sin nuevas clases, visible para presidencia y secretaría.
 - [ ] Centro de ayuda contextual dentro de la app (la guía y el manual existen; no
   están enlazados desde cada pantalla).
 - [ ] Revisión de accesibilidad después de los últimos rediseños (la auditoría de
@@ -238,7 +246,7 @@ pedir la baja; los correos de hitos se pueden desactivar por preferencia.
 
 ## Fase 7 — Nuevas funciones pedidas (21-oct-2026)
 
-**Por qué:** la CACE pidió cuatro cambios que no estaban en las fases 0–6. Se
+**Por qué:** la CACE pidió varias funciones que no estaban en las fases 0–6. Se
 planifican aparte para no mezclarlos con la integridad y la operación, y porque
 la multi-institución toca el modelo de solicitudes, revisiones y certificados.
 
@@ -254,6 +262,16 @@ la multi-institución toca el modelo de solicitudes, revisiones y certificados.
   reducida** para evitar enlaces maliciosos; nada de URL libres.
 - **Multi-institución:** la clase sigue siendo **una sola** (un proyecto) aunque
   participen más de dos instituciones; no se duplica en varias clases.
+- **Participantes:** quedan **congelados al crear el proyecto**; no se suman
+  instituciones académicas después. Se permiten **observadores** sin certificado
+  y cierra el **docente de origen**, con supervisión de la CACE.
+- **Identificador:** no se piden pasaporte, DNI ni documento internacional. El
+  **folio** sigue siendo el identificador público; lo interno de la CACE no se
+  imprime ni se muestra en la verificación.
+- **Lista blanca de enlaces:** YouTube, Vimeo, Google Drive y OneDrive, todos por
+  `https` y con enlace público.
+- **Sede:** una sola instancia y una sola base de datos; no hay subdominios por
+  institución ni multi-tenant.
 
 ### 7.1 Plazos configurables por la presidencia
 
@@ -275,9 +293,9 @@ cambia la fecha mínima real sin reiniciar el servidor y queda registrado.
 
 - [ ] `EVIDENCIA`: `archivoUrl` pasa a opcional y se añade `enlaceUrl`; `tipo`
   distingue `ARCHIVO`, `ENLACE` y `VIDEO`. Al menos uno de los dos debe existir.
-- [ ] Lista blanca inicial (pendiente de confirmar los dos últimos): YouTube
-  (`youtube.com`, `youtu.be`), Vimeo (`vimeo.com`), Google Drive
-  (`drive.google.com`), OneDrive (`1drv.ms`, `onedrive.live.com`).
+- [ ] Lista blanca definitiva: YouTube (`youtube.com`, `youtu.be`), Vimeo
+  (`vimeo.com`), Google Drive (`drive.google.com`) y OneDrive (`1drv.ms`,
+  `onedrive.live.com`). Solo `https` y enlaces públicos; sin acortadores.
 - [ ] Validar `https` (y `http` solo si se decide), longitud máxima, sin
   credenciales embebidas y sin `javascript:` ni `data:`; **no** descargar el
   enlace en el servidor (evita SSRF).
@@ -292,26 +310,23 @@ cambia la fecha mínima real sin reiniciar el servidor y queda registrado.
 evidencia de vídeo por enlace sin subir el archivo y el archivo ya no es
 obligatorio.
 
-### 7.3 Identificador internacional del alumno
+### 7.3 Identificador interno de la CACE (sin documento internacional)
 
-- [ ] `ALUMNO`: añadir `tipoDocumento` (DNI, Pasaporte, Cédula, RUT, CURP, Otro) y
-  `numeroDocumento`, normalizados; `@@unique([listaId, tipoDocumento, numeroDocumento])`
-  (la matrícula puede repetirse entre instituciones, el documento no dentro de
-  una lista).
-- [ ] Aviso si un mismo documento aparece en listas de instituciones distintas.
-- [ ] Plantilla de importación y formulario de lista con los dos campos; tabla
-  del panel con tipo y número.
-- [ ] Emisión: exigir documento en las listas nuevas; las antiguas se pueden
-  completar o marcar como «sin documento».
-- [ ] Certificado: hueco opcional `documento` en el editor de plantilla (o debajo
-  del nombre), sin romper los diseños actuales.
-- [ ] Verificación pública: decidir si se muestra el tipo y los últimos 4 dígitos
-  o nada (privacidad); el número completo se queda en el panel.
-- [ ] e2e: documento duplicado en la misma lista → 400; falta de documento en
-  emisión nueva → 400; el certificado lo imprime si el diseño lo activa.
+- **Decidido:** no se piden pasaporte, DNI, cédula ni otro documento
+  internacional, y no se imprimen en el certificado.
+- [ ] El **folio del certificado** sigue siendo el identificador público y el
+  que se usa en la verificación, como hoy.
+- [ ] No se añaden campos de documento al certificado ni a la verificación
+  pública; no hay que enmascarar nada porque no se muestra.
+- [ ] Si la CACE necesita una referencia interna para distinguir matrículas
+  repetidas entre instituciones, se estudiará un código interno por alumno,
+  visible solo para la CACE y nunca impreso. **Confirmar si hace falta o si el
+  folio basta.**
+- [ ] e2e: el alta de lista no exige documento; el folio sigue siendo único y
+  verificable.
 
-**Esfuerzo:** 5–7 días con el campo del certificado; 2–3 días si solo es registro
-interno. **Riesgo:** medio (importación y privacidad).
+**Esfuerzo:** 0–1 día si solo se confirma el folio; 2–3 días si se añade el
+código interno. **Riesgo:** bajo.
 
 ### 7.4 Clases con múltiples instituciones
 
@@ -327,8 +342,10 @@ interno. **Riesgo:** medio (importación y privacidad).
   acepta o rechaza por separado**. La clase se crea cuando hay **2 participantes
   aceptados en total**; un rechazo no la tumba si aún quedan 2 o más.
 - [ ] Si se baja de 2, la solicitud no se convierte en proyecto (o se cancela con
-  motivo) y el origen puede volver a invitar; decidir si se permite incorporar
-  instituciones después de crear el proyecto y hasta qué fecha.
+  motivo) y el origen puede volver a invitar.
+- [ ] Participantes **congelados** al crear el proyecto: no se suman instituciones
+  académicas después. Se permiten **observadores** sin certificado. Cierra el
+  **docente de origen** cuando estén los reportes, con supervisión de la CACE.
 - [ ] `ProyectoClaseEspejo`: un solo proyecto con N participantes; listas por
   institución (ya existen), `ProyectoDocente` por docente, calendario a todos y
   reportes por docente. Certificados: un certificado por alumno y el texto de
@@ -336,7 +353,8 @@ interno. **Riesgo:** medio (importación y privacidad).
 - [ ] UI: selector múltiple de instituciones, panel de respuestas por destino y
   vista del proyecto con N instituciones.
 - [ ] e2e: 3 instituciones (origen + 2 destinos) con un rechazo y quórum de 2;
-  certificado con tres instituciones; calendario a todos los docentes.
+  certificado con tres instituciones; calendario a todos los docentes; un
+  observador no recibe certificado y el cierre lo hace el docente de origen.
 
 **Esfuerzo:** 3–5 semanas. **Riesgo:** alto (modelo, revisiones, certificados y
 calendario). **Aceptación:** una clase con tres instituciones participantes se
@@ -346,31 +364,116 @@ crea, se planifica, se certifica y se verifica sin duplicar proyectos.
 
 1. Evidencias por enlace (rápida e independiente).
 2. Plazos configurables (rápida, alto valor).
-3. Identificador internacional (media; depende de si se imprime).
+3. Identificador interno (rápido: confirmar que el folio basta).
 4. Múltiples instituciones (la grande; cerrar antes las preguntas de abajo).
 
 ### Decisiones que faltan para cerrar la Fase 7
 
-- ¿El documento internacional se **imprime** en el certificado y se muestra
-  **enmascarado** en la verificación pública, o queda solo como registro interno?
-- ¿La lista blanca incluye Google Drive y OneDrive desde el principio, y qué
-  proveedor se añadiría después?
-- En multi-institución: ¿se pueden añadir instituciones **después** de crear el
-  proyecto? ¿Hasta cuándo? ¿Quién cierra la clase con N participantes?
+- ¿Hace falta un **código interno por alumno** además del folio, o el folio del
+  certificado es suficiente para las referencias de la CACE?
+- En multi-institución, ¿quién puede marcar a una institución como
+  **observadora** y hasta qué momento? La propuesta es el docente de origen,
+  antes de crear el proyecto.
 
 ---
 
-## Decisiones que necesitan tu visto bueno
+## Fase 8 — Panel de desempeño de instituciones y comunicación CACE–agentes (22-oct-2026)
 
-1. **¿Segundo factor (TOTP) para presidencia y secretaría?** Recomendado sí.
-2. **¿Providencia de correo para producción?** Gmail limita (≈500/día); para
-   certificados masivos hace falta un proveedor transaccional o cola propia.
-3. **Política de contraseñas y de bloqueo** (mínimo 10, intentos antes de bloquear).
-4. **Notificaciones por correo**: ¿solo hitos o también recordatorios de sesión?
-   (La plataforma nació sin recordatorios propios: el `.ics` los pone en el
-   calendario del usuario. No confundir las dos cosas.)
-5. **Retención de datos y qué significa «baja»**: borrado real o anonimización.
-6. **¿Una sola sede o multi-institución con subdominios?** Cambia la fase 4.
+**Por qué:** la presidencia necesita ver, de un vistazo, cómo va cada
+institución (cuántas clases propone, cuántas terminan, cuántas caducan o se
+cancelan) y decidir un plan de acción. Hoy esos datos están en la base, pero no
+hay una vista agregada; además, la comunicación con los agentes no tiene un
+canal propio.
+
+**Datos que ya existen:** `SOLICITUD_CLASE_ESPEJO` (estados `PENDIENTE`,
+`APROBADA_POR_ORIGEN`, `APROBADA`, `RECHAZADA`, `CADUCADA`),
+`PROYECTO_CLASE_ESPEJO` (estados `EN_PLANIFICACION`, `EN_CURSO`, `FINALIZADO`,
+`CANCELADO`), instituciones, asignaciones y docentes. No hay que inventar datos.
+
+**Métricas mínimas (por institución y periodo):**
+
+- Solicitudes creadas, aprobadas, rechazadas y **caducadas**.
+- Proyectos en planificación, en curso, **finalizados** y cancelados.
+- **Tasa de finalización** de proyectos que llegaron a existir: finalizados /
+  (finalizados + cancelados).
+- **Tasa de caducidad** de solicitudes: caducadas / total de solicitudes.
+- Participación: número de clases, instituciones contraparte y docentes.
+- Tiempo medio de respuesta a una solicitud (desde que se crea hasta la
+  revisión del destino).
+- Alertas: solicitudes por revisar, clases próximas a empezar y clases sin
+  reporte de cierre.
+
+**Definiciones a cerrar:** hoy `FINALIZADO` es el único estado de cierre; no
+existe un estado distinto de «terminada» y «concluida». Se propone usar
+**Finalizadas** para `FINALIZADO`, **Canceladas** para `CANCELADO` y
+**Caducadas** solo para solicitudes `CADUCADA`, sin contar dos veces. Confirmar
+si la CACE distingue «terminada» (última sesión) de «concluida» (todos los
+reportes y evaluación cerrados); si sí, hará falta un estado o un campo de
+cierre adicional.
+
+**Formato:** tarjetas de resumen, barras por estado, línea de tendencia por
+periodo y tabla ordenable; filtros por país, institución y rango de fechas;
+exportación a CSV/PDF. Se puede hacer con SVG/CSS y tablas sin añadir una
+librería de gráficas; si se quiere más, valorar Chart.js.
+
+**Comunicación con los agentes:** un canal por institución (nuevo
+`MENSAJE_CACE_INSTITUCION` o similar), con hilo, aviso por correo y estados de
+leído; el agente ve solo su institución y puede responder. El chat de proyecto
+que ya existe es por clase, no sirve para esto. Decidir si la secretaría puede
+leer o solo la presidencia.
+
+**Plan de acción:** por institución, una nota de prioridad, responsable, fecha
+y estado (`ABIERTA`, `EN_SEGUIMIENTO`, `CERRADA`), con historial. El panel
+muestra las acciones abiertas y su avance.
+
+**Permisos:** presidencia con acceso completo; secretaría solo lectura si se
+decide; agentes únicamente su institución. Los datos son agregados: no se
+exponen alumnos ni correos.
+
+- [ ] Endpoint agregado (por ejemplo `GET /cace/desempeno`) con filtros y
+  permisos, sin consultas N+1.
+- [ ] Pantalla con tarjetas, gráficas accesibles y tabla; exportación.
+- [ ] Plan de acción por institución con historial.
+- [ ] Canal de mensajes CACE–agente con aviso por correo.
+- [ ] e2e: los números cuadran con la base; un agente no ve otra institución;
+  una acción y un mensaje quedan registrados.
+
+**Esfuerzo:** 2–3 semanas (panel 1–2, canal 1). **Riesgo:** medio (permisos y
+definiciones de métricas). **Aceptación:** la presidencia puede comparar
+instituciones en un periodo, guardar un plan de acción y comunicarse con el
+agente sin salir del panel.
+
+**Decisiones de la Fase 8:** ¿«terminada» y «concluida» son lo mismo? ¿Qué
+periodo importa (mes, semestre, año)? ¿La secretaría ve el panel? ¿El canal es
+solo in-app, solo correo o ambos?
+
+---
+
+## Decisiones cerradas (22-oct-2026)
+
+- **Contraseñas:** mínimo **12 caracteres**, distinta del correo, sin exigir
+  mayúscula/número/símbolo y sin la regla del carácter repetido, con
+  comprobación de contraseñas comunes o filtradas.
+  **5 intentos fallidos / 15 minutos** de bloqueo, aviso al usuario y desbloqueo
+  administrativo. La política se aplica al establecer una contraseña nueva.
+- **Notificaciones:** correo para hitos y seguridad; avisos dentro de la app
+  para el resto; no duplicar los recordatorios del `.ics`; preferencias para lo
+  no esencial.
+- **Retención:** una institución dada de baja queda **inoperable y archivada**;
+  su historial se conserva para referencia. Los certificados se conservan y, si
+  procede, se anulan; no se borran en cascada.
+- **Sede:** una sola instancia y una sola base de datos; sin subdominios por
+  institución por ahora.
+- **Identificador:** sin pasaporte/DNI; el folio sigue siendo el identificador
+  público. Falta confirmar si se añade un código interno por alumno.
+- **Enlaces:** lista blanca con YouTube, Vimeo, Google Drive y OneDrive, solo
+  `https` y enlaces públicos.
+- **Multi-institución:** mínimo 2 participantes; un rechazo no tumba la clase
+  si quedan 2 o más; participantes congelados al crear el proyecto;
+  observadores sin certificado; cierra el docente de origen con supervisión.
+
+Las dos decisiones que requieren autorización —TOTP y proveedor de correo—
+están al final del plan, para la próxima reunión.
 
 ---
 
@@ -394,3 +497,32 @@ crea, se planifica, se certifica y se verifica sin duplicar proyectos.
   folio y verificación por QR).
 - Facturación, planes o multi-tenant comercial.
 - Traducción a otros idiomas (hoy todo está en español).
+
+---
+
+## Pendientes de autorización (próxima reunión)
+
+Estas dos no se implementan hasta que la CACE las autorice. Se dejan al final
+del plan para no perderlas de vista.
+
+### TOTP para presidencia y secretaría
+
+- **Qué se decide:** si el acceso a las cuentas de la CACE exige un código de
+  seis dígitos de una app autenticadora, además de la contraseña.
+- **Recomendación:** obligatorio para presidencia y secretaría; códigos de
+  respaldo; reset por la presidencia con auditoría; sin SMS.
+- **Para autorizarlo hacen falta:** decidir quién puede resetear, cuántos
+  códigos de respaldo y si se extiende después a agentes.
+- **Mientras no se autorice:** no se toca el inicio de sesión actual.
+
+### Proveedor de correo para producción
+
+- **Qué se decide:** qué servicio manda los correos reales y con qué dominio.
+- **Situación:** hoy hay SMTP configurado y envía correos; no está pensado para
+  lotes grandes de certificados.
+- **Recomendación:** proveedor transaccional con dominio propio, SPF/DKIM/DMARC,
+  rebotes registrados y la cola actual.
+- **Para autorizarlo hacen falta:** dominio, presupuesto, volumen estimado y
+  quién administra el DNS.
+- **Mientras no se autorice:** las pruebas siguen con el correo actual; no se
+  promete envío masivo en producción.
