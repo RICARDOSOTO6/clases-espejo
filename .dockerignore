@@ -1,0 +1,20 @@
+# Contexto de construcción: la raíz del repositorio (necesita frontend/ y backend/).
+# Nunca se copian node_modules, builds locales, .env ni datos de la demo.
+.git
+.gitignore
+**/node_modules
+**/dist
+**/.angular
+backend/generated
+backend/public
+backend/uploads
+backend/respaldos
+backend/.env
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.docker.example
+docs/tesis
+*.zip
+.tmp-chrome*
+.respaldos-prueba

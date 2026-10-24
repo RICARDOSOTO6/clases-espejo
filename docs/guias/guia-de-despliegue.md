@@ -828,3 +828,79 @@ npx ng build
 
 *Guía de despliegue de Clases Conjuntas · Plataforma CACE*
 *Documentos relacionados: `docs/readme` (técnico) y `docs/manual-de-usuario.md` (uso).*
+
+---
+
+## 19. Docker para la demo o un servidor temporal
+
+Hay un `Dockerfile` y un `docker-compose.yml` en la raíz. Es la vía más rápida
+para una demo: incluye PostgreSQL, aplica las migraciones y sirve frontend y API
+en el puerto 3000.
+
+> **Estado:** los archivos están preparados, pero **no se pudieron construir en
+> esta máquina porque Docker no está instalado**. La primera construcción real
+> debe hacerse en el servidor y revisar los logs antes de la clase.
+
+### Preparar los secretos
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+notepad .env.docker
+```
+
+Como mínimo cambia:
+
+- `POSTGRES_PASSWORD` (sin `@ : / ?` para que no rompa la URL de conexión).
+- `JWT_SECRET` (mínimo 16 caracteres; cambiarlo invalida códigos ya emitidos).
+- `FRONTEND_URL` y `URL_PUBLICA` con la URL real. **Antes de emitir certificados.**
+- `SMTP_*`, `MAIL_FROM` y `PRESIDENTE_CORREO`.
+
+`.env.docker` está en `.gitignore`; no se sube.
+
+### Levantar
+
+```powershell
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker logs -f app
+```
+
+La base empieza **vacía**: no se ejecuta `seed-demo.js`. El arranque aplica
+`prisma migrate deploy` y crea la presidencia con `PRESIDENTE_CORREO`.
+
+Comprobaciones:
+
+```powershell
+curl.exe http://localhost:3000/health
+docker compose --env-file .env.docker ps
+```
+
+### Datos y respaldos
+
+- `db-data`: base PostgreSQL.
+- `uploads`: evidencias, logos y PDFs emitidos.
+- `respaldos`: salida de los scripts de respaldo.
+
+No uses `docker compose down -v` salvo que quieras borrar la demo entera.
+
+Para respaldar desde el contenedor:
+
+```powershell
+docker compose --env-file .env.docker exec app node scripts/respaldo.js --salida /app/backend/respaldos/demo
+```
+
+Copia después la carpeta fuera del servidor.
+
+### HTTPS
+
+El contenedor publica HTTP en 3000. Para HTTPS, pon delante Nginx, Caddy o el
+proxy del proveedor, y configura `FRONTEND_URL` y `URL_PUBLICA` con el dominio
+final. El QR del certificado queda atado a esa URL.
+
+### Actualizar
+
+```powershell
+git pull
+docker compose --env-file .env.docker up -d --build
+```
+
+No cambies migraciones ni hagas `down -v` durante una clase.

@@ -50,3 +50,6 @@ borradores no importante/
 generar_informe.py
 corregir_informe.py
 ~$*
+
+# Entorno de Docker (secretos locales)
+.env.docker
