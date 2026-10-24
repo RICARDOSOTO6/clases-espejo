@@ -155,8 +155,8 @@ model DocenteInstitucion {
   docente        Docente             @relation(fields: [docenteId], references: [id])
   institucion    Institucion         @relation(fields: [institucionId], references: [id])
 
-  @@index([docenteId])
   @@index([institucionId])
+  @@unique([docenteId, institucionId], map: "docente_institucion_unico")
   @@map("DOCENTE_INSTITUCION")
 }
 
@@ -175,6 +175,7 @@ model Materia {
   solicitudesDestino SolicitudClaseEspejo[]
 
   @@index([institucionId])
+  @@unique([institucionId, clave], map: "materia_institucion_clave_unica")
   @@map("MATERIA")
 }
 
@@ -193,6 +194,7 @@ model AsignacionDocente {
 
   @@index([docenteInstitucionId])
   @@index([materiaId])
+  @@unique([docenteInstitucionId, materiaId, periodoEscolar], map: "asignacion_docente_periodo_unica")
   @@map("ASIGNACION_DOCENTE")
 }
 

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -42,10 +43,12 @@ export class MateriasService {
   async crear(agenteId: number, dto: CreateMateriaDto) {
     const agente = await this.getAgente(agenteId);
     await exigirAgenteHabilitado(this.prisma, agenteId);
+    const clave = dto.clave.trim();
+    await this.verificarClaveDisponible(agente.institucionId, clave);
     return this.prisma.materia.create({
       data: {
         institucionId: agente.institucionId,
-        clave: dto.clave,
+        clave,
         nombre: dto.nombre,
         programaEducativo: dto.programaEducativo,
         descripcion: dto.descripcion,
@@ -61,6 +64,17 @@ export class MateriasService {
       where: { id, institucionId: agente.institucionId },
     });
     if (!materia) throw new NotFoundException('Materia no encontrada');
+
+    if (dto.clave !== undefined) {
+      const clave = dto.clave.trim();
+      await this.verificarClaveDisponible(
+        agente.institucionId,
+        clave,
+        materia.id,
+      );
+      dto = { ...dto, clave };
+    }
+
     return this.prisma.materia.update({ where: { id }, data: dto });
   }
 
@@ -91,6 +105,26 @@ export class MateriasService {
 
     await this.prisma.materia.delete({ where: { id } });
     return { mensaje: 'Materia eliminada' };
+  }
+
+  private async verificarClaveDisponible(
+    institucionId: number,
+    clave: string,
+    exceptoId?: number,
+  ): Promise<void> {
+    const existente = await this.prisma.materia.findFirst({
+      where: {
+        institucionId,
+        clave: { equals: clave, mode: 'insensitive' },
+        ...(exceptoId ? { id: { not: exceptoId } } : {}),
+      },
+      select: { clave: true },
+    });
+    if (existente) {
+      throw new ConflictException(
+        `Ya existe una materia con la clave «${existente.clave}» en tu institución.`,
+      );
+    }
   }
 
   private async getAgente(agenteId: number) {

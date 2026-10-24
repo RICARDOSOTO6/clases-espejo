@@ -237,7 +237,7 @@ ClasesEspejo/
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma    # modelo de datos completo (33 tablas)
-│   │   └── migrations/      # 26 migraciones versionadas
+│   │   └── migrations/      # 28 migraciones versionadas
 │   │
 │   ├── generated/
 │   │   └── prisma/          # cliente generado (NO editar a mano)
@@ -355,7 +355,7 @@ ClasesconjuntasBD
 El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
 
 Las tablas se crean con las **migraciones versionadas** que están en
-`backend/prisma/migrations/` (**26 migraciones**):
+`backend/prisma/migrations/` (**28 migraciones**):
 
 ```bash
 npx prisma migrate deploy
@@ -1900,7 +1900,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] CORS restringido y cabeceras de seguridad globales (CSP, HSTS en producción,
   límite de la verificación pública) y en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (27 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (28 migraciones versionadas en `backend/prisma/migrations/`)
 * [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
   `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
   e2e y build
@@ -2033,7 +2033,7 @@ de entorno) y varias reglas CSS y `export` sin uso.
 # 📅 Plan de desarrollo (metas semanales)
 
 > **Meta:** producto terminado en 8 semanas.
-> El **modelo de datos ya está completo** (35 tablas) y el esquema está **migrado y versionado** (27 migraciones). Cada semana termina con un entregable **probable y visible**.
+> El **modelo de datos ya está completo** (35 tablas) y el esquema está **migrado y versionado** (28 migraciones). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
 ## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅

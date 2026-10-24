@@ -211,7 +211,7 @@ instituciones ni alumnos precargados.
 
 ### 2.5 Integridad que afecta a datos reales
 
-- [ ] Revisar duplicados antes de añadir `@@unique` de asignaciones y materias.
+- [x] Duplicados revisados en demo y pruebas (0) y añadidos tres índices únicos: docente-institución, materia-clave y asignación-periodo (24-oct-2026).
 - [ ] Añadir solo restricciones que protejan la demo; paginación, N+1, `ENUM`/`CHECK`
   pueden esperar a la Fase 6.
 - [ ] Comprobar que el folio es único y que la verificación no filtra datos.
