@@ -14,7 +14,10 @@
 ## Qué se va a demostrar
 
 Una clase con **dos instituciones**, con el fin de encontrar errores humanos y de
-operación que no aparecen en simulación. Puede ser:
+operación que no aparecen en simulación. La prueba solicitada arranca con una
+**base vacía**: sin instituciones, docentes, materias, alumnos, proyectos ni
+certificados; solo el alta inicial de la presidencia de la CACE. Las instituciones
+y los usuarios se crean durante la propia prueba. Puede ser:
 
 - **Alumnos ficticios:** más seguro; los certificados llevan marca **DEMO** y no
   se presentan como oficiales.
@@ -43,7 +46,7 @@ emitir, descargar, recibir y verificar.
 
 | Fase | Qué resuelve | Duración | Depende de |
 | --- | --- | --- | --- |
-| **0** | Decidir la demo y congelar el alcance | 2–3 días | — |
+| **0** | Preparar base vacía, guion desde cero y alcance | 2–3 días | — |
 | **1** | Servidor temporal listo: URL, HTTPS, respaldos, correo, seguridad | 1–2 semanas | Fase 0 |
 | **2** | Datos, privacidad y accesos reales | 1 semana | Fase 0 |
 | **3** | Release candidate y ensayo | 1 semana | Fases 1 y 2 |
@@ -57,27 +60,35 @@ restauración. Si falla uno de los tres, la demo se limita o se retrasa.
 
 ---
 
-## Fase 0 — Decidir la demo y congelar el alcance (2–3 días)
+## Fase 0 — Preparar la base vacía y el guion (2–3 días)
 
-No es código. Es evitar improvisar cuando avisen que ya es el momento.
+No hacen falta los nombres de las instituciones ni una fecha cerrada para avanzar.
+Si todavía no te los dieron, **no es un bloqueo**: la prueba empieza sin datos y
+las instituciones se registran durante la demo.
 
-- [ ] Confirmar **fecha, materia, dos instituciones, docentes, agentes y grupos**.
-- [ ] Confirmar que las dos instituciones están aprobadas por la CACE y que sus
-  cuentas están activas.
+- [ ] Confirmar que se quiere una **base vacía** (sin seed de demostración) y quién
+  hará de presidencia y secretaría de la CACE.
+- [ ] Nombrar responsable técnico, operador de la base y persona de soporte.
+- [ ] Escribir el **guion desde cero**: presidencia → secretaría → registro de
+  institución → aprobación CACE → agentes y docentes → materias → solicitud →
+  aprobación → planificación → sesión → evidencias → cierre → certificado DEMO →
+  verificación.
 - [ ] Decidir si los alumnos serán **ficticios o reales**. Si son reales, revisar
-  aviso de privacidad y consentimiento **antes** de cargar sus datos.
-- [ ] Decidir el tratamiento del certificado: **marca DEMO en base separada**,
-  certificado normal solo para la prueba, o no emitir. Recomendado: DEMO.
+  aviso de privacidad y consentimiento antes de cargar sus datos.
+- [ ] Definir el certificado de la prueba: **plantilla DEMO**, folio automático y
+  sin presentarlo como oficial. La plantilla hay que crearla porque la base vacía
+  no la trae.
 - [ ] Confirmar **URL pública y dominio**; no se emitirán certificados con una URL
   que pueda cambiar después.
-- [ ] Nombrar responsable técnico, responsable académico y persona de soporte.
-- [ ] Congelar el alcance: dos instituciones, evidencias por archivo, sin panel, sin
-  multi-institución y sin documento internacional.
-- [ ] Definir el **plan B** si falla el correo, la plataforma o un participante.
+- [ ] Definir el **plan B** si falla el correo, el registro o la plataforma.
 - [ ] Escribir el criterio de éxito y el criterio de **no celebrar la demo** si falta
   algo crítico.
+- [ ] Reservar una fecha tentativa cuando la CACE la indique; no hace falta fijarla
+  para dejar el entorno listo.
 
-**Aceptación:** fecha, personas, datos, URL, certificados y plan B confirmados.
+**Aceptación:** base vacía definida, guion desde cero escrito, roles y soporte
+confirmados, plantilla DEMO prevista y URL identificada. Los nombres de las
+instituciones pueden llegar después.
 
 ---
 
@@ -131,16 +142,34 @@ No es código. Es evitar improvisar cuando avisen que ya es el momento.
 - [ ] Logs con identificador de petición y errores 5xx.
 - [ ] Aviso de disco lleno y de cola de correo atascada.
 
-### 1.7 Entorno de demostración
+### 1.7 Entorno de demostración: base vacía
 
-- [ ] Base **separada** de cualquier base real; restaurar copia demo o sembrar datos.
-- [ ] Plantilla de certificado con marca **DEMO** o leyenda de demostración.
-- [ ] Instituciones, agentes y docentes de demo; alumnos ficticios si no hay
-  consentimiento.
-- [ ] Forma de reiniciar la demo sin tocar producción.
+**Modo A — base vacía de verdad (el que pidieron):**
 
-**Aceptación:** URL pública con HTTPS, correo probado, restauración comprobada,
-`/health` vigilado, cola activa y base demo separada.
+- [ ] Crear una base nueva y aplicar prisma migrate deploy; **no** ejecutar
+  seed-demo.js.
+- [ ] Configurar PRESIDENTE_CORREO y URL_PUBLICA. Al arrancar, el sistema crea
+  la presidencia y envía su contraseña provisional; si el SMTP falla, la deja en el
+  log (solo para la demo).
+- [ ] Entrar como presidencia, cambiar la contraseña y crear la secretaría.
+- [ ] Confirmar que no hay instituciones, docentes, materias, proyectos ni
+  certificados.
+- [ ] Probar que /registro crea una institución en PENDIENTE y que la CACE la
+  aprueba.
+- [ ] Crear la **plantilla de certificado DEMO desde cero**; sin plantilla activa no
+  se puede emitir.
+- [ ] Poder reiniciar la demo: borrar la base, volver a migrar y repetir el bootstrap.
+
+**Modo B — copia de demostración:** útil para un ensayo interno rápido, pero no
+sirve para la prueba de «empezar desde cero».
+
+La cuenta de presidencia no es un dato de demostración: sin ella nadie aprueba
+instituciones. Es el **único registro inicial**; todo lo demás se crea en la prueba.
+
+**Aceptación:** base vacía migrada, presidencia y secretaría creadas, registro de
+institución funcionando, plantilla DEMO lista, URL pública con HTTPS, correo
+probado, restauración comprobada, `/health` vigilado y cola activa. No hay
+instituciones ni alumnos precargados.
 
 ---
 
@@ -204,7 +233,10 @@ plantilla DEMO verificable y folio generado sin pasos manuales.
 
 En el servidor de pruebas (`:3001`, nunca el `:3000`):
 
-- [ ] Crear la clase con dos instituciones y recorrer todo el flujo.
+- [ ] Empezar con base vacía: presidencia, secretaría, registro de dos instituciones,
+  aprobación de la CACE y alta de agentes/docentes.
+- [ ] Crear materias, solicitud, aprobación, planificación, sesiones, evidencias y
+  cierre.
 - [ ] Subir lista, sesiones, evidencias y cerrar.
 - [ ] Emitir, descargar ZIP, verificar folio y QR.
 - [ ] Probar cola de correo y calendario.
@@ -260,7 +292,8 @@ Si el tiempo no alcanza, no se despliega a medias.
 
 - [ ] Checklist de accesos, sesión, lista, evidencias y certificados.
 - [ ] Una persona de soporte pendiente de la plataforma y del correo.
-- [ ] Observadores con guion: login, invitación, roles, móvil, lista, archivos,
+- [ ] Observadores con guion: registro de institución, login, invitación, roles,
+  móvil, lista, archivos,
   zona horaria, cierre, emisión, QR y correo.
 - [ ] Registrar cada incidencia con rol, hora, pantalla y captura.
 - [ ] **No corregir código durante la demo** salvo bloqueo total; usar el plan B.
