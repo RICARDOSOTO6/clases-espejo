@@ -30,6 +30,7 @@ import {
   diaLocal,
   diasAntelacionRevision,
   diasHasta,
+  diasMinimosPropuesta,
   fechaLimiteRevision,
   fechaMinimaPropuesta,
   textoDeColumna,
@@ -67,7 +68,7 @@ export class SolicitudesService {
     await exigirAgenteHabilitado(this.prisma, usuarioId);
 
     const docente = await this.getDocente(usuarioId);
-    this.verificarFechaPropuesta(dto.fechaPropuesta);
+    await this.verificarFechaPropuesta(dto.fechaPropuesta);
 
     const asignacion = await this.prisma.asignacionDocente.findFirst({
       where: {
@@ -136,6 +137,7 @@ export class SolicitudesService {
     const docente = await this.getDocente(usuarioId);
     // Antes de responder se revisa si alguna propuesta venció sin respuesta.
     await this.mantenimiento();
+    const { revision } = await this.plazos();
     const solicitudes = await this.prisma.solicitudClaseEspejo.findMany({
       where: {
         asignacionOrigen: { docenteInstitucion: { docenteId: docente.id } },
@@ -143,7 +145,7 @@ export class SolicitudesService {
       include: this.includeCompleto(),
       orderBy: { creadoEn: 'desc' },
     });
-    return solicitudes.map((solicitud) => this.conPlazos(solicitud));
+    return solicitudes.map((solicitud) => this.conPlazos(solicitud, revision));
   }
 
   /**
@@ -152,13 +154,17 @@ export class SolicitudesService {
    */
   private conPlazos<T extends { fechaPropuesta: Date; estado: string }>(
     solicitud: T,
+    diasRevision: number,
   ): T & {
     fechaLimite: Date;
     diasRestantes: number;
     urgencia: Urgencia;
     enRevision: boolean;
   } {
-    const fechaLimite = fechaLimiteRevision(solicitud.fechaPropuesta);
+    const fechaLimite = fechaLimiteRevision(
+      solicitud.fechaPropuesta,
+      diasRevision,
+    );
     const diasRestantes = diasHasta(fechaLimite);
     const enRevision = ESTADOS_SOLICITUD_EN_REVISION.includes(solicitud.estado);
     return {
@@ -180,10 +186,11 @@ export class SolicitudesService {
    * planificador de recordatorios.
    */
   async caducarVencidas(): Promise<number> {
+    const { revision } = await this.plazos();
     const { count } = await this.prisma.solicitudClaseEspejo.updateMany({
       where: {
         estado: { in: ESTADOS_SOLICITUD_EN_REVISION },
-        fechaPropuesta: { lt: corteCaducidad() },
+        fechaPropuesta: { lt: corteCaducidad(new Date(), revision) },
       },
       data: { estado: ESTADO_SOLICITUD_CADUCADA },
     });
@@ -253,7 +260,7 @@ export class SolicitudesService {
     const reenviar = solicitud.estado !== ESTADO_SOLICITUD_PENDIENTE;
 
     if (dto.fechaPropuesta !== undefined) {
-      this.verificarFechaPropuesta(dto.fechaPropuesta);
+      await this.verificarFechaPropuesta(dto.fechaPropuesta);
     }
 
     const asignacionOrigenId =
@@ -381,7 +388,8 @@ export class SolicitudesService {
         ? true
         : this.destinoConoce(solicitud),
     );
-    return visibles.map((solicitud) => this.conPlazos(solicitud));
+    const { revision } = await this.plazos();
+    return visibles.map((solicitud) => this.conPlazos(solicitud, revision));
   }
 
   /** ¿La institución del agente es la que propone la clase espejo? */
@@ -720,7 +728,32 @@ export class SolicitudesService {
    * instituciones pueden responder. Sin esto, una propuesta para pasado mañana
    * nacía ya caducada y nadie podía contestarla.
    */
-  private verificarFechaPropuesta(fecha: string): void {
+  /**
+   * Lee los dos plazos de la configuración de la CACE. Si la fila no existe,
+   * usa los valores por defecto (8 y 7) y el respaldo de entorno de la revisión.
+   */
+  private async plazos(): Promise<{ minimos: number; revision: number }> {
+    const config = await this.prisma.configuracionCace.findFirst({
+      select: { diasMinimosPropuesta: true, diasRevision: true },
+    });
+    return {
+      minimos: config?.diasMinimosPropuesta ?? diasMinimosPropuesta(),
+      revision: config?.diasRevision ?? diasAntelacionRevision(),
+    };
+  }
+
+  /** Los días mínimos para proponer, para el formulario del docente. */
+  async diasMinimosPropuestaConfig(): Promise<number> {
+    return (await this.plazos()).minimos;
+  }
+
+  /** Los días de revisión vigentes, para la agenda de recordatorios. */
+  async diasRevision(): Promise<number> {
+    return (await this.plazos()).revision;
+  }
+
+  private async verificarFechaPropuesta(fecha: string): Promise<void> {
+    const { minimos } = await this.plazos();
     const propuesta = fecha.slice(0, 10);
     const hoy = textoDeColumna(diaLocal());
     if (propuesta < hoy) {
@@ -728,10 +761,10 @@ export class SolicitudesService {
         'La fecha propuesta no puede estar en el pasado',
       );
     }
-    const minimo = textoDeColumna(fechaMinimaPropuesta());
+    const minimo = textoDeColumna(fechaMinimaPropuesta(new Date(), minimos));
     if (propuesta < minimo) {
       throw new BadRequestException(
-        `Propón la clase con al menos ${diasAntelacionRevision()} días de antelación (desde el ${minimo})`,
+        `Propón la clase con al menos ${minimos} días de antelación (desde el ${minimo})`,
       );
     }
   }

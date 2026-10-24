@@ -6,7 +6,6 @@
   homeRoute="/panel"
   (logout)="logout()"
 >
-
   <main class="content">
     @if (avisoPanel(); as aviso) {
       <div
@@ -21,16 +20,17 @@
             Reintentar
           </button>
         }
-        <button type="button" class="btn btn-secondary" (click)="cerrarAviso()">
-          Cerrar
-        </button>
+        <button type="button" class="btn btn-secondary" (click)="cerrarAviso()">Cerrar</button>
       </div>
     }
     <section class="card welcome">
       <div class="welcome-top">
         <div class="welcome-text">
           <span class="role-badge">Docente</span>
-          <h1>Bienvenido(a), {{ usuario?.nombres }} {{ usuario?.apellidoPaterno }} {{ usuario?.apellidoMaterno }}</h1>
+          <h1>
+            Bienvenido(a), {{ usuario?.nombres }} {{ usuario?.apellidoPaterno }}
+            {{ usuario?.apellidoMaterno }}
+          </h1>
           <p class="muted">Panel del Docente · Clases espejo colaborativas</p>
           @if (paisUsuario(); as pais) {
             <p class="welcome-meta">
@@ -75,12 +75,27 @@
       <div class="card-head">
         <div class="card-head-title">
           <span class="card-head-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4" />
+              <path d="M8 2v4" />
+              <path d="M3 10h18" />
+            </svg>
           </span>
           <h2>Recordatorios y próximos eventos</h2>
           @if (agenda(); as datos) {
             <span class="card-head-count">
-              {{ datos.resumen.clasesProximas }} clase(s) · {{ datos.resumen.enRevision }} por responder
+              {{ datos.resumen.clasesProximas }} clase(s) · {{ datos.resumen.enRevision }} por
+              responder
             </span>
           }
         </div>
@@ -97,8 +112,8 @@
         @if (agenda()!.caducadasAhora > 0) {
           <div class="alert alert-warning" role="status">
             <span>
-              {{ agenda()!.caducadasAhora }} solicitud(es) caducaron por falta de
-              respuesta y se cancelaron automáticamente.
+              {{ agenda()!.caducadasAhora }} solicitud(es) caducaron por falta de respuesta y se
+              cancelaron automáticamente.
             </span>
           </div>
         }
@@ -115,9 +130,7 @@
         <h2>Comunidad CACE</h2>
         <span class="comunidad-note">{{ lemaComunidad() }}</span>
       </div>
-      <p class="muted">
-        Países que conforman la Comunidad de Apoyo a Clases Espejo:
-      </p>
+      <p class="muted">Países que conforman la Comunidad de Apoyo a Clases Espejo:</p>
       <ul class="flags-comunidad">
         @for (p of paisesComunidad(); track p.codigo) {
           <li class="flag-pais">
@@ -203,9 +216,13 @@
                   <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Cancelar</button>
                 } @else if (s.estado === 'RECHAZADA' || s.estado === 'CADUCADA') {
                   <button class="btn btn-primary" (click)="openEditar(s)">
-                    {{ s.estado === 'CADUCADA' ? 'Reenviar con fecha nueva' : 'Corregir y reenviar' }}
+                    {{
+                      s.estado === 'CADUCADA' ? 'Reenviar con fecha nueva' : 'Corregir y reenviar'
+                    }}
                   </button>
-                  <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">Descartar</button>
+                  <button class="btn btn-secondary" (click)="cancelarSolicitud(s)">
+                    Descartar
+                  </button>
                 }
               </div>
             </li>
@@ -226,8 +243,7 @@
       @if (proyectosFiltrados().length === 0) {
         <p class="muted">
           @if (proyectos().length === 0) {
-            Aún no participas en proyectos. Se crean cuando el agente aprueba una
-            solicitud.
+            Aún no participas en proyectos. Se crean cuando el agente aprueba una solicitud.
           } @else {
             Ninguna clase espejo coincide con «{{ ui.busqueda() }}».
           }
@@ -243,8 +259,8 @@
                   → {{ pr.solicitud.institucionDestino.nombre }}
                 </div>
                 <div class="muted">
-                  {{ pr.docentes.length }} docente(s) ·
-                  {{ formatearFecha(pr.fechaInicio) }} – {{ formatearFecha(pr.fechaFin) }}
+                  {{ pr.docentes.length }} docente(s) · {{ formatearFecha(pr.fechaInicio) }} –
+                  {{ formatearFecha(pr.fechaFin) }}
                 </div>
               </div>
               <div class="lista-acciones">
@@ -292,11 +308,7 @@
 
       <div class="form-field">
         <label for="s-destino">Institución destino</label>
-        <select
-          id="s-destino"
-          formControlName="institucionDestinoId"
-          (change)="onDestinoChange()"
-        >
+        <select id="s-destino" formControlName="institucionDestinoId" (change)="onDestinoChange()">
           <option [ngValue]="null" disabled>Selecciona una institución</option>
           @for (i of instituciones(); track i.id) {
             <option [ngValue]="i.id">{{ i.nombre }} ({{ i.pais }})</option>
@@ -326,7 +338,12 @@
 
       <div class="form-field">
         <label for="s-fecha">Fecha propuesta</label>
-        <input id="s-fecha" type="date" formControlName="fechaPropuesta" />
+        <input
+          id="s-fecha"
+          type="date"
+          formControlName="fechaPropuesta"
+          [min]="fechaMinimaPropuesta()"
+        />
       </div>
 
       @if (solicitudError()) {

@@ -19,126 +19,126 @@
 
     <!-- Cabecera administrativa: identidad del rol, estado y acceso rápido a los módulos. -->
     @if (!soloSeccion()) {
-    <section class="card cace-cabecera cace-hero" id="cabecera">
-      <div class="cace-hero-head">
-        <div class="cace-hero-copy">
-          <span class="role-badge cace">
-            {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría CACE' : 'Presidencia CACE' }}
-          </span>
-          <p class="cace-eyebrow">Centro de administración</p>
-          <h1>
-            {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría de la CACE' : 'Presidencia de la CACE' }}
-          </h1>
-          <p class="cace-hero-subtitle">Hola, {{ nombreUsuario }}. Aquí tienes tus tareas y módulos de gestión.</p>
-        </div>
-        @if (!debeCambiarPassword() && !cargandoCapacidades()) {
-          <span class="cace-hero-state">
-            <span class="cace-hero-state-dot" aria-hidden="true"></span>
-            Panel listo
-          </span>
-        }
-      </div>
-
-      @if (debeCambiarPassword()) {
-        <div class="alert alert-warning" role="status">
-          Entraste con una contraseña provisional. Cámbiala para continuar: es el
-          primer paso obligatorio de tu cuenta.
+      <section class="card cace-cabecera cace-hero" id="cabecera">
+        <div class="cace-hero-head">
+          <div class="cace-hero-copy">
+            <span class="role-badge cace">
+              {{ rolCace() === 'SECRETARIA_CACE' ? 'Secretaría CACE' : 'Presidencia CACE' }}
+            </span>
+            <p class="cace-eyebrow">Centro de administración</p>
+            <h1>
+              {{
+                rolCace() === 'SECRETARIA_CACE' ? 'Secretaría de la CACE' : 'Presidencia de la CACE'
+              }}
+            </h1>
+            <p class="cace-hero-subtitle">
+              Hola, {{ nombreUsuario }}. Aquí tienes tus tareas y módulos de gestión.
+            </p>
+          </div>
+          @if (!debeCambiarPassword() && !cargandoCapacidades()) {
+            <span class="cace-hero-state">
+              <span class="cace-hero-state-dot" aria-hidden="true"></span>
+              Panel listo
+            </span>
+          }
         </div>
 
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <div class="form-field">
-            <label for="actual">Contraseña actual (la provisional)</label>
-            <input
-              id="actual"
-              type="password"
-              formControlName="actual"
-              autocomplete="current-password"
-            />
-            @if (mensajeDe('actual'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
+        @if (debeCambiarPassword()) {
+          <div class="alert alert-warning" role="status">
+            Entraste con una contraseña provisional. Cámbiala para continuar: es el primer paso
+            obligatorio de tu cuenta.
           </div>
 
-          <div class="form-field">
-            <label for="nueva">Nueva contraseña</label>
-            <input
-              id="nueva"
-              type="password"
-              formControlName="nueva"
-              autocomplete="new-password"
-            />
-            @if (mensajeDe('nueva'); as msg) {
-              <p class="field-error">{{ msg }}</p>
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <div class="form-field">
+              <label for="actual">Contraseña actual (la provisional)</label>
+              <input
+                id="actual"
+                type="password"
+                formControlName="actual"
+                autocomplete="current-password"
+              />
+              @if (mensajeDe('actual'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="nueva">Nueva contraseña</label>
+              <input
+                id="nueva"
+                type="password"
+                formControlName="nueva"
+                autocomplete="new-password"
+              />
+              @if (mensajeDe('nueva'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="confirmar">Repite la nueva contraseña</label>
+              <input
+                id="confirmar"
+                type="password"
+                formControlName="confirmar"
+                autocomplete="new-password"
+              />
+              @if (mensajeDe('confirmar'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            @if (error()) {
+              <div class="alert alert-error" role="alert">{{ error() }}</div>
             }
-          </div>
 
-          <div class="form-field">
-            <label for="confirmar">Repite la nueva contraseña</label>
-            <input
-              id="confirmar"
-              type="password"
-              formControlName="confirmar"
-              autocomplete="new-password"
-            />
-            @if (mensajeDe('confirmar'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          @if (error()) {
-            <div class="alert alert-error" role="alert">{{ error() }}</div>
-          }
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="form.invalid || loading()"
-          >
-            @if (loading()) {
-              <span class="spinner" aria-hidden="true"></span>
-            }
-            {{ loading() ? 'Guardando...' : 'Cambiar contraseña' }}
-          </button>
-        </form>
-      } @else if (exito()) {
-        <div class="alert alert-success" role="status">{{ exito() }}</div>
-      }
-    </section>
-
-    @if (!debeCambiarPassword() && !cargandoCapacidades()) {
-      @if (kpisCace().length > 0) {
-        <section class="cace-kpis" aria-label="Resumen de actividad">
-          @for (kpi of kpisCace(); track kpi.etiqueta) {
-            <article
-              class="cace-kpi"
-              [class.cace-kpi--warn]="kpi.tono === 'warn'"
-              [class.cace-kpi--info]="kpi.tono === 'info'"
-              [class.cace-kpi--success]="kpi.tono === 'success'"
-              [class.cace-kpi--danger]="kpi.tono === 'danger'"
-            >
-              <span class="cace-kpi-value">{{ kpi.valor }}</span>
-              <span class="cace-kpi-label">{{ kpi.etiqueta }}</span>
-            </article>
-          }
-        </section>
-      }
-
-      <nav class="cace-modulos" aria-label="Módulos de administración">
-        @for (modulo of modulosCace(); track modulo.id) {
-          @if (modulo.ruta) {
-            <a class="cace-modulo" [routerLink]="modulo.ruta">
-              <span>{{ modulo.etiqueta }}</span>
-              <span aria-hidden="true">↗</span>
-            </a>
-          } @else {
-            <a class="cace-modulo" [href]="'#' + modulo.ancla">
-              <span>{{ modulo.etiqueta }}</span>
-              <span aria-hidden="true">↓</span>
-            </a>
-          }
+            <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading()">
+              @if (loading()) {
+                <span class="spinner" aria-hidden="true"></span>
+              }
+              {{ loading() ? 'Guardando...' : 'Cambiar contraseña' }}
+            </button>
+          </form>
+        } @else if (exito()) {
+          <div class="alert alert-success" role="status">{{ exito() }}</div>
         }
-      </nav>
-    }
+      </section>
+
+      @if (!debeCambiarPassword() && !cargandoCapacidades()) {
+        @if (kpisCace().length > 0) {
+          <section class="cace-kpis" aria-label="Resumen de actividad">
+            @for (kpi of kpisCace(); track kpi.etiqueta) {
+              <article
+                class="cace-kpi"
+                [class.cace-kpi--warn]="kpi.tono === 'warn'"
+                [class.cace-kpi--info]="kpi.tono === 'info'"
+                [class.cace-kpi--success]="kpi.tono === 'success'"
+                [class.cace-kpi--danger]="kpi.tono === 'danger'"
+              >
+                <span class="cace-kpi-value">{{ kpi.valor }}</span>
+                <span class="cace-kpi-label">{{ kpi.etiqueta }}</span>
+              </article>
+            }
+          </section>
+        }
+
+        <nav class="cace-modulos" aria-label="Módulos de administración">
+          @for (modulo of modulosCace(); track modulo.id) {
+            @if (modulo.ruta) {
+              <a class="cace-modulo" [routerLink]="modulo.ruta">
+                <span>{{ modulo.etiqueta }}</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            } @else {
+              <a class="cace-modulo" [href]="'#' + modulo.ancla">
+                <span>{{ modulo.etiqueta }}</span>
+                <span aria-hidden="true">↓</span>
+              </a>
+            }
+          }
+        </nav>
+      }
     }
 
     @if (soloSeccion() || !debeCambiarPassword()) {
@@ -165,278 +165,299 @@
         solicitudes de borrado.
       -->
       @if (mostrarSeccion('instituciones') && puede('aprobarInstituciones')) {
-      <section class="card" id="instituciones" data-seccion="instituciones">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></span> <h2>Instituciones</h2>
-            @if (pendientes().length > 0) {
-              <span class="card-head-count">{{ pendientes().length }}</span>
-            }
-          </div>
-          <div class="card-head-actions">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              [disabled]="cargando()"
-              (click)="cargarInstituciones()"
-            >
-              {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
-            </button>
-          </div>
-        </div>
-
-        <p class="text-sm muted">
-          Las pendientes aparecen primero. Aprobar deja operar a la institución con normalidad;
-          rechazar y vetar exigen un motivo, y el agente de la institución recibe el aviso por
-          correo. Una institución rechazada se puede borrar definitivamente, pero solo si no
-          tiene historia: si la tiene, se queda como rechazada para no perderla.
-        </p>
-
-        @if (errorInstituciones()) {
-          <div class="alert alert-error" role="alert">
-            {{ errorInstituciones() }}
-          </div>
-        }
-        @if (avisoInstituciones()) {
-          <div class="alert alert-success" role="status">
-            {{ avisoInstituciones() }}
-          </div>
-        }
-
-        @if (instituciones().length > 0) {
-          <div class="cace-filtros" role="search" aria-label="Filtrar instituciones">
-            <div class="form-field">
-              <label for="buscar-instituciones">Buscar institución</label>
-              <input
-                id="buscar-instituciones"
-                type="search"
-                placeholder="Nombre, país o agente…"
-                [value]="filtroInstituciones()"
-                (input)="actualizarFiltroInstituciones($event)"
-              />
+        <section class="card" id="instituciones" data-seccion="instituciones">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z" />
+                  <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+                  <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+                  <path d="M10 6h4" />
+                  <path d="M10 10h4" />
+                  <path d="M10 14h4" />
+                  <path d="M10 18h4" /></svg
+              ></span>
+              <h2>Instituciones</h2>
+              @if (pendientes().length > 0) {
+                <span class="card-head-count">{{ pendientes().length }}</span>
+              }
             </div>
-            <div class="form-field">
-              <label for="estado-instituciones">Estado</label>
-              <select
-                id="estado-instituciones"
-                [value]="estadoInstituciones()"
-                (change)="actualizarEstadoInstituciones($event)"
+            <div class="card-head-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="cargando()"
+                (click)="cargarInstituciones()"
               >
-                <option value="TODAS">Todos los estados</option>
-                <option value="PENDIENTE">Pendientes</option>
-                <option value="APROBADA">Aprobadas</option>
-                <option value="RECHAZADA">Rechazadas</option>
-                <option value="VETADA">Vetadas</option>
-              </select>
+                {{ cargando() ? 'Actualizando...' : 'Actualizar' }}
+              </button>
             </div>
-            <p class="cace-filtros-resumen" aria-live="polite">
-              {{ institucionesFiltradas().length }} de {{ instituciones().length }} instituciones
-            </p>
           </div>
-        }
 
-        @if (cargando() && instituciones().length === 0) {
-          <p class="text-sm muted">Cargando instituciones...</p>
-        } @else if (instituciones().length === 0) {
-          <p class="text-sm muted">Todavía no hay instituciones registradas.</p>
-        } @else if (institucionesFiltradas().length === 0) {
-          <div class="cace-vacio-filtro">
-            <strong>No hay instituciones que coincidan.</strong>
-            <p class="text-sm muted">Prueba con otro nombre, país o estado.</p>
-          </div>
-        } @else {
-          <ul class="lista cace-admin-list">
-            @for (institucion of institucionesFiltradas(); track institucion.id) {
-              <li class="lista-item">
-                <div class="inst-bloque">
-                  <div class="inst-name">
-                    @if (logoDe(institucion); as logo) {
-                      <img class="logo-institucion" [src]="logo" alt="Logo de la institución" />
-                    }
-                    <strong>{{ institucion.nombre }}</strong>
-                    <span [class]="claseEstado(institucion.estadoCace)">
-                      {{ etiquetaEstado(institucion.estadoCace) }}
-                    </span>
-                  </div>
+          <p class="text-sm muted">
+            Las pendientes aparecen primero. Aprobar deja operar a la institución con normalidad;
+            rechazar y vetar exigen un motivo, y el agente de la institución recibe el aviso por
+            correo. Una institución rechazada se puede borrar definitivamente, pero solo si no tiene
+            historia: si la tiene, se queda como rechazada para no perderla.
+          </p>
 
-                  <p class="text-sm muted">
-                    {{ institucion.pais }}
-                    @if (institucion.revisadaPor) {
-                      · Revisada por {{ institucion.revisadaPor }}
-                      @if (institucion.revisadaEn) {
-                        el {{ fechaRevision(institucion.revisadaEn) }}
+          @if (errorInstituciones()) {
+            <div class="alert alert-error" role="alert">
+              {{ errorInstituciones() }}
+            </div>
+          }
+          @if (avisoInstituciones()) {
+            <div class="alert alert-success" role="status">
+              {{ avisoInstituciones() }}
+            </div>
+          }
+
+          @if (instituciones().length > 0) {
+            <div class="cace-filtros" role="search" aria-label="Filtrar instituciones">
+              <div class="form-field">
+                <label for="buscar-instituciones">Buscar institución</label>
+                <input
+                  id="buscar-instituciones"
+                  type="search"
+                  placeholder="Nombre, país o agente…"
+                  [value]="filtroInstituciones()"
+                  (input)="actualizarFiltroInstituciones($event)"
+                />
+              </div>
+              <div class="form-field">
+                <label for="estado-instituciones">Estado</label>
+                <select
+                  id="estado-instituciones"
+                  [value]="estadoInstituciones()"
+                  (change)="actualizarEstadoInstituciones($event)"
+                >
+                  <option value="TODAS">Todos los estados</option>
+                  <option value="PENDIENTE">Pendientes</option>
+                  <option value="APROBADA">Aprobadas</option>
+                  <option value="RECHAZADA">Rechazadas</option>
+                  <option value="VETADA">Vetadas</option>
+                </select>
+              </div>
+              <p class="cace-filtros-resumen" aria-live="polite">
+                {{ institucionesFiltradas().length }} de {{ instituciones().length }} instituciones
+              </p>
+            </div>
+          }
+
+          @if (cargando() && instituciones().length === 0) {
+            <p class="text-sm muted">Cargando instituciones...</p>
+          } @else if (instituciones().length === 0) {
+            <p class="text-sm muted">Todavía no hay instituciones registradas.</p>
+          } @else if (institucionesFiltradas().length === 0) {
+            <div class="cace-vacio-filtro">
+              <strong>No hay instituciones que coincidan.</strong>
+              <p class="text-sm muted">Prueba con otro nombre, país o estado.</p>
+            </div>
+          } @else {
+            <ul class="lista cace-admin-list">
+              @for (institucion of institucionesFiltradas(); track institucion.id) {
+                <li class="lista-item">
+                  <div class="inst-bloque">
+                    <div class="inst-name">
+                      @if (logoDe(institucion); as logo) {
+                        <img class="logo-institucion" [src]="logo" alt="Logo de la institución" />
                       }
-                    }
-                  </p>
+                      <strong>{{ institucion.nombre }}</strong>
+                      <span [class]="claseEstado(institucion.estadoCace)">
+                        {{ etiquetaEstado(institucion.estadoCace) }}
+                      </span>
+                    </div>
 
-                  @if (institucion.agentes.length > 0) {
                     <p class="text-sm muted">
-                      Agente de contacto:
-                      @for (agente of institucion.agentes; track agente.correo) {
-                        {{ agente.nombre }} ({{ agente.correo }}){{ $last ? '' : ',' }}
+                      {{ institucion.pais }}
+                      @if (institucion.revisadaPor) {
+                        · Revisada por {{ institucion.revisadaPor }}
+                        @if (institucion.revisadaEn) {
+                          el {{ fechaRevision(institucion.revisadaEn) }}
+                        }
                       }
                     </p>
-                  } @else {
-                    <p class="text-sm muted">Sin agente de contacto registrado.</p>
-                  }
 
-                  @if (institucion.posibleDuplicadoDe; as duplicado) {
-                    <div class="alert alert-warning" role="status">
-                      Posible duplicado de «{{ duplicado.nombre }}» ({{ duplicado.pais }}), que ya
-                      está aprobada.
-                    </div>
-                  }
-
-                  @if (institucion.motivoCace) {
-                    <p class="text-sm"><strong>Motivo:</strong> {{ institucion.motivoCace }}</p>
-                  }
-
-                  @if (pidiendoMotivo(); as solicitud) {
-                    @if (solicitud.id === institucion.id) {
-                      <div class="form-field inst-motivo">
-                        <label [for]="'motivo-' + institucion.id">
-                          {{
-                            solicitud.decision === 'rechazar'
-                              ? 'Motivo del rechazo'
-                              : 'Motivo del veto'
-                          }}
-                        </label>
-                        <textarea
-                          [id]="'motivo-' + institucion.id"
-                          rows="3"
-                          [formControl]="motivo"
-                          placeholder="Explica el motivo: se le enviará por correo al agente de la institución."
-                        ></textarea>
-                        @if (motivo.touched && motivo.invalid) {
-                          <p class="field-error">El motivo es obligatorio.</p>
+                    @if (institucion.agentes.length > 0) {
+                      <p class="text-sm muted">
+                        Agente de contacto:
+                        @for (agente of institucion.agentes; track agente.correo) {
+                          {{ agente.nombre }} ({{ agente.correo }}){{ $last ? '' : ',' }}
                         }
+                      </p>
+                    } @else {
+                      <p class="text-sm muted">Sin agente de contacto registrado.</p>
+                    }
+
+                    @if (institucion.posibleDuplicadoDe; as duplicado) {
+                      <div class="alert alert-warning" role="status">
+                        Posible duplicado de «{{ duplicado.nombre }}» ({{ duplicado.pais }}), que ya
+                        está aprobada.
                       </div>
                     }
-                  }
-                  @if (pidiendoBorrado(); as borrando) {
-                    @if (borrando.id === institucion.id) {
-                      <div class="alert alert-error" role="status">
-                        Vas a borrar «{{ institucion.nombre }}» de forma
-                        definitiva. Solo se puede si no tiene historia
-                        (solicitudes, clases espejo, sesiones, evidencias,
-                        listas de alumnos o revisiones): si la tiene, el sistema
-                        lo rechazará y deberá quedarse como rechazada.
-                      </div>
+
+                    @if (institucion.motivoCace) {
+                      <p class="text-sm"><strong>Motivo:</strong> {{ institucion.motivoCace }}</p>
                     }
-                  }
-                </div>
 
-                <div class="lista-acciones">
-                  @if (institucion.estadoCace === 'PENDIENTE') {
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      [disabled]="enProceso() !== null"
-                      (click)="aprobar(institucion)"
-                    >
-                      Aprobar
-                    </button>
-                  }
+                    @if (pidiendoMotivo(); as solicitud) {
+                      @if (solicitud.id === institucion.id) {
+                        <div class="form-field inst-motivo">
+                          <label [for]="'motivo-' + institucion.id">
+                            {{
+                              solicitud.decision === 'rechazar'
+                                ? 'Motivo del rechazo'
+                                : 'Motivo del veto'
+                            }}
+                          </label>
+                          <textarea
+                            [id]="'motivo-' + institucion.id"
+                            rows="3"
+                            [formControl]="motivo"
+                            placeholder="Explica el motivo: se le enviará por correo al agente de la institución."
+                          ></textarea>
+                          @if (motivo.touched && motivo.invalid) {
+                            <p class="field-error">El motivo es obligatorio.</p>
+                          }
+                        </div>
+                      }
+                    }
+                    @if (pidiendoBorrado(); as borrando) {
+                      @if (borrando.id === institucion.id) {
+                        <div class="alert alert-error" role="status">
+                          Vas a borrar «{{ institucion.nombre }}» de forma definitiva. Solo se puede
+                          si no tiene historia (solicitudes, clases espejo, sesiones, evidencias,
+                          listas de alumnos o revisiones): si la tiene, el sistema lo rechazará y
+                          deberá quedarse como rechazada.
+                        </div>
+                      }
+                    }
+                  </div>
 
-                  @if (
-                    institucion.estadoCace === 'PENDIENTE' || institucion.estadoCace === 'APROBADA'
-                  ) {
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      [disabled]="enProceso() !== null"
-                      (click)="pedirMotivo(institucion, 'rechazar')"
-                    >
-                      Rechazar
-                    </button>
-                  }
+                  <div class="lista-acciones">
+                    @if (institucion.estadoCace === 'PENDIENTE') {
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [disabled]="enProceso() !== null"
+                        (click)="aprobar(institucion)"
+                      >
+                        Aprobar
+                      </button>
+                    }
 
-                  @if (
-                    institucion.estadoCace === 'RECHAZADA' || institucion.estadoCace === 'VETADA'
-                  ) {
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      [disabled]="enProceso() !== null"
-                      (click)="reactivar(institucion)"
-                    >
-                      Reactivar
-                    </button>
-                  }
+                    @if (
+                      institucion.estadoCace === 'PENDIENTE' ||
+                      institucion.estadoCace === 'APROBADA'
+                    ) {
+                      <button
+                        type="button"
+                        class="btn btn-outline"
+                        [disabled]="enProceso() !== null"
+                        (click)="pedirMotivo(institucion, 'rechazar')"
+                      >
+                        Rechazar
+                      </button>
+                    }
 
-                  @if (institucion.estadoCace !== 'VETADA') {
-                    <button
-                      type="button"
-                      class="btn btn-danger"
-                      [disabled]="enProceso() !== null"
-                      (click)="pedirMotivo(institucion, 'vetar')"
-                    >
-                      Vetar
-                    </button>
-                  }
+                    @if (
+                      institucion.estadoCace === 'RECHAZADA' || institucion.estadoCace === 'VETADA'
+                    ) {
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [disabled]="enProceso() !== null"
+                        (click)="reactivar(institucion)"
+                      >
+                        Reactivar
+                      </button>
+                    }
 
-                  <!-- Borrado definitivo: solo en las rechazadas y sin historia.
-                       Es de la presidencia; la secretaría lo pide desde su
-                       sección de solicitudes. -->
-                  @if (institucion.estadoCace === 'RECHAZADA' && puede('borrarInstituciones')) {
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      data-accion="borrar-institucion"
-                      [disabled]="enProceso() !== null"
-                      (click)="pedirBorrado(institucion)"
-                    >
-                      Borrar definitivamente
-                    </button>
-                  }
-
-                  @if (pidiendoBorrado()?.id === institucion.id) {
-                    <button
-                      type="button"
-                      class="btn btn-danger"
-                      [disabled]="enProceso() !== null"
-                      (click)="confirmarBorrado()"
-                    >
-                      Confirmar borrado
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-ghost"
-                      [disabled]="enProceso() !== null"
-                      (click)="cancelarBorrado()"
-                    >
-                      Cancelar
-                    </button>
-                  }
-
-                  @if (pidiendoMotivo(); as solicitud) {
-                    @if (solicitud.id === institucion.id) {
+                    @if (institucion.estadoCace !== 'VETADA') {
                       <button
                         type="button"
                         class="btn btn-danger"
                         [disabled]="enProceso() !== null"
-                        (click)="confirmarMotivo()"
+                        (click)="pedirMotivo(institucion, 'vetar')"
                       >
-                        {{
-                          solicitud.decision === 'rechazar' ? 'Confirmar rechazo' : 'Confirmar veto'
-                        }}
+                        Vetar
+                      </button>
+                    }
+
+                    <!-- Borrado definitivo: solo en las rechazadas y sin historia.
+                       Es de la presidencia; la secretaría lo pide desde su
+                       sección de solicitudes. -->
+                    @if (institucion.estadoCace === 'RECHAZADA' && puede('borrarInstituciones')) {
+                      <button
+                        type="button"
+                        class="btn btn-outline"
+                        data-accion="borrar-institucion"
+                        [disabled]="enProceso() !== null"
+                        (click)="pedirBorrado(institucion)"
+                      >
+                        Borrar definitivamente
+                      </button>
+                    }
+
+                    @if (pidiendoBorrado()?.id === institucion.id) {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        [disabled]="enProceso() !== null"
+                        (click)="confirmarBorrado()"
+                      >
+                        Confirmar borrado
                       </button>
                       <button
                         type="button"
                         class="btn btn-ghost"
                         [disabled]="enProceso() !== null"
-                        (click)="cancelarMotivo()"
+                        (click)="cancelarBorrado()"
                       >
                         Cancelar
                       </button>
                     }
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+
+                    @if (pidiendoMotivo(); as solicitud) {
+                      @if (solicitud.id === institucion.id) {
+                        <button
+                          type="button"
+                          class="btn btn-danger"
+                          [disabled]="enProceso() !== null"
+                          (click)="confirmarMotivo()"
+                        >
+                          {{
+                            solicitud.decision === 'rechazar'
+                              ? 'Confirmar rechazo'
+                              : 'Confirmar veto'
+                          }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-ghost"
+                          [disabled]="enProceso() !== null"
+                          (click)="cancelarMotivo()"
+                        >
+                          Cancelar
+                        </button>
+                      }
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
       }
 
       <!--
@@ -448,7 +469,23 @@
         <section class="card" id="miembros" data-seccion="miembros">
           <div class="card-head">
             <div class="card-head-title">
-              <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <h2>Miembros de la CACE</h2>
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg
+              ></span>
+              <h2>Miembros de la CACE</h2>
               @if (miembros().length > 0) {
                 <span class="card-head-count">{{ miembros().length }}</span>
               }
@@ -466,11 +503,10 @@
           </div>
 
           <p class="ayuda-contexto">
-            La presidencia da de alta <strong>secretarías</strong>: ayudan con la
-            personalización de la CACE, los premios y las peticiones de borrado,
-            pero no aprueban instituciones, no firman certificados y no borran por
-            su cuenta (lo piden y lo autoriza la presidencia). A cada secretaría
-            nueva se le manda su contraseña provisional y el sistema le pedirá
+            La presidencia da de alta <strong>secretarías</strong>: ayudan con la personalización de
+            la CACE, los premios y las peticiones de borrado, pero no aprueban instituciones, no
+            firman certificados y no borran por su cuenta (lo piden y lo autoriza la presidencia). A
+            cada secretaría nueva se le manda su contraseña provisional y el sistema le pedirá
             cambiarla al entrar.
           </p>
 
@@ -482,10 +518,9 @@
           }
           @if (passwordDeApoyo(); as apoyo) {
             <div class="alert alert-warning" role="status">
-              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que
-              aquí está la contraseña provisional:
-              <strong>{{ apoyo.password }}</strong>. Dásela a mano: el sistema le
-              pedirá cambiarla al entrar.
+              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que aquí está la
+              contraseña provisional: <strong>{{ apoyo.password }}</strong
+              >. Dásela a mano: el sistema le pedirá cambiarla al entrar.
             </div>
           }
 
@@ -587,8 +622,8 @@
             <p class="text-sm muted">Cargando los miembros de la CACE...</p>
           } @else if (miembros().length === 0) {
             <p class="text-sm muted">
-              Todavía no hay miembros de la CACE. Da de alta una secretaría para
-              repartir el trabajo.
+              Todavía no hay miembros de la CACE. Da de alta una secretaría para repartir el
+              trabajo.
             </p>
           } @else if (miembrosFiltrados().length === 0) {
             <div class="cace-vacio-filtro">
@@ -600,14 +635,24 @@
               @for (miembro of miembrosFiltrados(); track miembro.id) {
                 <li class="lista-item">
                   <span class="miembro-avatar" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
                   </span>
                   <div class="inst-bloque">
                     <div class="inst-name">
                       <strong>{{ miembro.nombre }}</strong>
-                      <span
-                        [class]="miembro.activo ? 'estado aprobada' : 'estado cancelada'"
-                      >
+                      <span [class]="miembro.activo ? 'estado aprobada' : 'estado cancelada'">
                         {{ miembro.activo ? 'Activo' : 'Sin acceso' }}
                       </span>
                       <span class="text-sm muted">{{ miembro.etiquetaCargo }}</span>
@@ -617,8 +662,7 @@
 
                     <p class="text-sm muted">
                       @if (miembro.debeCambiarPassword) {
-                        Entra con contraseña provisional: el sistema le pedirá
-                        cambiarla.
+                        Entra con contraseña provisional: el sistema le pedirá cambiarla.
                       } @else {
                         Miembro desde {{ fechaRevision(miembro.creadoEn) }}.
                       }
@@ -631,9 +675,8 @@
                       @if (bajando.id === miembro.id) {
                         <div class="alert alert-error" role="status">
                           ¿Quitar el acceso de {{ miembro.nombre }}? Deja de ser
-                          {{ miembro.etiquetaCargo.toLowerCase() }} de la CACE: sus
-                          secciones le responderán 403. Se puede volver a activar
-                          cuando haga falta.
+                          {{ miembro.etiquetaCargo.toLowerCase() }} de la CACE: sus secciones le
+                          responderán 403. Se puede volver a activar cuando haga falta.
                         </div>
                       }
                     }
@@ -678,9 +721,8 @@
                           está en su propia sección.
                         -->
                         <span class="text-sm muted">
-                          {{ miembro.cargo === 'PRESIDENTE' ? 'Preside' : 'Suple' }} la
-                          CACE: no se desactiva, se transmite con «Cambiar de
-                          presidente».
+                          {{ miembro.cargo === 'PRESIDENTE' ? 'Preside' : 'Suple' }} la CACE: no se
+                          desactiva, se transmite con «Cambiar de presidente».
                         </span>
                       }
                     } @else {
@@ -714,7 +756,21 @@
         <section class="card" id="presidencia" data-seccion="presidencia">
           <div class="card-head">
             <div class="card-head-title">
-              <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/><path d="M5 20h14"/></svg></span> <h2>Presidencia de la CACE</h2>
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z" />
+                  <path d="M5 20h14" /></svg
+              ></span>
+              <h2>Presidencia de la CACE</h2>
               @if (presidenteActual(); as actual) {
                 <span class="card-head-count" [attr.data-presidente-actual]="actual.correo">
                   {{ actual.nombre }}
@@ -744,12 +800,11 @@
           </div>
 
           <p class="text-sm muted">
-            La presidencia no se borra ni se desactiva: <strong>se transmite</strong>.
-            Al cambiar de presidente, quien entra pasa a presidente y quien sale
-            queda como <strong>suplente</strong>, sigue activo y conserva las
-            capacidades (aprueba instituciones, autoriza borrados y firma
-            certificados igual que antes). No se pierde nada por el camino y nada
-            se borra.
+            La presidencia no se borra ni se desactiva: <strong>se transmite</strong>. Al cambiar de
+            presidente, quien entra pasa a presidente y quien sale queda como
+            <strong>suplente</strong>, sigue activo y conserva las capacidades (aprueba
+            instituciones, autoriza borrados y firma certificados igual que antes). No se pierde
+            nada por el camino y nada se borra.
           </p>
 
           @if (presidenteActual(); as actual) {
@@ -758,8 +813,8 @@
             </p>
           } @else {
             <p class="text-sm muted">
-              No hay presidencia activa registrada. Reinicia el servidor para que
-              se cree con el correo de <code>PRESIDENTE_CORREO</code>.
+              No hay presidencia activa registrada. Reinicia el servidor para que se cree con el
+              correo de <code>PRESIDENTE_CORREO</code>.
             </p>
           }
 
@@ -771,10 +826,9 @@
           }
           @if (passwordDeApoyoPresidencia(); as apoyo) {
             <div class="alert alert-warning" role="status">
-              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que aquí
-              está la contraseña provisional:
-              <strong>{{ apoyo.password }}</strong>. Dásela a mano: el sistema le
-              pedirá cambiarla al entrar.
+              El correo a <strong>{{ apoyo.correo }}</strong> no salió, así que aquí está la
+              contraseña provisional: <strong>{{ apoyo.password }}</strong
+              >. Dásela a mano: el sistema le pedirá cambiarla al entrar.
             </div>
           }
 
@@ -792,9 +846,7 @@
                 <div class="lista-acciones">
                   <button
                     type="button"
-                    [class]="
-                      modoSucesor() === 'miembro' ? 'btn btn-primary' : 'btn btn-outline'
-                    "
+                    [class]="modoSucesor() === 'miembro' ? 'btn btn-primary' : 'btn btn-outline'"
                     data-opcion="sucesor-miembro"
                     (click)="elegirModoSucesor('miembro')"
                   >
@@ -802,9 +854,7 @@
                   </button>
                   <button
                     type="button"
-                    [class]="
-                      modoSucesor() === 'nuevo' ? 'btn btn-primary' : 'btn btn-outline'
-                    "
+                    [class]="modoSucesor() === 'nuevo' ? 'btn btn-primary' : 'btn btn-outline'"
                     data-opcion="sucesor-nuevo"
                     (click)="elegirModoSucesor('nuevo')"
                   >
@@ -815,14 +865,11 @@
 
               @if (modoSucesor() === 'miembro') {
                 <div class="form-field">
-                  <label for="presidente-miembro">
-                    Miembro que recibe el cargo (activo)
-                  </label>
+                  <label for="presidente-miembro"> Miembro que recibe el cargo (activo) </label>
                   @if (candidatosPresidencia().length === 0) {
                     <p class="field-error">
-                      No hay a quién darle el cargo: hacen falta una secretaría o un
-                      suplente activos. Da de alta una secretaría y vuelve a
-                      intentarlo.
+                      No hay a quién darle el cargo: hacen falta una secretaría o un suplente
+                      activos. Da de alta una secretaría y vuelve a intentarlo.
                     </p>
                   } @else {
                     <select id="presidente-miembro" formControlName="miembroId">
@@ -877,9 +924,7 @@
                 </div>
 
                 <div class="form-field">
-                  <label for="presidente-apellido-materno">
-                    Apellido materno (opcional)
-                  </label>
+                  <label for="presidente-apellido-materno"> Apellido materno (opcional) </label>
                   <input
                     id="presidente-apellido-materno"
                     type="text"
@@ -897,18 +942,17 @@
                   placeholder="Por qué se transmite el cargo"
                 />
                 <p class="text-sm muted">
-                  Queda escrito en el historial: es lo que permitirá entender el
-                  cambio dentro de unos meses.
+                  Queda escrito en el historial: es lo que permitirá entender el cambio dentro de
+                  unos meses.
                 </p>
               </div>
 
               @if (sucesorElegido(); as sucesor) {
                 @if (sucesor.cargo === 'SECRETARIA') {
                   <div class="alert alert-warning" role="status">
-                    <strong>{{ sucesor.nombre }}</strong> es secretaría: al recibir la
-                    presidencia <strong>deja de ser secretaría</strong> (el cargo
-                    manda). Sus tareas de secretaría pasan a quien se dé de alta
-                    después.
+                    <strong>{{ sucesor.nombre }}</strong> es secretaría: al recibir la presidencia
+                    <strong>deja de ser secretaría</strong> (el cargo manda). Sus tareas de
+                    secretaría pasan a quien se dé de alta después.
                   </div>
                 }
               }
@@ -928,7 +972,9 @@
                     @if (cambiandoPresidencia()) {
                       <span class="spinner" aria-hidden="true"></span>
                     }
-                    {{ cambiandoPresidencia() ? 'Transmitiendo...' : 'Sí, transmitir la presidencia' }}
+                    {{
+                      cambiandoPresidencia() ? 'Transmitiendo...' : 'Sí, transmitir la presidencia'
+                    }}
                   </button>
                   <button
                     type="button"
@@ -949,11 +995,7 @@
                   >
                     Continuar
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost"
-                    (click)="cerrarCambioPresidencia()"
-                  >
+                  <button type="button" class="btn btn-ghost" (click)="cerrarCambioPresidencia()">
                     Cancelar
                   </button>
                 </div>
@@ -968,8 +1010,7 @@
                 <p class="text-sm muted">Cargando el historial...</p>
               } @else if ((historialPresidencia()?.cambios?.length ?? 0) === 0) {
                 <p class="text-sm muted">
-                  Todavía no se ha transmitido la presidencia: no hay ningún cambio
-                  registrado.
+                  Todavía no se ha transmitido la presidencia: no hay ningún cambio registrado.
                 </p>
               } @else {
                 <ul class="lista" data-lista="historial-presidencia">
@@ -981,8 +1022,9 @@
                           <span class="estado aprobada">Toma el cargo</span>
                         </div>
                         <p class="text-sm muted">
-                          Deja el cargo <strong>{{ cambio.saliente.nombre }}</strong>
-                          ({{ cambio.saliente.correo }}), que pasa a suplente.
+                          Deja el cargo <strong>{{ cambio.saliente.nombre }}</strong> ({{
+                            cambio.saliente.correo
+                          }}), que pasa a suplente.
                         </p>
                         <p class="text-sm muted">
                           {{ fechaRevision(cambio.creadoEn) }}
@@ -1013,7 +1055,24 @@
         <section class="card" id="solicitudes" data-seccion="solicitudes">
           <div class="card-head">
             <div class="card-head-title">
-              <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span> <h2>Solicitudes de borrado</h2>
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" /></svg
+              ></span>
+              <h2>Solicitudes de borrado</h2>
               @if (solicitudesPorResolver() > 0) {
                 <span class="card-head-count">{{ solicitudesPorResolver() }}</span>
               }
@@ -1032,14 +1091,13 @@
 
           <p class="text-sm muted">
             @if (puede('resolverSolicitudesBorrado')) {
-              La secretaría pide el borrado definitivo de una institución
-              rechazada y aquí lo autorizas tú: al aprobar se borra (solo si no
-              tiene historia) y queda registrado quién lo autorizó y cuándo. El
-              borrado directo de la sección «Instituciones» sigue siendo tuyo.
+              La secretaría pide el borrado definitivo de una institución rechazada y aquí lo
+              autorizas tú: al aprobar se borra (solo si no tiene historia) y queda registrado quién
+              lo autorizó y cuándo. El borrado directo de la sección «Instituciones» sigue siendo
+              tuyo.
             } @else {
-              Puedes <strong>pedir</strong> el borrado definitivo de una
-              institución rechazada, con su motivo. No borra nada por sí sola: lo
-              tiene que autorizar la presidencia.
+              Puedes <strong>pedir</strong> el borrado definitivo de una institución rechazada, con
+              su motivo. No borra nada por sí sola: lo tiene que autorizar la presidencia.
             }
           </p>
 
@@ -1055,8 +1113,8 @@
             <h3 class="text-sm">Instituciones rechazadas</h3>
             @if (institucionesRechazadas().length === 0) {
               <p class="text-sm muted">
-                No hay instituciones rechazadas: el borrado definitivo solo tiene
-                sentido sobre una institución que la CACE rechazó.
+                No hay instituciones rechazadas: el borrado definitivo solo tiene sentido sobre una
+                institución que la CACE rechazó.
               </p>
             } @else {
               <ul class="lista">
@@ -1140,7 +1198,11 @@
           <div class="cace-subsection-head">
             <h3 class="text-sm">Solicitudes</h3>
             @if (solicitudes().length > 0) {
-              <div class="cace-filtros cace-filtros--inline" role="search" aria-label="Filtrar solicitudes de borrado">
+              <div
+                class="cace-filtros cace-filtros--inline"
+                role="search"
+                aria-label="Filtrar solicitudes de borrado"
+              >
                 <div class="form-field">
                   <label for="buscar-solicitudes">Buscar solicitud</label>
                   <input
@@ -1206,12 +1268,11 @@
                       <strong>Motivo de la petición:</strong> {{ solicitud.motivo }}
                     </p>
                     <p class="text-sm muted">
-                      Pedida por {{ solicitud.solicitadaPor }}
-                      ({{ solicitud.solicitadaPorCorreo }})
+                      Pedida por {{ solicitud.solicitadaPor }} ({{ solicitud.solicitadaPorCorreo }})
                       el {{ fechaRevision(solicitud.creadoEn) }}.
                       @if (solicitud.resueltaPor) {
-                        Resuelta por {{ solicitud.resueltaPor }}
-                        el {{ fechaRevision(solicitud.resueltaEn) }}.
+                        Resuelta por {{ solicitud.resueltaPor }} el
+                        {{ fechaRevision(solicitud.resueltaEn) }}.
                       }
                     </p>
 
@@ -1219,13 +1280,12 @@
                       @if (resolviendo.solicitud.id === solicitud.id) {
                         @if (resolviendo.accion === 'aprobar') {
                           <div class="alert alert-error" role="status">
-                            Vas a aprobar el borrado definitivo de
-                            «{{ solicitud.institucionNombre ?? 'una institución que ya no existe' }}». Solo se puede si
-                            está rechazada y no tiene historia (solicitudes,
-                            clases espejo, sesiones, evidencias, listas de alumnos
-                            o revisiones): si la tiene, el sistema lo rechazará y
-                            la solicitud seguirá pendiente. Queda registrado que
-                            lo autorizaste tú.
+                            Vas a aprobar el borrado definitivo de «{{
+                              solicitud.institucionNombre ?? 'una institución que ya no existe'
+                            }}». Solo se puede si está rechazada y no tiene historia (solicitudes,
+                            clases espejo, sesiones, evidencias, listas de alumnos o revisiones): si
+                            la tiene, el sistema lo rechazará y la solicitud seguirá pendiente.
+                            Queda registrado que lo autorizaste tú.
                           </div>
                         } @else {
                           <div class="form-field inst-motivo">
@@ -1248,10 +1308,7 @@
                   </div>
 
                   <div class="lista-acciones">
-                    @if (
-                      puede('resolverSolicitudesBorrado') &&
-                      solicitud.estado === 'PENDIENTE'
-                    ) {
+                    @if (puede('resolverSolicitudesBorrado') && solicitud.estado === 'PENDIENTE') {
                       @if (resolviendoSolicitud()?.solicitud?.id === solicitud.id) {
                         <button
                           type="button"
@@ -1310,764 +1367,865 @@
       <!-- Personalización: logo, textos y tema. Es lo que da identidad a la
            CACE en toda la aplicación, incluida la pantalla de acceso. -->
       @if (mostrarSeccion('personalizacion') && puede('personalizarCace')) {
-      <section class="card" id="personalizacion" data-seccion="personalizacion">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/></svg></span>
-            <h2>Personalización</h2>
-          </div>
-          <div class="card-head-actions">
-            <span class="text-sm muted">Tema actual: {{ etiquetaTemaElegido }}</span>
-          </div>
-        </div>
-
-        <p class="ayuda-contexto">
-          El lema, la descripción y el logo salen en la portada del acceso y en la
-          sección «Comunidad» de docentes y agentes. El tema cambia los colores de
-          toda la aplicación; hay diez temas institucionales, estacionales y festivos ya probados, con el contraste
-          comprobado, porque un color libre dejaría texto ilegible sobre el fondo.
-        </p>
-
-        @if (errorPersonalizacion()) {
-          <div class="alert alert-error" role="alert">{{ errorPersonalizacion() }}</div>
-        }
-        @if (avisoPersonalizacion()) {
-          <div class="alert alert-success" role="status">{{ avisoPersonalizacion() }}</div>
-        }
-
-        <div class="personalizacion-layout">
-          <form
-            id="personalizacion-form"
-            class="personalizacion-form"
-            [formGroup]="formPersonalizacion"
-            (ngSubmit)="guardarPersonalizacion()"
-            novalidate
-          >
-            <div class="form-field">
-              <label for="lema">Lema</label>
-              <input
-                id="lema"
-                type="text"
-                formControlName="lema"
-                maxlength="160"
-                placeholder="Uniendo mentes, corazones y proyectos"
-              />
-              @if (mensajePersonalizacion('lema'); as msg) {
-                <p class="field-error">{{ msg }}</p>
-              }
+        <section class="card" id="personalizacion" data-seccion="personalizacion">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"
+                  /></svg
+              ></span>
+              <h2>Personalización</h2>
             </div>
-
-            <div class="form-field">
-              <label for="descripcion">Descripción</label>
-              <textarea
-                id="descripcion"
-                rows="3"
-                formControlName="descripcion"
-                maxlength="600"
-                placeholder="Comunidad de Apoyo a Clases Espejo"
-              ></textarea>
-              @if (mensajePersonalizacion('descripcion'); as msg) {
-                <p class="field-error">{{ msg }}</p>
-              }
+            <div class="card-head-actions">
+              <span class="text-sm muted">Tema actual: {{ etiquetaTemaElegido }}</span>
             </div>
+          </div>
 
-            <fieldset class="temas-grid" id="personalizacion-temas">
-              <legend>Paleta visual</legend>
-              <div class="temas-grid-cajas">
-                @for (tema of temas; track tema.valor) {
-                  <label class="tema-card" [class.seleccionada]="temaElegido() === tema.valor">
-                    <input
-                      type="radio"
-                      [value]="tema.valor"
-                      formControlName="tema"
-                    />
-                    <span
-                      class="tema-card-muestra"
-                      role="img"
-                      [style.background]="'linear-gradient(135deg, ' + tema.muestra + ' 0%, ' + tema.muestraSecundaria + ' 100%)'"
-                      [attr.aria-label]="'Paleta ' + tema.etiqueta"
-                    ></span>
-                    <span class="tema-card-nombre">{{ tema.etiqueta }}</span>
-                    <span class="tema-card-desc">{{ tema.descripcion }}</span>
-                  </label>
+          <p class="ayuda-contexto">
+            El lema, la descripción y el logo salen en la portada del acceso y en la sección
+            «Comunidad» de docentes y agentes. El tema cambia los colores de toda la aplicación; hay
+            diez temas institucionales, estacionales y festivos ya probados, con el contraste
+            comprobado, porque un color libre dejaría texto ilegible sobre el fondo.
+          </p>
+
+          @if (errorPersonalizacion()) {
+            <div class="alert alert-error" role="alert">{{ errorPersonalizacion() }}</div>
+          }
+          @if (avisoPersonalizacion()) {
+            <div class="alert alert-success" role="status">{{ avisoPersonalizacion() }}</div>
+          }
+
+          <div class="personalizacion-layout">
+            <form
+              id="personalizacion-form"
+              class="personalizacion-form"
+              [formGroup]="formPersonalizacion"
+              (ngSubmit)="guardarPersonalizacion()"
+              novalidate
+            >
+              <div class="form-field">
+                <label for="lema">Lema</label>
+                <input
+                  id="lema"
+                  type="text"
+                  formControlName="lema"
+                  maxlength="160"
+                  placeholder="Uniendo mentes, corazones y proyectos"
+                />
+                @if (mensajePersonalizacion('lema'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
                 }
               </div>
-            </fieldset>
 
-            <div class="form-field">
-              <label>Logo</label>
-              <div class="logo-fila">
-                <div class="logo-caja">
-                  <img [src]="logoActual()" alt="Logo de la CACE" />
-                </div>
-                <div class="logo-controles">
-                  <label class="logo-subida" for="logo-cace">
-                    {{ logoActual() ? 'Cambiar logo' : 'Subir nuevo logo' }}
-                  </label>
-                  <input
-                    id="logo-cace"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    (change)="alSeleccionarLogo($event)"
-                  />
-                  @if (subiendoLogo()) {
-                    <p class="text-sm muted">Subiendo el logo…</p>
-                  }
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    [disabled]="subiendoLogo()"
-                    (click)="quitarLogo()"
-                  >
-                    Quitar logo
-                  </button>
-                  <p class="text-sm muted">
-                    PNG, JPG o WEBP. Si no hay logo propio, se usa el del proyecto.
-                  </p>
-                </div>
+              <div class="form-field">
+                <label for="descripcion">Descripción</label>
+                <textarea
+                  id="descripcion"
+                  rows="3"
+                  formControlName="descripcion"
+                  maxlength="600"
+                  placeholder="Comunidad de Apoyo a Clases Espejo"
+                ></textarea>
+                @if (mensajePersonalizacion('descripcion'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
               </div>
-            </div>
 
-          </form>
-
-          <div class="personalizacion-vista-columna">
-            <aside class="personalizacion-vista">
-            <p class="vista-titulo-cabecera">Vista previa ({{ etiquetaTemaElegido }})</p>
-            <div class="vista-previa-caja" [attr.data-tema]="temaElegido()">
-              <div class="vista-hero">
-                <img [src]="logoActual()" alt="" />
-                <p class="vista-lema">{{ lemaVistaPreviaTexto }}</p>
-                <p class="vista-tag">{{ descripcionVistaPrevia }}</p>
-              </div>
-              <div class="vista-cuerpo">
-                <p class="vista-titulo">Tarjeta de ejemplo</p>
-                <p class="text-sm">
-                  Así se lee el texto principal y el secundario sobre las tarjetas
-                  de este tema.
+              <div class="form-field">
+                <label for="dias-minimos-propuesta">Días mínimos para proponer</label>
+                <input
+                  id="dias-minimos-propuesta"
+                  type="number"
+                  min="1"
+                  max="60"
+                  formControlName="diasMinimosPropuesta"
+                />
+                <p class="text-sm muted">
+                  Antelación mínima con la que un docente puede proponer una clase. Por defecto, 8
+                  días.
                 </p>
-                <div class="vista-botones">
-                  <button type="button" class="btn btn-primary vista-btn">Botón principal</button>
-                  <button type="button" class="btn btn-secondary vista-btn">Secundario</button>
+                @if (mensajePersonalizacion('diasMinimosPropuesta'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
+              </div>
+
+              <div class="form-field">
+                <label for="dias-revision">Días para revisar</label>
+                <input
+                  id="dias-revision"
+                  type="number"
+                  min="1"
+                  max="60"
+                  formControlName="diasRevision"
+                />
+                <p class="text-sm muted">
+                  Antelación con la que la otra institución debe responder antes de que caduque la
+                  solicitud. Por defecto, 7 días.
+                </p>
+                @if (mensajePersonalizacion('diasRevision'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
+              </div>
+
+              <fieldset class="temas-grid" id="personalizacion-temas">
+                <legend>Paleta visual</legend>
+                <div class="temas-grid-cajas">
+                  @for (tema of temas; track tema.valor) {
+                    <label class="tema-card" [class.seleccionada]="temaElegido() === tema.valor">
+                      <input type="radio" [value]="tema.valor" formControlName="tema" />
+                      <span
+                        class="tema-card-muestra"
+                        role="img"
+                        [style.background]="
+                          'linear-gradient(135deg, ' +
+                          tema.muestra +
+                          ' 0%, ' +
+                          tema.muestraSecundaria +
+                          ' 100%)'
+                        "
+                        [attr.aria-label]="'Paleta ' + tema.etiqueta"
+                      ></span>
+                      <span class="tema-card-nombre">{{ tema.etiqueta }}</span>
+                      <span class="tema-card-desc">{{ tema.descripcion }}</span>
+                    </label>
+                  }
                 </div>
-                <div class="vista-aviso" role="status">
-                  Este es el aspecto de un aviso informativo.
+              </fieldset>
+
+              <div class="form-field">
+                <label>Logo</label>
+                <div class="logo-fila">
+                  <div class="logo-caja">
+                    <img [src]="logoActual()" alt="Logo de la CACE" />
+                  </div>
+                  <div class="logo-controles">
+                    <label class="logo-subida" for="logo-cace">
+                      {{ logoActual() ? 'Cambiar logo' : 'Subir nuevo logo' }}
+                    </label>
+                    <input
+                      id="logo-cace"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      (change)="alSeleccionarLogo($event)"
+                    />
+                    @if (subiendoLogo()) {
+                      <p class="text-sm muted">Subiendo el logo…</p>
+                    }
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="subiendoLogo()"
+                      (click)="quitarLogo()"
+                    >
+                      Quitar logo
+                    </button>
+                    <p class="text-sm muted">
+                      PNG, JPG o WEBP. Si no hay logo propio, se usa el del proyecto.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </aside>
+            </form>
 
-            <div class="personalizacion-acciones">
-              <p class="personalizacion-acciones-nota">
-                Revisa la vista previa y aplica la paleta, textos y logo a toda la aplicación.
-              </p>
-              <button
-                type="submit"
-                form="personalizacion-form"
-                class="btn btn-primary"
-                [disabled]="guardandoPersonalizacion() || formPersonalizacion.invalid"
-              >
-                @if (guardandoPersonalizacion()) {
-                  <span class="spinner" aria-hidden="true"></span>
-                }
-                {{ guardandoPersonalizacion() ? 'Guardando...' : 'Guardar cambios' }}
-              </button>
+            <div class="personalizacion-vista-columna">
+              <aside class="personalizacion-vista">
+                <p class="vista-titulo-cabecera">Vista previa ({{ etiquetaTemaElegido }})</p>
+                <div class="vista-previa-caja" [attr.data-tema]="temaElegido()">
+                  <div class="vista-hero">
+                    <img [src]="logoActual()" alt="" />
+                    <p class="vista-lema">{{ lemaVistaPreviaTexto }}</p>
+                    <p class="vista-tag">{{ descripcionVistaPrevia }}</p>
+                  </div>
+                  <div class="vista-cuerpo">
+                    <p class="vista-titulo">Tarjeta de ejemplo</p>
+                    <p class="text-sm">
+                      Así se lee el texto principal y el secundario sobre las tarjetas de este tema.
+                    </p>
+                    <div class="vista-botones">
+                      <button type="button" class="btn btn-primary vista-btn">
+                        Botón principal
+                      </button>
+                      <button type="button" class="btn btn-secondary vista-btn">Secundario</button>
+                    </div>
+                    <div class="vista-aviso" role="status">
+                      Este es el aspecto de un aviso informativo.
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              <div class="personalizacion-acciones">
+                <p class="personalizacion-acciones-nota">
+                  Revisa la vista previa y aplica la paleta, textos y logo a toda la aplicación.
+                </p>
+                <button
+                  type="submit"
+                  form="personalizacion-form"
+                  class="btn btn-primary"
+                  [disabled]="guardandoPersonalizacion() || formPersonalizacion.invalid"
+                >
+                  @if (guardandoPersonalizacion()) {
+                    <span class="spinner" aria-hidden="true"></span>
+                  }
+                  {{ guardandoPersonalizacion() ? 'Guardando...' : 'Guardar cambios' }}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       }
 
       <!-- Banderas de la comunidad: lo que antes era una lista fija en el
            frontend y ahora mantiene la presidencia. -->
       @if (mostrarSeccion('comunidad') && puede('personalizarCace')) {
-      <section class="card" id="comunidad" data-seccion="comunidad">
-        <nav class="cace-breadcrumb" aria-label="Migas de pan">
-          <a routerLink="/panel">Inicio</a>
-          <span class="separador" aria-hidden="true">›</span>
-          <span>Comunidad</span>
-        </nav>
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> <h2>Comunidad</h2>
-            <span class="card-head-count">{{ paises().length }}</span>
-          </div>
-          <div class="card-head-actions">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              [disabled]="cargandoPaises()"
-              (click)="cargarPaises()"
-            >
-              {{ cargandoPaises() ? 'Actualizando...' : 'Actualizar' }}
-            </button>
-          </div>
-        </div>
-
-        @if (errorPaises()) {
-          <div class="alert alert-error" role="alert">{{ errorPaises() }}</div>
-        }
-        @if (avisoPaises()) {
-          <div class="alert alert-success" role="status">{{ avisoPaises() }}</div>
-        }
-
-        <form class="form-pais" [formGroup]="formPais" (ngSubmit)="guardarPais()" novalidate>
-          <div class="form-field">
-            <label for="pais-codigo">Código ISO (opcional)</label>
-            <input
-              id="pais-codigo"
-              type="text"
-              maxlength="2"
-              formControlName="codigo"
-              placeholder="MX"
-            />
-            @if (mensajePais('codigo'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          <div class="form-field">
-            <label for="pais-nombre">País (opcional)</label>
-            <input id="pais-nombre" type="text" formControlName="nombre" placeholder="México" />
-            @if (mensajePais('nombre'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          <div class="form-field acciones-pais">
-            <button type="submit" class="btn btn-primary" [disabled]="cargandoPaises()">
-              {{ paisEnEdicion() ? 'Guardar país' : 'Añadir país' }}
-            </button>
-            @if (paisEnEdicion()) {
+        <section class="card" id="comunidad" data-seccion="comunidad">
+          <nav class="cace-breadcrumb" aria-label="Migas de pan">
+            <a routerLink="/panel">Inicio</a>
+            <span class="separador" aria-hidden="true">›</span>
+            <span>Comunidad</span>
+          </nav>
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path
+                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  /></svg
+              ></span>
+              <h2>Comunidad</h2>
+              <span class="card-head-count">{{ paises().length }}</span>
+            </div>
+            <div class="card-head-actions">
               <button
                 type="button"
-                class="btn btn-ghost"
+                class="btn btn-secondary"
                 [disabled]="cargandoPaises()"
-                (click)="cancelarEdicionPais()"
+                (click)="cargarPaises()"
               >
-                Cancelar
+                {{ cargandoPaises() ? 'Actualizando...' : 'Actualizar' }}
               </button>
-            }
+            </div>
           </div>
 
-          @if (faltaPais) {
-            <p class="field-error">Escribe el nombre del país o su código ISO.</p>
+          @if (errorPaises()) {
+            <div class="alert alert-error" role="alert">{{ errorPaises() }}</div>
           }
-        </form>
+          @if (avisoPaises()) {
+            <div class="alert alert-success" role="status">{{ avisoPaises() }}</div>
+          }
 
-        <!-- Pista a todo el ancho y destacada: es la única ayuda que explica que
-             el nombre basta, y no debe pasar desapercibida al añadir una bandera. -->
-        <p class="pista-pais" role="note">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
-          <span>
-            Escribe <strong>el país</strong> o <strong>su código ISO</strong>: con
-            uno de los dos basta. Si no sabes el código, escribe solo el nombre
-            (por ejemplo <strong>México</strong>) y el servidor lo busca.
-          </span>
-        </p>
-
-        <p class="text-sm muted">
-          Estos son los países que aparecen como banderas en la sección «Comunidad»
-          de docentes y agentes. La lista va siempre en orden alfabético por nombre
-          (sin distinguir mayúsculas ni acentos), tanto aquí como en la web pública:
-          no hay ningún número de orden que mantener. Si un país deja la comunidad,
-          desactívalo desde la lista: desaparece de la web sin perder la fila.
-        </p>
-
-        @if (paises().length > 0) {
-          <div class="cace-filtros" role="search" aria-label="Buscar país">
+          <form class="form-pais" [formGroup]="formPais" (ngSubmit)="guardarPais()" novalidate>
             <div class="form-field">
-              <label for="buscar-paises">Buscar país</label>
+              <label for="pais-codigo">Código ISO (opcional)</label>
               <input
-                id="buscar-paises"
-                type="search"
-                placeholder="Nombre o código: Perú, PE…"
-                [value]="busquedaPaises()"
-                (input)="actualizarBusquedaPaises($event)"
-              />
-            </div>
-            <p class="cace-filtros-resumen" aria-live="polite">
-              {{ paisesFiltrados().length }} de {{ paises().length }} países
-            </p>
-          </div>
-        }
-
-        @if (cargandoPaises() && paises().length === 0) {
-          <p class="text-sm muted">Cargando los países de la comunidad...</p>
-        } @else if (paises().length === 0) {
-          <p class="text-sm muted">
-            Todavía no hay países cargados. Mientras no haya ninguno, la web muestra
-            la lista de banderas que traía de antes.
-          </p>
-        } @else if (paisesFiltrados().length === 0) {
-          <div class="cace-vacio-filtro">
-            <strong>Ningún país coincide con «{{ busquedaPaises() }}».</strong>
-            <p class="text-sm muted">
-              Escribe el nombre completo o su código ISO de dos letras.
-            </p>
-          </div>
-        } @else {
-          <ul class="lista">
-            @for (pais of paisesFiltrados(); track pais.id) {
-              <li class="lista-item">
-                <div class="pais-bloque">
-                  <div class="pais-nombre">
-                    <img
-                      class="flag"
-                      [src]="banderaUrl(pais.codigo)"
-                      [alt]="'Bandera de ' + pais.nombre"
-                      width="28"
-                      height="20"
-                      loading="lazy"
-                    />
-                    <strong>{{ pais.nombre }}</strong>
-                    <span class="pais-codigo">{{ pais.codigo }}</span>
-                    @if (pais.activo) {
-                      <span class="estado aprobada">Visible</span>
-                    } @else {
-                      <span class="estado cancelada">Oculto</span>
-                    }
-                  </div>
-                  @if (paisAEliminar(); as eliminando) {
-                    @if (eliminando.id === pais.id) {
-                      <div class="alert alert-error" role="status">
-                        ¿Quitar «{{ pais.nombre }}» de la comunidad? Se pierde la fila.
-                        Para retirarlo de la web basta con desactivarlo.
-                      </div>
-                    }
-                  }
-                </div>
-
-                <div class="lista-acciones">
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    [disabled]="cargandoPaises()"
-                    (click)="editarPais(pais)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    [disabled]="cargandoPaises()"
-                    (click)="alternarActivoPais(pais)"
-                  >
-                    {{ pais.activo ? 'Desactivar' : 'Activar' }}
-                  </button>
-                  @if (paisAEliminar()?.id === pais.id) {
-                    <button
-                      type="button"
-                      class="btn btn-danger"
-                      [disabled]="cargandoPaises()"
-                      (click)="confirmarEliminarPais()"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-ghost"
-                      [disabled]="cargandoPaises()"
-                      (click)="cancelarEliminarPais()"
-                    >
-                      Cancelar
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      class="btn btn-outline"
-                      [disabled]="cargandoPaises()"
-                      (click)="pedirEliminarPais(pais)"
-                    >
-                      Quitar
-                    </button>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
-      }
-
-      <!-- Premios y reconocimientos: se preparan aquí y se publican (o no) desde
-           la propia lista. -->
-      @if (mostrarSeccion('premios') && puede('publicarPremios')) {
-      <section class="card" id="premios" data-seccion="premios">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg></span> <h2>Premios y reconocimientos</h2>
-            @if (borradores() > 0) {
-              <span class="card-head-count">{{ borradores() }} sin publicar</span>
-            }
-          </div>
-          <div class="card-head-actions">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              [disabled]="cargandoPremios()"
-              (click)="cargarPremios()"
-            >
-              {{ cargandoPremios() ? 'Actualizando...' : 'Actualizar' }}
-            </button>
-          </div>
-        </div>
-
-        <p class="text-sm muted">
-          Los reconocimientos publicados aparecen en el carrusel automático de la sección «Comunidad»
-          de docentes y agentes. Un registro sin publicar es un borrador: solo lo
-          ves aquí. Una imagen, certificado o fuente oficial ayudan a que el reconocimiento sea
-          verificable; la fuente se puede consultar desde la ficha.
-          La imagen y el certificado se añaden desde la ficha, una vez guardado.
-        </p>
-
-        @if (errorPremios()) {
-          <div class="alert alert-error" role="alert">{{ errorPremios() }}</div>
-        }
-        @if (avisoPremios()) {
-          <div class="alert alert-success" role="status">{{ avisoPremios() }}</div>
-        }
-
-        <form class="form-premio premios-form" [formGroup]="formPremio" (ngSubmit)="guardarPremio()" novalidate>
-          <div class="form-field">
-            <label for="premio-titulo">Título</label>
-            <input
-              id="premio-titulo"
-              type="text"
-              formControlName="titulo"
-              maxlength="160"
-              placeholder="Reconocimiento a la colaboración internacional"
-            />
-            @if (mensajePremio('titulo'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          <div class="form-field premio-tipo">
-            <label for="premio-tipo">Tipo de reconocimiento</label>
-            <select id="premio-tipo" formControlName="tipo">
-              @for (tipo of tiposReconocimiento; track tipo.valor) {
-                <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="fila-3">
-            <div class="form-field">
-              <label for="premio-anio">Año</label>
-              <input id="premio-anio" type="number" formControlName="anio" min="1900" max="2100" />
-              @if (mensajePremio('anio'); as msg) {
-                <p class="field-error">{{ msg }}</p>
-              }
-            </div>
-
-            <div class="form-field">
-              <label for="premio-orden">Prioridad visual</label>
-              <input id="premio-orden" type="number" formControlName="orden" min="0" max="999" />
-              @if (mensajePremio('orden'); as msg) {
-                <p class="field-error">{{ msg }}</p>
-              }
-            </div>
-
-            <div class="form-field">
-              <label for="premio-institucion">Institución vinculada (opcional)</label>
-              <select id="premio-institucion" formControlName="institucionId">
-                <option [ngValue]="null">Sin institución</option>
-                @for (institucion of institucionesOpcion(); track institucion.id) {
-                  <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          <div class="form-field">
-            <label for="premio-otorgado">Entidad otorgante</label>
-            <input
-              id="premio-otorgado"
-              type="text"
-              formControlName="otorgadoA"
-              maxlength="200"
-              placeholder="Universidad, ministerio o entidad que reconoce"
-            />
-            @if (mensajePremio('otorgadoA'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-
-          <div class="premio-fuente-grid">
-            <div class="form-field">
-              <label for="premio-fuente-nombre">Fuente oficial</label>
-              <input
-                id="premio-fuente-nombre"
+                id="pais-codigo"
                 type="text"
-                formControlName="fuenteNombre"
-                maxlength="120"
-                placeholder="Catálogo Co-Lab, sitio de la universidad…"
+                maxlength="2"
+                formControlName="codigo"
+                placeholder="MX"
               />
-            </div>
-            <div class="form-field">
-              <label for="premio-fuente-url">Enlace de verificación</label>
-              <input
-                id="premio-fuente-url"
-                type="url"
-                formControlName="fuenteUrl"
-                maxlength="500"
-                placeholder="https://…"
-              />
-              @if (mensajePremio('fuenteUrl'); as msg) {
+              @if (mensajePais('codigo'); as msg) {
                 <p class="field-error">{{ msg }}</p>
               }
-              <p class="text-sm muted">Recomendado si no hay certificado adjunto.</p>
             </div>
-          </div>
 
-          <div class="form-field">
-            <label for="premio-descripcion">Descripción</label>
-            <textarea
-              id="premio-descripcion"
-              rows="3"
-              formControlName="descripcion"
-              maxlength="1500"
-              placeholder="En qué consiste el reconocimiento y por qué se otorgó."
-            ></textarea>
-            @if (mensajePremio('descripcion'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
+            <div class="form-field">
+              <label for="pais-nombre">País (opcional)</label>
+              <input id="pais-nombre" type="text" formControlName="nombre" placeholder="México" />
+              @if (mensajePais('nombre'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
 
-          <div class="premios-controles">
-            <label class="switch" for="premio-publicado">
-              <input id="premio-publicado" type="checkbox" formControlName="publicado" />
-              <span class="switch-pista" aria-hidden="true"></span>
-              <span>Publicado (visible en la web)</span>
-            </label>
-
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="cargandoPremios()">
-                Guardar
+            <div class="form-field acciones-pais">
+              <button type="submit" class="btn btn-primary" [disabled]="cargandoPaises()">
+                {{ paisEnEdicion() ? 'Guardar país' : 'Añadir país' }}
               </button>
-              @if (premioEnEdicion()) {
+              @if (paisEnEdicion()) {
                 <button
                   type="button"
                   class="btn btn-ghost"
-                  [disabled]="cargandoPremios()"
-                  (click)="cancelarEdicionPremio()"
+                  [disabled]="cargandoPaises()"
+                  (click)="cancelarEdicionPais()"
                 >
                   Cancelar
                 </button>
               }
             </div>
-          </div>
-        </form>
 
-        @if (cargandoPremios() && premios().length === 0) {
-          <p class="text-sm muted">Cargando los premios...</p>
-        } @else if (premios().length === 0) {
-          <p class="text-sm muted">
-            Todavía no hay premios ni reconocimientos. Cuando los haya, los
-            publicados aparecerán en la web.
-          </p>
-        } @else {
-          <ul class="premios-lista">
-            @for (premio of premios(); track premio.id) {
-              <li class="premio-fila">
-                <div class="premio-thumb-caja">
-                  @if (imagenDe(premio); as imagen) {
-                    <img [src]="imagen" [alt]="premio.titulo" />
-                  } @else {
-                    <svg class="sin-imagen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                  }
-                </div>
-
-                <div class="premio-info">
-                  <div class="premio-fila-encabezado">
-                    <span class="premio-tipo">{{ etiquetaTipo(premio.tipo) }}</span>
-                    <span class="premio-anio">{{ premio.anio }}</span>
-                  </div>
-                  <p class="titulo">{{ premio.titulo }}</p>
-                  <p class="secundario">
-                    Entidad otorgante: {{ premio.otorgadoA }}
-                    @if (premio.institucionNombre) {
-                      · Vinculada: {{ premio.institucionNombre }}
-                    }
-                  </p>
-                  @if (premio.fuenteUrl) {
-                    <a
-                      class="premio-fuente-enlace"
-                      [href]="premio.fuenteUrl"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {{ premio.fuenteNombre || 'Ver fuente oficial' }}
-                      <span aria-hidden="true">↗</span>
-                    </a>
-                  }
-                  @if (premio.publicado) {
-                    <span class="estado aprobada">Publicado</span>
-                  } @else {
-                    <span class="estado pendiente">Borrador</span>
-                  }
-
-                  @if (premioAEliminar()?.id === premio.id) {
-                    <div class="alert alert-error" role="status">
-                      ¿Eliminar «{{ premio.titulo }}»? Se borra también su imagen y
-                      no se puede deshacer.
-                    </div>
-                  }
-
-                  @if (premioEnEdicion() === premio.id) {
-                    <div class="premio-imagen-control">
-                      <label class="subir-imagen" [for]="'premio-imagen-' + premio.id">
-                        {{ premio.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}
-                        <input
-                          [id]="'premio-imagen-' + premio.id"
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp"
-                          [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
-                          (change)="alSeleccionarImagen(premio, $event)"
-                        />
-                      </label>
-                      @if (premio.imagenUrl) {
-                        <button
-                          type="button"
-                          class="btn btn-outline"
-                          [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
-                          (click)="quitarImagen(premio)"
-                        >
-                          Quitar imagen
-                        </button>
-                      }
-                      @if (subiendoImagen() === premio.id) {
-                        <span class="text-sm muted">Subiendo…</span>
-                      }
-                    </div>
-
-                    <!-- Certificado opcional del premio: evidencia documental que admite PDF
-                         además de imagen. -->
-                    <div class="premio-certificado-control">
-                      <label
-                        class="subir-imagen"
-                        [for]="'premio-certificado-' + premio.id"
-                      >
-                        {{
-                          premio.certificadoUrl
-                            ? 'Cambiar certificado'
-                            : 'Subir certificado'
-                        }}
-                        <input
-                          [id]="'premio-certificado-' + premio.id"
-                          type="file"
-                          accept="application/pdf,image/png,image/jpeg,image/webp"
-                          data-accion="subir-certificado"
-                          [disabled]="subiendoCertificado() !== null || subiendoImagen() !== null"
-                          (change)="alSeleccionarCertificado(premio, $event)"
-                        />
-                      </label>
-
-                      @if (premio.certificadoUrl) {
-                        <button
-                          type="button"
-                          class="btn btn-outline"
-                          data-accion="quitar-certificado"
-                          [disabled]="subiendoCertificado() !== null"
-                          (click)="quitarCertificado(premio)"
-                        >
-                          Quitar certificado
-                        </button>
-                        @if (premio.publicado && certificadoDe(premio); as enlace) {
-                          <a
-                            class="premio-certificado-enlace"
-                            [href]="enlace"
-                            rel="noopener"
-                          >
-                            Ver o descargar
-                            @if (premio.certificadoNombre) {
-                              ({{ premio.certificadoNombre }})
-                            }
-                          </a>
-                        }
-                      }
-
-                      @if (subiendoCertificado() === premio.id) {
-                        <span class="text-sm muted">Subiendo…</span>
-                      }
-                      @if (premio.certificadoUrl && !premio.publicado) {
-                        <span class="text-sm muted">
-                          El certificado se descarga cuando el premio esté publicado.
-                        </span>
-                      }
-                      @if (!premio.certificadoUrl) {
-                        <span class="text-sm muted">
-                          Se recomienda añadir un certificado o una fuente oficial para verificarlo.
-                        </span>
-                      }
-                    </div>
-                  }
-                </div>
-
-                <div class="premio-fila-acciones">
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    [disabled]="cargandoPremios()"
-                    (click)="editarPremio(premio)"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-outline"
-                    [disabled]="cargandoPremios()"
-                    (click)="alternarPublicado(premio)"
-                  >
-                    {{ premio.publicado ? 'Despublicar' : 'Publicar' }}
-                  </button>
-                  @if (premioAEliminar()?.id === premio.id) {
-                    <button
-                      type="button"
-                      class="btn btn-danger"
-                      [disabled]="cargandoPremios()"
-                      (click)="confirmarEliminarPremio()"
-                    >
-                      Confirmar
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-ghost"
-                      [disabled]="cargandoPremios()"
-                      (click)="cancelarEliminarPremio()"
-                    >
-                      Cancelar
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      class="btn btn-danger"
-                      [disabled]="cargandoPremios()"
-                      (click)="pedirEliminarPremio(premio)"
-                    >
-                      Eliminar
-                    </button>
-                  }
-                </div>
-              </li>
+            @if (faltaPais) {
+              <p class="field-error">Escribe el nombre del país o su código ISO.</p>
             }
-          </ul>
-        }
-      </section>
+          </form>
+
+          <!-- Pista a todo el ancho y destacada: es la única ayuda que explica que
+             el nombre basta, y no debe pasar desapercibida al añadir una bandera. -->
+          <p class="pista-pais" role="note">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>
+              Escribe <strong>el país</strong> o <strong>su código ISO</strong>: con uno de los dos
+              basta. Si no sabes el código, escribe solo el nombre (por ejemplo
+              <strong>México</strong>) y el servidor lo busca.
+            </span>
+          </p>
+
+          <p class="text-sm muted">
+            Estos son los países que aparecen como banderas en la sección «Comunidad» de docentes y
+            agentes. La lista va siempre en orden alfabético por nombre (sin distinguir mayúsculas
+            ni acentos), tanto aquí como en la web pública: no hay ningún número de orden que
+            mantener. Si un país deja la comunidad, desactívalo desde la lista: desaparece de la web
+            sin perder la fila.
+          </p>
+
+          @if (paises().length > 0) {
+            <div class="cace-filtros" role="search" aria-label="Buscar país">
+              <div class="form-field">
+                <label for="buscar-paises">Buscar país</label>
+                <input
+                  id="buscar-paises"
+                  type="search"
+                  placeholder="Nombre o código: Perú, PE…"
+                  [value]="busquedaPaises()"
+                  (input)="actualizarBusquedaPaises($event)"
+                />
+              </div>
+              <p class="cace-filtros-resumen" aria-live="polite">
+                {{ paisesFiltrados().length }} de {{ paises().length }} países
+              </p>
+            </div>
+          }
+
+          @if (cargandoPaises() && paises().length === 0) {
+            <p class="text-sm muted">Cargando los países de la comunidad...</p>
+          } @else if (paises().length === 0) {
+            <p class="text-sm muted">
+              Todavía no hay países cargados. Mientras no haya ninguno, la web muestra la lista de
+              banderas que traía de antes.
+            </p>
+          } @else if (paisesFiltrados().length === 0) {
+            <div class="cace-vacio-filtro">
+              <strong>Ningún país coincide con «{{ busquedaPaises() }}».</strong>
+              <p class="text-sm muted">Escribe el nombre completo o su código ISO de dos letras.</p>
+            </div>
+          } @else {
+            <ul class="lista">
+              @for (pais of paisesFiltrados(); track pais.id) {
+                <li class="lista-item">
+                  <div class="pais-bloque">
+                    <div class="pais-nombre">
+                      <img
+                        class="flag"
+                        [src]="banderaUrl(pais.codigo)"
+                        [alt]="'Bandera de ' + pais.nombre"
+                        width="28"
+                        height="20"
+                        loading="lazy"
+                      />
+                      <strong>{{ pais.nombre }}</strong>
+                      <span class="pais-codigo">{{ pais.codigo }}</span>
+                      @if (pais.activo) {
+                        <span class="estado aprobada">Visible</span>
+                      } @else {
+                        <span class="estado cancelada">Oculto</span>
+                      }
+                    </div>
+                    @if (paisAEliminar(); as eliminando) {
+                      @if (eliminando.id === pais.id) {
+                        <div class="alert alert-error" role="status">
+                          ¿Quitar «{{ pais.nombre }}» de la comunidad? Se pierde la fila. Para
+                          retirarlo de la web basta con desactivarlo.
+                        </div>
+                      }
+                    }
+                  </div>
+
+                  <div class="lista-acciones">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="cargandoPaises()"
+                      (click)="editarPais(pais)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="cargandoPaises()"
+                      (click)="alternarActivoPais(pais)"
+                    >
+                      {{ pais.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    @if (paisAEliminar()?.id === pais.id) {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        [disabled]="cargandoPaises()"
+                        (click)="confirmarEliminarPais()"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost"
+                        [disabled]="cargandoPaises()"
+                        (click)="cancelarEliminarPais()"
+                      >
+                        Cancelar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn btn-outline"
+                        [disabled]="cargandoPaises()"
+                        (click)="pedirEliminarPais(pais)"
+                      >
+                        Quitar
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      <!-- Premios y reconocimientos: se preparan aquí y se publican (o no) desde
+           la propia lista. -->
+      @if (mostrarSeccion('premios') && puede('publicarPremios')) {
+        <section class="card" id="premios" data-seccion="premios">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" /></svg
+              ></span>
+              <h2>Premios y reconocimientos</h2>
+              @if (borradores() > 0) {
+                <span class="card-head-count">{{ borradores() }} sin publicar</span>
+              }
+            </div>
+            <div class="card-head-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="cargandoPremios()"
+                (click)="cargarPremios()"
+              >
+                {{ cargandoPremios() ? 'Actualizando...' : 'Actualizar' }}
+              </button>
+            </div>
+          </div>
+
+          <p class="text-sm muted">
+            Los reconocimientos publicados aparecen en el carrusel automático de la sección
+            «Comunidad» de docentes y agentes. Un registro sin publicar es un borrador: solo lo ves
+            aquí. Una imagen, certificado o fuente oficial ayudan a que el reconocimiento sea
+            verificable; la fuente se puede consultar desde la ficha. La imagen y el certificado se
+            añaden desde la ficha, una vez guardado.
+          </p>
+
+          @if (errorPremios()) {
+            <div class="alert alert-error" role="alert">{{ errorPremios() }}</div>
+          }
+          @if (avisoPremios()) {
+            <div class="alert alert-success" role="status">{{ avisoPremios() }}</div>
+          }
+
+          <form
+            class="form-premio premios-form"
+            [formGroup]="formPremio"
+            (ngSubmit)="guardarPremio()"
+            novalidate
+          >
+            <div class="form-field">
+              <label for="premio-titulo">Título</label>
+              <input
+                id="premio-titulo"
+                type="text"
+                formControlName="titulo"
+                maxlength="160"
+                placeholder="Reconocimiento a la colaboración internacional"
+              />
+              @if (mensajePremio('titulo'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="form-field premio-tipo">
+              <label for="premio-tipo">Tipo de reconocimiento</label>
+              <select id="premio-tipo" formControlName="tipo">
+                @for (tipo of tiposReconocimiento; track tipo.valor) {
+                  <option [value]="tipo.valor">{{ tipo.etiqueta }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="fila-3">
+              <div class="form-field">
+                <label for="premio-anio">Año</label>
+                <input
+                  id="premio-anio"
+                  type="number"
+                  formControlName="anio"
+                  min="1900"
+                  max="2100"
+                />
+                @if (mensajePremio('anio'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
+              </div>
+
+              <div class="form-field">
+                <label for="premio-orden">Prioridad visual</label>
+                <input id="premio-orden" type="number" formControlName="orden" min="0" max="999" />
+                @if (mensajePremio('orden'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
+              </div>
+
+              <div class="form-field">
+                <label for="premio-institucion">Institución vinculada (opcional)</label>
+                <select id="premio-institucion" formControlName="institucionId">
+                  <option [ngValue]="null">Sin institución</option>
+                  @for (institucion of institucionesOpcion(); track institucion.id) {
+                    <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="premio-otorgado">Entidad otorgante</label>
+              <input
+                id="premio-otorgado"
+                type="text"
+                formControlName="otorgadoA"
+                maxlength="200"
+                placeholder="Universidad, ministerio o entidad que reconoce"
+              />
+              @if (mensajePremio('otorgadoA'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="premio-fuente-grid">
+              <div class="form-field">
+                <label for="premio-fuente-nombre">Fuente oficial</label>
+                <input
+                  id="premio-fuente-nombre"
+                  type="text"
+                  formControlName="fuenteNombre"
+                  maxlength="120"
+                  placeholder="Catálogo Co-Lab, sitio de la universidad…"
+                />
+              </div>
+              <div class="form-field">
+                <label for="premio-fuente-url">Enlace de verificación</label>
+                <input
+                  id="premio-fuente-url"
+                  type="url"
+                  formControlName="fuenteUrl"
+                  maxlength="500"
+                  placeholder="https://…"
+                />
+                @if (mensajePremio('fuenteUrl'); as msg) {
+                  <p class="field-error">{{ msg }}</p>
+                }
+                <p class="text-sm muted">Recomendado si no hay certificado adjunto.</p>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="premio-descripcion">Descripción</label>
+              <textarea
+                id="premio-descripcion"
+                rows="3"
+                formControlName="descripcion"
+                maxlength="1500"
+                placeholder="En qué consiste el reconocimiento y por qué se otorgó."
+              ></textarea>
+              @if (mensajePremio('descripcion'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="premios-controles">
+              <label class="switch" for="premio-publicado">
+                <input id="premio-publicado" type="checkbox" formControlName="publicado" />
+                <span class="switch-pista" aria-hidden="true"></span>
+                <span>Publicado (visible en la web)</span>
+              </label>
+
+              <div class="form-grid-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="cargandoPremios()">
+                  Guardar
+                </button>
+                @if (premioEnEdicion()) {
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    [disabled]="cargandoPremios()"
+                    (click)="cancelarEdicionPremio()"
+                  >
+                    Cancelar
+                  </button>
+                }
+              </div>
+            </div>
+          </form>
+
+          @if (cargandoPremios() && premios().length === 0) {
+            <p class="text-sm muted">Cargando los premios...</p>
+          } @else if (premios().length === 0) {
+            <p class="text-sm muted">
+              Todavía no hay premios ni reconocimientos. Cuando los haya, los publicados aparecerán
+              en la web.
+            </p>
+          } @else {
+            <ul class="premios-lista">
+              @for (premio of premios(); track premio.id) {
+                <li class="premio-fila">
+                  <div class="premio-thumb-caja">
+                    @if (imagenDe(premio); as imagen) {
+                      <img [src]="imagen" [alt]="premio.titulo" />
+                    } @else {
+                      <svg
+                        class="sin-imagen"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="9" cy="9" r="2" />
+                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                      </svg>
+                    }
+                  </div>
+
+                  <div class="premio-info">
+                    <div class="premio-fila-encabezado">
+                      <span class="premio-tipo">{{ etiquetaTipo(premio.tipo) }}</span>
+                      <span class="premio-anio">{{ premio.anio }}</span>
+                    </div>
+                    <p class="titulo">{{ premio.titulo }}</p>
+                    <p class="secundario">
+                      Entidad otorgante: {{ premio.otorgadoA }}
+                      @if (premio.institucionNombre) {
+                        · Vinculada: {{ premio.institucionNombre }}
+                      }
+                    </p>
+                    @if (premio.fuenteUrl) {
+                      <a
+                        class="premio-fuente-enlace"
+                        [href]="premio.fuenteUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ premio.fuenteNombre || 'Ver fuente oficial' }}
+                        <span aria-hidden="true">↗</span>
+                      </a>
+                    }
+                    @if (premio.publicado) {
+                      <span class="estado aprobada">Publicado</span>
+                    } @else {
+                      <span class="estado pendiente">Borrador</span>
+                    }
+
+                    @if (premioAEliminar()?.id === premio.id) {
+                      <div class="alert alert-error" role="status">
+                        ¿Eliminar «{{ premio.titulo }}»? Se borra también su imagen y no se puede
+                        deshacer.
+                      </div>
+                    }
+
+                    @if (premioEnEdicion() === premio.id) {
+                      <div class="premio-imagen-control">
+                        <label class="subir-imagen" [for]="'premio-imagen-' + premio.id">
+                          {{ premio.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}
+                          <input
+                            [id]="'premio-imagen-' + premio.id"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
+                            (change)="alSeleccionarImagen(premio, $event)"
+                          />
+                        </label>
+                        @if (premio.imagenUrl) {
+                          <button
+                            type="button"
+                            class="btn btn-outline"
+                            [disabled]="subiendoImagen() !== null || subiendoCertificado() !== null"
+                            (click)="quitarImagen(premio)"
+                          >
+                            Quitar imagen
+                          </button>
+                        }
+                        @if (subiendoImagen() === premio.id) {
+                          <span class="text-sm muted">Subiendo…</span>
+                        }
+                      </div>
+
+                      <!-- Certificado opcional del premio: evidencia documental que admite PDF
+                         además de imagen. -->
+                      <div class="premio-certificado-control">
+                        <label class="subir-imagen" [for]="'premio-certificado-' + premio.id">
+                          {{ premio.certificadoUrl ? 'Cambiar certificado' : 'Subir certificado' }}
+                          <input
+                            [id]="'premio-certificado-' + premio.id"
+                            type="file"
+                            accept="application/pdf,image/png,image/jpeg,image/webp"
+                            data-accion="subir-certificado"
+                            [disabled]="subiendoCertificado() !== null || subiendoImagen() !== null"
+                            (change)="alSeleccionarCertificado(premio, $event)"
+                          />
+                        </label>
+
+                        @if (premio.certificadoUrl) {
+                          <button
+                            type="button"
+                            class="btn btn-outline"
+                            data-accion="quitar-certificado"
+                            [disabled]="subiendoCertificado() !== null"
+                            (click)="quitarCertificado(premio)"
+                          >
+                            Quitar certificado
+                          </button>
+                          @if (premio.publicado && certificadoDe(premio); as enlace) {
+                            <a class="premio-certificado-enlace" [href]="enlace" rel="noopener">
+                              Ver o descargar
+                              @if (premio.certificadoNombre) {
+                                ({{ premio.certificadoNombre }})
+                              }
+                            </a>
+                          }
+                        }
+
+                        @if (subiendoCertificado() === premio.id) {
+                          <span class="text-sm muted">Subiendo…</span>
+                        }
+                        @if (premio.certificadoUrl && !premio.publicado) {
+                          <span class="text-sm muted">
+                            El certificado se descarga cuando el premio esté publicado.
+                          </span>
+                        }
+                        @if (!premio.certificadoUrl) {
+                          <span class="text-sm muted">
+                            Se recomienda añadir un certificado o una fuente oficial para
+                            verificarlo.
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <div class="premio-fila-acciones">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="cargandoPremios()"
+                      (click)="editarPremio(premio)"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      [disabled]="cargandoPremios()"
+                      (click)="alternarPublicado(premio)"
+                    >
+                      {{ premio.publicado ? 'Despublicar' : 'Publicar' }}
+                    </button>
+                    @if (premioAEliminar()?.id === premio.id) {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        [disabled]="cargandoPremios()"
+                        (click)="confirmarEliminarPremio()"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-ghost"
+                        [disabled]="cargandoPremios()"
+                        (click)="cancelarEliminarPremio()"
+                      >
+                        Cancelar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn btn-danger"
+                        [disabled]="cargandoPremios()"
+                        (click)="pedirEliminarPremio(premio)"
+                      >
+                        Eliminar
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
       }
 
       <!-- Diseño del certificado. Es universal: uno solo para toda la CACE. Y es
@@ -2077,114 +2235,127 @@
            sube como una imagen terminada: aquí solo se marcan los tres huecos
            (nombre, folio y QR) que la aplicación rellena al emitir.
            Es de la presidencia: la secretaría no diseña ni firma. -->
-      @if (mostrarSeccion('certificado') && (puede('disenarCertificados') || puede('firmarCertificados'))) {
-      <section class="card" id="certificado" data-seccion="certificado">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 1-12 0 6 6 0 0 1 12 0"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></span> <h2>Diseño del certificado</h2>
-            @if (borrador(); as b) {
-              <span class="card-head-count">
-                @if (b.version === 0) {
-                  sin guardar
-                } @else {
-                  versión {{ b.version }}{{ b.activa ? ' · activa' : '' }}
-                }
-              </span>
-            }
-            <!-- La explicación larga vive plegada: el «?» la abre. Junto al
+      @if (
+        mostrarSeccion('certificado') &&
+        (puede('disenarCertificados') || puede('firmarCertificados'))
+      ) {
+        <section class="card" id="certificado" data-seccion="certificado">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 8a6 6 0 1 1-12 0 6 6 0 0 1 12 0" />
+                  <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></svg
+              ></span>
+              <h2>Diseño del certificado</h2>
+              @if (borrador(); as b) {
+                <span class="card-head-count">
+                  @if (b.version === 0) {
+                    sin guardar
+                  } @else {
+                    versión {{ b.version }}{{ b.activa ? ' · activa' : '' }}
+                  }
+                </span>
+              }
+              <!-- La explicación larga vive plegada: el «?» la abre. Junto al
                  título ocupa una línea en lugar de un párrafo entero. -->
-            <button
-              type="button"
-              class="ayuda-boton"
-              data-accion="ayuda"
-              data-peso="terciario"
-              [class.ayuda-boton--abierta]="ayudaAbierta()"
-              [attr.aria-expanded]="ayudaAbierta()"
-              aria-controls="certificado-ayuda"
-              [attr.title]="
-                ayudaAbierta() ? 'Ocultar la explicación' : '¿Cómo funciona?'
-              "
-              (click)="alternarAyuda()"
-            >
-              ?
-            </button>
+              <button
+                type="button"
+                class="ayuda-boton"
+                data-accion="ayuda"
+                data-peso="terciario"
+                [class.ayuda-boton--abierta]="ayudaAbierta()"
+                [attr.aria-expanded]="ayudaAbierta()"
+                aria-controls="certificado-ayuda"
+                [attr.title]="ayudaAbierta() ? 'Ocultar la explicación' : '¿Cómo funciona?'"
+                (click)="alternarAyuda()"
+              >
+                ?
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div
-          class="ayuda"
-          id="certificado-ayuda"
-          data-ayuda
-          [attr.data-abierto]="ayudaAbierta()"
-          [hidden]="!ayudaAbierta()"
-        >
-          <h3 class="ayuda-titulo">¿Cómo funciona?</h3>
-          <ul class="vinetas">
-            <li>
-              El certificado se diseña <strong>fuera</strong> de la aplicación
-              (Canva, Word, el programa que prefieras) y aquí se sube como una
-              <strong>imagen terminada</strong>.
-            </li>
-            <li>
-              El título, los logos, los textos legales y la línea de firma van
-              dibujados <strong>dentro</strong> de esa imagen.
-            </li>
-            <li>
-              La aplicación solo estampa <strong>tres datos</strong> encima: el
-              nombre del alumno, el folio y el QR de verificación.
-            </li>
-            <li>
-              Guardar <strong>no</strong> cambia la versión anterior: crea una
-              nueva, porque los certificados ya emitidos se quedan como salieron.
-            </li>
-            <li>
-              Una versión suelta se puede <strong>borrar</strong> (con su imagen de
-              diseño). No se pueden borrar la <strong>activa</strong> (hay que
-              activar otra antes) ni las que ya tienen
-              <strong>certificados emitidos</strong>: el botón queda deshabilitado
-              con el motivo a la vista.
-            </li>
-          </ul>
-        </div>
+          <div
+            class="ayuda"
+            id="certificado-ayuda"
+            data-ayuda
+            [attr.data-abierto]="ayudaAbierta()"
+            [hidden]="!ayudaAbierta()"
+          >
+            <h3 class="ayuda-titulo">¿Cómo funciona?</h3>
+            <ul class="vinetas">
+              <li>
+                El certificado se diseña <strong>fuera</strong> de la aplicación (Canva, Word, el
+                programa que prefieras) y aquí se sube como una <strong>imagen terminada</strong>.
+              </li>
+              <li>
+                El título, los logos, los textos legales y la línea de firma van dibujados
+                <strong>dentro</strong> de esa imagen.
+              </li>
+              <li>
+                La aplicación solo estampa <strong>tres datos</strong> encima: el nombre del alumno,
+                el folio y el QR de verificación.
+              </li>
+              <li>
+                Guardar <strong>no</strong> cambia la versión anterior: crea una nueva, porque los
+                certificados ya emitidos se quedan como salieron.
+              </li>
+              <li>
+                Una versión suelta se puede <strong>borrar</strong> (con su imagen de diseño). No se
+                pueden borrar la <strong>activa</strong> (hay que activar otra antes) ni las que ya
+                tienen <strong>certificados emitidos</strong>: el botón queda deshabilitado con el
+                motivo a la vista.
+              </li>
+            </ul>
+          </div>
 
-        @if (errorPlantilla()) {
-          <div class="alert alert-error" role="alert">{{ errorPlantilla() }}</div>
-        }
-        @if (avisoPlantilla()) {
-          <div class="alert alert-success" role="status">{{ avisoPlantilla() }}</div>
-        }
+          @if (errorPlantilla()) {
+            <div class="alert alert-error" role="alert">{{ errorPlantilla() }}</div>
+          }
+          @if (avisoPlantilla()) {
+            <div class="alert alert-success" role="status">{{ avisoPlantilla() }}</div>
+          }
 
-        @if (cargandoPlantilla() && !borrador()) {
-          <p class="text-sm muted">Cargando el diseño del certificado...</p>
-        } @else if (borrador(); as b) {
-          <!-- El editor: a la izquierda las herramientas y las versiones, en el
+          @if (cargandoPlantilla() && !borrador()) {
+            <p class="text-sm muted">Cargando el diseño del certificado...</p>
+          } @else if (borrador(); as b) {
+            <!-- El editor: a la izquierda las herramientas y las versiones, en el
                centro la hoja y a la derecha las propiedades, la vista previa y
                la salud del diseño. La imagen del diseño se sube desde su
                columna de herramientas. -->
-          <app-diseno-certificado
-            [borrador]="b"
-            [fondo]="fondoPlantilla()"
-            [catalogo]="catalogoCampos()"
-            [guardando]="guardandoPlantilla()"
-            [nombresDeClase]="nombresDeLaClase()"
-            [versiones]="versionesPlantilla()"
-            [urlZonas]="urlPlantillaZonas"
-            [urlGuia]="urlGuiaDiseno"
-            [actualizando]="cargandoPlantilla()"
-            [activando]="activandoVersion()"
-            [borrando]="borrandoVersion()"
-            [subiendoFondo]="subiendoFondo()"
-            (cambio)="aplicarCambio($event)"
-            (guardar)="guardarPlantilla()"
-            (restaurar)="restablecerPlantilla()"
-            (actualizar)="cargarPlantilla()"
-            (verVersion)="verVersion($event)"
-            (activarVersion)="activarVersion($event)"
-            (borrarVersion)="borrarVersion($event)"
-            (subirFondo)="alSeleccionarFondo($event)"
-          />
-        }
-      </section>
+            <app-diseno-certificado
+              [borrador]="b"
+              [fondo]="fondoPlantilla()"
+              [catalogo]="catalogoCampos()"
+              [guardando]="guardandoPlantilla()"
+              [nombresDeClase]="nombresDeLaClase()"
+              [versiones]="versionesPlantilla()"
+              [urlZonas]="urlPlantillaZonas"
+              [urlGuia]="urlGuiaDiseno"
+              [actualizando]="cargandoPlantilla()"
+              [activando]="activandoVersion()"
+              [borrando]="borrandoVersion()"
+              [subiendoFondo]="subiendoFondo()"
+              (cambio)="aplicarCambio($event)"
+              (guardar)="guardarPlantilla()"
+              (restaurar)="restablecerPlantilla()"
+              (actualizar)="cargarPlantilla()"
+              (verVersion)="verVersion($event)"
+              (activarVersion)="activarVersion($event)"
+              (borrarVersion)="borrarVersion($event)"
+              (subirFondo)="alSeleccionarFondo($event)"
+            />
+          }
+        </section>
       }
     }
   </main>

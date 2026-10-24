@@ -161,6 +161,12 @@ export class IdentidadCaceService {
           ? { descripcion: dto.descripcion.trim() }
           : {}),
         ...(dto.tema !== undefined ? { tema: dto.tema } : {}),
+        ...(dto.diasMinimosPropuesta !== undefined
+          ? { diasMinimosPropuesta: dto.diasMinimosPropuesta }
+          : {}),
+        ...(dto.diasRevision !== undefined
+          ? { diasRevision: dto.diasRevision }
+          : {}),
         // Queda constancia de quién cambió la imagen de la CACE.
         actualizadoPorUsuarioId: usuarioId,
       },
@@ -208,6 +214,8 @@ export class IdentidadCaceService {
     descripcion: string;
     logoUrl: string | null;
     tema: string;
+    diasMinimosPropuesta: number;
+    diasRevision: number;
     actualizadoEn: Date;
   }) {
     return {
@@ -215,6 +223,8 @@ export class IdentidadCaceService {
       descripcion: config.descripcion,
       logoUrl: config.logoUrl,
       tema: esTemaCaceValido(config.tema) ? config.tema : TEMA_CACE_POR_DEFECTO,
+      diasMinimosPropuesta: config.diasMinimosPropuesta,
+      diasRevision: config.diasRevision,
       actualizadoEn: config.actualizadoEn,
     };
   }

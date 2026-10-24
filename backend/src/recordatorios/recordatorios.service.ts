@@ -8,7 +8,6 @@ import {
   ESTATUS_PENDIENTE,
 } from '../common/estados';
 import {
-  diasAntelacionRevision,
   diasHasta,
   diasHastaInstante,
   urgenciaSegunDias,
@@ -93,6 +92,8 @@ export class RecordatoriosService {
 
     const cuenta = (nivel: Urgencia) =>
       solicitudes.filter((s) => s.urgencia === nivel).length;
+    const revision = await this.solicitudes.diasRevision();
+    const minimos = await this.solicitudes.diasMinimosPropuestaConfig();
 
     return {
       generadoEn: new Date(),
@@ -100,7 +101,8 @@ export class RecordatoriosService {
       // Reglas vigentes: el frontend las usa en el formulario en vez de repetir
       // el valor por su cuenta.
       configuracion: {
-        diasAntelacionRevision: diasAntelacionRevision(),
+        diasAntelacionRevision: revision,
+        diasMinimosPropuesta: minimos,
       },
       resumen: {
         vencidas: cuenta('VENCIDA'),

@@ -92,23 +92,19 @@ export class CaceService {
 
   // --- Configuración: textos, tema y logo ---
 
-  actualizarConfiguracion(
-    dto: ConfiguracionCaceDto,
-  ): Observable<ConfiguracionCace> {
-    return this.http.patch<ConfiguracionCace>(
-      `${API_URL}/cace/configuracion`,
-      dto,
-    );
+  obtenerConfiguracion(): Observable<ConfiguracionCace> {
+    return this.http.get<ConfiguracionCace>(`${API_URL}/cace/configuracion`);
+  }
+
+  actualizarConfiguracion(dto: ConfiguracionCaceDto): Observable<ConfiguracionCace> {
+    return this.http.patch<ConfiguracionCace>(`${API_URL}/cace/configuracion`, dto);
   }
 
   /** Sube el logo de la CACE (PNG, JPG o WEBP, hasta 2 MB). */
   subirLogo(archivo: File): Observable<ConfiguracionCace> {
     const datos = new FormData();
     datos.append('logo', archivo);
-    return this.http.post<ConfiguracionCace>(
-      `${API_URL}/cace/configuracion/logo`,
-      datos,
-    );
+    return this.http.post<ConfiguracionCace>(`${API_URL}/cace/configuracion/logo`, datos);
   }
 
   /** Quita el logo: la aplicación vuelve al logo de respaldo. */
@@ -129,17 +125,12 @@ export class CaceService {
     return this.http.post<PaisComunidad>(`${API_URL}/cace/paises`, dto);
   }
 
-  actualizarPais(
-    id: number,
-    dto: PaisComunidadDto,
-  ): Observable<PaisComunidad> {
+  actualizarPais(id: number, dto: PaisComunidadDto): Observable<PaisComunidad> {
     return this.http.patch<PaisComunidad>(`${API_URL}/cace/paises/${id}`, dto);
   }
 
   eliminarPais(id: number): Observable<{ mensaje: string; id: number }> {
-    return this.http.delete<{ mensaje: string; id: number }>(
-      `${API_URL}/cace/paises/${id}`,
-    );
+    return this.http.delete<{ mensaje: string; id: number }>(`${API_URL}/cace/paises/${id}`);
   }
 
   // --- Premios y reconocimientos ---
@@ -158,19 +149,14 @@ export class CaceService {
   }
 
   eliminarPremio(id: number): Observable<{ mensaje: string; id: number }> {
-    return this.http.delete<{ mensaje: string; id: number }>(
-      `${API_URL}/cace/premios/${id}`,
-    );
+    return this.http.delete<{ mensaje: string; id: number }>(`${API_URL}/cace/premios/${id}`);
   }
 
   /** Imagen del premio. Solo se puede subir cuando el premio ya está creado. */
   subirImagenPremio(id: number, archivo: File): Observable<Premio> {
     const datos = new FormData();
     datos.append('imagen', archivo);
-    return this.http.post<Premio>(
-      `${API_URL}/cace/premios/${id}/imagen`,
-      datos,
-    );
+    return this.http.post<Premio>(`${API_URL}/cace/premios/${id}/imagen`, datos);
   }
 
   quitarImagenPremio(id: number): Observable<Premio> {
@@ -185,10 +171,7 @@ export class CaceService {
   subirCertificadoPremio(id: number, archivo: File): Observable<Premio> {
     const datos = new FormData();
     datos.append('certificado', archivo);
-    return this.http.post<Premio>(
-      `${API_URL}/cace/premios/${id}/certificado`,
-      datos,
-    );
+    return this.http.post<Premio>(`${API_URL}/cace/premios/${id}/certificado`, datos);
   }
 
   /** Quita el certificado: el premio deja de tener documento que lo acredite. */
@@ -225,9 +208,7 @@ export class CaceService {
    * `pedirBorradoInstitucion`, y quien lo autoriza y lo ejecuta es el
    * presidente.
    */
-  eliminarInstitucion(
-    id: number,
-  ): Observable<{ mensaje: string; id: number; nombre: string }> {
+  eliminarInstitucion(id: number): Observable<{ mensaje: string; id: number; nombre: string }> {
     return this.http.delete<{ mensaje: string; id: number; nombre: string }>(
       `${API_URL}/cace/instituciones/${id}`,
     );
@@ -264,7 +245,10 @@ export class CaceService {
   }
 
   /** Activa o desactiva a un miembro: `id` es el de su fila de miembro. */
-  cambiarActivoMiembro(id: number, activo: boolean): Observable<{
+  cambiarActivoMiembro(
+    id: number,
+    activo: boolean,
+  ): Observable<{
     mensaje: string;
     miembro: MiembroCace;
   }> {
@@ -285,20 +269,13 @@ export class CaceService {
    * el saliente queda como **suplente activo** (conserva las capacidades y no se
    * borra nada) y el cambio queda escrito en el historial.
    */
-  cambiarPresidente(
-    dto: CambiarPresidenteDto,
-  ): Observable<RespuestaCambioPresidencia> {
-    return this.http.post<RespuestaCambioPresidencia>(
-      `${API_URL}/cace/presidencia/cambiar`,
-      dto,
-    );
+  cambiarPresidente(dto: CambiarPresidenteDto): Observable<RespuestaCambioPresidencia> {
+    return this.http.post<RespuestaCambioPresidencia>(`${API_URL}/cace/presidencia/cambiar`, dto);
   }
 
   /** Los cambios registrados, con quién preside ahora. Solo la presidencia. */
   historialPresidencia(): Observable<HistorialPresidenciaCace> {
-    return this.http.get<HistorialPresidenciaCace>(
-      `${API_URL}/cace/presidencia/historial`,
-    );
+    return this.http.get<HistorialPresidenciaCace>(`${API_URL}/cace/presidencia/historial`);
   }
 
   // --- Borrado de instituciones con autorización (fase 6) ---
@@ -310,16 +287,11 @@ export class CaceService {
    * corresponde).
    */
   listarSolicitudesBorrado(): Observable<SolicitudesBorradoCace> {
-    return this.http.get<SolicitudesBorradoCace>(
-      `${API_URL}/cace/solicitudes-borrado`,
-    );
+    return this.http.get<SolicitudesBorradoCace>(`${API_URL}/cace/solicitudes-borrado`);
   }
 
   /** La secretaría pide el borrado de una institución rechazada, con motivo. */
-  pedirBorradoInstitucion(
-    id: number,
-    motivo: string,
-  ): Observable<RespuestaSolicitudBorrado> {
+  pedirBorradoInstitucion(id: number, motivo: string): Observable<RespuestaSolicitudBorrado> {
     return this.http.post<RespuestaSolicitudBorrado>(
       `${API_URL}/cace/instituciones/${id}/solicitud-borrado`,
       { motivo },
@@ -335,9 +307,9 @@ export class CaceService {
     aprobar: boolean,
     motivo?: string,
   ): Observable<RespuestaSolicitudBorrado> {
-    return this.http.patch<RespuestaSolicitudBorrado>(
-      `${API_URL}/cace/solicitudes-borrado/${id}`,
-      { aprobar, motivo },
-    );
+    return this.http.patch<RespuestaSolicitudBorrado>(`${API_URL}/cace/solicitudes-borrado/${id}`, {
+      aprobar,
+      motivo,
+    });
   }
 }

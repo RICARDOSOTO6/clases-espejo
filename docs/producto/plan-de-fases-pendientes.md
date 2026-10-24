@@ -263,9 +263,9 @@ rama y se demuestra el release candidate.
 
 ### 4.1 Plazos configurables (1–2 días)
 
-- [ ] Campos en `CONFIGURACION_CACE`: 8 días para proponer y 7 para revisar.
-- [ ] Pantalla de presidencia y uso en alta, edición, caducidad y formulario.
-- [ ] e2e: 7 rechaza, 8 acepta; el cambio de la presidencia se aplica.
+- [x] Campos en `CONFIGURACION_CACE`: 8 días para proponer y 7 para revisar.
+- [x] Pantalla de presidencia y uso en alta, edición, caducidad, agenda y formulario.
+- [x] e2e: con 10 días se rechaza una fecha a 9 y se acepta a 10; el cambio de la presidencia se aplica.
 
 ### 4.2 Evidencias por enlace (3–5 días)
 

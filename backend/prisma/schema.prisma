@@ -508,6 +508,10 @@ model ConfiguracionCace {
   logoUrl                 String?  @map("logo_url")
   /// Tema visual de una lista corta (no color libre, para no romper el contraste).
   tema                    String   @default("AZUL")
+  /// Días mínimos de antelación para proponer una clase (8 por defecto).
+  diasMinimosPropuesta    Int      @default(8) @map("dias_minimos_propuesta")
+  /// Días de antelación con los que se debe responder (7 por defecto).
+  diasRevision            Int      @default(7) @map("dias_revision")
   actualizadoPorUsuarioId Int?     @map("actualizado_por_usuario_id")
   actualizadoEn           DateTime @default(now()) @updatedAt @map("actualizado_en")
   actualizadoPor          Usuario? @relation("ConfiguracionCace", fields: [actualizadoPorUsuarioId], references: [id])

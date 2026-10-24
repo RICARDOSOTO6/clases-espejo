@@ -88,17 +88,34 @@ export function urgenciaSegunDias(
 }
 
 /**
- * Días de antelación exigidos para responder una solicitud.
- * Configurable con `REVISION_DIAS_ANTELACION` (por defecto 7).
+ * Días de antelación exigidos para **responder** una solicitud.
+ * Sin argumento usa `REVISION_DIAS_ANTELACION` (7 por defecto), que queda como
+ * respaldo de instalaciones antiguas. La configuración de la CACE manda cuando
+ * el servicio pasa su valor.
  */
-export function diasAntelacionRevision(): number {
+export function diasAntelacionRevision(dias?: number): number {
+  if (dias !== undefined) {
+    return Number.isFinite(dias) && dias >= 0 ? Math.floor(dias) : 7;
+  }
   const valor = Number(process.env.REVISION_DIAS_ANTELACION ?? 7);
   return Number.isFinite(valor) && valor >= 0 ? Math.floor(valor) : 7;
 }
 
 /**
+ * Días mínimos de antelación para **proponer** una clase.
+ * Sin configuración se usan 8, que es el valor acordado.
+ */
+export function diasMinimosPropuesta(dias?: number): number {
+  if (dias !== undefined) {
+    return Number.isFinite(dias) && dias >= 0 ? Math.floor(dias) : 8;
+  }
+  const valor = Number(process.env.DIAS_MINIMOS_PROPUESTA ?? 8);
+  return Number.isFinite(valor) && valor >= 0 ? Math.floor(valor) : 8;
+}
+
+/**
  * Último día en el que una solicitud todavía puede responderse:
- * la fecha propuesta menos los días de antelación.
+ * la fecha propuesta menos los días de revisión.
  */
 export function fechaLimiteRevision(
   fechaPropuesta: Date,
@@ -110,15 +127,21 @@ export function fechaLimiteRevision(
 }
 
 /** Fecha (sin hora) a partir de la cual una solicitud ya está caducada. */
-export function corteCaducidad(ahora: Date = new Date()): Date {
+export function corteCaducidad(
+  ahora: Date = new Date(),
+  dias: number = diasAntelacionRevision(),
+): Date {
   const corte = diaLocal(ahora);
-  corte.setUTCDate(corte.getUTCDate() + diasAntelacionRevision());
+  corte.setUTCDate(corte.getUTCDate() + dias);
   return corte;
 }
 
-/** Fecha mínima que se puede proponer: hoy más la antelación exigida. */
-export function fechaMinimaPropuesta(ahora: Date = new Date()): Date {
+/** Fecha mínima que se puede proponer: hoy más los días mínimos configurados. */
+export function fechaMinimaPropuesta(
+  ahora: Date = new Date(),
+  dias: number = diasMinimosPropuesta(),
+): Date {
   const minimo = diaLocal(ahora);
-  minimo.setUTCDate(minimo.getUTCDate() + diasAntelacionRevision());
+  minimo.setUTCDate(minimo.getUTCDate() + dias);
   return minimo;
 }

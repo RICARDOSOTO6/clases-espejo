@@ -1,18 +1,6 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
@@ -26,33 +14,19 @@ import {
   estadoProyectoLabel as etiquetaEstadoProyecto,
 } from '../../core/constants/catalogos';
 import { Materia } from '../../core/models/materia.models';
-import {
-  AsignacionMia,
-  CreateSolicitudDto,
-  Solicitud,
-} from '../../core/models/solicitud.models';
+import { AsignacionMia, CreateSolicitudDto, Solicitud } from '../../core/models/solicitud.models';
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
-import {
-  PendienteUi,
-  UiStateService,
-} from '../../core/services/ui-state.service';
+import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { RecordatoriosService } from '../../core/services/recordatorios.service';
 import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
 import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
 import { AgendaComponent } from '../../shared/components/agenda/agenda.component';
 import { CarruselComponent } from '../../shared/components/carrusel/carrusel.component';
 import { PremioTarjetaComponent } from '../../shared/components/premio-tarjeta/premio-tarjeta.component';
-import {
-  claseUrgencia,
-  etiquetaUrgencia,
-} from '../../core/utils/urgencia.util';
-import {
-  fechaLarga,
-  fechaTexto,
-  hoyTexto,
-} from '../../core/utils/fecha.util';
+import { claseUrgencia, etiquetaUrgencia } from '../../core/utils/urgencia.util';
+import { fechaLarga, fechaTexto, hoyTexto } from '../../core/utils/fecha.util';
 
 @Component({
   selector: 'app-docente',
@@ -196,14 +170,8 @@ export class DocenteComponent implements OnInit, OnDestroy {
   solicitudError = signal<string | null>(null);
 
   solicitudForm = this.fb.group({
-    asignacionOrigenId: this.fb.control<number | null>(
-      null,
-      Validators.required,
-    ),
-    institucionDestinoId: this.fb.control<number | null>(
-      null,
-      Validators.required,
-    ),
+    asignacionOrigenId: this.fb.control<number | null>(null, Validators.required),
+    institucionDestinoId: this.fb.control<number | null>(null, Validators.required),
     materiaDestinoId: this.fb.control<number | null>(null),
     titulo: ['', Validators.required],
     objetivo: ['', Validators.required],
@@ -227,9 +195,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
       next: (r) => {
         this.asignaciones.set(r);
         if (!this.paisUsuario()) {
-          this.establecerPais(
-            r[0]?.docenteInstitucion?.institucion?.codigoPais,
-          );
+          this.establecerPais(r[0]?.docenteInstitucion?.institucion?.codigoPais);
         }
       },
       error: () => this.asignaciones.set([]),
@@ -414,12 +380,8 @@ export class DocenteComponent implements OnInit, OnDestroy {
    * (al editar) NO borra la materia ya elegida: antes, cualquier edición
    * eliminaba la materia destino sin avisar.
    */
-  private cargarMateriasDestino(
-    destinoId: number | null,
-    conservarSeleccion: boolean,
-  ): void {
-    const seleccionada =
-      this.solicitudForm.get('materiaDestinoId')?.value ?? null;
+  private cargarMateriasDestino(destinoId: number | null, conservarSeleccion: boolean): void {
+    const seleccionada = this.solicitudForm.get('materiaDestinoId')?.value ?? null;
     this.materiasDestino.set([]);
     if (!conservarSeleccion) {
       this.solicitudForm.patchValue({ materiaDestinoId: null });
@@ -430,11 +392,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
       next: (r) => {
         this.materiasDestino.set(r);
         // Si la materia guardada ya no pertenece a esta institución, se limpia.
-        if (
-          conservarSeleccion &&
-          seleccionada != null &&
-          !r.some((m) => m.id === seleccionada)
-        ) {
+        if (conservarSeleccion && seleccionada != null && !r.some((m) => m.id === seleccionada)) {
           this.solicitudForm.patchValue({ materiaDestinoId: null });
         }
       },
@@ -492,7 +450,7 @@ export class DocenteComponent implements OnInit, OnDestroy {
     // La propuesta debe respetar la antelación con la que se puede responder.
     if ((v.fechaPropuesta ?? '') < this.fechaMinimaPropuesta()) {
       this.solicitudError.set(
-        `Propón la clase con al menos ${this.diasAntelacion()} días de antelación (desde el ${fechaLarga(this.fechaMinimaPropuesta())})`,
+        `Propón la clase con al menos ${this.diasMinimosPropuesta()} días de antelación (desde el ${fechaLarga(this.fechaMinimaPropuesta())})`,
       );
       return;
     }
@@ -521,29 +479,21 @@ export class DocenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.solicitudLoading.set(false);
-        this.solicitudError.set(
-          extraerMensajeError(err, 'Error al guardar la solicitud'),
-        );
+        this.solicitudError.set(extraerMensajeError(err, 'Error al guardar la solicitud'));
       },
     });
   }
 
   cancelarSolicitud(s: Solicitud): void {
-    this.confirmarAccion(
-      'Cancelar solicitud',
-      `¿Cancelar la solicitud "${s.titulo}"?`,
-      () =>
-        this.solicitudesService.cancelar(s.id).subscribe({
-          next: () => {
-            this.avisar('ok', 'Solicitud cancelada');
-            this.cargarDatos();
-          },
-          error: (err: HttpErrorResponse) =>
-            this.avisar(
-              'error',
-              extraerMensajeError(err, 'Error al cancelar la solicitud'),
-            ),
-        }),
+    this.confirmarAccion('Cancelar solicitud', `¿Cancelar la solicitud "${s.titulo}"?`, () =>
+      this.solicitudesService.cancelar(s.id).subscribe({
+        next: () => {
+          this.avisar('ok', 'Solicitud cancelada');
+          this.cargarDatos();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.avisar('error', extraerMensajeError(err, 'Error al cancelar la solicitud')),
+      }),
     );
   }
 
@@ -597,15 +547,15 @@ export class DocenteComponent implements OnInit, OnDestroy {
     return fechaTexto(fecha);
   }
 
-  /** Antelación exigida para proponer (la manda el backend; 7 por defecto). */
-  diasAntelacion(): number {
-    return this.agenda()?.configuracion?.diasAntelacionRevision ?? 7;
+  /** Antelación mínima para proponer (la manda el backend; 8 por defecto). */
+  diasMinimosPropuesta(): number {
+    return this.agenda()?.configuracion?.diasMinimosPropuesta ?? 8;
   }
 
   /** Primera fecha que se puede proponer, como texto `YYYY-MM-DD`. */
   fechaMinimaPropuesta(): string {
     const minimo = new Date();
-    minimo.setDate(minimo.getDate() + this.diasAntelacion());
+    minimo.setDate(minimo.getDate() + this.diasMinimosPropuesta());
     return hoyTexto(minimo);
   }
 

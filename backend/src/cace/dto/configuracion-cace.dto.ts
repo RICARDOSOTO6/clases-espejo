@@ -1,4 +1,12 @@
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { TEMAS_CACE } from '../../common/temas-cace';
 
 /**
@@ -29,4 +37,16 @@ export class ActualizarConfiguracionCaceDto {
     message: `El tema debe ser uno de: ${TEMAS_CACE.join(', ')}`,
   })
   tema?: string;
+
+  @IsOptional()
+  @IsInt({ message: 'Los días mínimos deben ser un número entero' })
+  @Min(1, { message: 'Los días mínimos deben ser al menos 1' })
+  @Max(60, { message: 'Los días mínimos no pueden pasar de 60' })
+  diasMinimosPropuesta?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'Los días de revisión deben ser un número entero' })
+  @Min(1, { message: 'Los días de revisión deben ser al menos 1' })
+  @Max(60, { message: 'Los días de revisión no pueden pasar de 60' })
+  diasRevision?: number;
 }

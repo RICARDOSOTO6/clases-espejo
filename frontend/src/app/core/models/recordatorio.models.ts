@@ -46,6 +46,7 @@ export interface Agenda {
   /** Reglas vigentes del backend, para no duplicarlas en el cliente. */
   configuracion: {
     diasAntelacionRevision: number;
+    diasMinimosPropuesta: number;
   };
   resumen: {
     vencidas: number;

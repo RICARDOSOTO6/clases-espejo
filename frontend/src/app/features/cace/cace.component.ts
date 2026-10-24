@@ -17,11 +17,7 @@ import { PlantillaCertificadoService } from '../../core/services/plantilla-certi
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { DisenoCertificadoComponent } from './diseno-certificado/diseno-certificado.component';
-import {
-  InstitucionOpcion,
-  PaisComunidad,
-  Premio,
-} from '../../core/models/cace-identidad.models';
+import { InstitucionOpcion, PaisComunidad, Premio } from '../../core/models/cace-identidad.models';
 import {
   HistorialPresidenciaCace,
   InstitucionRechazadaCace,
@@ -34,9 +30,7 @@ import {
   EstadoPlantillaCertificado,
   PlantillaCertificado,
 } from '../../core/models/certificado.models';
-import {
-  LIENZO_POR_DEFECTO,
-} from '../../core/utils/certificado-medidas';
+import { LIENZO_POR_DEFECTO } from '../../core/utils/certificado-medidas';
 import {
   TEMAS_CACE,
   TIPOS_RECONOCIMIENTO,
@@ -88,12 +82,7 @@ const PESO_MAXIMO_IMAGEN = 12 * 1024 * 1024;
 const PESO_MAXIMO_CERTIFICADO = 8 * 1024 * 1024;
 
 /** Tipos de documento que acepta el certificado de un premio. */
-const TIPOS_CERTIFICADO = [
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-];
+const TIPOS_CERTIFICADO = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
 
 /** Normaliza búsquedas para que los acentos no cambien los resultados. */
 function normalizarBusqueda(valor: string | null | undefined): string {
@@ -155,9 +144,7 @@ export class CaceComponent implements OnInit, OnDestroy {
    * esqueleto para que no ofrezca lo que el rol no puede hacer.
    */
   readonly rolCace = computed<'PRESIDENTE_CACE' | 'SECRETARIA_CACE'>(() =>
-    this.auth.currentUser()?.rol === 'SECRETARIA_CACE'
-      ? 'SECRETARIA_CACE'
-      : 'PRESIDENTE_CACE',
+    this.auth.currentUser()?.rol === 'SECRETARIA_CACE' ? 'SECRETARIA_CACE' : 'PRESIDENTE_CACE',
   );
 
   /** ¿Se enseña esta sección en la pantalla actual? */
@@ -206,13 +193,13 @@ export class CaceComponent implements OnInit, OnDestroy {
         id: 'miembros',
         etiqueta: 'Equipo CACE',
         ancla: 'miembros',
-        capacidades: ['gestionarMiembrosCace']
+        capacidades: ['gestionarMiembrosCace'],
       },
       {
         id: 'presidencia',
         etiqueta: 'Presidencia',
         ancla: 'presidencia',
-        capacidades: ['gestionarMiembrosCace']
+        capacidades: ['gestionarMiembrosCace'],
       },
       {
         id: 'solicitudes',
@@ -223,39 +210,35 @@ export class CaceComponent implements OnInit, OnDestroy {
         id: 'personalizacion',
         etiqueta: 'Identidad',
         ruta: '/panel/personalizacion',
-        capacidades: ['personalizarCace']
+        capacidades: ['personalizarCace'],
       },
       {
         id: 'comunidad',
         etiqueta: 'Comunidad',
         ancla: 'comunidad',
-        capacidades: ['personalizarCace']
+        capacidades: ['personalizarCace'],
       },
       {
         id: 'premios',
         etiqueta: 'Premios',
         ancla: 'premios',
-        capacidades: ['publicarPremios']
+        capacidades: ['publicarPremios'],
       },
       {
         id: 'certificado',
         etiqueta: 'Certificados',
         ruta: '/panel/certificado',
-        capacidades: ['disenarCertificados', 'firmarCertificados']
+        capacidades: ['disenarCertificados', 'firmarCertificados'],
       },
     ];
 
     return modulos.filter((modulo) => {
       if (modulo.id === 'solicitudes') {
         return (
-          this.puede('solicitarBorradoInstitucion') ||
-          this.puede('resolverSolicitudesBorrado')
+          this.puede('solicitarBorradoInstitucion') || this.puede('resolverSolicitudesBorrado')
         );
       }
-      return (
-        !modulo.capacidades ||
-        modulo.capacidades.some((capacidad) => this.puede(capacidad))
-      );
+      return !modulo.capacidades || modulo.capacidades.some((capacidad) => this.puede(capacidad));
     });
   });
 
@@ -277,10 +260,7 @@ export class CaceComponent implements OnInit, OnDestroy {
         tono: 'info',
       });
     }
-    if (
-      this.puede('solicitarBorradoInstitucion') ||
-      this.puede('resolverSolicitudesBorrado')
-    ) {
+    if (this.puede('solicitarBorradoInstitucion') || this.puede('resolverSolicitudesBorrado')) {
       kpis.push({
         etiqueta: 'Solicitudes de borrado',
         valor: this.solicitudesPendientes(),
@@ -310,9 +290,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly errorCapacidades = signal<string | null>(null);
 
   /** Las capacidades en crudo, para el `data-capacidades` del panel. */
-  readonly capacidadesTexto = computed(
-    () => this.capacidades().join(' ') || 'sin-rol',
-  );
+  readonly capacidadesTexto = computed(() => this.capacidades().join(' ') || 'sin-rol');
 
   /** ¿Este usuario puede hacer esto? (Igual que el `@Requiere(...)` del servidor.) */
   puede(capacidad: string): boolean {
@@ -354,7 +332,9 @@ export class CaceComponent implements OnInit, OnDestroy {
       const agentes = institucion.agentes
         .map((agente) => `${agente.nombre} ${agente.correo}`)
         .join(' ');
-      return normalizarBusqueda(`${institucion.nombre} ${institucion.pais} ${agentes}`).includes(texto);
+      return normalizarBusqueda(`${institucion.nombre} ${institucion.pais} ${agentes}`).includes(
+        texto,
+      );
     });
   });
 
@@ -404,9 +384,7 @@ export class CaceComponent implements OnInit, OnDestroy {
    * Contraseña provisional que solo llega cuando el correo **no** pudo salir.
    * Se muestra una vez para que la presidencia se la pueda dar a mano.
    */
-  readonly passwordDeApoyo = signal<{ correo: string; password: string } | null>(
-    null,
-  );
+  readonly passwordDeApoyo = signal<{ correo: string; password: string } | null>(null);
 
   formMiembro = this.fb.group({
     correo: ['', [Validators.required, Validators.email]],
@@ -499,9 +477,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   });
 
   /** Institución rechazada cuyo borrado está pidiendo la secretaría. */
-  readonly pidiendoSolicitudBorrado = signal<InstitucionRechazadaCace | null>(
-    null,
-  );
+  readonly pidiendoSolicitudBorrado = signal<InstitucionRechazadaCace | null>(null);
   /** Solicitud que está resolviendo la presidencia, y qué va a hacer. */
   readonly resolviendoSolicitud = signal<{
     solicitud: SolicitudBorradoCace;
@@ -548,9 +524,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   actualizarEstadoSolicitudes(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
     const estado: 'TODAS' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' =
-      valor === 'PENDIENTE' || valor === 'APROBADA' || valor === 'RECHAZADA'
-        ? valor
-        : 'TODAS';
+      valor === 'PENDIENTE' || valor === 'APROBADA' || valor === 'RECHAZADA' ? valor : 'TODAS';
     this.estadoSolicitudes.set(estado);
     this.cerrarEdicionesAlFiltrar();
   }
@@ -581,6 +555,8 @@ export class CaceComponent implements OnInit, OnDestroy {
     lema: ['', Validators.maxLength(160)],
     descripcion: ['', Validators.maxLength(600)],
     tema: this.fb.nonNullable.control<TemaCace>('AZUL'),
+    diasMinimosPropuesta: [8, [Validators.required, Validators.min(1), Validators.max(60)]],
+    diasRevision: [7, [Validators.required, Validators.min(1), Validators.max(60)]],
   });
 
   /** Logo configurado (o el de respaldo), listo para la vista previa. */
@@ -654,10 +630,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     ]),
     otorgadoA: ['', [Validators.required, Validators.minLength(2)]],
     fuenteNombre: ['', Validators.maxLength(120)],
-    fuenteUrl: [
-      '',
-      [Validators.maxLength(500), Validators.pattern(/^https?:\/\/\S+$/i)],
-    ],
+    fuenteUrl: ['', [Validators.maxLength(500), Validators.pattern(/^https?:\/\/\S+$/i)]],
     institucionId: this.fb.control<number | null>(null),
     orden: this.fb.nonNullable.control(0, [
       Validators.required,
@@ -668,9 +641,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   });
 
   /** Un premio sin publicar es un borrador: solo lo ve la presidencia. */
-  readonly borradores = computed(
-    () => this.premios().filter((premio) => !premio.publicado).length,
-  );
+  readonly borradores = computed(() => this.premios().filter((premio) => !premio.publicado).length);
 
   // --- Plantilla del certificado ---
 
@@ -694,14 +665,10 @@ export class CaceComponent implements OnInit, OnDestroy {
   readonly borrador = signal<BorradorPlantillaCertificado | null>(null);
 
   /** Los datos con su etiqueta, en el orden del catálogo, para el panel. */
-  readonly catalogoCampos = computed(
-    () => this.plantillaEstado()?.catalogo ?? [],
-  );
+  readonly catalogoCampos = computed(() => this.plantillaEstado()?.catalogo ?? []);
 
   /** Las versiones guardadas, tal cual, para la tabla del panel de diseño. */
-  readonly versionesPlantilla = computed(
-    () => this.plantillaEstado()?.versiones ?? [],
-  );
+  readonly versionesPlantilla = computed(() => this.plantillaEstado()?.versiones ?? []);
 
   /**
    * La explicación del panel (la que antes era un párrafo de arriba), plegada.
@@ -733,7 +700,6 @@ export class CaceComponent implements OnInit, OnDestroy {
   alternarAyuda(): void {
     this.ayudaAbierta.update((abierta) => !abierta);
   }
-
 
   ngOnInit(): void {
     const url = this.router.url;
@@ -769,9 +735,7 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   get nombreUsuario(): string {
     const u = this.usuario();
-    return u
-      ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}`.trim()
-      : '';
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}`.trim() : '';
   }
 
   mensajeDe(campo: 'actual' | 'nueva' | 'confirmar'): string | null {
@@ -816,9 +780,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'No se pudo cambiar la contraseña'),
-        );
+        this.error.set(extraerMensajeError(err, 'No se pudo cambiar la contraseña'));
       },
     });
   }
@@ -842,9 +804,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.capacidades.set([]);
         this.cargandoCapacidades.set(false);
-        this.errorCapacidades.set(
-          extraerMensajeError(err, 'No se pudieron cargar tus permisos'),
-        );
+        this.errorCapacidades.set(extraerMensajeError(err, 'No se pudieron cargar tus permisos'));
       },
     });
   }
@@ -858,10 +818,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       // sección de la presidencia.
       this.cargarHistorialPresidencia();
     }
-    if (
-      this.puede('solicitarBorradoInstitucion') ||
-      this.puede('resolverSolicitudesBorrado')
-    ) {
+    if (this.puede('solicitarBorradoInstitucion') || this.puede('resolverSolicitudesBorrado')) {
       this.cargarSolicitudes();
     }
     if (this.puede('personalizarCace')) {
@@ -908,8 +865,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { correo, nombres, apellidoPaterno, apellidoMaterno } =
-      this.formMiembro.getRawValue();
+    const { correo, nombres, apellidoPaterno, apellidoMaterno } = this.formMiembro.getRawValue();
     this.creandoMiembro.set(true);
     this.errorMiembros.set(null);
     this.avisoMiembros.set(null);
@@ -944,9 +900,7 @@ export class CaceComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.creandoMiembro.set(false);
-          this.errorMiembros.set(
-            extraerMensajeError(err, 'No se pudo dar de alta la secretaría'),
-          );
+          this.errorMiembros.set(extraerMensajeError(err, 'No se pudo dar de alta la secretaría'));
         },
       });
   }
@@ -999,9 +953,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   /** Valida un campo del alta de secretaría, con el mismo estilo que el resto. */
-  mensajeMiembro(
-    campo: 'correo' | 'nombres' | 'apellidoPaterno',
-  ): string | null {
+  mensajeMiembro(campo: 'correo' | 'nombres' | 'apellidoPaterno'): string | null {
     return mensajeDeControl(this.formMiembro, campo, {
       required: 'Este campo es obligatorio',
       email: 'Escribe un correo válido, por ejemplo persona@universidad.edu',
@@ -1044,9 +996,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.confirmandoCambioPresidencia.set(false);
     this.errorPresidencia.set(null);
     if (modo === 'miembro' && this.formPresidente.controls.miembroId.value === null) {
-      this.formPresidente.controls.miembroId.setValue(
-        this.candidatosPresidencia()[0]?.id ?? null,
-      );
+      this.formPresidente.controls.miembroId.setValue(this.candidatosPresidencia()[0]?.id ?? null);
     }
   }
 
@@ -1059,9 +1009,7 @@ export class CaceComponent implements OnInit, OnDestroy {
    * No usa `mensajeDeControl` a propósito: aquí el aviso de campo vacío sale al
    * intentar enviar (`intentoPresidencia`), no al tocar el campo.
    */
-  mensajePresidente(
-    campo: 'correo' | 'nombres' | 'apellidoPaterno',
-  ): string | null {
+  mensajePresidente(campo: 'correo' | 'nombres' | 'apellidoPaterno'): string | null {
     if (this.modoSucesor() !== 'nuevo') return null;
     const control = this.formPresidente.get(campo);
     const valor = String(control?.value ?? '').trim();
@@ -1081,9 +1029,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       return this.formPresidente.controls.miembroId.value !== null;
     }
     const { correo, nombres, apellidoPaterno } = this.formPresidente.getRawValue();
-    return (
-      !!correo?.trim() && !!nombres?.trim() && !!apellidoPaterno?.trim()
-    );
+    return !!correo?.trim() && !!nombres?.trim() && !!apellidoPaterno?.trim();
   }
 
   /**
@@ -1182,9 +1128,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cambiandoPresidencia.set(false);
-        this.errorPresidencia.set(
-          extraerMensajeError(err, 'No se pudo cambiar la presidencia'),
-        );
+        this.errorPresidencia.set(extraerMensajeError(err, 'No se pudo cambiar la presidencia'));
       },
     });
   }
@@ -1329,11 +1273,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.avisoSolicitudes.set(null);
 
     this.cace
-      .resolverSolicitudBorrado(
-        pendiente.solicitud.id,
-        aprobar,
-        aprobar ? undefined : motivo,
-      )
+      .resolverSolicitudBorrado(pendiente.solicitud.id, aprobar, aprobar ? undefined : motivo)
       .subscribe({
         next: (res) => {
           this.solicitudEnProceso.set(null);
@@ -1349,9 +1289,7 @@ export class CaceComponent implements OnInit, OnDestroy {
           this.resolviendoSolicitud.set(null);
           // El servidor explica qué lo impide (por ejemplo, que la institución
           // tiene historia). La solicitud sigue pendiente.
-          this.errorSolicitudes.set(
-            extraerMensajeError(err, 'No se pudo resolver la solicitud'),
-          );
+          this.errorSolicitudes.set(extraerMensajeError(err, 'No se pudo resolver la solicitud'));
           this.cargarSolicitudes();
         },
       });
@@ -1484,9 +1422,7 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.enProceso.set(null);
         this.pidiendoBorrado.set(null);
         // El servidor explica qué historia lo impide, o que no estaba rechazada.
-        this.errorInstituciones.set(
-          extraerMensajeError(err, 'No se pudo borrar la institución'),
-        );
+        this.errorInstituciones.set(extraerMensajeError(err, 'No se pudo borrar la institución'));
       },
     });
   }
@@ -1501,12 +1437,14 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Rellena el formulario con lo que ya está configurado. */
   cargarIdentidad(): void {
     this.errorPersonalizacion.set(null);
-    this.identidad.cargar().subscribe({
+    this.cace.obtenerConfiguracion().subscribe({
       next: (config) => {
         this.formPersonalizacion.patchValue({
           lema: config.lema,
           descripcion: config.descripcion,
           tema: config.tema,
+          diasMinimosPropuesta: config.diasMinimosPropuesta,
+          diasRevision: config.diasRevision,
         });
         this.temaElegido.set(config.tema);
         this.lemaVistaPrevia.set(config.lema);
@@ -1528,7 +1466,8 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { lema, descripcion, tema } = this.formPersonalizacion.getRawValue();
+    const { lema, descripcion, tema, diasMinimosPropuesta, diasRevision } =
+      this.formPersonalizacion.getRawValue();
     this.guardandoPersonalizacion.set(true);
     this.errorPersonalizacion.set(null);
     this.avisoPersonalizacion.set(null);
@@ -1538,6 +1477,8 @@ export class CaceComponent implements OnInit, OnDestroy {
         lema: lema ?? '',
         descripcion: descripcion ?? '',
         tema,
+        diasMinimosPropuesta: diasMinimosPropuesta ?? 8,
+        diasRevision: diasRevision ?? 7,
       })
       .subscribe({
         next: () => {
@@ -1599,9 +1540,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       preparado = await prepararLogo(archivo);
     } catch {
       this.subiendoLogo.set(false);
-      this.errorPersonalizacion.set(
-        'No se pudo leer la imagen. Prueba con otra en PNG o JPG.',
-      );
+      this.errorPersonalizacion.set('No se pudo leer la imagen. Prueba con otra en PNG o JPG.');
       return;
     }
 
@@ -1613,9 +1552,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoLogo.set(false);
-        this.errorPersonalizacion.set(
-          extraerMensajeError(err, 'No se pudo subir el logo'),
-        );
+        this.errorPersonalizacion.set(extraerMensajeError(err, 'No se pudo subir el logo'));
       },
     });
   }
@@ -1636,9 +1573,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoLogo.set(false);
-        this.errorPersonalizacion.set(
-          extraerMensajeError(err, 'No se pudo quitar el logo'),
-        );
+        this.errorPersonalizacion.set(extraerMensajeError(err, 'No se pudo quitar el logo'));
       },
     });
   }
@@ -1657,14 +1592,18 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Etiqueta del tema elegido, para el resumen de la vista previa. */
   get etiquetaTemaElegido(): string {
     return (
-      this.temas.find((tema) => tema.valor === this.temaElegido())?.etiqueta ??
-      this.temaElegido()
+      this.temas.find((tema) => tema.valor === this.temaElegido())?.etiqueta ?? this.temaElegido()
     );
   }
 
-  mensajePersonalizacion(campo: 'lema' | 'descripcion'): string | null {
+  mensajePersonalizacion(
+    campo: 'lema' | 'descripcion' | 'diasMinimosPropuesta' | 'diasRevision',
+  ): string | null {
     return mensajeDeControl(this.formPersonalizacion, campo, {
       maxlength: 'El texto es demasiado largo',
+      min: 'El valor mínimo es 1 día',
+      max: 'El valor máximo es 60 días',
+      required: 'Indica un número de días',
     });
   }
 
@@ -1681,9 +1620,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.paises.set([]);
         this.cargandoPaises.set(false);
-        this.errorPaises.set(
-          extraerMensajeError(err, 'No se pudieron cargar los países'),
-        );
+        this.errorPaises.set(extraerMensajeError(err, 'No se pudieron cargar los países'));
       },
     });
   }
@@ -1739,9 +1676,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.errorPaises.set(null);
     this.avisoPaises.set(null);
 
-    const peticion = id
-      ? this.cace.actualizarPais(id, dto)
-      : this.cace.crearPais(dto);
+    const peticion = id ? this.cace.actualizarPais(id, dto) : this.cace.crearPais(dto);
 
     peticion.subscribe({
       next: (pais) => {
@@ -1756,9 +1691,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoPaises.set(false);
-        this.errorPaises.set(
-          extraerMensajeError(err, 'No se pudo guardar el país'),
-        );
+        this.errorPaises.set(extraerMensajeError(err, 'No se pudo guardar el país'));
       },
     });
   }
@@ -1787,9 +1720,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoPaises.set(false);
-        this.errorPaises.set(
-          extraerMensajeError(err, 'No se pudo cambiar el estado del país'),
-        );
+        this.errorPaises.set(extraerMensajeError(err, 'No se pudo cambiar el estado del país'));
       },
     });
   }
@@ -1825,9 +1756,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.cargandoPaises.set(false);
         this.paisAEliminar.set(null);
-        this.errorPaises.set(
-          extraerMensajeError(err, 'No se pudo quitar el país'),
-        );
+        this.errorPaises.set(extraerMensajeError(err, 'No se pudo quitar el país'));
       },
     });
   }
@@ -1850,8 +1779,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** Aviso cuando el formulario no tiene ni nombre ni código. */
   get faltaPais(): boolean {
     return (
-      this.formPais.hasError('paisRequerido') &&
-      (this.formPais.touched || this.formPais.dirty)
+      this.formPais.hasError('paisRequerido') && (this.formPais.touched || this.formPais.dirty)
     );
   }
 
@@ -1875,9 +1803,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.premios.set([]);
         this.cargandoPremios.set(false);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudieron cargar los premios'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudieron cargar los premios'));
         this.publicarEnCampana();
       },
     });
@@ -1954,9 +1880,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.errorPremios.set(null);
     this.avisoPremios.set(null);
 
-    const peticion = id
-      ? this.cace.actualizarPremio(id, dto)
-      : this.cace.crearPremio(dto);
+    const peticion = id ? this.cace.actualizarPremio(id, dto) : this.cace.crearPremio(dto);
 
     peticion.subscribe({
       next: (premio) => {
@@ -1977,9 +1901,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoPremios.set(false);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo guardar el premio'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo guardar el premio'));
       },
     });
   }
@@ -2005,9 +1927,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoPremios.set(false);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo cambiar la publicación'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo cambiar la publicación'));
       },
     });
   }
@@ -2042,9 +1962,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.cargandoPremios.set(false);
         this.premioAEliminar.set(null);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo eliminar el premio'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo eliminar el premio'));
       },
     });
   }
@@ -2090,9 +2008,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoImagen.set(null);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo subir la imagen'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo subir la imagen'));
       },
     });
   }
@@ -2113,17 +2029,14 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoImagen.set(null);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo quitar la imagen'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo quitar la imagen'));
       },
     });
   }
 
   etiquetaTipo(tipo: TipoReconocimiento): string {
     return (
-      this.tiposReconocimiento.find((opcion) => opcion.valor === tipo)?.etiqueta ??
-      'Reconocimiento'
+      this.tiposReconocimiento.find((opcion) => opcion.valor === tipo)?.etiqueta ?? 'Reconocimiento'
     );
   }
 
@@ -2174,9 +2087,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoCertificado.set(null);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo subir el certificado'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo subir el certificado'));
       },
     });
   }
@@ -2191,17 +2102,13 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.cace.quitarCertificadoPremio(premio.id).subscribe({
       next: (actualizado) => {
         this.subiendoCertificado.set(null);
-        this.avisoPremios.set(
-          `Certificado de «${actualizado.titulo}» eliminado.`,
-        );
+        this.avisoPremios.set(`Certificado de «${actualizado.titulo}» eliminado.`);
         this.cargarPremios();
         this.recargarIdentidadPublica();
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoCertificado.set(null);
-        this.errorPremios.set(
-          extraerMensajeError(err, 'No se pudo quitar el certificado'),
-        );
+        this.errorPremios.set(extraerMensajeError(err, 'No se pudo quitar el certificado'));
       },
     });
   }
@@ -2216,13 +2123,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   }
 
   mensajePremio(
-    campo:
-      | 'titulo'
-      | 'descripcion'
-      | 'anio'
-      | 'otorgadoA'
-      | 'orden'
-      | 'fuenteUrl',
+    campo: 'titulo' | 'descripcion' | 'anio' | 'otorgadoA' | 'orden' | 'fuenteUrl',
   ): string | null {
     const textoRango =
       campo === 'anio'
@@ -2252,7 +2153,9 @@ export class CaceComponent implements OnInit, OnDestroy {
         this.cargandoPlantilla.set(false);
         // Se abre siempre la versión activa; si todavía no hay ninguna, la
         // plantilla de arranque que propone el servidor.
-        this.usarPlantilla(estado.activa ?? { ...estado.porDefecto, id: 0, version: 0, activa: false });
+        this.usarPlantilla(
+          estado.activa ?? { ...estado.porDefecto, id: 0, version: 0, activa: false },
+        );
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoPlantilla.set(false);
@@ -2369,9 +2272,7 @@ export class CaceComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoPlantilla.set(false);
-          this.errorPlantilla.set(
-            extraerMensajeError(err, 'No se pudo guardar la plantilla'),
-          );
+          this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo guardar la plantilla'));
         },
       });
   }
@@ -2400,9 +2301,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.subiendoFondo.set(false);
-        this.errorPlantilla.set(
-          extraerMensajeError(err, 'No se pudo subir el fondo'),
-        );
+        this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo subir el fondo'));
       },
     });
   }
@@ -2421,9 +2320,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.activandoVersion.set(null);
-        this.errorPlantilla.set(
-          extraerMensajeError(err, 'No se pudo activar esa versión'),
-        );
+        this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo activar esa versión'));
       },
     });
   }
@@ -2448,9 +2345,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.borrandoVersion.set(null);
-        this.errorPlantilla.set(
-          extraerMensajeError(err, 'No se pudo borrar esa versión'),
-        );
+        this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo borrar esa versión'));
       },
     });
   }
@@ -2538,10 +2433,9 @@ export class CaceComponent implements OnInit, OnDestroy {
     }
     if (solicitudes > 0) {
       avisos.push({
-        titulo:
-          this.puede('resolverSolicitudesBorrado')
-            ? `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado por resolver`
-            : `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado esperando al presidente`,
+        titulo: this.puede('resolverSolicitudesBorrado')
+          ? `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado por resolver`
+          : `${solicitudes} ${solicitudes === 1 ? 'solicitud' : 'solicitudes'} de borrado esperando al presidente`,
         detalle: this.puede('resolverSolicitudesBorrado')
           ? 'Al aprobarlas se borra la institución; al rechazarlas queda el motivo.'
           : 'La presidencia tiene que autorizar el borrado antes de que se haga.',

@@ -29,6 +29,8 @@ export interface ConfiguracionCace {
   descripcion: string;
   logoUrl: string | null;
   tema: TemaCace;
+  diasMinimosPropuesta: number;
+  diasRevision: number;
   actualizadoEn?: string;
 }
 
@@ -91,6 +93,8 @@ export interface ConfiguracionCaceDto {
   lema?: string;
   descripcion?: string;
   tema?: TemaCace;
+  diasMinimosPropuesta?: number;
+  diasRevision?: number;
 }
 
 /** Cuerpo de alta o edición de un país de la comunidad. */
