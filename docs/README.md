@@ -1595,6 +1595,7 @@ osniff` y CSP restrictiva. Solo se aceptan **PNG, JPG y WEBP**: un SVG puede lle
 | **Autorización antes de escribir** | En `POST /proyectos/:id/evidencias`, el `DocenteParticipanteGuard` valida el permiso **antes** de que multer escriba el archivo en disco. |
 | **Errores de integridad legibles** | Un filtro global traduce `PrismaClientKnownRequestError`: `P2002`→409, `P2003`→400, `P2025`→404. |
 | **Validación de entrada** | `ValidationPipe` global con `whitelist` y `transform`; los DTO usan `class-validator`. |
+| **CSS completo sin `onload` inline** | El build de Angular usa `inlineCritical: false`: la hoja de estilos se enlaza normal y la CSP no necesita permitir manejadores inline (`unsafe-inline`) para que el diseño se aplique. |
 | **Transiciones atómicas** | Revisiones de solicitudes, consumo de invitaciones, reinicio de firmas, transmisión de la presidencia y el cambio de estado de una institución usan transacciones o `updateMany` condicionales. |
 
 ---
