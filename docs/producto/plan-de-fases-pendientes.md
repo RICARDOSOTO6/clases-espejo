@@ -34,10 +34,10 @@
 | **5** | Producto y confianza: privacidad, exportar/eliminar cuenta, correos de hitos | 1–2 semanas | Fases 1 y 2 |
 | **6** | Mantenibilidad: duplicación, componentes gigantes, despliegue reproducible | continuo | — |
 | **7** | Nuevas funciones: plazos configurables, evidencias por enlace, identificador interno y clases con N instituciones | 5–7 semanas | Fases 2 y 3 |
-| **8** | Panel de desempeño de instituciones y comunicación CACE–agentes | 2–3 semanas | Fases 2 y 3 |
+| **8** | Panel de desempeño de instituciones y comunicación CACE–agentes | 3–4 semanas | Fases 2 y 3 |
 
 **Total realista:** 6–8 semanas de una persona a tiempo parcial para las fases 0–6.
-La Fase 7 añade 5–7 semanas y la Fase 8 otras 2–3; no están incluidas en ese
+La Fase 7 añade 5–7 semanas y la Fase 8 otras 3–4; no están incluidas en ese
 total. Las fases 1 y 3 pueden ir en paralelo si hay dos personas (tocan archivos
 distintos).
 
@@ -379,73 +379,98 @@ crea, se planifica, se certifica y se verifica sin duplicar proyectos.
 
 ## Fase 8 — Panel de desempeño de instituciones y comunicación CACE–agentes (22-oct-2026)
 
-**Por qué:** la presidencia necesita ver, de un vistazo, cómo va cada
-institución (cuántas clases propone, cuántas terminan, cuántas caducan o se
-cancelan) y decidir un plan de acción. Hoy esos datos están en la base, pero no
-hay una vista agregada; además, la comunicación con los agentes no tiene un
-canal propio.
+**Por qué:** la presidencia necesita ver qué instituciones participan, cuáles
+responden tarde o no responden y cuáles no logran concluir una colaboración,
+para decidir dónde apoyar y qué plan de acción aplicar. Hoy esos datos están en
+la base, pero no hay una vista agregada; la comunicación con los agentes
+tampoco tiene un canal propio.
 
 **Datos que ya existen:** `SOLICITUD_CLASE_ESPEJO` (estados `PENDIENTE`,
 `APROBADA_POR_ORIGEN`, `APROBADA`, `RECHAZADA`, `CADUCADA`),
 `PROYECTO_CLASE_ESPEJO` (estados `EN_PLANIFICACION`, `EN_CURSO`, `FINALIZADO`,
-`CANCELADO`), instituciones, asignaciones y docentes. No hay que inventar datos.
+`CANCELADO`), instituciones, docentes y fechas. No hay que inventar datos.
 
-**Métricas mínimas (por institución y periodo):**
+### Métricas
 
-- Solicitudes creadas, aprobadas, rechazadas y **caducadas**.
-- Proyectos en planificación, en curso, **finalizados** y cancelados.
-- **Tasa de finalización** de proyectos que llegaron a existir: finalizados /
-  (finalizados + cancelados).
-- **Tasa de caducidad** de solicitudes: caducadas / total de solicitudes.
-- Participación: número de clases, instituciones contraparte y docentes.
-- Tiempo medio de respuesta a una solicitud (desde que se crea hasta la
-  revisión del destino).
-- Alertas: solicitudes por revisar, clases próximas a empezar y clases sin
-  reporte de cierre.
+- **Una sola métrica de cierre:** «terminada» y «concluida» son lo mismo y se
+  cuentan como `FINALIZADO`. No se duplica el número.
+- **Actividad:** solicitudes creadas, recibidas, aprobadas, rechazadas y
+  **caducadas**.
+- **Participación:** proyectos en planificación, en curso, finalizados y
+  cancelados.
+- **Tasa de finalización:** finalizados / (finalizados + cancelados).
+- **No conclusión:** cancelados / (finalizados + cancelados), más los proyectos
+  **estancados** (fecha de fin pasada hace más de 30 días y todavía en
+  `EN_PLANIFICACION` o `EN_CURSO`). La tasa de no conclusión suma cancelados y
+  estancados sobre los proyectos que ya debían haber terminado.
+- **No responden a tiempo:** solicitudes que caducaron sin respuesta cuando la
+  institución era destino, sobre el total de solicitudes recibidas. Se muestra
+  la **tasa de caducidad** y el **tiempo medio de respuesta** en días.
+- **Ranking de instituciones:** ordenadas por tasa de caducidad y por tasa de no
+  conclusión, con el número de casos al lado (para no sacar conclusiones de una
+  sola solicitud). Por defecto se marca alerta si la tasa supera el 30 % con al
+  menos 3 casos; el umbral es ajustable.
+- **Detalle por docente:** mismas métricas acotadas a los docentes de una
+  institución. Es la vista simplificada del agente.
+- **Alertas:** solicitudes por revisar, clases próximas a empezar, clases sin
+  reporte de cierre y proyectos estancados.
 
-**Definiciones a cerrar:** hoy `FINALIZADO` es el único estado de cierre; no
-existe un estado distinto de «terminada» y «concluida». Se propone usar
-**Finalizadas** para `FINALIZADO`, **Canceladas** para `CANCELADO` y
-**Caducadas** solo para solicitudes `CADUCADA`, sin contar dos veces. Confirmar
-si la CACE distingue «terminada» (última sesión) de «concluida» (todos los
-reportes y evaluación cerrados); si sí, hará falta un estado o un campo de
-cierre adicional.
+**Periodo:** por defecto se muestra el **mes actual**, con selector de rango por
+meses (mes inicial y mes final) y una tendencia de los últimos 12 meses. Los
+números y las gráficas se recalculan con el rango elegido; no hay que fijar un
+periodo único.
 
-**Formato:** tarjetas de resumen, barras por estado, línea de tendencia por
-periodo y tabla ordenable; filtros por país, institución y rango de fechas;
-exportación a CSV/PDF. Se puede hacer con SVG/CSS y tablas sin añadir una
-librería de gráficas; si se quiere más, valorar Chart.js.
+**Formato:** tarjetas de resumen, barras por estado, línea mensual y tabla
+ordenable con el ranking. Exportación a CSV/PDF. Se puede hacer con SVG/CSS y
+tablas, sin añadir una librería de gráficas; si se necesita más, valorar
+Chart.js. Todo con texto alternativo y una tabla equivalente para accesibilidad.
 
-**Comunicación con los agentes:** un canal por institución (nuevo
-`MENSAJE_CACE_INSTITUCION` o similar), con hilo, aviso por correo y estados de
-leído; el agente ve solo su institución y puede responder. El chat de proyecto
-que ya existe es por clase, no sirve para esto. Decidir si la secretaría puede
-leer o solo la presidencia.
+### Comunicación y acción
 
-**Plan de acción:** por institución, una nota de prioridad, responsable, fecha
-y estado (`ABIERTA`, `EN_SEGUIMIENTO`, `CERRADA`), con historial. El panel
-muestra las acciones abiertas y su avance.
+**Canal solo dentro de la app:** un hilo por institución entre la CACE y sus
+agentes, con estados de leído y aviso en la campana de la aplicación. No se
+envían correos por este canal. El chat de proyecto que ya existe es por clase y
+no sirve para esto.
 
-**Permisos:** presidencia con acceso completo; secretaría solo lectura si se
-decide; agentes únicamente su institución. Los datos son agregados: no se
-exponen alumnos ni correos.
+**Plan de acción:** por institución, prioridad, nota, responsable, fecha y
+estado (`ABIERTA`, `EN_SEGUIMIENTO`, `CERRADA`), con historial. El panel muestra
+las acciones abiertas y su avance; el agente ve las de su institución y puede
+responder en el hilo.
 
-- [ ] Endpoint agregado (por ejemplo `GET /cace/desempeno`) con filtros y
-  permisos, sin consultas N+1.
-- [ ] Pantalla con tarjetas, gráficas accesibles y tabla; exportación.
+### Visibilidad por rol
+
+| Rol | Qué ve |
+| --- | --- |
+| Presidencia | Todas las instituciones, todas las métricas, rankings, acciones y hilos |
+| Secretaría | Las mismas métricas y rankings en **solo lectura**; no crea acciones ni escribe en los hilos |
+| Agente de internacionalización | Versión simplificada de **su institución** y **sus docentes**; sin acceso a otras instituciones ni al ranking global |
+
+Los datos son agregados: no se muestran alumnos, correos ni documentos. El
+agente ve el detalle por docente porque es su equipo; no ve docentes de otras
+instituciones.
+
+- [ ] Endpoint agregado (por ejemplo `GET /cace/desempeno`) con filtros de mes,
+  institución y país, sin consultas N+1.
+- [ ] Pantalla de presidencia y secretaría con tarjetas, gráficas, ranking y
+  exportación.
+- [ ] Vista simplificada para el agente, limitada a su institución y sus
+  docentes.
 - [ ] Plan de acción por institución con historial.
-- [ ] Canal de mensajes CACE–agente con aviso por correo.
+- [ ] Canal de mensajes CACE–agente **solo in-app**, con aviso en la campana.
 - [ ] e2e: los números cuadran con la base; un agente no ve otra institución;
-  una acción y un mensaje quedan registrados.
+  una acción y un mensaje quedan registrados; el rango de meses cambia los
+  totales.
 
-**Esfuerzo:** 2–3 semanas (panel 1–2, canal 1). **Riesgo:** medio (permisos y
-definiciones de métricas). **Aceptación:** la presidencia puede comparar
-instituciones en un periodo, guardar un plan de acción y comunicarse con el
+**Esfuerzo:** 3–4 semanas (panel 2, vista del agente y canal 1–2). **Riesgo:**
+medio (permisos, definiciones y privacidad entre instituciones). **Aceptación:**
+la presidencia puede comparar instituciones en un rango de meses, detectar a
+las que no responden o no concluyen, guardar un plan de acción y hablar con el
 agente sin salir del panel.
 
-**Decisiones de la Fase 8:** ¿«terminada» y «concluida» son lo mismo? ¿Qué
-periodo importa (mes, semestre, año)? ¿La secretaría ve el panel? ¿El canal es
-solo in-app, solo correo o ambos?
+**Decisiones de la Fase 8:** confirmar el umbral de alerta (propuesto 30 % con
+mínimo 3 casos) y los 30 días de gracia para marcar un proyecto como estancado;
+confirmar que la secretaría queda en solo lectura y que el agente ve el detalle
+por docente de su institución.
 
 ---
 
@@ -471,6 +496,9 @@ solo in-app, solo correo o ambos?
 - **Multi-institución:** mínimo 2 participantes; un rechazo no tumba la clase
   si quedan 2 o más; participantes congelados al crear el proyecto;
   observadores sin certificado; cierra el docente de origen con supervisión.
+- **Panel de desempeño (Fase 8):** «terminada» y «concluida» son una sola
+  métrica (`FINALIZADO`); periodo mensual ajustable; presidencia y secretaría ven
+  todo; el agente ve su institución y sus docentes; el canal es solo in-app.
 
 Las dos decisiones que requieren autorización —TOTP y proveedor de correo—
 están al final del plan, para la próxima reunión.
