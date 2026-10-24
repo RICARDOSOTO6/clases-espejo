@@ -1,4 +1,4 @@
-# Respaldo y restauración de la base de datos
+﻿# Respaldo y restauración de la base de datos
 
 **Base de datos de trabajo:** `ClasesconjuntasBD`
 **Base de datos de respaldo vigente:** `clasesconjuntas_respaldo_20261013`
@@ -317,3 +317,68 @@ ode scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
 * La aplicación, al arrancar, revisa los vencimientos de las solicitudes y la
   agenda. Con los datos que queden en la base eso no cambia el contenido más allá
   de pasar a *Caducada* alguna solicitud que ya estuviera fuera de plazo.
+
+---
+
+## 7. Scripts automáticos (recomendado)
+
+Los pasos manuales de este documento siguen sirviendo, pero para la demo y para
+una tarea programada hay dos scripts que hacen la copia y la restauración sin
+depender de la interfaz de PostgreSQL.
+
+### Respaldar
+
+Desde `backend`:
+
+```powershell
+npm run respaldo
+npm run respaldo -- --salida C:\respaldos\clase-real
+npm run respaldo -- --sin-archivos
+```
+
+Deja una carpeta con:
+
+- `base.dump`: volcado de PostgreSQL en formato personalizado.
+- `uploads/`: copia de evidencias, logos, fondos y certificados.
+- `respaldo.json`: fecha, base, archivos y tamaños.
+
+No detiene la aplicación ni escribe en la base: `pg_dump` lee una foto
+consistente. Aun así, para una clase real conviene ejecutarlo con poco tráfico.
+
+### Restaurar
+
+La restauración **borra** los objetos que estén en el volcado. Hazlo primero en
+una base de prueba:
+
+```powershell
+# La base de destino debe existir y estar vacía
+npm run restauracion -- --carpeta C:\respaldos\clase-real --destino clasesconjuntasbd_restauracion --si
+```
+
+- `--si` es obligatorio: sin él no hace nada.
+- El destino no puede ser la misma base que se respaldó.
+- Si el nombre no termina en `_test`, `_demo`, `_restauracion`, `_prueba` o
+  `_respaldo`, exige `--forzar`.
+- `--archivos` copia también la carpeta `uploads/` del respaldo, sin pisar los
+  archivos que ya existan.
+- No crea la base de destino: eso se hace aparte con `createdb` o `psql`.
+
+### Rutas de PostgreSQL
+
+Los scripts buscan `pg_dump` y `pg_restore` en el `PATH` y en
+`C:\Program Files\PostgreSQL\17\bin` (también 16 y 15). Si tu instalación está en
+otro sitio, define:
+
+```powershell
+$env:PG_DUMP = 'C:\ruta\a\pg_dump.exe'
+$env:PG_RESTORE = 'C:\ruta\a\pg_restore.exe'
+```
+
+### Prueba hecha el 24-oct-2026
+
+- Respaldo de `ClasesconjuntasBD` con `--sin-archivos`: correcto.
+- Restauración en `clasesconjuntasbd_restauracion_prueba`: correcta.
+- La base restaurada conservó las **36 tablas** del esquema.
+- La base de demostración no se modificó.
+- La copia de `uploads/` también se probó: 11 archivos y 0,24 MB, sin tocar los
+  originales.

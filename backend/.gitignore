@@ -46,6 +46,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Respaldos locales (base.dump + uploads): nunca se versionan
+/respaldos/
+
 # Runtime data
 pids
 *.pid

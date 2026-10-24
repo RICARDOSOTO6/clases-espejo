@@ -1897,18 +1897,21 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] Filtro global de errores de Prisma (respuestas legibles)
 * [x] Transiciones de estado atómicas y en transacción donde corresponde
 * [x] Autorización por recurso y por capacidad
-* [x] CORS restringido y cabeceras seguras en los archivos servidos
+* [x] CORS restringido y cabeceras de seguridad globales (CSP, HSTS en producción,
+  límite de la verificación pública) y en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
 * [x] **Migraciones formales de Prisma** (27 migraciones versionadas en `backend/prisma/migrations/`)
 * [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
   `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
   e2e y build
-* [x] **108 pruebas e2e** de los flujos críticos contra una base de prueba
+* [x] **110 pruebas e2e** de los flujos críticos contra una base de prueba
   real (`clasesconjuntasbd_test`), con el correo simulado
 * [x] **Cola de correo con worker** (Fase 2): certificados y calendario se
   encolan, se reintentan con espera creciente y el progreso se consulta por lote
 * [x] **ZIP de certificados en streaming**: los PDF se empaquetan según se leen
   (JSZip `generateNodeStream`), sin el buffer completo en memoria
+* [x] **Scripts de respaldo y restauración** (`npm run respaldo` y
+  `npm run restauracion`) con prueba en base de prueba
 * [x] **Backend en `strict`** y `.env.example` con todas las variables
 * [x] **ESLint en el frontend** (`.ts` y plantillas, `angular-eslint`)
 * [ ] Cobertura de pruebas **unitarias** de los servicios (las e2e ya están)

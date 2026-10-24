@@ -1,11 +1,20 @@
-import { Controller, Get, Header, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Header,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { RateLimitVerificacionGuard } from '../common/guards/rate-limit-verificacion.guard';
 import { VerificacionService } from './verificacion.service';
 
 /**
  * La página pública de verificación, que es lo que abre el QR del certificado.
  *
- * `GET /verificar/:folio?c=<codigo>`, **sin guardia a propósito**: la abre
- * cualquiera que escanee un certificado, sin cuenta y sin sesión.
+ * `GET /verificar/:folio?c=<codigo>`, **sin autenticación a propósito**: la abre
+ * cualquiera que escanee un certificado, sin cuenta y sin sesión. Sólo lleva un
+ * límite por IP (60/minuto) para que no se pueda enumerar folios a gran velocidad.
  *
  * Tres cosas que se hacen así y conviene no «arreglar»:
  *
@@ -21,6 +30,7 @@ import { VerificacionService } from './verificacion.service';
  *    página tiene que decir siempre la verdad de hoy.
  */
 @Controller('verificar')
+@UseGuards(RateLimitVerificacionGuard)
 export class VerificacionController {
   constructor(private readonly verificacion: VerificacionService) {}
 

@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readFileSync, statSync } from 'fs';
 import { gzipSync } from 'zlib';
 import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import { aplicarCabecerasSeguridad } from './common/seguridad-cabeceras.middleware';
 
 /** Prefijos conocidos de la API (red de seguridad del fallback del SPA). */
 const PREFIJOS_API_CONOCIDOS = [
@@ -92,6 +93,10 @@ const CACHE_HTML = 'max-age=0, must-revalidate';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Cabeceras de seguridad antes de cualquier estático o ruta, para que también
+  // las reciba el index.html, los chunks y los archivos de /uploads.
+  app.use(aplicarCabecerasSeguridad);
 
   // CORS restringido a los orígenes conocidos (antes aceptaba cualquiera).
   const origenes = [

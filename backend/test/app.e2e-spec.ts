@@ -34,6 +34,20 @@ describe('Humo (e2e)', () => {
     expect(respuesta.body.status).toBe('ok');
   });
 
+  it('las respuestas llevan cabeceras de seguridad', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .get('/health')
+      .expect(200);
+    expect(respuesta.headers['x-content-type-options']).toBe('nosniff');
+    expect(respuesta.headers['x-frame-options']).toBe('DENY');
+    expect(respuesta.headers['referrer-policy']).toBe(
+      'strict-origin-when-cross-origin',
+    );
+    expect(respuesta.headers['content-security-policy']).toContain(
+      "default-src 'self'",
+    );
+  });
+
   it('GET /cace/publico responde sin sesión', async () => {
     await request(app.getHttpServer()).get('/cace/publico').expect(200);
   });
