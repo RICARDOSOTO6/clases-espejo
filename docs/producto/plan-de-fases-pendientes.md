@@ -1,556 +1,313 @@
-# Plan de fases — lo que falta para poner la plataforma en uso real
+# Plan por fases — prioridad: primera clase espejo real
 
-> **Escrito el 17 de octubre de 2026**, con el repositorio en `master` (96 commits,
-> 127 rutas —hoy 135—, 32 modelos —hoy 34—, 23 migraciones —hoy 26—) y los
-> datos de demostración cargados
-> (2 instituciones, 6 usuarios, 2 proyectos, 19 países, 0 certificados).
+> Reordenado el 24-oct-2026. **Sustituye el orden anterior.** Las funciones de las
+> antiguas fases 7 y 8 no se pierden: pasan a la Fase 4, troceadas para que no
+> bloqueen la primera clase.
 >
-> No repite lo que ya está hecho (permisos por capacidad, doble revisión,
-> certificados con verificación pública, calendario, CACE, auditorías): eso está
-> y funciona. Aquí solo están los huecos **comprobados en el código**, ordenados
-> por lo que duele primero cuando hay usuarios de verdad.
->
-> Cada fase termina con un **criterio de aceptación medible**. Si no se puede
-> medir, no es criterio: es deseo.
->
-> **Actualización (18-oct-2026):** la parte de rendimiento de la Fase 3 ya está
-> hecha (41 índices en 22 modelos, migración
-> `20261018011641_indices_de_rendimiento`, `EXPLAIN` comprobado) y el frontend
-> pasó a servirse comprimido y cacheado (login en frío 1.014.948 → 186.979 B).
-> El detalle está en [`rendimiento.md`](rendimiento.md). Lo que sigue sin hacer de
-> la fase: `ENUM`/`CHECK`, `@@unique` de negocio, paginación y revisión de N+1.
+> Regla: si algo no es necesario para que **una clase con dos instituciones
+> reales** funcione de principio a fin, no va antes de la Fase 4.
 
----
+## Qué significa «primera clase real»
+
+Una clase con **dos instituciones reales**, docentes y alumnos reales, que cumpla:
+
+- La solicitud se crea y las dos instituciones la aprueban.
+- La planificación, las sesiones y las evidencias quedan registradas.
+- Se cierra la clase y se emiten los certificados de los alumnos.
+- Cada certificado se puede verificar por su folio y QR.
+- Los correos de invitación, calendario y certificados llegan.
+- Antes y después hay **respaldo y restauración comprobados**.
+- No se usan cuentas de demostración ni datos inventados en producción.
+
+Si algo de esto falla, la clase no está «lista», aunque la pantalla se vea bien.
+
+## Regla de prioridad
+
+- **P0 — Sin esto no hay clase real:** dominio/TLS, backups, correo, privacidad,
+  cuentas reales, ensayo general.
+- **P1 — Debe estar antes de abrir la plataforma a más gente:** contraseñas,
+  TOTP si se autoriza, límites de seguridad, plantilla de certificado.
+- **P2 — Después de la primera clase:** panel de desempeño, multi-institución,
+  enlaces de evidencias, plazos configurables.
+- **P3 — Continuo:** paginación, rendimiento, refactor, documentación.
+
+## Cómo se reordena
+
+| Antes | Ahora |
+| --- | --- |
+| Fases 0–2 | Ya cerradas; no se repiten |
+| Fase 3 (integridad) | Solo lo que protege datos reales, en 2.4; el resto, en 4.4 y 5 |
+| Fase 4 (operación) | 1.1–1.6 |
+| Fase 5 (producto) | Privacidad en 2.1; el resto, en 4.4 |
+| Fase 6 (mantenibilidad) | 5 |
+| Fase 7 (funciones pedidas) | 4.1 (plazos y enlaces), 4.3 (multi-institución) y 4.4 (identificador) |
+| Fase 8 (panel) | 4.2, en tres entregas separadas |
 
 ## Cuadro de conjunto
 
-| Fase | Qué resuelve | Esfuerzo | Depende de |
+| Fase | Qué resuelve | Duración | Depende de |
 | --- | --- | --- | --- |
-| **0** | Red de seguridad: CI y pruebas de los flujos que se van a tocar | 1 semana | — |
-| **1** | Cuenta y acceso: recuperar contraseña, verificar correo, cerrar sesiones | 1,5–2 semanas | Fase 0 |
-| **2** | Correo y procesos largos: cola, reintentos, topes de lote | 1 semana | Fase 1 |
-| **3** | Integridad y rendimiento: índices, `ENUM`/`CHECK`, paginación | 1 semana | Fase 0 |
-| **4** | Operación: backups automáticos, monitorización, `helmet`, API documentada | 1 semana | Fase 0 |
-| **5** | Producto y confianza: privacidad, exportar/eliminar cuenta, correos de hitos | 1–2 semanas | Fases 1 y 2 |
-| **6** | Mantenibilidad: duplicación, componentes gigantes, despliegue reproducible | continuo | — |
-| **7** | Nuevas funciones: plazos configurables, evidencias por enlace, identificador interno y clases con N instituciones | 5–7 semanas | Fases 2 y 3 |
-| **8** | Panel de desempeño de instituciones y comunicación CACE–agentes | 3–4 semanas | Fases 2 y 3 |
+| **0** | Decidir la clase y preparar a las personas | 2–3 días | — |
+| **1** | Operación mínima: servidor, dominio, backups, correo, seguridad | 1–2 semanas | Fase 0 |
+| **2** | Datos, privacidad y accesos reales | 1 semana | Fase 0 |
+| **3** | Ensayo general y primera clase | 1 semana | Fases 1 y 2 |
+| **4** | Después de la primera clase: mejoras pedidas, por incrementos | 4–6 semanas | Fase 3 |
+| **5** | Endurecimiento y mantenibilidad continua | continuo | — |
 
-**Total realista:** 6–8 semanas de una persona a tiempo parcial para las fases 0–6.
-La Fase 7 añade 5–7 semanas y la Fase 8 otras 3–4; no están incluidas en ese
-total. Las fases 1 y 3 pueden ir en paralelo si hay dos personas (tocan archivos
-distintos).
+**Camino crítico:** autorización del proveedor de correo + dominio/DNS + prueba de
+restauración. Si eso se retrasa, la clase se retrasa; el código ya está casi todo.
 
 ---
 
-## Fase 0 — Red de seguridad (primero, aunque no se vea)
+## Fase 0 — Decidir la clase y preparar a las personas (2–3 días)
 
-**Por qué:** 127 rutas y 4 archivos de prueba triviales. Cualquier cambio de las
-fases siguientes sin pruebas es a ciegas, y este proyecto ya se comió un caso de
-«corregido» que volvió a abrirse (fechas).
+No es código; es evitar improvisar el día de la clase.
 
-- [x] CI en `.github/workflows/ci.yml` (20-oct-2026): PostgreSQL 17 de servicio,
-  `prisma generate`/`validate`/`migrate deploy`, lint sin `--fix`
-  (
-pm run lint:ci`), tipos en `strict`, unitarias, e2e y build; el frontend con
-  lint, `tsc`, 
-gc` y 
-g build`. Corre en cada push y pull request.
-- [x] `.env.example` con todas las variables del backend (el `.env` sigue
-  ignorado).
-- [x] `strict` en el `tsconfig` del backend (las 73 propiedades de DTO que hacían
-  falta llevan asignación definida) y ESLint en el frontend
-  (`frontend/eslint.config.mjs` con `angular-eslint`, scripts `lint` y `lint:ci`).
-- [x] **64 pruebas e2e** en 7 suites contra una base de prueba real
-  (`clasesconjuntasbd_test`, PostgreSQL): 14 de registro → aprobación →
-  invitación → activación; 10 de doble revisión y proyecto; 7 de la matriz de
-  capacidades; 12 de certificados, HMAC y verificación pública; 11 del cierre de
-  la clase; 6 del calendario `.ics` y su envío; 4 de humo. La infraestructura se
-  niega a correr si `DATABASE_URL` no termina en `_test` o `_ci`, y el correo va
-  simulado.
+- [ ] Confirmar **fecha, materia, dos instituciones, docentes, agentes y grupos**.
+- [ ] Confirmar que las dos instituciones están **aprobadas por la CACE** y que sus
+  agentes y docentes tienen cuentas activas.
+- [ ] Confirmar que la fecha cumple la antelación mínima (**8 días**); si no, mover
+  la clase o cambiar el plazo antes de abrir solicitudes.
+- [ ] Nombrar un **responsable técnico** y un **responsable académico** durante la
+  clase, con horario de soporte.
+- [ ] Revisar el **aviso de privacidad y el consentimiento** para datos de alumnos;
+  sin esto no se cargan alumnos reales.
+- [ ] Congelar el alcance: dos instituciones, evidencias por archivo, sin panel de
+  desempeño, sin multi-institución y sin documento internacional.
+- [ ] Hacer un **respaldo fresco** de la base y guardarlo fuera del servidor.
+- [ ] Definir el **plan B**: si falla el correo o la plataforma, cómo se comparte el
+  enlace, cómo se recogen evidencias y a quién se avisa.
+- [ ] Escribir el criterio de éxito (el de «primera clase real») y firmarlo.
 
-**Aceptación:** el CI corre en cada push y falla si se rompe cualquiera de los seis
-flujos; `prisma validate` y 
-g build` en verde. **Estado:** cumplida el
-20-oct-2026, con una salvedad: el workflow no se ha ejecutado todavía en GitHub
-(aquí se verificó cada comando por separado y las 64 e2e contra PostgreSQL real).
+**Aceptación:** fecha, personas, datos, permisos y plan B confirmados por escrito.
 
 ---
 
-## Fase 1 — Cuenta y acceso (el hueco más caro)
+## Fase 1 — Operación mínima para salir de localhost (1–2 semanas)
 
-**Por qué:** hoy no hay recuperación de contraseña (solo `register`, `login` y
-`activate`), el correo no se verifica al registrarse (`activo: true` sin
-comprobarlo), cambiar la contraseña no cierra las sesiones (JWT de 1 día sin
-versión ni refresh) y la invitación caducada no se puede reenviar.
+### 1.1 Servidor, dominio y HTTPS
 
-- [x] **Recuperar contraseña** (20-oct-2026): `POST /auth/recuperar`,
-  `GET /auth/recuperar/validar` y `POST /auth/restablecer`. Token de 32 bytes
-  del que solo se guarda el hash SHA-256, un solo uso con consumo atómico,
-  caducidad de 1 hora y un único enlace válido por cuenta. La respuesta es
-  siempre la misma exista o no la cuenta. Pantallas `/recuperar` y
-  `/restablecer` en el frontend.
-- [x] **Invalidar sesiones** al cambiar o restablecer la contraseña
-  (`USUARIO.sesionesValidasDesde` comparada con el `iat` del JWT en
-  `JwtAuthGuard`). Con esto, un token robado muere al cambiar la contraseña.
-- [x] **Verificación de correo al registrarse** (20-oct-2026): la cuenta nace
-  con `correoVerificado` en falso, recibe un enlace de 48 h (solo el hash en la
-  base) y el login responde 403 hasta abrirlo; hay reenvío desde el acceso.
-  Las cuentas que ya existían y las de docentes invitados quedan verificadas.
-- [x] **Reenviar invitación** de docente desde el panel del agente
-  (20-oct-2026): el agente ve las invitaciones pendientes (también las
-  caducadas, con su fecha) y las reenvía generando un **token nuevo** —el
-  enlace anterior deja de valer— sin borrar y volver a invitar.
-- [x] **Política de contraseña** (20-oct-2026): mínimo 10, sin ser la del correo
-  y sin un carácter repetido, más bloqueo temporal de 15 minutos tras 5 intentos
-  fallidos (además del rate limit).
-- [ ] **Endurecer la política** (decisión 22-oct-2026): mínimo **12**, sin la
-  regla del carácter repetido, comprobación de contraseñas comunes/filtradas,
-  aviso al usuario y desbloqueo administrativo; se mantiene 5 intentos/15 min.
-- [x] **Cambio de correo** (20-oct-2026): se pide desde «Mi perfil», el enlace
-  llega a la **dirección nueva** y el cambio se aplica al confirmarlo (con
-  cierre de sesiones); un correo ya usado responde 409.
-- [ ] *(Opcional, a decidir)* segundo factor TOTP para presidencia y secretaría.
+- [ ] Publicar el build actual en un servidor accesible por los participantes.
+- [ ] Dominio y certificado TLS; una sola URL, sin puertos raros.
+- [ ] Variables de entorno reales; secretos fuera del repositorio.
+- [ ] **Desactivar o eliminar las cuentas de demostración** en producción.
+- [ ] Revisar que el frontend compilado se sirve desde `backend/public` y que las
+  rutas de la API no devuelven el `index.html`.
 
-**Aceptación:** un usuario que olvida su contraseña la recupera solo, sin tocar la
-base; un token robado deja de valer en cuanto se cambia la contraseña; ninguna
-cuenta nueva opera sin correo verificado. Todo con e2e de la fase 0.
-**Estado (20-oct-2026):** recuperación, cierre de sesiones, política, reenvío de
-invitaciones, verificación de correo y cambio de correo hechos y cubiertos por
-las suites `cuenta`, `invitaciones` y `verificacion-correo` (26 pruebas e2e).
-Solo queda decidir el TOTP opcional.
+### 1.2 Respaldos y restauración
 
----
+- [ ] Respaldo **automático diario** de la base y de los archivos subidos.
+- [ ] Retención definida (por ejemplo 7 diarios, 4 semanales) y copia fuera del
+  servidor.
+- [ ] **Prueba de restauración real** en una base aparte, documentada, antes de
+  cargar alumnos reales.
+- [ ] Comprobar que los certificados y las evidencias también se restauran.
 
-## Fase 2 — Correo y procesos largos
+### 1.3 Correo real
 
-**Por qué:** el envío de certificados va en un `for … await` dentro de la petición
-(hasta 300 destinatarios por lote), con SMTP de Gmail, sin cola, sin reintentos y
-sin registro de rebotes. Un lote grande puede agotar el tiempo de espera o el
-límite diario del proveedor.
+- [ ] Autorizar el proveedor de correo (está al final del plan).
+- [ ] Dominio de envío con SPF, DKIM y DMARC; remitente visible.
+- [ ] Probar: invitación, recuperación de contraseña, calendario, certificado y
+  rebote.
+- [ ] Worker de la cola activo y con reintentos; límite de envío conocido.
+- [ ] No usar Gmail personal para lotes de certificados.
 
-- [x] Tabla `ENVIO_CORREO` (destinatario, asunto, adjunto, estado, intentos,
-  últimoError) y un worker periódico que vacía la cola cada minuto
-  (21-oct-2026: migración `20261021120000_fase2_envio_correo`).
-- [x] Los endpoints de envío **encolan** y responden al instante con un
-  identificador de lote; el frontend muestra el progreso con una barra y los
-  fallos con su motivo (`GET /envios/lotes/:loteId`).
-- [x] Reintentos con espera creciente (1, 5, 15 y 60 minutos) y registro del
-  motivo de cada fallo; a los 5 intentos queda `FALLIDO` con su detalle.
-- [x] Tope de emisión por clase (500) con aviso claro al superarlo.
-- [x] ZIP de certificados en streaming (21-oct-2026): los PDF se leen como
-  flujos y el ZIP sale con `generateNodeStream`, sin armarlo entero en memoria.
-- [x] Documentar la configuración SMTP del despliegue (SPF/DKIM si es dominio
-  propio), incluido el worker de la cola (21-oct-2026).
-- [x] Separar el remitente de certificados del resto: `MAIL_FROM_CERTIFICADOS`
-  opcional; si no está, se usa `MAIL_FROM`.
+### 1.4 Seguridad mínima
 
-**Aceptación:** un envío de 300 certificados responde en menos de 2 s y termina en
-la cola; matar el proceso a mitad no pierde envíos (se reintentan); cada fallo
-queda registrado con su motivo.
-**Estado (21-oct-2026):** cola, worker, progreso, reintentos y tope hechos y
-cubiertos por la suite `envios-cola` (7 pruebas; 300 encolados en <2 s), el ZIP en
-streaming y el remitente propio de certificados. La fase queda cerrada.
+- [ ] `helmet` con HSTS, `X-Frame-Options` y CSP global.
+- [ ] Límite de intentos en login, registro y verificación pública.
+- [ ] Cookies seguras, sin trazas internas en las respuestas y sin endpoints de
+  depuración.
+- [ ] Límite de subida y extensiones permitidas para evidencias.
+
+### 1.5 Monitorización y logs
+
+- [ ] Comprobar `/health` desde fuera del servidor y avisar si cae.
+- [ ] Logs con identificador de petición y errores 5xx.
+- [ ] Aviso de disco lleno y de cola de correo atascada.
+
+### 1.6 Despliegue y migraciones
+
+- [ ] `prisma migrate deploy` en el despliegue, no `db push`.
+- [ ] Guion de despliegue reproducible y vuelta atrás documentada.
+- [ ] Probar el despliegue completo una vez antes de la clase.
+
+**Aceptación:** URL pública con HTTPS, correo entregado, restauración comprobada,
+`/health` vigilado y migraciones aplicadas sin pasos manuales ocultos.
 
 ---
 
-## Fase 3 — Integridad de datos y rendimiento
+## Fase 2 — Datos, privacidad y accesos reales (1 semana)
 
-**Por qué:** `@@index: 0` en 32 modelos (todo se recorre en tabla), estados como
-texto libre (0 `ENUM`, 0 `CHECK`), un solo `@@unique` de negocio y listados sin
-paginación (6 `take` en todo el backend).
+### 2.1 Privacidad y consentimiento
 
-- [x] **Una migración con índices en las FKs consultadas** (hecho el
-  18-oct-2026: `20261018011641_indices_de_rendimiento`, 41 índices en 22 modelos,
-  con `EXPLAIN` comprobado; ver [`rendimiento.md`](rendimiento.md)): `proyectoId`,
-  `institucionId`, `usuarioId`, `solicitudId`, `alumnoId`, y los campos de fecha
-  usados en recordatorios.
-- [ ] `ENUM` de Prisma o `CHECK` para los estados (`SESION`, `SOLICITUD`,
-  `PROYECTO`, `PLANIFICACION`, `REPORTE`, `CERTIFICADO`, `INSTITUCION.estadoCace`).
-- [ ] `@@unique` de negocio: `ASIGNACION_DOCENTE`, `DOCENTE_INSTITUCION`,
-  `MATERIA` (revisar duplicados históricos antes de aplicar).
-- [ ] Paginación (`page`/`limit` o cursor) en certificados, alumnos, docentes,
-  instituciones y proyectos, con el frontend adaptado.
-- [ ] Revisar N+1 en los listados grandes (`include` masivos del panel CACE).
+- [ ] Aviso de privacidad y términos, con versión y fecha de aceptación.
+- [ ] Consentimiento o base legal para cargar nombre, matrícula y correo de alumnos.
+- [ ] Política de retención: institución dada de baja queda **inoperable y
+  archivada**, con historial; certificados conservados y, si procede, anulados.
+- [ ] Enlace al aviso desde el registro y el pie de la aplicación.
 
-**Aceptación:** `EXPLAIN ANALYZE` de los listados principales usa índices; el panel
-carga con 1.000 certificados y 500 alumnos sin traerlo todo; los estados inválidos
-son rechazados por la base.
+### 2.2 Contraseñas y segundo factor
 
----
+- [ ] Aplicar la política acordada: mínimo **12**, sin regla del carácter repetido,
+  comprobación de contraseñas comunes/filtradas, aviso y desbloqueo administrativo.
+- [ ] Mantener 5 intentos fallidos / 15 minutos, con aviso al usuario.
+- [ ] Si se autoriza, TOTP obligatorio para presidencia y secretaría, con códigos
+  de respaldo y reset auditado.
 
-## Fase 4 — Operación
+### 2.3 Cuentas y roles reales
 
-**Por qué:** sin `helmet`, sin backups automáticos, sin monitorización, sin logs
-estructurados, sin API documentada y sin entorno reproducible.
+- [ ] Crear las cuentas reales de presidencia, secretaría, agentes y docentes.
+- [ ] Revisar que cada rol ve solo lo suyo; probar un 403 y un 401.
+- [ ] Quitar las credenciales de demostración de la documentación de producción.
+- [ ] Verificar la plantilla y el logo del certificado con la CACE.
 
-- [ ] `helmet` con HSTS, `X-Frame-Options` y CSP global (hoy solo `/uploads` y
-  `/avatars` fijan cabeceras).
-- [ ] Rate limit en `POST /auth/register` y `GET /verificar/:folio`; sacar el mapa
-  en memoria a algo compartido si va a haber más de una instancia.
-- [ ] Copia de seguridad automática diaria (script + tarea programada) y **prueba
-  de restauración** documentada y fechada.
-- [ ] Logs estructurados con identificador de petición y registro de errores 5xx.
-- [ ] Monitorización del `/health` desde fuera del servidor y alerta si cae.
-- [ ] Swagger/OpenAPI (`@nestjs/swagger`) publicado solo en entornos internos; es
-  la documentación que hoy vive a mano en el README.
-- [ ] Despliegue reproducible: `Dockerfile`/`docker-compose` o script de
-  instalación; separar `.env` de desarrollo y producción.
-- [ ] `prisma migrate deploy` en el despliegue (ya documentado; falta el automatismo).
+### 2.4 Integridad que afecta a datos reales
 
-**Aceptación:** el servidor arranca desde cero con un comando; hay un backup
-automático diario probado restaurándolo en una base temporal; si el servicio cae,
-alguien se entera antes que los usuarios.
+- [ ] Revisar duplicados antes de añadir `@@unique` de asignaciones y materias.
+- [ ] Añadir solo las restricciones que protegen la clase real; **paginación, N+1
+  y `ENUM`/`CHECK` pueden esperar** a la Fase 4.
+- [ ] Comprobar que el folio del certificado es único y que la verificación no
+  filtra datos personales.
+
+**Aceptación:** alumnos reales con aviso de privacidad, cuentas reales sin demo,
+contraseñas acordes y certificado de prueba verificable.
 
 ---
 
-## Fase 5 — Producto y confianza
+## Fase 3 — Ensayo general y primera clase (1 semana)
 
-**Por qué:** se tratan datos de alumnos (nombre, matrícula, correo) y no hay aviso
-de privacidad ni consentimiento; no se puede exportar ni eliminar la cuenta; las
-notificaciones solo viven dentro de la aplicación.
+### 3.1 Ensayo con datos ficticios
 
-- [ ] Páginas de **aviso de privacidad y términos**, con enlace desde el registro y
-  el pie; registro de la aceptación (fecha y versión del aviso).
-- [ ] **Exportar mis datos** y **solicitar baja**: la institución queda
-  **inoperable y archivada**, conservando su historial (clases, certificados y
-  fechas) para consulta de la CACE; no se borra en cascada.
-- [ ] Correos de hitos: solicitud aprobada/rechazada, certificado disponible y
-  seguridad; los recordatorios de 1 h/30/15 min siguen en el `.ics` y no se
-  duplican. Preferencias para lo no esencial.
-- [ ] **Historial de instituciones inoperables**: estado `ARCHIVADA`, sin acceso
-  de sus agentes y sin nuevas clases, visible para presidencia y secretaría.
-- [ ] Centro de ayuda contextual dentro de la app (la guía y el manual existen; no
-  están enlazados desde cada pantalla).
-- [ ] Revisión de accesibilidad después de los últimos rediseños (la auditoría de
-  contraste es anterior a los cambios de octubre).
+En el servidor de pruebas (`:3001`, nunca el `:3000`):
 
-**Aceptación:** cualquier usuario puede ver qué datos se guardan, exportarlos y
-pedir la baja; los correos de hitos se pueden desactivar por preferencia.
+- [ ] Crear la clase con dos instituciones y recorrer todo el flujo.
+- [ ] Subir lista, crear sesiones, adjuntar evidencias y cerrar la clase.
+- [ ] Emitir certificados, descargar el ZIP y verificar folio y QR.
+- [ ] Probar la cola de correo y el calendario.
+- [ ] Anotar cada fricción y corregir solo lo que impida la clase.
 
----
+### 3.2 Ensayo con las cuentas reales
 
-## Fase 6 — Mantenibilidad (continua)
+- [ ] Repetir el flujo con docentes y agentes reales, sin alumnos reales todavía.
+- [ ] Medir quién puede entrar, qué correo recibe y qué pantalla confunde.
+- [ ] Confirmar el enlace de la sesión y el canal de soporte del día.
 
-- [ ] Extraer los componentes comunes de agente/docente (~450 líneas duplicadas).
-- [ ] Trocear `cace.component.ts` (2.283 líneas), `proyecto.component.ts` (1.605)
-  y `styles.css` (4.011 líneas, sin SCSS).
-- [ ] Seed de Prisma (`prisma/seed.ts`) en lugar de los scripts sueltos.
-- [ ] Borrar el andamiaje SSR inerte (`main.server.ts`, `server.ts`,
-  `@angular/ssr`) y el resto de residuos de la QA 5.
-- [ ] Repasar los `.docx` del repositorio: ya están fuera del control de versiones
-  (política de octubre); mantenerlo así.
+### 3.3 Día de la clase
 
+- [ ] Checklist de accesos, sesión, lista de alumnos y evidencias.
+- [ ] Una persona de soporte pendiente del correo y de la plataforma.
+- [ ] Registrar hora, incidencias y quién las resolvió.
+
+### 3.4 Después de la clase
+
+- [ ] Emitir los certificados y comprobar que llegan.
+- [ ] Verificar varios folios desde el QR y desde la URL pública.
+- [ ] Hacer un respaldo posterior y probar una restauración.
+- [ ] Reunión de cierre: qué falló, qué se corrige y qué se pospone.
+
+**Aceptación:** una clase real completa, certificados verificables, correos
+entregados y respaldo restaurado. Recién entonces se abre la Fase 4.
 
 ---
 
-## Fase 7 — Nuevas funciones pedidas (21-oct-2026)
+## Fase 4 — Después de la primera clase (4–6 semanas)
 
-**Por qué:** la CACE pidió varias funciones que no estaban en las fases 0–6. Se
-planifican aparte para no mezclarlos con la integridad y la operación, y porque
-la multi-institución toca el modelo de solicitudes, revisiones y certificados.
+Nada de esto bloquea la primera clase. Se hace **por incrementos pequeños**, no
+todo de golpe.
 
-### Decisiones ya tomadas (21-oct-2026)
+### 4.1 Mejoras rápidas (1–2 semanas)
 
-- **Plazos:** **8 días** como mínimo para proponer una clase y **7 días** para
-  revisarla. Los dos los configura la presidencia desde el panel (no una variable
-  de entorno). Hoy el código usa un único valor por entorno, 7 por defecto.
-- **Mínimo de participantes:** **2 instituciones en total** (la de origen cuenta
-  como participante). Si una institución rechaza y todavía quedan 2 o más, la
-  clase sigue adelante; si se baja de 2, no se crea (o no continúa) la clase.
-- **Evidencias por enlace:** solo se aceptan enlaces de una **lista blanca
-  reducida** para evitar enlaces maliciosos; nada de URL libres.
-- **Multi-institución:** la clase sigue siendo **una sola** (un proyecto) aunque
-  participen más de dos instituciones; no se duplica en varias clases.
-- **Participantes:** quedan **congelados al crear el proyecto**; no se suman
-  instituciones académicas después. Se permiten **observadores** sin certificado
-  y cierra el **docente de origen**, con supervisión de la CACE.
-- **Identificador:** no se piden pasaporte, DNI ni documento internacional. El
-  **folio** sigue siendo el identificador público; lo interno de la CACE no se
-  imprime ni se muestra en la verificación.
-- **Lista blanca de enlaces:** YouTube, Vimeo, Google Drive y OneDrive, todos por
-  `https` y con enlace público.
-- **Sede:** una sola instancia y una sola base de datos; no hay subdominios por
-  institución ni multi-tenant.
+- [ ] Plazos configurables por la presidencia: **8 días para proponer, 7 para
+  revisar**.
+- [ ] Evidencias por enlace con lista blanca: YouTube, Vimeo, Google Drive y
+  OneDrive, solo `https` y enlaces públicos; sin descargar el enlace en el servidor.
+- [ ] Correos de hitos y preferencias, sin duplicar los recordatorios del `.ics`.
 
-### 7.1 Plazos configurables por la presidencia
+### 4.2 Panel de desempeño, en tres entregas
 
-- [ ] Añadir a `CONFIGURACION_CACE` dos campos: `diasMinimosPropuesta` (8 por
-  defecto) y `diasRevision` (7 por defecto), con rango válido (2–60) y auditoría
-  de quién los cambia.
-- [ ] Pantalla de la presidencia en «Comunidad/Configuración» para editarlos, con
-  la fecha mínima resultante a la vista. La secretaría no puede cambiarlos.
-- [ ] Usar esos valores en: alta y edición de solicitud, fecha mínima del
-  formulario, caducidad de la revisión, recordatorios y textos de la pantalla.
-- [ ] Mantener `REVISION_DIAS_ANTELACION` solo como respaldo de instalación.
-- [ ] e2e: 7 días rechaza, 8 acepta; el cambio de la presidencia se aplica a la
-  siguiente solicitud; la secretaría recibe 403.
+No se implementa completo en una sola fase.
 
-**Esfuerzo:** 1–2 días. **Riesgo:** bajo. **Aceptación:** un cambio en el panel
-cambia la fecha mínima real sin reiniciar el servidor y queda registrado.
+1. **Entrega A — métricas y ranking (1 semana).** Solicitudes y proyectos por
+   estado, una sola métrica de cierre (`FINALIZADO`), tasa de caducidad, tiempo de
+   respuesta, tasa de no conclusión y proyectos estancados; filtro mensual
+   ajustable; presidencia y secretaría. Sin acciones ni mensajes.
+2. **Entrega B — plan de acción (3–5 días).** Prioridad, nota, responsable, fecha
+   y estado por institución, con historial; secretaría en lectura.
+3. **Entrega C — vista del agente y canal (1 semana).** Versión simplificada de su
+   institución y sus docentes y canal **solo dentro de la app**, sin correo.
 
-### 7.2 Evidencias por enlace (lista blanca)
+### 4.3 Clases con múltiples instituciones (3–5 semanas)
 
-- [ ] `EVIDENCIA`: `archivoUrl` pasa a opcional y se añade `enlaceUrl`; `tipo`
-  distingue `ARCHIVO`, `ENLACE` y `VIDEO`. Al menos uno de los dos debe existir.
-- [ ] Lista blanca definitiva: YouTube (`youtube.com`, `youtu.be`), Vimeo
-  (`vimeo.com`), Google Drive (`drive.google.com`) y OneDrive (`1drv.ms`,
-  `onedrive.live.com`). Solo `https` y enlaces públicos; sin acortadores.
-- [ ] Validar `https` (y `http` solo si se decide), longitud máxima, sin
-  credenciales embebidas y sin `javascript:` ni `data:`; **no** descargar el
-  enlace en el servidor (evita SSRF).
-- [ ] Endpoint de alta por JSON (o campo opcional en el formulario multipart) y
-  UI con «Subir archivo / Pegar enlace», mostrando el proveedor reconocido.
-- [ ] Abrir en pestaña nueva con `rel="noopener noreferrer"`; no incrustar
-  iframes de dominios no previstos.
-- [ ] e2e: enlace de YouTube aceptado; dominio fuera de la lista → 400; enlace
-  inválido o `javascript:` → 400; una evidencia antigua de archivo sigue viéndose.
+- [ ] Tabla de participantes, migración del destino actual y revisión por destino.
+- [ ] Mínimo 2 participantes; un rechazo no tumba la clase si quedan 2 o más.
+- [ ] Participantes congelados al crear el proyecto, observadores sin certificado,
+  cierre por el docente de origen con supervisión de la CACE.
+- [ ] Certificados y calendario con todas las instituciones.
+- [ ] Solo se hace si hay demanda real; la primera clase funciona con dos.
 
-**Esfuerzo:** 3–5 días. **Riesgo:** bajo. **Aceptación:** se puede registrar una
-evidencia de vídeo por enlace sin subir el archivo y el archivo ya no es
-obligatorio.
+### 4.4 Identificador interno y deudas técnicas
 
-### 7.3 Identificador interno de la CACE (sin documento internacional)
-
-- **Decidido:** no se piden pasaporte, DNI, cédula ni otro documento
-  internacional, y no se imprimen en el certificado.
-- [ ] El **folio del certificado** sigue siendo el identificador público y el
-  que se usa en la verificación, como hoy.
-- [ ] No se añaden campos de documento al certificado ni a la verificación
-  pública; no hay que enmascarar nada porque no se muestra.
-- [ ] Si la CACE necesita una referencia interna para distinguir matrículas
-  repetidas entre instituciones, se estudiará un código interno por alumno,
-  visible solo para la CACE y nunca impreso. **Confirmar si hace falta o si el
-  folio basta.**
-- [ ] e2e: el alta de lista no exige documento; el folio sigue siendo único y
-  verificable.
-
-**Esfuerzo:** 0–1 día si solo se confirma el folio; 2–3 días si se añade el
-código interno. **Riesgo:** bajo.
-
-### 7.4 Clases con múltiples instituciones
-
-- [ ] Nueva tabla `PARTICIPANTE_SOLICITUD`: solicitud, institución, docente,
-  materia, rol (`ORIGEN`/`DESTINO`), estado (`PENDIENTE`, `ACEPTADA`, `RECHAZADA`,
-  `CADUCADA`), quién revisó y cuándo. La institución de origen también es
-  participante.
-- [ ] Migrar el destino actual de cada solicitud a una fila de participante;
-  mantener las columnas viejas como compatibilidad mientras se termina la
-  migración (aditiva).
-- [ ] Flujo: el docente de origen elige N instituciones (cada una con su
-  docente/materia opcional); el agente de origen revisa una vez; **cada destino
-  acepta o rechaza por separado**. La clase se crea cuando hay **2 participantes
-  aceptados en total**; un rechazo no la tumba si aún quedan 2 o más.
-- [ ] Si se baja de 2, la solicitud no se convierte en proyecto (o se cancela con
-  motivo) y el origen puede volver a invitar.
-- [ ] Participantes **congelados** al crear el proyecto: no se suman instituciones
-  académicas después. Se permiten **observadores** sin certificado. Cierra el
-  **docente de origen** cuando estén los reportes, con supervisión de la CACE.
-- [ ] `ProyectoClaseEspejo`: un solo proyecto con N participantes; listas por
-  institución (ya existen), `ProyectoDocente` por docente, calendario a todos y
-  reportes por docente. Certificados: un certificado por alumno y el texto de
-  **todas** las instituciones; verificación pública con todas.
-- [ ] UI: selector múltiple de instituciones, panel de respuestas por destino y
-  vista del proyecto con N instituciones.
-- [ ] e2e: 3 instituciones (origen + 2 destinos) con un rechazo y quórum de 2;
-  certificado con tres instituciones; calendario a todos los docentes; un
-  observador no recibe certificado y el cierre lo hace el docente de origen.
-
-**Esfuerzo:** 3–5 semanas. **Riesgo:** alto (modelo, revisiones, certificados y
-calendario). **Aceptación:** una clase con tres instituciones participantes se
-crea, se planifica, se certifica y se verifica sin duplicar proyectos.
-
-### Orden recomendado dentro de la fase
-
-1. Evidencias por enlace (rápida e independiente).
-2. Plazos configurables (rápida, alto valor).
-3. Identificador interno (rápido: confirmar que el folio basta).
-4. Múltiples instituciones (la grande; cerrar antes las preguntas de abajo).
-
-### Decisiones que faltan para cerrar la Fase 7
-
-- ¿Hace falta un **código interno por alumno** además del folio, o el folio del
-  certificado es suficiente para las referencias de la CACE?
-- En multi-institución, ¿quién puede marcar a una institución como
-  **observadora** y hasta qué momento? La propuesta es el docente de origen,
-  antes de crear el proyecto.
+- [ ] Si la CACE lo confirma, código interno por alumno para distinguir matrículas
+  repetidas; nunca impreso ni público (el folio sigue siendo el identificador).
+- [ ] `ENUM`/`CHECK`, paginación y revisión de N+1 en los listados grandes.
+- [ ] Exportar datos y baja de usuario, centro de ayuda y accesibilidad.
 
 ---
 
-## Fase 8 — Panel de desempeño de instituciones y comunicación CACE–agentes (22-oct-2026)
+## Fase 5 — Endurecimiento y mantenibilidad (continuo)
 
-**Por qué:** la presidencia necesita ver qué instituciones participan, cuáles
-responden tarde o no responden y cuáles no logran concluir una colaboración,
-para decidir dónde apoyar y qué plan de acción aplicar. Hoy esos datos están en
-la base, pero no hay una vista agregada; la comunicación con los agentes
-tampoco tiene un canal propio.
-
-**Datos que ya existen:** `SOLICITUD_CLASE_ESPEJO` (estados `PENDIENTE`,
-`APROBADA_POR_ORIGEN`, `APROBADA`, `RECHAZADA`, `CADUCADA`),
-`PROYECTO_CLASE_ESPEJO` (estados `EN_PLANIFICACION`, `EN_CURSO`, `FINALIZADO`,
-`CANCELADO`), instituciones, docentes y fechas. No hay que inventar datos.
-
-### Métricas
-
-- **Una sola métrica de cierre:** «terminada» y «concluida» son lo mismo y se
-  cuentan como `FINALIZADO`. No se duplica el número.
-- **Actividad:** solicitudes creadas, recibidas, aprobadas, rechazadas y
-  **caducadas**.
-- **Participación:** proyectos en planificación, en curso, finalizados y
-  cancelados.
-- **Tasa de finalización:** finalizados / (finalizados + cancelados).
-- **No conclusión:** cancelados / (finalizados + cancelados), más los proyectos
-  **estancados** (fecha de fin pasada hace más de 30 días y todavía en
-  `EN_PLANIFICACION` o `EN_CURSO`). La tasa de no conclusión suma cancelados y
-  estancados sobre los proyectos que ya debían haber terminado.
-- **No responden a tiempo:** solicitudes que caducaron sin respuesta cuando la
-  institución era destino, sobre el total de solicitudes recibidas. Se muestra
-  la **tasa de caducidad** y el **tiempo medio de respuesta** en días.
-- **Ranking de instituciones:** ordenadas por tasa de caducidad y por tasa de no
-  conclusión, con el número de casos al lado (para no sacar conclusiones de una
-  sola solicitud). Por defecto se marca alerta si la tasa supera el 30 % con al
-  menos 3 casos; el umbral es ajustable.
-- **Detalle por docente:** mismas métricas acotadas a los docentes de una
-  institución. Es la vista simplificada del agente.
-- **Alertas:** solicitudes por revisar, clases próximas a empezar, clases sin
-  reporte de cierre y proyectos estancados.
-
-**Periodo:** por defecto se muestra el **mes actual**, con selector de rango por
-meses (mes inicial y mes final) y una tendencia de los últimos 12 meses. Los
-números y las gráficas se recalculan con el rango elegido; no hay que fijar un
-periodo único.
-
-**Formato:** tarjetas de resumen, barras por estado, línea mensual y tabla
-ordenable con el ranking. Exportación a CSV/PDF. Se puede hacer con SVG/CSS y
-tablas, sin añadir una librería de gráficas; si se necesita más, valorar
-Chart.js. Todo con texto alternativo y una tabla equivalente para accesibilidad.
-
-### Comunicación y acción
-
-**Canal solo dentro de la app:** un hilo por institución entre la CACE y sus
-agentes, con estados de leído y aviso en la campana de la aplicación. No se
-envían correos por este canal. El chat de proyecto que ya existe es por clase y
-no sirve para esto.
-
-**Plan de acción:** por institución, prioridad, nota, responsable, fecha y
-estado (`ABIERTA`, `EN_SEGUIMIENTO`, `CERRADA`), con historial. El panel muestra
-las acciones abiertas y su avance; el agente ve las de su institución y puede
-responder en el hilo.
-
-### Visibilidad por rol
-
-| Rol | Qué ve |
-| --- | --- |
-| Presidencia | Todas las instituciones, todas las métricas, rankings, acciones y hilos |
-| Secretaría | Las mismas métricas y rankings en **solo lectura**; no crea acciones ni escribe en los hilos |
-| Agente de internacionalización | Versión simplificada de **su institución** y **sus docentes**; sin acceso a otras instituciones ni al ranking global |
-
-Los datos son agregados: no se muestran alumnos, correos ni documentos. El
-agente ve el detalle por docente porque es su equipo; no ve docentes de otras
-instituciones.
-
-- [ ] Endpoint agregado (por ejemplo `GET /cace/desempeno`) con filtros de mes,
-  institución y país, sin consultas N+1.
-- [ ] Pantalla de presidencia y secretaría con tarjetas, gráficas, ranking y
-  exportación.
-- [ ] Vista simplificada para el agente, limitada a su institución y sus
-  docentes.
-- [ ] Plan de acción por institución con historial.
-- [ ] Canal de mensajes CACE–agente **solo in-app**, con aviso en la campana.
-- [ ] e2e: los números cuadran con la base; un agente no ve otra institución;
-  una acción y un mensaje quedan registrados; el rango de meses cambia los
-  totales.
-
-**Esfuerzo:** 3–4 semanas (panel 2, vista del agente y canal 1–2). **Riesgo:**
-medio (permisos, definiciones y privacidad entre instituciones). **Aceptación:**
-la presidencia puede comparar instituciones en un rango de meses, detectar a
-las que no responden o no concluyen, guardar un plan de acción y hablar con el
-agente sin salir del panel.
-
-**Decisiones de la Fase 8:** confirmar el umbral de alerta (propuesto 30 % con
-mínimo 3 casos) y los 30 días de gracia para marcar un proyecto como estancado;
-confirmar que la secretaría queda en solo lectura y que el agente ve el detalle
-por docente de su institución.
+- [ ] Extraer componentes comunes de agente/docente.
+- [ ] Trocear `cace.component.ts` y `proyecto.component.ts`.
+- [ ] `prisma/seed.ts` y borrar el andamiaje SSR inerte.
+- [ ] Swagger interno, despliegue reproducible y automatización de migraciones.
+- [ ] Documentación y `.docx` fuera de git.
 
 ---
 
-## Decisiones cerradas (22-oct-2026)
+## Decisiones cerradas
 
-- **Contraseñas:** mínimo **12 caracteres**, distinta del correo, sin exigir
-  mayúscula/número/símbolo y sin la regla del carácter repetido, con
-  comprobación de contraseñas comunes o filtradas.
-  **5 intentos fallidos / 15 minutos** de bloqueo, aviso al usuario y desbloqueo
-  administrativo. La política se aplica al establecer una contraseña nueva.
-- **Notificaciones:** correo para hitos y seguridad; avisos dentro de la app
-  para el resto; no duplicar los recordatorios del `.ics`; preferencias para lo
-  no esencial.
-- **Retención:** una institución dada de baja queda **inoperable y archivada**;
-  su historial se conserva para referencia. Los certificados se conservan y, si
-  procede, se anulan; no se borran en cascada.
-- **Sede:** una sola instancia y una sola base de datos; sin subdominios por
-  institución por ahora.
-- **Identificador:** sin pasaporte/DNI; el folio sigue siendo el identificador
-  público. Falta confirmar si se añade un código interno por alumno.
-- **Enlaces:** lista blanca con YouTube, Vimeo, Google Drive y OneDrive, solo
-  `https` y enlaces públicos.
-- **Multi-institución:** mínimo 2 participantes; un rechazo no tumba la clase
-  si quedan 2 o más; participantes congelados al crear el proyecto;
-  observadores sin certificado; cierra el docente de origen con supervisión.
-- **Panel de desempeño (Fase 8):** «terminada» y «concluida» son una sola
-  métrica (`FINALIZADO`); periodo mensual ajustable; presidencia y secretaría ven
-  todo; el agente ve su institución y sus docentes; el canal es solo in-app.
+- **Plazos:** 8 días para proponer y 7 para revisar; configurables por presidencia.
+- **Participantes:** mínimo 2 instituciones en total; un rechazo no tumba la clase
+  si quedan 2 o más; un solo proyecto; participantes congelados al crear; el
+  docente de origen cierra con supervisión de la CACE.
+- **Contraseñas:** mínimo 12, sin regla del carácter repetido, comprobación de
+  filtradas, 5 intentos/15 minutos, aviso y desbloqueo administrativo.
+- **Notificaciones:** correo para hitos y seguridad; el resto dentro de la app; no
+  duplicar el `.ics`.
+- **Baja de institución:** inoperable y archivada, con historial; certificados
+  conservados y anulados si procede; sin borrado en cascada.
+- **Sede:** una sola instancia y una sola base de datos.
+- **Identificador:** sin pasaporte/DNI; el folio es el identificador público.
+- **Enlaces:** YouTube, Vimeo, Google Drive y OneDrive, solo `https` y públicos.
+- **Panel:** una sola métrica de cierre (`FINALIZADO`); periodo mensual ajustable;
+  presidencia y secretaría ven todo (secretaría en lectura); agentes ven su
+  institución y sus docentes; canal solo in-app.
 
-Las dos decisiones que requieren autorización —TOTP y proveedor de correo—
-están al final del plan, para la próxima reunión.
-
----
-
-## Cómo se verifica cada fase (el listón de este repositorio)
-
-1. `cd backend && npx tsc --noEmit && npx nest build && npx jest --runInBand`.
-2. `cd frontend && npx tsc -p tsconfig.app.json --noEmit && npx ngc -p tsconfig.app.json --noEmit && npx ng build`.
-3. Servidor de pruebas **en 3001** (nunca el 3000): login de los roles implicados,
-   caso bueno, caso malo y el 403/401 que corresponda.
-4. Navegador por DevTools cuando sea visual, midiendo (no mirando).
-5. Los datos de prueba se borran al terminar.
-6. Cada fase se commitea con su mensaje y no se hace `git push`.
-
----
-
-## Lo que este plan NO incluye (fuera de alcance)
-
-- Aplicación móvil nativa (la web es responsive; valorar PWA más adelante).
-- Integración con LMS (Moodle, Canvas) ni con videoconferencia por API.
-- Firma electrónica avanzada/cualificada de los certificados (hoy son PDF con
-  folio y verificación por QR).
-- Facturación, planes o multi-tenant comercial.
-- Traducción a otros idiomas (hoy todo está en español).
-
----
-
-## Pendientes de autorización (próxima reunión)
-
-Estas dos no se implementan hasta que la CACE las autorice. Se dejan al final
-del plan para no perderlas de vista.
+## Pendientes de autorización (al final, para la próxima reunión)
 
 ### TOTP para presidencia y secretaría
 
-- **Qué se decide:** si el acceso a las cuentas de la CACE exige un código de
-  seis dígitos de una app autenticadora, además de la contraseña.
-- **Recomendación:** obligatorio para presidencia y secretaría; códigos de
-  respaldo; reset por la presidencia con auditoría; sin SMS.
-- **Para autorizarlo hacen falta:** decidir quién puede resetear, cuántos
-  códigos de respaldo y si se extiende después a agentes.
-- **Mientras no se autorice:** no se toca el inicio de sesión actual.
+- Qué se decide: exigir un código de app autenticadora además de la contraseña.
+- Recomendación: obligatorio para presidencia y secretaría, con códigos de
+  respaldo y reset auditado.
+- Falta: quién resetea, cuántos códigos y si se extiende a agentes.
+- Mientras no se autorice: no se toca el login actual.
 
 ### Proveedor de correo para producción
 
-- **Qué se decide:** qué servicio manda los correos reales y con qué dominio.
-- **Situación:** hoy hay SMTP configurado y envía correos; no está pensado para
-  lotes grandes de certificados.
-- **Recomendación:** proveedor transaccional con dominio propio, SPF/DKIM/DMARC,
-  rebotes registrados y la cola actual.
-- **Para autorizarlo hacen falta:** dominio, presupuesto, volumen estimado y
-  quién administra el DNS.
-- **Mientras no se autorice:** las pruebas siguen con el correo actual; no se
-  promete envío masivo en producción.
+- Qué se decide: qué servicio manda los correos reales y con qué dominio.
+- Situación: hoy hay SMTP y envía, pero no está pensado para lotes de certificados.
+- Recomendación: proveedor transaccional con dominio propio, SPF/DKIM/DMARC,
+  rebotes y la cola actual.
+- Falta: dominio, presupuesto, volumen estimado y quién administra el DNS.
+- Mientras no se autorice: las pruebas siguen con el correo actual; no se promete
+  envío masivo en producción.
+
+## Decisiones menores que pueden esperar a la Fase 4
+
+- ¿Código interno por alumno o basta el folio?
+- ¿El agente ve el detalle por docente o solo el agregado de su institución?
+- ¿Secretaría en solo lectura?
+- Umbral de alerta (propuesto 30 % con 3 casos) y 30 días de gracia para
+  «estancado».
