@@ -344,6 +344,26 @@ export class AuthService {
     }
   }
 
+  /**
+   * Avisa por correo del bloqueo temporal. Un fallo de SMTP no puede impedir
+   * que el login responda: se registra y se sigue.
+   */
+  private async avisarBloqueo(correo: string): Promise<void> {
+    const url =
+      process.env.URL_PUBLICA ??
+      process.env.FRONTEND_URL ??
+      'http://localhost:3000';
+    try {
+      await this.mail.sendAvisoBloqueo(correo, BLOQUEO_MINUTOS, url);
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo avisar del bloqueo a ${correo}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
   async login(dto: LoginDto) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { correo: dto.correo },
@@ -403,6 +423,7 @@ export class AuthService {
             bloqueadoHasta: new Date(Date.now() + BLOQUEO_MINUTOS * 60_000),
           },
         });
+        await this.avisarBloqueo(usuario.correo);
         throw new UnauthorizedException(
           `Demasiados intentos fallidos: la cuenta queda bloqueada ${BLOQUEO_MINUTOS} minutos por seguridad. Puedes restablecer tu contraseña.`,
         );

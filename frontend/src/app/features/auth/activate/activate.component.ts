@@ -41,7 +41,7 @@ export class ActivateComponent implements OnInit {
     dni: ['', Validators.required],
     gradoAcademico: ['', Validators.required],
     especialidad: ['', [Validators.required, esTextoValido()]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(12)]],
     confirmar: ['', Validators.required],
   });
 
@@ -75,7 +75,7 @@ export class ActivateComponent implements OnInit {
   mensajeDe(campo: string): string | null {
     return mensajeDeControl(this.form, campo, {
       required: 'Este campo es obligatorio',
-      minlength: 'Mínimo 6 caracteres',
+      minlength: 'Mínimo 12 caracteres',
       textoInvalido:
         'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
     });

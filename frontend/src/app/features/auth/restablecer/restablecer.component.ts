@@ -11,8 +11,8 @@ import { IdentidadCaceService } from '../../../core/services/identidad-cace.serv
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
-/** Mínimo de la política de contraseñas (Fase 1): 10 caracteres. */
-export const PASSWORD_MINIMO = 10;
+/** Mínimo de la política de contraseñas: 12 caracteres. */
+export const PASSWORD_MINIMO = 12;
 
 /**
  * Pantalla a la que lleva el enlace del correo de recuperación (`/restablecer?token=…`).

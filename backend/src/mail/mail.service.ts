@@ -3,6 +3,7 @@ import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import {
   ContenidoCorreo,
+  contenidoAvisoBloqueo,
   contenidoCalendarioClase,
   contenidoCertificadoAlumno,
 } from './contenido-correo';
@@ -85,6 +86,26 @@ export class MailService {
         <p><a href="${link}">${link}</a></p>
       `,
     });
+  }
+
+  /**
+   * Aviso de bloqueo temporal. Se manda solo al bloquear, no en cada intento.
+   * El enlace apunta a la pantalla de recuperación; no lleva token.
+   */
+  async sendAvisoBloqueo(
+    to: string,
+    minutos: number,
+    urlPublica: string,
+  ): Promise<void> {
+    const enlace = `${urlPublica.replace(/\/$/, '')}/recuperar`;
+    await this.enviarCorreo(
+      to,
+      contenidoAvisoBloqueo({
+        destinatario: to,
+        minutos,
+        enlaceRecuperacion: enlace,
+      }),
+    );
   }
 
   /**

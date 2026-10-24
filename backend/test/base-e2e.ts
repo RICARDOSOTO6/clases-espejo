@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Utilidades compartidas por las pruebas e2e.
  *
  * Reglas de esta base de pruebas:
@@ -25,7 +25,7 @@ import { MailService } from '../src/mail/mail.service';
 import { PrismaExceptionFilter } from '../src/common/filters/prisma-exception.filter';
 
 /** Contraseña común de todas las cuentas sembradas. */
-export const PASSWORD_PRUEBA = 'Demo12345x';
+export const PASSWORD_PRUEBA = 'PruebaSegura2026';
 
 export interface LlamadaCorreo {
   metodo: string;
@@ -71,6 +71,7 @@ const METODOS_CORREO = [
   'enviarCorreo',
   'sendInvitation',
   'sendRecuperacionPassword',
+  'sendAvisoBloqueo',
   'sendConfirmacionCorreo',
   'sendCredencialesPresidente',
   'sendCredencialesSecretaria',

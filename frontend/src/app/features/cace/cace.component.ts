@@ -360,7 +360,7 @@ export class CaceComponent implements OnInit, OnDestroy {
 
   form = this.fb.group({
     actual: ['', Validators.required],
-    nueva: ['', [Validators.required, Validators.minLength(8)]],
+    nueva: ['', [Validators.required, Validators.minLength(12)]],
     confirmar: ['', Validators.required],
   });
 
@@ -777,7 +777,7 @@ export class CaceComponent implements OnInit, OnDestroy {
   mensajeDe(campo: 'actual' | 'nueva' | 'confirmar'): string | null {
     return mensajeDeControl(this.form, campo, {
       required: 'Este campo es obligatorio',
-      minlength: 'Mínimo 8 caracteres',
+      minlength: 'Mínimo 12 caracteres',
     });
   }
 

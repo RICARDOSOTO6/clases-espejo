@@ -166,8 +166,9 @@ Y siempre, separado y claro: **lo que no está verificado**.
   cada persona lo localiza. No hay selector manual de zona: manda el dispositivo.
 - **Temas de la CACE**: lista cerrada, con el contraste medido en todos. No se inventan
   colores nuevos sin medirlos.
-- **Contraseñas (Fase 1)**: mínimo 10 caracteres, distintas del correo y sin un
-  carácter repetido; 5 intentos fallidos bloquean la cuenta 15 minutos. Cambiar o
+- **Contraseñas**: mínimo 12 caracteres, distintas del correo y que no sean una
+  contraseña común (lista local); 5 intentos fallidos bloquean la cuenta 15
+  minutos, con aviso por correo. Cambiar o
   restablecer la contraseña **cierra las sesiones** (`sesionesValidasDesde`), así
   que el frontend manda volver a entrar.
 - **Recuperación de contraseña**: enlace de un solo uso que caduca en 1 hora; en la

@@ -1,14 +1,16 @@
 import { PASSWORD_MINIMO, problemaDePassword } from './politica-password';
+import { esPasswordComun } from './passwords-comunes';
 
 describe('Política de contraseñas', () => {
   const correo = 'persona@prueba.mx';
 
-  it('acepta una contraseña de 10 caracteres que no sea el correo', () => {
+  it('acepta una contraseña de 12 caracteres que no sea el correo ni común', () => {
+    expect(PASSWORD_MINIMO).toBe(12);
     expect(problemaDePassword('ClaveSegura1', correo)).toBeNull();
   });
 
   it('rechaza una contraseña más corta que el mínimo', () => {
-    const problema = problemaDePassword('Corta1', correo);
+    const problema = problemaDePassword('ClaveSegura', correo);
     expect(problema).toContain(String(PASSWORD_MINIMO));
   });
 
@@ -19,8 +21,10 @@ describe('Política de contraseñas', () => {
     );
   });
 
-  it('rechaza un único carácter repetido', () => {
-    expect(problemaDePassword('aaaaaaaaaaaa', correo)).toContain('repetido');
+  it('rechaza contraseñas comunes o con prefijos obvios', () => {
+    expect(problemaDePassword('Password1234', correo)).toContain('común');
+    expect(problemaDePassword('clasesconjuntas', correo)).toContain('común');
+    expect(esPasswordComun('ClaveSegura1')).toBe(false);
   });
 
   it('no aplica la política a una contraseña vacía con mensaje de longitud', () => {

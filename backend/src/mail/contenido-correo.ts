@@ -77,3 +77,32 @@ export function contenidoCalendarioClase(
       `,
   };
 }
+
+export interface DatosAvisoBloqueo {
+  destinatario: string;
+  minutos: number;
+  enlaceRecuperacion: string;
+}
+
+/**
+ * Aviso de bloqueo temporal por intentos fallidos.
+ *
+ * No se manda en cada intento (sería ruido y permitiría spamear a una persona);
+ * solo cuando la cuenta queda bloqueada. El enlace de recuperación sirve para
+ * desbloquearla sin esperar.
+ */
+export function contenidoAvisoBloqueo(
+  datos: DatosAvisoBloqueo,
+): ContenidoCorreo {
+  const { destinatario, minutos, enlaceRecuperacion } = datos;
+  return {
+    asunto: 'Tu cuenta de Clases Espejo fue bloqueada temporalmente',
+    texto: `Hola ${destinatario}: alguien intentó entrar a tu cuenta varias veces con una contraseña incorrecta y la bloqueamos durante ${minutos} minutos por seguridad. Si fuiste tú, espera o restablece tu contraseña en ${enlaceRecuperacion}. Si no fuiste tú, restablece tu contraseña ahora y avisa a la CACE. Nadie ha cambiado tu contraseña.`,
+    html: `
+        <p>Hola <strong>${destinatario}</strong>:</p>
+        <p>Alguien intentó entrar a tu cuenta varias veces con una contraseña incorrecta y la bloqueamos durante <strong>${minutos} minutos</strong> por seguridad.</p>
+        <p>Si fuiste tú, puedes esperar o <a href="${enlaceRecuperacion}">restablecer tu contraseña</a>.</p>
+        <p>Si no fuiste tú, restablece tu contraseña ahora y avisa a la CACE. <strong>Nadie ha cambiado tu contraseña.</strong></p>
+      `,
+  };
+}

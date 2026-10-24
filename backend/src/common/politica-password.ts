@@ -1,17 +1,19 @@
 import { BadRequestException } from '@nestjs/common';
+import { esPasswordComun } from './passwords-comunes';
 
 /**
- * Política de contraseñas de la Fase 1.
+ * Política de contraseñas (decisión de 22-oct-2026).
  *
- * Decisión cerrada en el plan: **mínimo 10 caracteres y distinta del correo**.
- * No se imponen reglas de «una mayúscula, un número y un símbolo» porque
- * empujan a contraseñas predecibles; la longitud es lo que más protege.
+ * **Mínimo 12 caracteres**, distinta del correo y que no sea una contraseña
+ * común. No se imponen reglas de «una mayúscula, un número y un símbolo» porque
+ * empujan a contraseñas predecibles; la longitud y una lista de contraseñas
+ * obvias protegen más.
  *
  * Las cuentas que ya existían conservan su contraseña: la política se aplica
  * cuando se **establece** una nueva (registro, activación, cambio o
  * restablecimiento), no al iniciar sesión.
  */
-export const PASSWORD_MINIMO = 10;
+export const PASSWORD_MINIMO = 12;
 
 /** Intentos fallidos seguidos antes de bloquear temporalmente la cuenta. */
 export const INTENTOS_MAXIMOS = 5;
@@ -37,8 +39,8 @@ export function problemaDePassword(
   ) {
     return 'La contraseña no puede ser igual a tu correo.';
   }
-  if (new Set(clave).size === 1) {
-    return 'La contraseña no puede ser el mismo carácter repetido.';
+  if (esPasswordComun(clave)) {
+    return 'Esa contraseña es demasiado común. Elige una frase larga que solo conozcas tú.';
   }
   return null;
 }

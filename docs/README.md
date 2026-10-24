@@ -1574,10 +1574,10 @@ auditorías):
 | **JWT obligatorio en la firma** | La app **no arranca** si `JWT_SECRET` falta o tiene menos de 16 caracteres. El mismo secreto se usa (con HMAC-SHA256 y un contexto propio) para **derivar el código de verificación** de los certificados. |
 | **Cuenta vigente por petición** | `JwtAuthGuard` verifica en cada request que el usuario siga activo y que conserve al menos una institución activa. |
 | **Autorización por capacidad** | `@Requiere('...')` + `CapacidadesGuard`: la ruta comprueba la **capacidad** (no el nombre del rol) contra la matriz de `common/capacidades.ts`, y el rol se lee de la base en cada petición (no viaja en el token). |
-| **Rate limit** | `RateLimitGuard` en `POST /auth/login` y `POST /auth/activate`: 10 intentos por minuto por `ip + correo`. |
+| **Rate limit** | `RateLimitGuard` en `POST /auth/login` y `POST /auth/activate`: 10 intentos por minuto por `ip + correo`; `/verificar/:folio` tiene 60 por minuto por IP. |
 | **Invitaciones de un solo uso** | La activación consume la invitación con un `updateMany` condicional (`usadaEn: null`); si ya se usó, la operación se aborta. |
 | **Recuperación de contraseña con hash** | El enlace lleva un token de 32 bytes aleatorios; en la base se guarda **solo su hash SHA-256**, caduca en 1 hora y es de un solo uso (consumo atómico). La respuesta de `/auth/recuperar` es idéntica exista o no la cuenta. |
-| **Política de contraseñas y bloqueo** | Mínimo 10 caracteres, distinta del correo y sin un carácter repetido. Cinco intentos fallidos bloquean la cuenta 15 minutos (aunque después se escriba la contraseña correcta); el bloqueo se limpia al entrar bien o al restablecer. |
+| **Política de contraseñas y bloqueo** | Mínimo **12** caracteres, distinta del correo y que no sea una contraseña común (lista local). Cinco intentos fallidos bloquean la cuenta 15 minutos; se avisa por correo y el bloqueo se limpia al entrar bien o al restablecer. |
 | **Sesiones cerradas al cambiar la contraseña** | `USUARIO.sesionesValidasDesde` invalida en `JwtAuthGuard` los tokens emitidos antes del cambio: cambiar o restablecer la contraseña cierra las sesiones abiertas. |
 | **Correo confirmado para entrar** | Las cuentas nuevas nacen con `correoVerificado` en falso y el login responde **403** hasta abrir el enlace (caduca en 48 h). Los enlaces guardan solo el hash y son de un solo uso. |
 | **Cambio de correo en dos pasos** | El correo no cambia al pedirlo: se manda un enlace a la **dirección nueva** y el cambio se aplica al confirmarlo; entonces se cierran las sesiones. Un correo ya usado por otra cuenta responde 409. |
@@ -1822,7 +1822,7 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] JWT
 * [x] Hash de contraseñas
 * [x] **Recuperación de contraseña** con enlace de un solo uso (1 hora; en la base solo el hash)
-* [x] **Política de contraseñas** (mínimo 10, distinta del correo) y bloqueo temporal por intentos
+* [x] **Política de contraseñas** (mínimo 12, distinta del correo, sin contraseñas comunes) y bloqueo temporal con aviso
 * [x] **Cierre de sesiones** al cambiar o restablecer la contraseña
 * [x] **Verificación de correo al registrarse**: la cuenta no entra hasta confirmar el enlace (48 h, reenvío disponible)
 * [x] **Cambio de correo** con confirmación desde la dirección nueva

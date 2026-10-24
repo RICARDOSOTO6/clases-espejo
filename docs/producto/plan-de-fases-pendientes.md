@@ -185,9 +185,10 @@ instituciones ni alumnos precargados.
 
 ### 2.2 Contraseñas y segundo factor
 
-- [ ] Política acordada: mínimo **12**, sin regla del carácter repetido,
-  comprobación de contraseñas comunes/filtradas, aviso y desbloqueo administrativo.
-- [ ] Mantener 5 intentos/15 minutos.
+- [x] Política aplicada: mínimo **12**, sin regla del carácter repetido y
+  comprobación local de contraseñas comunes; se mantiene el enlace de recuperación
+  como desbloqueo.
+- [x] 5 intentos/15 minutos con aviso por correo al bloquear.
 - [ ] Si se autoriza, TOTP para presidencia y secretaría, con códigos de respaldo y
   reset auditado.
 
@@ -352,7 +353,7 @@ entregados (si se autorizó), respaldo restaurado y lista de incidencias.
 - **Participantes:** mínimo 2 instituciones; un rechazo no tumba la clase si quedan
   2 o más; un solo proyecto; congelados al crear; cierra el docente de origen.
 - **Contraseñas:** mínimo 12, sin regla del carácter repetido, comprobación de
-  filtradas, 5 intentos/15 minutos, aviso y desbloqueo administrativo.
+  filtradas, 5 intentos/15 minutos con aviso por correo y desbloqueo mediante el enlace de recuperación.
 - **Notificaciones:** correo para hitos y seguridad; el resto dentro de la app; no
   duplicar el `.ics`.
 - **Baja de institución:** inoperable y archivada, con historial; certificados

@@ -56,4 +56,20 @@ describe('MailService: remitente de los correos', () => {
 
     expect(enviados[0].from).toBe('certificados@prueba.mx');
   });
+
+  it('el aviso de bloqueo lleva a recuperar la contraseña', async () => {
+    process.env.MAIL_FROM = 'general@prueba.mx';
+    const { servicio, enviados } = servicioConCaptura();
+
+    await servicio.sendAvisoBloqueo(
+      'alguien@prueba.mx',
+      15,
+      'https://app.prueba.mx/',
+    );
+
+    expect(String(enviados[0].subject)).toContain('bloqueada');
+    expect(String(enviados[0].html)).toContain(
+      'https://app.prueba.mx/recuperar',
+    );
+  });
 });

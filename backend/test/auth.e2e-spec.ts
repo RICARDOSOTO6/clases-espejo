@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Flujo crítico 1: registro de un agente → aprobación de su institución por la
  * CACE → invitación de un docente → activación de la cuenta del docente.
  *
@@ -238,7 +238,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
         dni: 'NUEVD001',
         gradoAcademico: 'Maestría',
         especialidad: 'Redes de Computadoras',
-        password: 'Docente1234',
+        password: 'PracticaSegura12',
       })
       .expect(201);
   });
@@ -246,7 +246,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
   it('11. el docente ya puede iniciar sesión con el rol DOCENTE', async () => {
     const respuesta = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ correo: correoDocenteNuevo, password: 'Docente1234' })
+      .send({ correo: correoDocenteNuevo, password: 'PracticaSegura12' })
       .expect(201);
     expect(respuesta.body.usuario.rol).toBe('DOCENTE');
   });
@@ -263,7 +263,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
         dni: 'NUEVD002',
         gradoAcademico: 'Maestría',
         especialidad: 'Redes de Computadoras',
-        password: 'Docente1234',
+        password: 'PracticaSegura12',
       })
       .expect(400);
   });

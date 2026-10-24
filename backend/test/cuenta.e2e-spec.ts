@@ -213,6 +213,13 @@ describe('Fase 1: cuenta y acceso', () => {
         .expect(401);
     }
 
+    const aviso = correo.llamadas.find(
+      (llamada) =>
+        llamada.metodo === 'sendAvisoBloqueo' &&
+        llamada.argumentos[0] === correoDocente,
+    );
+    expect(aviso).toBeDefined();
+
     // Con la contraseña correcta tampoco se entra: sigue bloqueada.
     const bloqueada = await request(app.getHttpServer())
       .post('/auth/login')

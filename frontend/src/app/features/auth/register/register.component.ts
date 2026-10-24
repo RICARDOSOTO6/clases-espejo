@@ -60,7 +60,7 @@ export class RegisterComponent {
     tipoDocumento: ['DNI', Validators.required],
     dni: ['', Validators.required],
     correo: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(12)]],
     nombreInstitucion: [''],
     paisCodigo: [''],
     estado: [''],
@@ -229,7 +229,7 @@ export class RegisterComponent {
     return mensajeDeControl(this.form, campo, {
       required: 'Este campo es obligatorio',
       email: 'Introduce un correo válido',
-      minlength: 'Mínimo 6 caracteres',
+      minlength: 'Mínimo 12 caracteres',
       textoInvalido:
         'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
     });
