@@ -415,7 +415,10 @@ model Evidencia {
   proyectoId    Int                 @map("proyecto_id")
   sesionId      Int?                @map("sesion_id")
   tipo          String
-  archivoUrl    String              @map("archivo_url")
+  /// Archivo subido (obligatorio si no hay `enlaceUrl`).
+  archivoUrl    String?             @map("archivo_url")
+  /// Enlace externo de la lista blanca (obligatorio si no hay archivo).
+  enlaceUrl     String?             @map("enlace_url")
   registradaEn  DateTime            @map("registrada_en")
   creadoEn      DateTime            @default(now()) @map("creado_en")
   actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")

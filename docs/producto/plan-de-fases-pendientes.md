@@ -269,9 +269,11 @@ rama y se demuestra el release candidate.
 
 ### 4.2 Evidencias por enlace (3–5 días)
 
-- [ ] `archivoUrl` opcional y `enlaceUrl` con lista blanca: YouTube, Vimeo, Google
+- [x] `archivoUrl` opcional y `enlaceUrl` con lista blanca: YouTube, Vimeo, Google
   Drive y OneDrive; solo `https` y enlaces públicos.
-- [ ] Validación sin descargar el enlace en el servidor; abrir en pestaña nueva.
+- [x] Validación sin descargar el enlace en el servidor; abrir en pestaña nueva.
+- [x] e2e: enlace válido, dominio ajeno y archivo más enlace; pantalla con modo
+  archivo o enlace.
 - [ ] e2e: enlace válido, dominio no permitido y `javascript:` rechazado.
 
 ### 4.3 Lo que **no** entra antes de la demo

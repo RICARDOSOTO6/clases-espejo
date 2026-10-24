@@ -302,7 +302,9 @@ export class ResumenPdfService {
         .font('Helvetica')
         .fontSize(10)
         .fillColor('#000000')
-        .text(`· ${seguro(e.tipo) || 'Evidencia'}  ·  ${seguro(e.archivoUrl)}`);
+        .text(
+          `· ${seguro(e.tipo) || 'Evidencia'}  ·  ${seguro(e.enlaceUrl ?? e.archivoUrl)}`,
+        );
     }
     if (evidencias.length === 0) {
       doc

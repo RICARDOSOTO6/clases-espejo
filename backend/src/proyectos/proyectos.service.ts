@@ -20,6 +20,7 @@ import { UpdateSesionDto } from './dto/update-sesion.dto';
 import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { CreateEvidenciaDto } from './dto/create-evidencia.dto';
+import { validarEnlaceEvidencia } from '../common/enlaces-evidencia';
 import { SaveReporteClaseDto } from './dto/save-reporte-clase.dto';
 import { ConfirmarReporteClaseDto } from './dto/confirmar-reporte-clase.dto';
 import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
@@ -680,8 +681,28 @@ export class ProyectosService {
   ) {
     await this.obtenerConAcceso(usuarioId, id);
     await this.exigirDocenteParticipante(usuarioId, id);
-    if (!archivo) {
-      throw new BadRequestException('Debes adjuntar un archivo de evidencia');
+
+    const enlace = (dto.enlaceUrl ?? '').trim();
+    if (archivo && enlace) {
+      throw new BadRequestException(
+        'Adjunta un archivo o pega un enlace, pero no las dos cosas.',
+      );
+    }
+    if (!archivo && !enlace) {
+      throw new BadRequestException(
+        'Adjunta un archivo o pega un enlace de evidencia.',
+      );
+    }
+
+    let enlaceValidado: string | null = null;
+    if (enlace) {
+      try {
+        enlaceValidado = validarEnlaceEvidencia(enlace);
+      } catch (error) {
+        throw new BadRequestException(
+          error instanceof Error ? error.message : 'Enlace no válido',
+        );
+      }
     }
 
     let sesionId: number | null = null;
@@ -697,12 +718,13 @@ export class ProyectosService {
       sesionId = sesion.id;
     }
 
-    const tipo = dto.tipo?.trim() || 'Archivo';
+    const tipo = dto.tipo?.trim() || (enlaceValidado ? 'Enlace' : 'Archivo');
     return this.prisma.evidencia.create({
       data: {
         proyectoId: id,
         tipo,
-        archivoUrl: `/uploads/${archivo.filename}`,
+        archivoUrl: archivo ? `/uploads/${archivo.filename}` : null,
+        enlaceUrl: enlaceValidado,
         sesionId,
         registradaEn: new Date(),
       },

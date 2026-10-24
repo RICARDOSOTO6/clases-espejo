@@ -51,10 +51,7 @@ import {
 } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
-import {
-  PendienteUi,
-  UiStateService,
-} from '../../core/services/ui-state.service';
+import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 
 @Component({
   selector: 'app-proyecto',
@@ -90,9 +87,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly usuario = this.auth.currentUser();
   /** Zona horaria del navegador, para avisar en qué hora se ven las sesiones. */
   readonly zonaHoraria =
-    typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : 'tu zona';
+    typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'tu zona';
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
   /**
@@ -102,9 +97,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly panelUrl = '/panel';
 
   /** Plantilla de ejemplo para subir la lista (descargable desde la sección). */
-  readonly urlPlantillaAlumnos = urlDeArchivo(
-    '/plantillas/plantilla-lista-alumnos.xlsx',
-  );
+  readonly urlPlantillaAlumnos = urlDeArchivo('/plantillas/plantilla-lista-alumnos.xlsx');
 
   // --- Lista de alumnos (la base de los certificados) ---
   /** La lista guardada de la institución del docente, si ya subió una. */
@@ -131,9 +124,9 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly descargandoCertificado = signal<number | null>(null);
   readonly descargandoZip = signal(false);
   /** Alumnos que ya tenían certificado: se listan con su motivo. */
-  readonly certificadosOmitidos = signal<
-    { alumnoId: number; alumno: string; motivo: string }[]
-  >([]);
+  readonly certificadosOmitidos = signal<{ alumnoId: number; alumno: string; motivo: string }[]>(
+    [],
+  );
 
   // --- Envío por correo a los alumnos (fase 5) ---
   /** Certificado cuyo correo se está enviando (evita el doble clic). */
@@ -146,9 +139,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly envioFallidos = signal<
     { certificadoId: number; folio: string; alumno: string; correo: string; motivo: string }[]
   >([]);
-  readonly envioSinCorreo = signal<
-    { certificadoId: number; folio: string; alumno: string }[]
-  >([]);
+  readonly envioSinCorreo = signal<{ certificadoId: number; folio: string; alumno: string }[]>([]);
 
   // --- Cola de correo (Fase 2) ---
   /** Progreso del lote en curso o del último terminado. */
@@ -174,18 +165,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly puedeEmitirCertificados = computed(() => {
     const estado = this.certificadosEstado();
     return (
-      !!estado &&
-      estado.claseCerrada &&
-      !!estado.plantilla &&
-      (estado.lista?.incluidos ?? 0) > 0
+      !!estado && estado.claseCerrada && !!estado.plantilla && (estado.lista?.incluidos ?? 0) > 0
     );
   });
 
   /** ¿Hay algún certificado vigente al que se le pueda enviar el correo? */
   readonly puedeEnviarCertificados = computed(() =>
-    (this.certificadosEstado()?.certificados ?? []).some(
-      (c) => c.estado === 'EMITIDO',
-    ),
+    (this.certificadosEstado()?.certificados ?? []).some((c) => c.estado === 'EMITIDO'),
   );
 
   /** Nombre completo para la navbar. */
@@ -245,8 +231,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   chatAbierto = signal(false);
   errorChat = signal<string | null>(null);
 
-  private readonly chatScroll =
-    viewChild<ElementRef<HTMLDivElement>>('chatScroll');
+  private readonly chatScroll = viewChild<ElementRef<HTMLDivElement>>('chatScroll');
   private ultimoConteoMensajes = 0;
 
   // --- Sesiones, actividades y evidencias (Semana 6) ---
@@ -257,10 +242,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   sesionForm = this.fb.group({
     titulo: ['', Validators.required],
     fechaHora: ['', Validators.required],
-    enlaceVirtual: [
-      '',
-      [Validators.required, Validators.pattern(/^https?:\/\/.+/i)],
-    ],
+    enlaceVirtual: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/i)]],
   });
   actividadForm = this.fb.group({
     titulo: ['', Validators.required],
@@ -270,8 +252,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   evidenciaForm = this.fb.group({
     tipo: [''],
     sesionId: this.fb.control<number | null>(null),
+    enlaceUrl: [''],
   });
   archivoSeleccionado = signal<File | null>(null);
+  /** Enlace o archivo: nunca las dos cosas a la vez. */
+  readonly modoEvidencia = signal<'ARCHIVO' | 'ENLACE'>('ARCHIVO');
 
   // --- Reporte de clase, evaluación final y cierre (Semana 7) ---
   reportesClase = signal<ReporteClase[]>([]);
@@ -381,9 +366,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     const sinReporte = this.sesiones().filter(
       (s) => s.estado !== 'CANCELADA' && !confirmados.has(s.id),
     ).length;
-    const programadas = this.sesiones().filter(
-      (s) => s.estado === 'PROGRAMADA',
-    ).length;
+    const programadas = this.sesiones().filter((s) => s.estado === 'PROGRAMADA').length;
 
     const avisos: PendienteUi[] = [];
     if (sinReporte > 0) {
@@ -485,9 +468,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         this.enviandoMensaje.set(false);
         // El error se muestra dentro del chat: la alerta de la página queda
         // tapada por el propio modal.
-        this.errorChat.set(
-          extraerMensajeError(err, 'Error al enviar el mensaje'),
-        );
+        this.errorChat.set(extraerMensajeError(err, 'Error al enviar el mensaje'));
       },
     });
   }
@@ -516,9 +497,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargando.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'No se pudo cargar el proyecto'),
-        );
+        this.error.set(extraerMensajeError(err, 'No se pudo cargar el proyecto'));
       },
     });
 
@@ -562,17 +541,16 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     }
     return {
       texto:
-        hechas === 0
-          ? 'Nadie ha confirmado todavía'
-          : `Faltan ${total - hechas} por confirmar`,
+        hechas === 0 ? 'Nadie ha confirmado todavía' : `Faltan ${total - hechas} por confirmar`,
       tono: 'aviso',
     };
   }
 
   /** El estado de las firmas de un reporte de clase. */
-  estadoFirmasReporte(reporte: {
-    participaciones?: { confirmadoEn: string | null }[];
-  }): { texto: string; tono: 'ok' | 'aviso' | 'error' | 'neutro' } {
+  estadoFirmasReporte(reporte: { participaciones?: { confirmadoEn: string | null }[] }): {
+    texto: string;
+    tono: 'ok' | 'aviso' | 'error' | 'neutro';
+  } {
     const participaciones = reporte.participaciones ?? [];
     const mia = this.miParticipacionReporte(
       reporte as Parameters<typeof this.miParticipacionReporte>[0],
@@ -596,9 +574,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoLista.set(false);
-        this.errorLista.set(
-          extraerMensajeError(err, 'No se pudo cargar la lista de alumnos'),
-        );
+        this.errorLista.set(extraerMensajeError(err, 'No se pudo cargar la lista de alumnos'));
       },
     });
   }
@@ -621,9 +597,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.leyendoLista.set(false);
         entrada.value = '';
-        this.errorLista.set(
-          extraerMensajeError(err, 'No se pudo leer el archivo'),
-        );
+        this.errorLista.set(extraerMensajeError(err, 'No se pudo leer el archivo'));
       },
     });
   }
@@ -643,27 +617,19 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.leyendoLista.set(false);
-        this.errorLista.set(
-          extraerMensajeError(err, 'No se pudo leer la lista'),
-        );
+        this.errorLista.set(extraerMensajeError(err, 'No se pudo leer la lista'));
       },
     });
   }
 
   /** Corrige una celda de la vista previa antes de guardar. */
-  editarFila(
-    indice: number,
-    campo: 'nombre' | 'matricula' | 'correo',
-    evento: Event,
-  ): void {
+  editarFila(indice: number, campo: 'nombre' | 'matricula' | 'correo', evento: Event): void {
     const valor = (evento.target as HTMLInputElement).value;
     this.vistaPrevia.update((vista) => {
       if (!vista) return vista;
       return {
         ...vista,
-        filas: vista.filas.map((fila, i) =>
-          i === indice ? { ...fila, [campo]: valor } : fila,
-        ),
+        filas: vista.filas.map((fila, i) => (i === indice ? { ...fila, [campo]: valor } : fila)),
       };
     });
   }
@@ -671,9 +637,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   /** Saca una fila de la vista previa (no toca lo que ya está guardado). */
   quitarFila(indice: number): void {
     this.vistaPrevia.update((vista) =>
-      vista
-        ? { ...vista, filas: vista.filas.filter((_, i) => i !== indice) }
-        : vista,
+      vista ? { ...vista, filas: vista.filas.filter((_, i) => i !== indice) } : vista,
     );
   }
 
@@ -709,17 +673,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           this.textoPegado.set('');
           this.modoReemplazo.set(false);
           this.guardandoLista.set(false);
-          this.avisoLista.set(
-            `Lista guardada: ${lista.resumen.total} alumno(s).`,
-          );
+          this.avisoLista.set(`Lista guardada: ${lista.resumen.total} alumno(s).`);
           // Los certificados salen de esta lista: la sección se recalcula.
           this.cargarCertificados();
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoLista.set(false);
-          this.errorLista.set(
-            extraerMensajeError(err, 'No se pudo guardar la lista'),
-          );
+          this.errorLista.set(extraerMensajeError(err, 'No se pudo guardar la lista'));
         },
       });
   }
@@ -742,9 +702,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           this.cargarCertificados();
         },
         error: (err: HttpErrorResponse) =>
-          this.errorLista.set(
-            extraerMensajeError(err, 'No se pudo actualizar al alumno'),
-          ),
+          this.errorLista.set(extraerMensajeError(err, 'No se pudo actualizar al alumno')),
       });
   }
 
@@ -757,9 +715,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         this.cargarCertificados();
       },
       error: (err: HttpErrorResponse) =>
-        this.errorLista.set(
-          extraerMensajeError(err, 'No se pudo quitar al alumno'),
-        ),
+        this.errorLista.set(extraerMensajeError(err, 'No se pudo quitar al alumno')),
     });
   }
 
@@ -801,25 +757,23 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.avisoCertificados.set(null);
     this.certificadosOmitidos.set([]);
 
-    this.certificadosService
-      .emitir(this.proyectoId, { alumnoId, reemitir })
-      .subscribe({
-        next: (resultado) => {
-          this.emitiendoCertificados.set(false);
-          this.avisoCertificados.set(resultado.mensaje);
-          this.certificadosOmitidos.set(resultado.omitidos);
-          if (resultado.avisos.length > 0) {
-            this.errorCertificados.set(resultado.avisos.join(' '));
-          }
-          this.cargarCertificados();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.emitiendoCertificados.set(false);
-          this.errorCertificados.set(
-            extraerMensajeError(err, 'No se pudieron emitir los certificados'),
-          );
-        },
-      });
+    this.certificadosService.emitir(this.proyectoId, { alumnoId, reemitir }).subscribe({
+      next: (resultado) => {
+        this.emitiendoCertificados.set(false);
+        this.avisoCertificados.set(resultado.mensaje);
+        this.certificadosOmitidos.set(resultado.omitidos);
+        if (resultado.avisos.length > 0) {
+          this.errorCertificados.set(resultado.avisos.join(' '));
+        }
+        this.cargarCertificados();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.emitiendoCertificados.set(false);
+        this.errorCertificados.set(
+          extraerMensajeError(err, 'No se pudieron emitir los certificados'),
+        );
+      },
+    });
   }
 
   /** Descarga el PDF de un certificado. */
@@ -827,21 +781,17 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     if (this.descargandoCertificado() !== null) return;
     this.descargandoCertificado.set(certificado.id);
     this.errorCertificados.set(null);
-    this.certificadosService
-      .descargarPdf(this.proyectoId, certificado.id)
-      .subscribe({
-        next: (blob) => {
-          this.descargandoCertificado.set(null);
-          descargarBlob(blob, `certificado-${certificado.folio}.pdf`);
-          this.avisoCertificados.set(`Certificado ${certificado.folio} descargado`);
-        },
-        error: (err: HttpErrorResponse) => {
-          this.descargandoCertificado.set(null);
-          this.errorCertificados.set(
-            extraerMensajeError(err, 'No se pudo descargar el certificado'),
-          );
-        },
-      });
+    this.certificadosService.descargarPdf(this.proyectoId, certificado.id).subscribe({
+      next: (blob) => {
+        this.descargandoCertificado.set(null);
+        descargarBlob(blob, `certificado-${certificado.folio}.pdf`);
+        this.avisoCertificados.set(`Certificado ${certificado.folio} descargado`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoCertificado.set(null);
+        this.errorCertificados.set(extraerMensajeError(err, 'No se pudo descargar el certificado'));
+      },
+    });
   }
 
   /** Descarga todos los certificados vigentes en un ZIP. */
@@ -857,9 +807,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.descargandoZip.set(false);
-        this.errorCertificados.set(
-          extraerMensajeError(err, 'No se pudo descargar el ZIP'),
-        );
+        this.errorCertificados.set(extraerMensajeError(err, 'No se pudo descargar el ZIP'));
       },
     });
   }
@@ -887,21 +835,17 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.errorCertificados.set(null);
     this.avisoCertificados.set(null);
 
-    this.certificadosService
-      .enviarUno(this.proyectoId, certificado.id, reenviar)
-      .subscribe({
-        next: (resultado) => {
-          this.enviandoCertificado.set(null);
-          this.mostrarResultadoEnvio(resultado);
-          this.cargarCertificados();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.enviandoCertificado.set(null);
-          this.errorCertificados.set(
-            extraerMensajeError(err, 'No se pudo enviar el certificado'),
-          );
-        },
-      });
+    this.certificadosService.enviarUno(this.proyectoId, certificado.id, reenviar).subscribe({
+      next: (resultado) => {
+        this.enviandoCertificado.set(null);
+        this.mostrarResultadoEnvio(resultado);
+        this.cargarCertificados();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoCertificado.set(null);
+        this.errorCertificados.set(extraerMensajeError(err, 'No se pudo enviar el certificado'));
+      },
+    });
   }
 
   /**
@@ -949,10 +893,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
    * resultado final en pantalla: cuántos salieron y cuántos fallaron con su
    * motivo. El docente puede cerrar la página: la cola sigue en el servidor.
    */
-  private seguirLote(
-    loteId: string,
-    contexto: 'certificados' | 'calendario',
-  ): void {
+  private seguirLote(loteId: string, contexto: 'certificados' | 'calendario'): void {
     this.loteSub?.unsubscribe();
     this.loteEnvio.set(loteId);
     this.progresoEnvio.set(null);
@@ -978,10 +919,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           }
         },
         error: (err: HttpErrorResponse) => {
-          const mensaje = extraerMensajeError(
-            err,
-            'No se pudo consultar el progreso del envío',
-          );
+          const mensaje = extraerMensajeError(err, 'No se pudo consultar el progreso del envío');
           if (contexto === 'certificados') {
             this.errorCertificados.set(mensaje);
           } else {
@@ -991,10 +929,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       });
   }
 
-  private resumenDeLote(
-    progreso: ProgresoLote,
-    contexto: 'certificados' | 'calendario',
-  ): string {
+  private resumenDeLote(progreso: ProgresoLote, contexto: 'certificados' | 'calendario'): string {
     const cosa =
       contexto === 'certificados'
         ? progreso.total === 1
@@ -1048,22 +983,18 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
     this.anulandoCertificado.set(true);
     this.errorAnulacion.set(null);
-    this.certificadosService
-      .anular(this.proyectoId, certificado.id, motivo)
-      .subscribe({
-        next: (r) => {
-          this.anulandoCertificado.set(false);
-          this.cerrarAnulacion();
-          this.avisoCertificados.set(r.mensaje);
-          this.cargarCertificados();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.anulandoCertificado.set(false);
-          this.errorAnulacion.set(
-            extraerMensajeError(err, 'No se pudo anular el certificado'),
-          );
-        },
-      });
+    this.certificadosService.anular(this.proyectoId, certificado.id, motivo).subscribe({
+      next: (r) => {
+        this.anulandoCertificado.set(false);
+        this.cerrarAnulacion();
+        this.avisoCertificados.set(r.mensaje);
+        this.cargarCertificados();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.anulandoCertificado.set(false);
+        this.errorAnulacion.set(extraerMensajeError(err, 'No se pudo anular el certificado'));
+      },
+    });
   }
 
   // --- Enlace de verificación ---
@@ -1080,18 +1011,14 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     const portapapeles = navigator.clipboard;
     if (!portapapeles?.writeText) {
       this.enlaceCopiado.set(certificado.folio);
-      this.avisoCertificados.set(
-        `Copia el enlace a mano: ${enlace}`,
-      );
+      this.avisoCertificados.set(`Copia el enlace a mano: ${enlace}`);
       return;
     }
 
     portapapeles.writeText(enlace).then(
       () => {
         this.enlaceCopiado.set(certificado.folio);
-        this.avisoCertificados.set(
-          `Enlace de verificación del ${certificado.folio} copiado.`,
-        );
+        this.avisoCertificados.set(`Enlace de verificación del ${certificado.folio} copiado.`);
       },
       () => {
         this.enlaceCopiado.set(certificado.folio);
@@ -1127,27 +1054,23 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
     this.guardandoCorreo.set(alumnoId);
     this.errorLista.set(null);
-    this.listasService
-      .editarAlumno(this.proyectoId, alumnoId, { correo })
-      .subscribe({
-        next: (lista) => {
-          this.guardandoCorreo.set(null);
-          this.listaAlumnos.set(lista);
-          this.correosNuevos.update((mapa) => {
-            const copia = { ...mapa };
-            delete copia[alumnoId];
-            return copia;
-          });
-          this.avisoLista.set('Correo guardado: ya se le puede enviar el certificado.');
-          this.cargarCertificados();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.guardandoCorreo.set(null);
-          this.errorLista.set(
-            extraerMensajeError(err, 'No se pudo guardar el correo'),
-          );
-        },
-      });
+    this.listasService.editarAlumno(this.proyectoId, alumnoId, { correo }).subscribe({
+      next: (lista) => {
+        this.guardandoCorreo.set(null);
+        this.listaAlumnos.set(lista);
+        this.correosNuevos.update((mapa) => {
+          const copia = { ...mapa };
+          delete copia[alumnoId];
+          return copia;
+        });
+        this.avisoLista.set('Correo guardado: ya se le puede enviar el certificado.');
+        this.cargarCertificados();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoCorreo.set(null);
+        this.errorLista.set(extraerMensajeError(err, 'No se pudo guardar el correo'));
+      },
+    });
   }
 
   /** Etiqueta legible del estado de un certificado. */
@@ -1161,9 +1084,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     if (this.guardandoProyecto() || this.proyectoForm.invalid) return;
     const v = this.proyectoForm.value;
     if (v.fechaInicio && v.fechaFin && v.fechaFin < v.fechaInicio) {
-      this.error.set(
-        'La fecha de fin no puede ser anterior a la fecha de inicio',
-      );
+      this.error.set('La fecha de fin no puede ser anterior a la fecha de inicio');
       return;
     }
     this.guardandoProyecto.set(true);
@@ -1185,9 +1106,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoProyecto.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al actualizar el proyecto'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al actualizar el proyecto'));
         },
       });
   }
@@ -1229,27 +1148,21 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   quitarDocente(proyectoDocenteId: number, nombre: string): void {
-    this.confirmarAccion(
-      'Quitar docente',
-      `¿Quitar a ${nombre} del proyecto?`,
-      () =>
-        this.proyectos
-          .quitarDocente(this.proyectoId, proyectoDocenteId)
-          .subscribe({
-            next: () => {
-              this.ok.set('Docente retirado del proyecto');
-              this.cargar();
-            },
-            error: (err: HttpErrorResponse) =>
-              this.error.set(extraerMensajeError(err, 'Error al quitar docente')),
-          }),
+    this.confirmarAccion('Quitar docente', `¿Quitar a ${nombre} del proyecto?`, () =>
+      this.proyectos.quitarDocente(this.proyectoId, proyectoDocenteId).subscribe({
+        next: () => {
+          this.ok.set('Docente retirado del proyecto');
+          this.cargar();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.error.set(extraerMensajeError(err, 'Error al quitar docente')),
+      }),
     );
   }
 
   private rolDeInstitucion(): string {
     const p = this.proyecto();
-    const institucionOrigen =
-      p?.solicitud.asignacionOrigen.docenteInstitucion.institucion.id;
+    const institucionOrigen = p?.solicitud.asignacionOrigen.docenteInstitucion.institucion.id;
     return this.miInstitucionId() === institucionOrigen ? 'ORIGEN' : 'DESTINO';
   }
 
@@ -1278,9 +1191,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoPlanificacion.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al guardar la planificación'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al guardar la planificación'));
         },
       });
   }
@@ -1299,9 +1210,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.confirmando.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'Error al confirmar la participación'),
-        );
+        this.error.set(extraerMensajeError(err, 'Error al confirmar la participación'));
       },
     });
   }
@@ -1312,8 +1221,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     return (
       p.planificacion.participaciones.find(
         (x) =>
-          x.proyectoDocente.asignacionDocente.docenteInstitucion.docente
-            .usuario.id === this.usuario?.id,
+          x.proyectoDocente.asignacionDocente.docenteInstitucion.docente.usuario.id ===
+          this.usuario?.id,
       ) ?? null
     );
   }
@@ -1389,9 +1298,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       this.proyectos.eliminarSesion(this.proyectoId, id).subscribe({
         next: () => this.cargarSesiones(),
         error: (err: HttpErrorResponse) =>
-          this.error.set(
-            extraerMensajeError(err, 'Error al eliminar la sesión'),
-          ),
+          this.error.set(extraerMensajeError(err, 'Error al eliminar la sesión')),
       }),
     );
   }
@@ -1426,9 +1333,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoActividad.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al crear la actividad'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al crear la actividad'));
         },
       });
   }
@@ -1438,9 +1343,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       this.proyectos.eliminarActividad(this.proyectoId, id).subscribe({
         next: () => this.cargarActividades(),
         error: (err: HttpErrorResponse) =>
-          this.error.set(
-            extraerMensajeError(err, 'Error al eliminar la actividad'),
-          ),
+          this.error.set(extraerMensajeError(err, 'Error al eliminar la actividad')),
       }),
     );
   }
@@ -1467,14 +1370,37 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.archivoSeleccionado.set(archivo);
   }
 
+  cambiarModoEvidencia(modo: 'ARCHIVO' | 'ENLACE'): void {
+    this.modoEvidencia.set(modo);
+    if (modo === 'ARCHIVO') {
+      this.evidenciaForm.controls.enlaceUrl.setValue('');
+    } else {
+      this.archivoSeleccionado.set(null);
+    }
+  }
+
+  puedeGuardarEvidencia(): boolean {
+    if (this.subiendoEvidencia()) return false;
+    if (this.modoEvidencia() === 'ARCHIVO') {
+      return this.archivoSeleccionado() !== null;
+    }
+    return (this.evidenciaForm.controls.enlaceUrl.value ?? '').trim().length > 0;
+  }
+
   crearEvidencia(): void {
-    const archivo = this.archivoSeleccionado();
-    if (!archivo) {
+    const v = this.evidenciaForm.value;
+    const enlace = (v.enlaceUrl ?? '').trim();
+    const archivo = this.modoEvidencia() === 'ARCHIVO' ? this.archivoSeleccionado() : null;
+    if (this.modoEvidencia() === 'ARCHIVO' && !archivo) {
       this.error.set('Selecciona un archivo de evidencia');
       return;
     }
+    if (this.modoEvidencia() === 'ENLACE' && !enlace) {
+      this.error.set('Pega un enlace de evidencia');
+      return;
+    }
     if (this.subiendoEvidencia()) return;
-    const v = this.evidenciaForm.value;
+
     this.subiendoEvidencia.set(true);
     this.error.set(null);
     this.proyectos
@@ -1483,6 +1409,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         archivo,
         v.tipo ?? '',
         v.sesionId ?? undefined,
+        this.modoEvidencia() === 'ENLACE' ? enlace : undefined,
       )
       .subscribe({
         next: () => {
@@ -1494,20 +1421,37 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.subiendoEvidencia.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al registrar la evidencia'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al registrar la evidencia'));
         },
       });
   }
 
   // En desarrollo (frontend en :4200) el archivo vive en el backend (:3000).
-  urlArchivo(url: string): string {
-    return urlDeArchivo(url) ?? '';
+  urlArchivo(url: string | null): string {
+    return url ? (urlDeArchivo(url) ?? '') : '';
   }
 
-  nombreArchivo(url: string): string {
-    return url.split('/').pop() ?? url;
+  nombreArchivo(url: string | null): string {
+    return url ? (url.split('/').pop() ?? url) : '';
+  }
+
+  /** Etiqueta legible del proveedor del enlace (sin hacer peticiones). */
+  proveedorEnlace(url: string | null): string {
+    if (!url) return '';
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      if (host.endsWith('youtube.com') || host.endsWith('youtu.be')) {
+        return 'YouTube';
+      }
+      if (host.endsWith('vimeo.com')) return 'Vimeo';
+      if (host === 'drive.google.com') return 'Google Drive';
+      if (host === '1drv.ms' || host.endsWith('onedrive.live.com')) {
+        return 'OneDrive';
+      }
+    } catch {
+      // Un enlace viejo o inválido se muestra sin proveedor.
+    }
+    return 'Enlace';
   }
 
   tituloSesion(sesionId: number | null): string {
@@ -1522,10 +1466,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       next: (r) => this.reportesClase.set(r),
       error: (err: HttpErrorResponse) => {
         this.reportesClase.set([]);
-        this.avisarErrorCarga(
-          err,
-          'No se pudieron cargar los reportes de clase',
-        );
+        this.avisarErrorCarga(err, 'No se pudieron cargar los reportes de clase');
       },
     });
   }
@@ -1541,9 +1482,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   private avisarErrorCarga(err: HttpErrorResponse, contexto: string): void {
-    this.error.set(
-      `${contexto}: ${extraerMensajeError(err, 'error de conexión')}`,
-    );
+    this.error.set(`${contexto}: ${extraerMensajeError(err, 'error de conexión')}`);
   }
 
   reporteDeSesion(sesionId: number): ReporteClase | null {
@@ -1554,8 +1493,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     return (
       reporte.participaciones.find(
         (p) =>
-          p.proyectoDocente.asignacionDocente.docenteInstitucion.docente.usuario
-            .id === this.usuario?.id,
+          p.proyectoDocente.asignacionDocente.docenteInstitucion.docente.usuario.id ===
+          this.usuario?.id,
       ) ?? null
     );
   }
@@ -1578,11 +1517,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   guardarReporteClase(): void {
     const sesionId = this.sesionReporteAbierta();
-    if (
-      sesionId == null ||
-      this.guardandoReporteClase() ||
-      this.reporteClaseForm.invalid
-    ) {
+    if (sesionId == null || this.guardandoReporteClase() || this.reporteClaseForm.invalid) {
       return;
     }
     const v = this.reporteClaseForm.value;
@@ -1604,9 +1539,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoReporteClase.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al guardar el reporte de clase'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al guardar el reporte de clase'));
         },
       });
   }
@@ -1629,22 +1562,18 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     const observaciones = this.observacionesForm.value.observaciones ?? '';
     this.confirmandoReporteClase.set(true);
     this.error.set(null);
-    this.proyectos
-      .confirmarReporteClase(this.proyectoId, reporte.id, observaciones)
-      .subscribe({
-        next: () => {
-          this.confirmandoReporteClase.set(false);
-          this.reporteAConfirmar.set(null);
-          this.ok.set('Participación confirmada en el reporte');
-          this.cargarReportesClase();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.confirmandoReporteClase.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al confirmar el reporte'),
-          );
-        },
-      });
+    this.proyectos.confirmarReporteClase(this.proyectoId, reporte.id, observaciones).subscribe({
+      next: () => {
+        this.confirmandoReporteClase.set(false);
+        this.reporteAConfirmar.set(null);
+        this.ok.set('Participación confirmada en el reporte');
+        this.cargarReportesClase();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.confirmandoReporteClase.set(false);
+        this.error.set(extraerMensajeError(err, 'Error al confirmar el reporte'));
+      },
+    });
   }
 
   crearEvaluacion(): void {
@@ -1671,9 +1600,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.guardandoEvaluacion.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'Error al registrar la evaluación'),
-          );
+          this.error.set(extraerMensajeError(err, 'Error al registrar la evaluación'));
         },
       });
   }
@@ -1691,9 +1618,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.descargandoResumenPdf.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'Error al descargar el resumen PDF'),
-        );
+        this.error.set(extraerMensajeError(err, 'Error al descargar el resumen PDF'));
       },
     });
   }
@@ -1718,17 +1643,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         }
         descargarBlob(
           blob,
-          this.nombreArchivoCalendario(
-            respuesta.headers.get('Content-Disposition'),
-          ),
+          this.nombreArchivoCalendario(respuesta.headers.get('Content-Disposition')),
         );
         this.ok.set('Calendario descargado: ábrelo para añadirlo');
       },
       error: (err: HttpErrorResponse) => {
         this.descargandoCalendario.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'Error al descargar el calendario'),
-        );
+        this.error.set(extraerMensajeError(err, 'Error al descargar el calendario'));
       },
     });
   }
@@ -1786,9 +1707,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoCalendario.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'No se pudo enviar el calendario por correo'),
-        );
+        this.error.set(extraerMensajeError(err, 'No se pudo enviar el calendario por correo'));
       },
     });
   }
@@ -1814,9 +1733,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           },
           error: (err: HttpErrorResponse) => {
             this.cerrando.set(false);
-            this.error.set(
-              extraerMensajeError(err, 'Error al cerrar la clase espejo'),
-            );
+            this.error.set(extraerMensajeError(err, 'Error al cerrar la clase espejo'));
           },
         });
       },
@@ -1855,11 +1772,17 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   // --- Helpers de presentación ---
 
   nombreDocente(item: {
-    asignacionDocente: { docenteInstitucion: { docente: { usuario: {
-      nombres: string;
-      apellidoPaterno: string;
-      apellidoMaterno: string;
-    } } } };
+    asignacionDocente: {
+      docenteInstitucion: {
+        docente: {
+          usuario: {
+            nombres: string;
+            apellidoPaterno: string;
+            apellidoMaterno: string;
+          };
+        };
+      };
+    };
   }): string {
     const u = item.asignacionDocente.docenteInstitucion.docente.usuario;
     return `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}`;
@@ -1871,10 +1794,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   }
 
   esMio(m: Mensaje): boolean {
-    return (
-      m.autor.asignacionDocente.docenteInstitucion.docente.usuario.id ===
-      this.usuario?.id
-    );
+    return m.autor.asignacionDocente.docenteInstitucion.docente.usuario.id === this.usuario?.id;
   }
 
   iniciales(m: Mensaje): string {

@@ -147,7 +147,8 @@ export interface Actividad {
 export interface Evidencia {
   id: number;
   tipo: string;
-  archivoUrl: string;
+  archivoUrl: string | null;
+  enlaceUrl: string | null;
   sesionId: number | null;
   registradaEn: string;
 }

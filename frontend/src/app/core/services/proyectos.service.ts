@@ -67,37 +67,23 @@ export class ProyectosService {
    * adjunto) y devuelve a quién se envió y a quién no, para poder enseñarlo.
    */
   enviarCalendario(id: number): Observable<EnvioCalendario> {
-    return this.http.post<EnvioCalendario>(
-      `${API_URL}/proyectos/${id}/calendario/enviar`,
-      {},
-    );
+    return this.http.post<EnvioCalendario>(`${API_URL}/proyectos/${id}/calendario/enviar`, {});
   }
 
   actualizar(id: number, dto: UpdateProyectoDto): Observable<Proyecto> {
     return this.http.patch<Proyecto>(`${API_URL}/proyectos/${id}`, dto);
   }
 
-  agregarDocente(
-    id: number,
-    dto: CreateProyectoDocenteDto,
-  ): Observable<Proyecto> {
+  agregarDocente(id: number, dto: CreateProyectoDocenteDto): Observable<Proyecto> {
     return this.http.post<Proyecto>(`${API_URL}/proyectos/${id}/docentes`, dto);
   }
 
   quitarDocente(id: number, proyectoDocenteId: number): Observable<Proyecto> {
-    return this.http.delete<Proyecto>(
-      `${API_URL}/proyectos/${id}/docentes/${proyectoDocenteId}`,
-    );
+    return this.http.delete<Proyecto>(`${API_URL}/proyectos/${id}/docentes/${proyectoDocenteId}`);
   }
 
-  guardarPlanificacion(
-    id: number,
-    dto: SavePlanificacionDto,
-  ): Observable<PlanificacionConjunta> {
-    return this.http.put<PlanificacionConjunta>(
-      `${API_URL}/proyectos/${id}/planificacion`,
-      dto,
-    );
+  guardarPlanificacion(id: number, dto: SavePlanificacionDto): Observable<PlanificacionConjunta> {
+    return this.http.put<PlanificacionConjunta>(`${API_URL}/proyectos/${id}/planificacion`, dto);
   }
 
   confirmarParticipacion(id: number): Observable<PlanificacionConjunta> {
@@ -107,14 +93,8 @@ export class ProyectosService {
     );
   }
 
-  generarReporte(
-    id: number,
-    dto: CreateReportePlanificacionDto,
-  ): Observable<ReportePlanificacion> {
-    return this.http.post<ReportePlanificacion>(
-      `${API_URL}/proyectos/${id}/reportes`,
-      dto,
-    );
+  generarReporte(id: number, dto: CreateReportePlanificacionDto): Observable<ReportePlanificacion> {
+    return this.http.post<ReportePlanificacion>(`${API_URL}/proyectos/${id}/reportes`, dto);
   }
 
   listarMensajes(id: number): Observable<Mensaje[]> {
@@ -139,9 +119,7 @@ export class ProyectosService {
   }
 
   eliminarSesion(id: number, sesionId: number): Observable<{ mensaje: string }> {
-    return this.http.delete<{ mensaje: string }>(
-      `${API_URL}/proyectos/${id}/sesiones/${sesionId}`,
-    );
+    return this.http.delete<{ mensaje: string }>(`${API_URL}/proyectos/${id}/sesiones/${sesionId}`);
   }
 
   listarActividades(id: number): Observable<Actividad[]> {
@@ -152,16 +130,10 @@ export class ProyectosService {
     id: number,
     dto: { titulo: string; instrucciones: string; fechaLimite: string },
   ): Observable<Actividad> {
-    return this.http.post<Actividad>(
-      `${API_URL}/proyectos/${id}/actividades`,
-      dto,
-    );
+    return this.http.post<Actividad>(`${API_URL}/proyectos/${id}/actividades`, dto);
   }
 
-  eliminarActividad(
-    id: number,
-    actividadId: number,
-  ): Observable<{ mensaje: string }> {
+  eliminarActividad(id: number, actividadId: number): Observable<{ mensaje: string }> {
     return this.http.delete<{ mensaje: string }>(
       `${API_URL}/proyectos/${id}/actividades/${actividadId}`,
     );
@@ -173,30 +145,31 @@ export class ProyectosService {
 
   crearEvidencia(
     id: number,
-    archivo: File,
+    archivo: File | null,
     tipo: string,
     sesionId?: number,
+    enlaceUrl?: string,
   ): Observable<Evidencia> {
     const formData = new FormData();
-    formData.append('archivo', archivo, archivo.name);
+    if (archivo) {
+      formData.append('archivo', archivo, archivo.name);
+    }
     if (tipo) {
       formData.append('tipo', tipo);
     }
     if (sesionId != null) {
       formData.append('sesionId', String(sesionId));
     }
-    return this.http.post<Evidencia>(
-      `${API_URL}/proyectos/${id}/evidencias`,
-      formData,
-    );
+    if (enlaceUrl) {
+      formData.append('enlaceUrl', enlaceUrl);
+    }
+    return this.http.post<Evidencia>(`${API_URL}/proyectos/${id}/evidencias`, formData);
   }
 
   // --- Reporte de clase conjunta (Semana 7) ---
 
   listarReportesClase(id: number): Observable<ReporteClase[]> {
-    return this.http.get<ReporteClase[]>(
-      `${API_URL}/proyectos/${id}/reportes-clase`,
-    );
+    return this.http.get<ReporteClase[]>(`${API_URL}/proyectos/${id}/reportes-clase`);
   }
 
   guardarReporteClase(
@@ -224,19 +197,11 @@ export class ProyectosService {
   // --- Evaluación final y cierre (Semana 7) ---
 
   listarEvaluaciones(id: number): Observable<Evaluacion[]> {
-    return this.http.get<Evaluacion[]>(
-      `${API_URL}/proyectos/${id}/evaluaciones`,
-    );
+    return this.http.get<Evaluacion[]>(`${API_URL}/proyectos/${id}/evaluaciones`);
   }
 
-  crearEvaluacion(
-    id: number,
-    dto: CreateEvaluacionDto,
-  ): Observable<Evaluacion> {
-    return this.http.post<Evaluacion>(
-      `${API_URL}/proyectos/${id}/evaluaciones`,
-      dto,
-    );
+  crearEvaluacion(id: number, dto: CreateEvaluacionDto): Observable<Evaluacion> {
+    return this.http.post<Evaluacion>(`${API_URL}/proyectos/${id}/evaluaciones`, dto);
   }
 
   cerrarProyecto(id: number): Observable<Proyecto> {

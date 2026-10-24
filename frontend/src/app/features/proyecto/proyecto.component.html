@@ -4,7 +4,6 @@
   [homeRoute]="panelUrl"
   (logout)="logout()"
 >
-
   <main class="content">
     <p>
       <a class="link-button" [routerLink]="panelUrl">← Volver al panel</a>
@@ -73,7 +72,9 @@
             <h1>{{ p.solicitud.titulo }}</h1>
             <p class="muted">Proyecto de clase espejo #{{ p.id }}</p>
             <p class="welcome-meta">
-              <strong>{{ p.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre }}</strong>
+              <strong>{{
+                p.solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre
+              }}</strong>
               <span>→</span>
               <strong>{{ p.solicitud.institucionDestino.nombre }}</strong>
             </p>
@@ -116,11 +117,7 @@
             (click)="descargarResumenPdf()"
             [disabled]="descargandoResumenPdf()"
           >
-            {{
-              descargandoResumenPdf()
-                ? 'Generando PDF…'
-                : 'Descargar resumen (PDF)'
-            }}
+            {{ descargandoResumenPdf() ? 'Generando PDF…' : 'Descargar resumen (PDF)' }}
           </button>
 
           <!-- Solo para los docentes participantes (el agente consulta). La
@@ -142,9 +139,7 @@
               "
             >
               {{
-                enviandoCalendario()
-                  ? 'Enviando el calendario…'
-                  : 'Enviar el calendario por correo'
+                enviandoCalendario() ? 'Enviando el calendario…' : 'Enviar el calendario por correo'
               }}
             </button>
 
@@ -176,11 +171,9 @@
                 {{ envio.enviados.length }} de {{ envio.total }}
                 {{ envio.total === 1 ? 'correo enviado' : 'correos enviados' }}
               </strong>
-              · {{ envio.sesiones }}
-              {{ envio.sesiones === 1 ? 'sesión' : 'sesiones' }} en
-              <code>{{ envio.nombreArchivo }}</code> · los recordatorios (1 hora,
-              30 y 15 minutos) los pone el calendario de cada quien, no la
-              plataforma.
+              · {{ envio.sesiones }} {{ envio.sesiones === 1 ? 'sesión' : 'sesiones' }} en
+              <code>{{ envio.nombreArchivo }}</code> · los recordatorios (1 hora, 30 y 15 minutos)
+              los pone el calendario de cada quien, no la plataforma.
               <button
                 type="button"
                 class="btn btn-ghost"
@@ -208,14 +201,12 @@
                 <strong>No se pudo enviar a:</strong>
                 <ul>
                   @for (fallo of envio.fallidos; track fallo.correo) {
-                    <li>
-                      {{ fallo.nombre }} ({{ fallo.correo }}): {{ fallo.motivo }}
-                    </li>
+                    <li>{{ fallo.nombre }} ({{ fallo.correo }}): {{ fallo.motivo }}</li>
                   }
                 </ul>
                 <p class="text-sm">
-                  El archivo es el mismo: puedes descargarlo y mandarlo tú
-                  mientras se arregla el correo.
+                  El archivo es el mismo: puedes descargarlo y mandarlo tú mientras se arregla el
+                  correo.
                 </p>
               </div>
             }
@@ -225,9 +216,9 @@
 
       @if (esAgente) {
         <div class="alert alert-info" role="status">
-          Vista de consulta: puedes revisar la organización de la clase conjunta y
-          gestionar los docentes de tu institución. La planificación, las sesiones,
-          las actividades y las evidencias las registran los docentes participantes.
+          Vista de consulta: puedes revisar la organización de la clase conjunta y gestionar los
+          docentes de tu institución. La planificación, las sesiones, las actividades y las
+          evidencias las registran los docentes participantes.
         </div>
       }
 
@@ -272,1143 +263,1546 @@
       }
 
       <div class="proyecto-cols">
+        @if (esDocente && proyectoAbierto()) {
+          <section class="card">
+            <div class="card-head">
+              <div class="card-head-title">
+                <span class="card-head-icon" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="4" y1="21" x2="4" y2="14" />
+                    <line x1="4" y1="10" x2="4" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12" y2="3" />
+                    <line x1="20" y1="21" x2="20" y2="16" />
+                    <line x1="20" y1="12" x2="20" y2="3" />
+                    <line x1="1" y1="14" x2="7" y2="14" />
+                    <line x1="9" y1="8" x2="15" y2="8" />
+                    <line x1="17" y1="16" x2="23" y2="16" />
+                  </svg>
+                </span>
+                <h2 id="datos">Datos del proyecto</h2>
+              </div>
+            </div>
+            <form [formGroup]="proyectoForm" (ngSubmit)="guardarProyecto()" novalidate>
+              <div class="row">
+                <div class="col form-field">
+                  <label for="p-estado">Estado</label>
+                  <select id="p-estado" formControlName="estado">
+                    <option value="EN_PLANIFICACION">En planificación</option>
+                    <option value="EN_CURSO">En curso</option>
+                  </select>
+                </div>
+                <div class="col form-field">
+                  <label for="p-plataforma">Plataforma</label>
+                  <input id="p-plataforma" type="text" formControlName="plataforma" />
+                </div>
+              </div>
+              <div class="row">
+                <div class="col form-field">
+                  <label for="p-inicio">Fecha de inicio</label>
+                  <input id="p-inicio" type="date" formControlName="fechaInicio" />
+                </div>
+                <div class="col form-field">
+                  <label for="p-fin">Fecha de fin</label>
+                  <input id="p-fin" type="date" formControlName="fechaFin" />
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="proyectoForm.invalid || guardandoProyecto()"
+              >
+                {{ guardandoProyecto() ? 'Guardando...' : 'Guardar proyecto' }}
+              </button>
+            </form>
+          </section>
+        }
 
-      @if (esDocente && proyectoAbierto()) {
         <section class="card">
           <div class="card-head">
             <div class="card-head-title">
               <span class="card-head-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
               </span>
-              <h2 id="datos">Datos del proyecto</h2>
+              <h2 id="participantes">Docentes participantes</h2>
             </div>
           </div>
-          <form [formGroup]="proyectoForm" (ngSubmit)="guardarProyecto()" novalidate>
-            <div class="row">
-              <div class="col form-field">
-                <label for="p-estado">Estado</label>
-                <select id="p-estado" formControlName="estado">
-                  <option value="EN_PLANIFICACION">En planificación</option>
-                  <option value="EN_CURSO">En curso</option>
-                </select>
-              </div>
-              <div class="col form-field">
-                <label for="p-plataforma">Plataforma</label>
-                <input id="p-plataforma" type="text" formControlName="plataforma" />
-              </div>
-            </div>
-            <div class="row">
-              <div class="col form-field">
-                <label for="p-inicio">Fecha de inicio</label>
-                <input id="p-inicio" type="date" formControlName="fechaInicio" />
-              </div>
-              <div class="col form-field">
-                <label for="p-fin">Fecha de fin</label>
-                <input id="p-fin" type="date" formControlName="fechaFin" />
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary" [disabled]="proyectoForm.invalid || guardandoProyecto()">
-              {{ guardandoProyecto() ? 'Guardando...' : 'Guardar proyecto' }}
-            </button>
-          </form>
-        </section>
-      }
 
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </span>
-            <h2 id="participantes">Docentes participantes</h2>
-          </div>
-        </div>
-
-        @if (p.docentes.length === 0) {
-          <p class="muted">Aún no hay docentes en el proyecto.</p>
-        } @else {
-          <ul class="lista">
-            @for (d of p.docentes; track d.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ nombreDocente(d) }}</strong>
-                  <span class="muted"> · {{ d.asignacionDocente.materia.nombre }} ({{ d.asignacionDocente.periodoEscolar }})</span>
-                  <div class="muted">
-                    {{ d.asignacionDocente.docenteInstitucion.institucion.nombre }}
-                  </div>
-                </div>
-                <div class="lista-acciones">
-                  <span class="estado">{{ d.rol === 'ORIGEN' ? 'Origen' : 'Destino' }}</span>
-                  @if (esAgente) {
-                    <button class="btn btn-secondary" (click)="quitarDocente(d.id, nombreDocente(d))">
-                      Quitar
-                    </button>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        }
-
-        @if (esAgente) {
-          <div class="form-inline">
-            <div class="form-field">
-              <label for="nuevo-docente">Agregar docente de mi institución</label>
-              <select id="nuevo-docente" [formControl]="asignacionSeleccionada">
-                <option [ngValue]="null" disabled>Selecciona una asignación</option>
-                @for (a of asignaciones(); track a.id) {
-                  <option [ngValue]="a.id">
-                    {{ a.docenteInstitucion.docente.usuario.nombres }}
-                    {{ a.docenteInstitucion.docente.usuario.apellidoPaterno }} ·
-                    {{ a.materia.nombre }} ({{ a.periodoEscolar }})
-                  </option>
-                }
-              </select>
-            </div>
-            <button
-              type="button"
-              class="btn btn-primary"
-              [disabled]="asignacionSeleccionada.value === null || agregandoDocente() || miInstitucionId() === null"
-              (click)="agregarDocente()"
-            >
-              {{ agregandoDocente() ? 'Agregando...' : 'Agregar' }}
-            </button>
-          </div>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-            </span>
-            <h2 id="planificacion">Planificación conjunta</h2>
-          </div>
-          @if (p.planificacion) {
-            <span class="estado">{{ estadoPlanificacionLabel(p.planificacion.estado) }}</span>
-          }
-        </div>
-
-        @if (!p.planificacion) {
-          <div class="alert alert-info">
-            @if (esDocente) {
-              Aún no existe la planificación. Completa los acuerdos para crearla.
-            } @else {
-              Aún no existe la planificación conjunta.
-            }
-          </div>
-        }
-
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="planificacionForm" (ngSubmit)="guardarPlanificacion()" novalidate>
-            <div class="form-field">
-              <label for="pl-objetivos">Objetivos acordados</label>
-              <input id="pl-objetivos" type="text" formControlName="objetivosAcordados" />
-            </div>
-            <div class="form-field">
-              <label for="pl-temas">Temas acordados</label>
-              <input id="pl-temas" type="text" formControlName="temasAcordados" />
-            </div>
-            <div class="form-field">
-              <label for="pl-metodologia">Metodología</label>
-              <input id="pl-metodologia" type="text" formControlName="metodologia" />
-            </div>
-            <div class="row">
-              <div class="col form-field">
-                <label for="pl-plataforma">Plataforma</label>
-                <input id="pl-plataforma" type="text" formControlName="plataforma" />
-              </div>
-              <div class="col form-field">
-                <label for="pl-estado">Estado de la planificación</label>
-                <select id="pl-estado" formControlName="estado">
-                  <option value="BORRADOR">Borrador</option>
-                  <option value="EN_REVISION">En revisión</option>
-                  <option value="APROBADA">Aprobada</option>
-                </select>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary" [disabled]="planificacionForm.invalid || guardandoPlanificacion()">
-              {{ guardandoPlanificacion() ? 'Guardando...' : (p.planificacion ? 'Actualizar planificación' : 'Crear planificación') }}
-            </button>
-          </form>
-        } @else if (p.planificacion) {
-          <div class="reporte">
-            <p><span class="meta-label">Objetivos acordados:</span> {{ p.planificacion.objetivosAcordados }}</p>
-            <p><span class="meta-label">Temas acordados:</span> {{ p.planificacion.temasAcordados }}</p>
-            <p><span class="meta-label">Metodología:</span> {{ p.planificacion.metodologia }}</p>
-            <p><span class="meta-label">Plataforma:</span> {{ p.planificacion.plataforma }}</p>
-          </div>
-        }
-
-        @if (p.planificacion && p.planificacion.participaciones.length > 0) {
-          <h3 class="subtitle">Confirmación de los docentes</h3>
-          <ul class="lista">
-            @for (part of p.planificacion.participaciones; track part.id) {
-              <li class="lista-item">
-                <span>{{ nombreDocente(part.proyectoDocente) }}</span>
-                <div class="lista-acciones">
-                  <span
-                    class="estado"
-                    [class.pendiente]="part.estatusConfirmacion !== 'CONFIRMADA'"
-                  >
-                    {{ estadoParticipacionLabel(part.estatusConfirmacion) }}
-                  </span>
-                  @if (part.confirmadaEn) {
-                    <span class="muted">{{ formatearFecha(part.confirmadaEn) }}</span>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        }
-
-        @if (esDocente && proyectoAbierto() && p.planificacion && miParticipacion()?.estatusConfirmacion !== 'CONFIRMADA') {
-          <button class="btn btn-primary" [disabled]="confirmando()" (click)="confirmarParticipacion()">
-            {{ confirmando() ? 'Confirmando...' : 'Confirmar mi participación' }}
-          </button>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </span>
-            <h2>Acta de supervisión</h2>
-          </div>
-        </div>
-
-        @if (!p.planificacion) {
-          <p class="muted">Primero debe existir una planificación conjunta.</p>
-        } @else {
-          @if (esAgente && proyectoAbierto()) {
-            <form [formGroup]="reporteForm" (ngSubmit)="generarReporte()" novalidate>
-              <div class="form-field">
-                <label for="r-vb">
-                  <input id="r-vb" type="checkbox" formControlName="vistoBueno" />
-                  <span>Doy mi visto bueno a la planificación conjunta</span>
-                </label>
-              </div>
-              <div class="form-field">
-                <label for="r-observaciones">Observaciones (opcional)</label>
-                <input id="r-observaciones" type="text" formControlName="observaciones" />
-              </div>
-              <button type="submit" class="btn btn-primary" [disabled]="generandoReporte()">
-                {{ generandoReporte() ? 'Guardando...' : 'Guardar acta' }}
-              </button>
-            </form>
-          }
-
-          @if (p.planificacion.reportes.length === 0) {
-            <p class="muted">Todavía no hay acta de supervisión.</p>
+          @if (p.docentes.length === 0) {
+            <p class="muted">Aún no hay docentes en el proyecto.</p>
           } @else {
-            @for (rep of p.planificacion.reportes; track rep.id) {
-              <div class="reporte">
-                <div class="reporte-head">
-                  <strong>Acta del {{ formatearFecha(rep.generadoEn) }}</strong>
-                  <span
-                    class="estado"
-                    [class.aprobada]="rep.vistoBueno"
-                    [class.pendiente]="!rep.vistoBueno"
-                  >
-                    {{ rep.vistoBueno ? 'Visto bueno' : 'Con observaciones' }}
-                  </span>
-                </div>
-                @if (rep.observaciones) {
-                  <p>
-                    <span class="meta-label">Observaciones:</span> {{ rep.observaciones }}
-                  </p>
-                }
-              </div>
-            }
-          }
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-            </span>
-            <h2 id="evaluacion">Evaluación final</h2>
-          </div>
-        </div>
-        @if (evaluaciones().length === 0) {
-          <p class="muted">Aún no se ha registrado la evaluación final.</p>
-        } @else {
-          @for (ev of evaluaciones(); track ev.id) {
-            <div class="reporte">
-              <div class="reporte-head">
-                <strong>Evaluación del {{ formatearFecha(ev.creadoEn) }}</strong>
-              </div>
-              <p><span class="meta-label">Instrumento:</span> {{ ev.instrumento }}</p>
-              <p><span class="meta-label">Resultado:</span> {{ ev.resultado }}</p>
-              <p><span class="meta-label">Observaciones:</span> {{ ev.observaciones }}</p>
-            </div>
-          }
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="evaluacionForm" (ngSubmit)="crearEvaluacion()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="ev-instrumento">Instrumento</label>
-              <input id="ev-instrumento" type="text" formControlName="instrumento" placeholder="Ej. rúbrica, encuesta, lista de cotejo" />
-            </div>
-            <div class="form-field">
-              <label for="ev-resultado">Resultado</label>
-              <input id="ev-resultado" type="text" formControlName="resultado" placeholder="Ej. satisfactorio, 4.5/5" />
-            </div>
-            <div class="form-field">
-              <label for="ev-observaciones">Observaciones</label>
-              <input id="ev-observaciones" type="text" formControlName="observaciones" placeholder="Conclusiones de la experiencia" />
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="evaluacionForm.invalid || guardandoEvaluacion()">
-                {{ guardandoEvaluacion() ? 'Guardando...' : 'Registrar evaluación' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-      @if (esDocente) {
-        <section class="card" id="alumnos">
-          <div class="card-head">
-            <div class="card-head-title">
-              <span class="card-head-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </span>
-              <h2 id="alumnos-titulo">Alumnos</h2>
-              @if (listaAlumnos(); as lista) {
-                <span class="card-head-count">
-                  {{ lista.resumen.incluidos }} de {{ lista.resumen.total }}
-                </span>
-              }
-            </div>
-            <!-- El botón de la plantilla va en la cabecera para que esté siempre
-                 a la vista, también cuando ya hay una lista guardada. -->
-            <div class="card-head-actions">
-              <a class="btn btn-outline" [href]="urlPlantillaAlumnos" download>
-                Descargar plantilla (.xlsx)
-              </a>
-              @if (listaAlumnos() && !modoReemplazo() && !vistaPrevia()) {
-                <button type="button" class="btn btn-secondary" (click)="reemplazarLista()">
-                  Subir otra lista
-                </button>
-              }
-            </div>
-          </div>
-
-          <p class="muted">
-            Sube la lista de <strong>tus</strong> alumnos de esta clase espejo: con
-            ella se emitirán los certificados al cerrar el curso. Puedes usar la
-            plantilla de Excel, un CSV o pegar los nombres.
-          </p>
-
-          @if (errorLista()) {
-            <div class="alert alert-error" role="alert">{{ errorLista() }}</div>
-          }
-          @if (avisoLista()) {
-            <div class="alert alert-success" role="status">{{ avisoLista() }}</div>
-          }
-
-          @if (cargandoLista()) {
-            <p class="muted">Cargando la lista…</p>
-          } @else if (vistaPrevia(); as vista) {
-            <div class="alumnos-resumen">
-              <span class="alumnos-chip alumnos-chip--ok">
-                {{ vista.filas.length }} alumno(s) listos
-              </span>
-              @if (vista.resumen.descartadas > 0) {
-                <span class="alumnos-chip alumnos-chip--aviso">
-                  {{ vista.resumen.descartadas }} descartada(s)
-                </span>
-              }
-              @if (vista.resumen.conAvisos > 0) {
-                <span class="alumnos-chip alumnos-chip--aviso">
-                  {{ vista.resumen.conAvisos }} con avisos
-                </span>
-              }
-              <span class="alumnos-chip">{{ vista.origen }}</span>
-            </div>
-
-            @if (vista.avisos.length > 0) {
-              <ul class="alumnos-avisos">
-                @for (aviso of vista.avisos; track aviso) {
-                  <li>{{ aviso }}</li>
-                }
-              </ul>
-            }
-
-            <div class="alumnos-scroll">
-              <table class="alumnos-tabla">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Matrícula</th>
-                    <th>Correo</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (fila of vista.filas; track $index) {
-                    <tr>
-                      <td>{{ $index + 1 }}</td>
-                      <td>
-                        <input
-                          class="alumnos-input"
-                          [value]="fila.nombre"
-                          (input)="editarFila($index, 'nombre', $event)"
-                          aria-label="Nombre del alumno"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          class="alumnos-input"
-                          [value]="fila.matricula"
-                          (input)="editarFila($index, 'matricula', $event)"
-                          aria-label="Matrícula"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          class="alumnos-input"
-                          [value]="fila.correo"
-                          (input)="editarFila($index, 'correo', $event)"
-                          aria-label="Correo"
-                        />
-                        @if (fila.avisos.length > 0) {
-                          <span class="alumnos-aviso">{{ fila.avisos[0] }}</span>
-                        }
-                      </td>
-                      <td>
-                        <button type="button" class="link-button" (click)="quitarFila($index)">
-                          Quitar
-                        </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-
-            <div class="alumnos-acciones">
-              <button
-                type="button"
-                class="btn btn-primary"
-                [disabled]="guardandoLista() || vista.filas.length === 0"
-                (click)="guardarLista()"
-              >
-                @if (guardandoLista()) {
-                  <span class="spinner" aria-hidden="true"></span>
-                }
-                {{ guardandoLista() ? 'Guardando…' : 'Guardar lista' }}
-              </button>
-              <button type="button" class="btn btn-secondary" (click)="cancelarVistaPrevia()">
-                Cancelar
-              </button>
-              <span class="muted">Revisa y corrige lo que haga falta antes de guardar.</span>
-            </div>
-          } @else if (!listaAlumnos() || modoReemplazo()) {
-            <div class="alumnos-carga">
-              <p class="muted">
-                Descarga la plantilla de la cabecera, escribe una fila por alumno
-                y súbela: así evitamos los errores de formato. La columna
-                <strong>Correo</strong> es la que permite
-                <strong>enviarle el certificado</strong> al alumno.
-              </p>
-              <p class="muted alumnos-nota">
-                ⚠️ Si pegas solo los nombres (la opción de abajo), el envío por
-                correo <strong>no será posible</strong>: esos certificados habrá
-                que entregarlos impresos. Para poder enviarlos, sube el archivo
-                con la columna de correo llena.
-              </p>
-
-              <label class="btn btn-secondary">
-                Elegir archivo (.xlsx o .csv)
-                <input
-                  type="file"
-                  accept=".xlsx,.csv"
-                  (change)="leerArchivo($event)"
-                  hidden
-                />
-              </label>
-
-              <p class="muted">
-                …o pega la lista aquí, un alumno por línea (también puedes
-                copiar y pegar directamente desde Excel):
-              </p>
-              <textarea
-                rows="4"
-                [value]="textoPegado()"
-                (input)="textoPegado.set($any($event.target).value)"
-                placeholder="Ana Lucía Ramírez Pech&#10;José Manuel Uc Dzul"
-                aria-label="Nombres de los alumnos, uno por línea"
-              ></textarea>
-
-              <div class="alumnos-acciones">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [disabled]="leyendoLista() || !textoPegado().trim()"
-                  (click)="leerTextoPegado()"
-                >
-                  Leer la lista pegada
-                </button>
-                @if (modoReemplazo()) {
-                  <button type="button" class="btn btn-outline" (click)="modoReemplazo.set(false)">
-                    Volver a la lista guardada
-                  </button>
-                }
-                @if (leyendoLista()) {
-                  <span class="muted">Leyendo…</span>
-                }
-              </div>
-            </div>
-          } @else if (listaAlumnos(); as lista) {
-            <p class="muted">
-              {{ lista.resumen.total }} alumnos · {{ lista.resumen.incluidos }} entran
-              en los certificados
-              @if (lista.resumen.sinCorreo > 0) {
-                · {{ lista.resumen.sinCorreo }} sin correo (a esos hay que
-                entregarles el certificado impreso)
-              }
-              · la subió {{ lista.subidaPor }}
-            </p>
-
-            <div class="alumnos-scroll">
-              <table class="alumnos-tabla">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nombre</th>
-                    <th>Matrícula</th>
-                    <th>Correo</th>
-                    <th>Certificado</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (alumno of lista.alumnos; track alumno.id) {
-                    <tr [class.alumnos-fila--fuera]="!alumno.incluido">
-                      <td>{{ $index + 1 }}</td>
-                      <td>{{ alumno.nombre }}</td>
-                      <td>{{ alumno.matricula || '—' }}</td>
-                      <td>{{ alumno.correo || 'sin correo' }}</td>
-                      <td>
-                        <label class="alumnos-interruptor">
-                          <input
-                            type="checkbox"
-                            [checked]="alumno.incluido"
-                            (change)="alternarIncluido(alumno)"
-                          />
-                          <span>{{ alumno.incluido ? 'Sí' : 'No' }}</span>
-                        </label>
-                      </td>
-                      <td>
-                        <button type="button" class="link-button" (click)="eliminarAlumno(alumno)">
-                          Quitar
-                        </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </section>
-
-        <!-- Certificados (fases 4 y 5): sale de la lista de arriba y solo se emite
-             con la clase cerrada. El docente ve aquí el folio, la descarga, el
-             enlace público de verificación, el envío por correo y la anulación. -->
-        <section class="card" id="certificados">
-          <div class="card-head">
-            <div class="card-head-title">
-              <span class="card-head-icon" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-              </span>
-              <h2 id="certificados-titulo">Certificados</h2>
-              @if (certificadosEstado(); as estado) {
-                <span class="card-head-count">
-                  {{ estado.resumen.emitidos }} de {{ estado.resumen.alumnos }}
-                </span>
-              }
-            </div>
-            <div class="card-head-actions">
-              @if (certificadosEstado(); as estado) {
-                <button
-                  type="button"
-                  class="btn btn-outline"
-                  data-accion="enviar-todos"
-                  [disabled]="
-                    enviandoTodos() ||
-                    !puedeEnviarCertificados() ||
-                    estado.certificados.length === 0
-                  "
-                  (click)="enviarCertificadosATodos()"
-                >
-                  {{ enviandoTodos() ? 'Enviando…' : 'Enviar a todos por correo' }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-outline"
-                  [disabled]="descargandoZip() || estado.resumen.emitidos === 0"
-                  (click)="descargarCertificadosZip()"
-                >
-                  {{ descargandoZip() ? 'Preparando…' : 'Descargar todos (.zip)' }}
-                </button>
-              }
-            </div>
-          </div>
-
-          <p class="muted">
-            Un certificado por alumno de <strong>tu</strong> lista, con folio único.
-            Se emiten al <strong>cerrar</strong> la clase espejo y el PDF se guarda
-            tal como sale: cambiar la plantilla después no altera lo ya emitido.
-            Cada certificado lleva impreso un <strong>QR</strong> que abre su
-            verificación pública, y desde aquí se le puede
-            <strong>enviar por correo</strong> al alumno o <strong>anularlo</strong>
-            con su motivo.
-          </p>
-
-          @if (errorCertificados()) {
-            <div class="alert alert-error" role="alert">{{ errorCertificados() }}</div>
-          }
-          @if (avisoCertificados()) {
-            <div class="alert alert-success" role="status">{{ avisoCertificados() }}</div>
-          }
-
-          <!-- Lo que el envío no pudo entregar. Se enseña aparte porque un envío
-               a varios alumnos no se cae por uno: hay que decir qué pasó con cada
-               uno para poder arreglarlo. -->
-          @if (envioSinCorreo().length > 0) {
-            <div class="alert alert-warning" role="status">
-              <strong>{{ envioSinCorreo().length }} alumno(s) sin correo en la lista:</strong>
-              no se les pudo enviar.
-              <ul class="alumnos-avisos">
-                @for (sin of envioSinCorreo(); track sin.certificadoId) {
-                  <li>{{ sin.alumno }} ({{ sin.folio }})</li>
-                }
-              </ul>
-            </div>
-          }
-          @if (envioOmitidos().length > 0) {
-            <ul class="alumnos-avisos">
-              @for (omitido of envioOmitidos(); track omitido.certificadoId) {
-                <li>{{ omitido.alumno }} ({{ omitido.folio }}): {{ omitido.motivo }}</li>
+            <ul class="lista">
+              @for (d of p.docentes; track d.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ nombreDocente(d) }}</strong>
+                    <span class="muted">
+                      · {{ d.asignacionDocente.materia.nombre }} ({{
+                        d.asignacionDocente.periodoEscolar
+                      }})</span
+                    >
+                    <div class="muted">
+                      {{ d.asignacionDocente.docenteInstitucion.institucion.nombre }}
+                    </div>
+                  </div>
+                  <div class="lista-acciones">
+                    <span class="estado">{{ d.rol === 'ORIGEN' ? 'Origen' : 'Destino' }}</span>
+                    @if (esAgente) {
+                      <button
+                        class="btn btn-secondary"
+                        (click)="quitarDocente(d.id, nombreDocente(d))"
+                      >
+                        Quitar
+                      </button>
+                    }
+                  </div>
+                </li>
               }
             </ul>
           }
-          @if (envioFallidos().length > 0) {
-            <div class="alert alert-error" role="alert">
-              <strong>{{ envioFallidos().length }} envío(s) fallaron:</strong>
-              <ul class="alumnos-avisos">
-                @for (fallido of envioFallidos(); track fallido.certificadoId) {
-                  <li>{{ fallido.alumno }} ({{ fallido.correo }}): {{ fallido.motivo }}</li>
-                }
-              </ul>
-            </div>
-          }
 
-          @if (cargandoCertificados()) {
-            <p class="muted">Cargando los certificados…</p>
-          } @else if (certificadosEstado(); as estado) {
-            @if (estado.motivoNoEmitir) {
-              <div class="alert alert-info" role="status">{{ estado.motivoNoEmitir }}</div>
-            }
-
-            <div class="certificado-acciones">
+          @if (esAgente) {
+            <div class="form-inline">
+              <div class="form-field">
+                <label for="nuevo-docente">Agregar docente de mi institución</label>
+                <select id="nuevo-docente" [formControl]="asignacionSeleccionada">
+                  <option [ngValue]="null" disabled>Selecciona una asignación</option>
+                  @for (a of asignaciones(); track a.id) {
+                    <option [ngValue]="a.id">
+                      {{ a.docenteInstitucion.docente.usuario.nombres }}
+                      {{ a.docenteInstitucion.docente.usuario.apellidoPaterno }} ·
+                      {{ a.materia.nombre }} ({{ a.periodoEscolar }})
+                    </option>
+                  }
+                </select>
+              </div>
               <button
                 type="button"
                 class="btn btn-primary"
-                [disabled]="!puedeEmitirCertificados() || emitiendoCertificados()"
-                (click)="emitirCertificados()"
+                [disabled]="
+                  asignacionSeleccionada.value === null ||
+                  agregandoDocente() ||
+                  miInstitucionId() === null
+                "
+                (click)="agregarDocente()"
               >
-                @if (emitiendoCertificados()) {
-                  <span class="spinner" aria-hidden="true"></span>
-                }
-                {{ emitiendoCertificados() ? 'Emitiendo...' : 'Emitir certificados' }}
+                {{ agregandoDocente() ? 'Agregando...' : 'Agregar' }}
               </button>
-              @if (estado.plantilla; as plantilla) {
-                <span class="text-sm muted">
-                  Plantilla versión {{ plantilla.version }}
-                </span>
-              }
-              @if (estado.resumen.pendientes > 0) {
-                <span class="chip-estado chip-estado--aviso">
-                  Faltan {{ estado.resumen.pendientes }} por emitir
-                </span>
+            </div>
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+                  />
+                  <rect x="8" y="2" width="8" height="4" rx="1" />
+                  <path d="M12 11h4" />
+                  <path d="M12 16h4" />
+                  <path d="M8 11h.01" />
+                  <path d="M8 16h.01" />
+                </svg>
+              </span>
+              <h2 id="planificacion">Planificación conjunta</h2>
+            </div>
+            @if (p.planificacion) {
+              <span class="estado">{{ estadoPlanificacionLabel(p.planificacion.estado) }}</span>
+            }
+          </div>
+
+          @if (!p.planificacion) {
+            <div class="alert alert-info">
+              @if (esDocente) {
+                Aún no existe la planificación. Completa los acuerdos para crearla.
+              } @else {
+                Aún no existe la planificación conjunta.
               }
             </div>
+          }
 
-            @if (certificadosOmitidos().length > 0) {
-              <ul class="alumnos-avisos">
-                @for (omitido of certificadosOmitidos(); track omitido.alumnoId) {
-                  <li>{{ omitido.alumno }}: {{ omitido.motivo }}</li>
-                }
-              </ul>
+          @if (esDocente && proyectoAbierto()) {
+            <form [formGroup]="planificacionForm" (ngSubmit)="guardarPlanificacion()" novalidate>
+              <div class="form-field">
+                <label for="pl-objetivos">Objetivos acordados</label>
+                <input id="pl-objetivos" type="text" formControlName="objetivosAcordados" />
+              </div>
+              <div class="form-field">
+                <label for="pl-temas">Temas acordados</label>
+                <input id="pl-temas" type="text" formControlName="temasAcordados" />
+              </div>
+              <div class="form-field">
+                <label for="pl-metodologia">Metodología</label>
+                <input id="pl-metodologia" type="text" formControlName="metodologia" />
+              </div>
+              <div class="row">
+                <div class="col form-field">
+                  <label for="pl-plataforma">Plataforma</label>
+                  <input id="pl-plataforma" type="text" formControlName="plataforma" />
+                </div>
+                <div class="col form-field">
+                  <label for="pl-estado">Estado de la planificación</label>
+                  <select id="pl-estado" formControlName="estado">
+                    <option value="BORRADOR">Borrador</option>
+                    <option value="EN_REVISION">En revisión</option>
+                    <option value="APROBADA">Aprobada</option>
+                  </select>
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="planificacionForm.invalid || guardandoPlanificacion()"
+              >
+                {{
+                  guardandoPlanificacion()
+                    ? 'Guardando...'
+                    : p.planificacion
+                      ? 'Actualizar planificación'
+                      : 'Crear planificación'
+                }}
+              </button>
+            </form>
+          } @else if (p.planificacion) {
+            <div class="reporte">
+              <p>
+                <span class="meta-label">Objetivos acordados:</span>
+                {{ p.planificacion.objetivosAcordados }}
+              </p>
+              <p>
+                <span class="meta-label">Temas acordados:</span>
+                {{ p.planificacion.temasAcordados }}
+              </p>
+              <p><span class="meta-label">Metodología:</span> {{ p.planificacion.metodologia }}</p>
+              <p><span class="meta-label">Plataforma:</span> {{ p.planificacion.plataforma }}</p>
+            </div>
+          }
+
+          @if (p.planificacion && p.planificacion.participaciones.length > 0) {
+            <h3 class="subtitle">Confirmación de los docentes</h3>
+            <ul class="lista">
+              @for (part of p.planificacion.participaciones; track part.id) {
+                <li class="lista-item">
+                  <span>{{ nombreDocente(part.proyectoDocente) }}</span>
+                  <div class="lista-acciones">
+                    <span
+                      class="estado"
+                      [class.pendiente]="part.estatusConfirmacion !== 'CONFIRMADA'"
+                    >
+                      {{ estadoParticipacionLabel(part.estatusConfirmacion) }}
+                    </span>
+                    @if (part.confirmadaEn) {
+                      <span class="muted">{{ formatearFecha(part.confirmadaEn) }}</span>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (
+            esDocente &&
+            proyectoAbierto() &&
+            p.planificacion &&
+            miParticipacion()?.estatusConfirmacion !== 'CONFIRMADA'
+          ) {
+            <button
+              class="btn btn-primary"
+              [disabled]="confirmando()"
+              (click)="confirmarParticipacion()"
+            >
+              {{ confirmando() ? 'Confirmando...' : 'Confirmar mi participación' }}
+            </button>
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+              </span>
+              <h2>Acta de supervisión</h2>
+            </div>
+          </div>
+
+          @if (!p.planificacion) {
+            <p class="muted">Primero debe existir una planificación conjunta.</p>
+          } @else {
+            @if (esAgente && proyectoAbierto()) {
+              <form [formGroup]="reporteForm" (ngSubmit)="generarReporte()" novalidate>
+                <div class="form-field">
+                  <label for="r-vb">
+                    <input id="r-vb" type="checkbox" formControlName="vistoBueno" />
+                    <span>Doy mi visto bueno a la planificación conjunta</span>
+                  </label>
+                </div>
+                <div class="form-field">
+                  <label for="r-observaciones">Observaciones (opcional)</label>
+                  <input id="r-observaciones" type="text" formControlName="observaciones" />
+                </div>
+                <button type="submit" class="btn btn-primary" [disabled]="generandoReporte()">
+                  {{ generandoReporte() ? 'Guardando...' : 'Guardar acta' }}
+                </button>
+              </form>
             }
 
-            <!-- Correos que faltan: la lista pegada a mano puede no traerlos, y
-                 sin correo no hay envío. Se dicen cuántos son y quiénes, y se
-                 deja añadírselo aquí mismo. -->
-            @if (estado.lista && estado.lista.sinCorreoAlumnos.length > 0) {
-              <div class="certificado-sin-correo">
-                <p class="muted">
-                  <strong>
-                    {{ estado.lista.sinCorreoAlumnos.length }} alumno(s) de tu lista
-                    no tienen correo:
-                  </strong>
-                  a esos no se les puede enviar el certificado (habría que
-                  entregárselo impreso). Añade el correo aquí y podrás enviárselo.
-                </p>
-                <ul class="certificado-sin-correo-lista">
-                  @for (alumno of estado.lista.sinCorreoAlumnos; track alumno.alumnoId) {
-                    <li>
-                      <span class="certificado-sin-correo-nombre">{{ alumno.alumno }}</span>
-                      <input
-                        type="email"
-                        class="alumnos-input"
-                        [value]="correoDe(alumno.alumnoId)"
-                        (input)="cambiarCorreo(alumno.alumnoId, $any($event.target).value)"
-                        placeholder="correo@institucion.edu"
-                        [attr.aria-label]="'Correo de ' + alumno.alumno"
-                      />
-                      <button
-                        type="button"
-                        class="btn btn-mini btn-secondary"
-                        [disabled]="guardandoCorreo() === alumno.alumnoId"
-                        (click)="guardarCorreo(alumno.alumnoId)"
-                      >
-                        {{ guardandoCorreo() === alumno.alumnoId ? 'Guardando…' : 'Guardar' }}
-                      </button>
-                    </li>
+            @if (p.planificacion.reportes.length === 0) {
+              <p class="muted">Todavía no hay acta de supervisión.</p>
+            } @else {
+              @for (rep of p.planificacion.reportes; track rep.id) {
+                <div class="reporte">
+                  <div class="reporte-head">
+                    <strong>Acta del {{ formatearFecha(rep.generadoEn) }}</strong>
+                    <span
+                      class="estado"
+                      [class.aprobada]="rep.vistoBueno"
+                      [class.pendiente]="!rep.vistoBueno"
+                    >
+                      {{ rep.vistoBueno ? 'Visto bueno' : 'Con observaciones' }}
+                    </span>
+                  </div>
+                  @if (rep.observaciones) {
+                    <p><span class="meta-label">Observaciones:</span> {{ rep.observaciones }}</p>
                   }
-                </ul>
+                </div>
+              }
+            }
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </span>
+              <h2 id="evaluacion">Evaluación final</h2>
+            </div>
+          </div>
+          @if (evaluaciones().length === 0) {
+            <p class="muted">Aún no se ha registrado la evaluación final.</p>
+          } @else {
+            @for (ev of evaluaciones(); track ev.id) {
+              <div class="reporte">
+                <div class="reporte-head">
+                  <strong>Evaluación del {{ formatearFecha(ev.creadoEn) }}</strong>
+                </div>
+                <p><span class="meta-label">Instrumento:</span> {{ ev.instrumento }}</p>
+                <p><span class="meta-label">Resultado:</span> {{ ev.resultado }}</p>
+                <p><span class="meta-label">Observaciones:</span> {{ ev.observaciones }}</p>
               </div>
             }
+          }
+          @if (esDocente && proyectoAbierto()) {
+            <form
+              [formGroup]="evaluacionForm"
+              (ngSubmit)="crearEvaluacion()"
+              class="form-grid"
+              novalidate
+            >
+              <div class="form-field">
+                <label for="ev-instrumento">Instrumento</label>
+                <input
+                  id="ev-instrumento"
+                  type="text"
+                  formControlName="instrumento"
+                  placeholder="Ej. rúbrica, encuesta, lista de cotejo"
+                />
+              </div>
+              <div class="form-field">
+                <label for="ev-resultado">Resultado</label>
+                <input
+                  id="ev-resultado"
+                  type="text"
+                  formControlName="resultado"
+                  placeholder="Ej. satisfactorio, 4.5/5"
+                />
+              </div>
+              <div class="form-field">
+                <label for="ev-observaciones">Observaciones</label>
+                <input
+                  id="ev-observaciones"
+                  type="text"
+                  formControlName="observaciones"
+                  placeholder="Conclusiones de la experiencia"
+                />
+              </div>
+              <div class="form-grid-actions">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="evaluacionForm.invalid || guardandoEvaluacion()"
+                >
+                  {{ guardandoEvaluacion() ? 'Guardando...' : 'Registrar evaluación' }}
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+        @if (esDocente) {
+          <section class="card" id="alumnos">
+            <div class="card-head">
+              <div class="card-head-title">
+                <span class="card-head-icon" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </span>
+                <h2 id="alumnos-titulo">Alumnos</h2>
+                @if (listaAlumnos(); as lista) {
+                  <span class="card-head-count">
+                    {{ lista.resumen.incluidos }} de {{ lista.resumen.total }}
+                  </span>
+                }
+              </div>
+              <!-- El botón de la plantilla va en la cabecera para que esté siempre
+                 a la vista, también cuando ya hay una lista guardada. -->
+              <div class="card-head-actions">
+                <a class="btn btn-outline" [href]="urlPlantillaAlumnos" download>
+                  Descargar plantilla (.xlsx)
+                </a>
+                @if (listaAlumnos() && !modoReemplazo() && !vistaPrevia()) {
+                  <button type="button" class="btn btn-secondary" (click)="reemplazarLista()">
+                    Subir otra lista
+                  </button>
+                }
+              </div>
+            </div>
 
-            @if (estado.certificados.length === 0) {
-              <p class="muted">Todavía no hay ningún certificado emitido en esta clase espejo.</p>
-            } @else {
+            <p class="muted">
+              Sube la lista de <strong>tus</strong> alumnos de esta clase espejo: con ella se
+              emitirán los certificados al cerrar el curso. Puedes usar la plantilla de Excel, un
+              CSV o pegar los nombres.
+            </p>
+
+            @if (errorLista()) {
+              <div class="alert alert-error" role="alert">{{ errorLista() }}</div>
+            }
+            @if (avisoLista()) {
+              <div class="alert alert-success" role="status">{{ avisoLista() }}</div>
+            }
+
+            @if (cargandoLista()) {
+              <p class="muted">Cargando la lista…</p>
+            } @else if (vistaPrevia(); as vista) {
+              <div class="alumnos-resumen">
+                <span class="alumnos-chip alumnos-chip--ok">
+                  {{ vista.filas.length }} alumno(s) listos
+                </span>
+                @if (vista.resumen.descartadas > 0) {
+                  <span class="alumnos-chip alumnos-chip--aviso">
+                    {{ vista.resumen.descartadas }} descartada(s)
+                  </span>
+                }
+                @if (vista.resumen.conAvisos > 0) {
+                  <span class="alumnos-chip alumnos-chip--aviso">
+                    {{ vista.resumen.conAvisos }} con avisos
+                  </span>
+                }
+                <span class="alumnos-chip">{{ vista.origen }}</span>
+              </div>
+
+              @if (vista.avisos.length > 0) {
+                <ul class="alumnos-avisos">
+                  @for (aviso of vista.avisos; track aviso) {
+                    <li>{{ aviso }}</li>
+                  }
+                </ul>
+              }
+
               <div class="alumnos-scroll">
                 <table class="alumnos-tabla">
                   <thead>
                     <tr>
-                      <th>Folio</th>
-                      <th>Alumno</th>
-                      <th>Estado</th>
-                      <th>Emitido</th>
-                      <th>Envío</th>
+                      <th>#</th>
+                      <th>Nombre</th>
+                      <th>Matrícula</th>
+                      <th>Correo</th>
                       <th></th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (certificado of estado.certificados; track certificado.id) {
-                      <tr [class.alumnos-fila--fuera]="certificado.estado !== 'EMITIDO'">
-                        <td><strong>{{ certificado.folio }}</strong></td>
+                    @for (fila of vista.filas; track $index) {
+                      <tr>
+                        <td>{{ $index + 1 }}</td>
                         <td>
-                          {{ certificado.alumnoNombre }}
-                          @if (certificado.matricula) {
-                            <span class="muted"> · {{ certificado.matricula }}</span>
+                          <input
+                            class="alumnos-input"
+                            [value]="fila.nombre"
+                            (input)="editarFila($index, 'nombre', $event)"
+                            aria-label="Nombre del alumno"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            class="alumnos-input"
+                            [value]="fila.matricula"
+                            (input)="editarFila($index, 'matricula', $event)"
+                            aria-label="Matrícula"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            class="alumnos-input"
+                            [value]="fila.correo"
+                            (input)="editarFila($index, 'correo', $event)"
+                            aria-label="Correo"
+                          />
+                          @if (fila.avisos.length > 0) {
+                            <span class="alumnos-aviso">{{ fila.avisos[0] }}</span>
                           }
                         </td>
                         <td>
-                          <span
-                            class="chip-estado"
-                            [class.chip-estado--ok]="certificado.estado === 'EMITIDO'"
-                            [class.chip-estado--error]="certificado.estado !== 'EMITIDO'"
-                          >
-                            {{ estadoCertificadoLabel(certificado.estado) }}
-                          </span>
-                          @if (certificado.anuladoMotivo) {
-                            <span class="alumnos-aviso">{{ certificado.anuladoMotivo }}</span>
-                          }
-                        </td>
-                        <td>{{ formatearFecha(certificado.emitidoEn) }}</td>
-                        <td>
-                          @if (certificado.enviadoEn) {
-                            {{ certificado.enviadoA }}
-                          } @else {
-                            <span class="muted">sin enviar</span>
-                          }
-                        </td>
-                        <td class="certificado-celda-acciones">
-                          <button
-                            type="button"
-                            class="link-button"
-                            data-accion="copiar-enlace"
-                            (click)="copiarEnlace(certificado)"
-                          >
-                            {{ enlaceCopiado() === certificado.folio ? 'Enlace copiado ✓' : 'Copiar enlace' }}
+                          <button type="button" class="link-button" (click)="quitarFila($index)">
+                            Quitar
                           </button>
-                          <button
-                            type="button"
-                            class="link-button"
-                            [disabled]="descargandoCertificado() === certificado.id"
-                            (click)="descargarCertificado(certificado)"
-                          >
-                            {{ descargandoCertificado() === certificado.id ? 'Descargando…' : 'Descargar PDF' }}
-                          </button>
-                          @if (certificado.estado === 'EMITIDO') {
-                            <button
-                              type="button"
-                              class="link-button"
-                              data-accion="enviar"
-                              [disabled]="enviandoCertificado() === certificado.id"
-                              (click)="enviarCertificado(certificado)"
-                            >
-                              {{ enviandoCertificado() === certificado.id ? 'Enviando…' : 'Enviar por correo' }}
-                            </button>
-                            @if (certificado.enviadoEn) {
-                              <button
-                                type="button"
-                                class="link-button"
-                                [disabled]="enviandoCertificado() === certificado.id"
-                                (click)="enviarCertificado(certificado, true)"
-                              >
-                                Reenviar
-                              </button>
-                            }
-                            <button
-                              type="button"
-                              class="link-button"
-                              [disabled]="emitiendoCertificados()"
-                              (click)="reemitirCertificado(certificado)"
-                            >
-                              Reemitir
-                            </button>
-                            <button
-                              type="button"
-                              class="link-button link-button--peligro"
-                              data-accion="anular"
-                              (click)="abrirAnulacion(certificado)"
-                            >
-                              Anular
-                            </button>
-                          }
                         </td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
-              <p class="text-sm muted">
-                El enlace de cada certificado lleva su folio y el código del QR:
-                sin ese código la página pública no muestra ningún dato del alumno.
-                Un certificado anulado se sigue descargando (es un documento
-                histórico), pero la verificación ya dice que no vale.
+
+              <div class="alumnos-acciones">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="guardandoLista() || vista.filas.length === 0"
+                  (click)="guardarLista()"
+                >
+                  @if (guardandoLista()) {
+                    <span class="spinner" aria-hidden="true"></span>
+                  }
+                  {{ guardandoLista() ? 'Guardando…' : 'Guardar lista' }}
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="cancelarVistaPrevia()">
+                  Cancelar
+                </button>
+                <span class="muted">Revisa y corrige lo que haga falta antes de guardar.</span>
+              </div>
+            } @else if (!listaAlumnos() || modoReemplazo()) {
+              <div class="alumnos-carga">
+                <p class="muted">
+                  Descarga la plantilla de la cabecera, escribe una fila por alumno y súbela: así
+                  evitamos los errores de formato. La columna
+                  <strong>Correo</strong> es la que permite
+                  <strong>enviarle el certificado</strong> al alumno.
+                </p>
+                <p class="muted alumnos-nota">
+                  ⚠️ Si pegas solo los nombres (la opción de abajo), el envío por correo
+                  <strong>no será posible</strong>: esos certificados habrá que entregarlos
+                  impresos. Para poder enviarlos, sube el archivo con la columna de correo llena.
+                </p>
+
+                <label class="btn btn-secondary">
+                  Elegir archivo (.xlsx o .csv)
+                  <input type="file" accept=".xlsx,.csv" (change)="leerArchivo($event)" hidden />
+                </label>
+
+                <p class="muted">
+                  …o pega la lista aquí, un alumno por línea (también puedes copiar y pegar
+                  directamente desde Excel):
+                </p>
+                <textarea
+                  rows="4"
+                  [value]="textoPegado()"
+                  (input)="textoPegado.set($any($event.target).value)"
+                  placeholder="Ana Lucía Ramírez Pech&#10;José Manuel Uc Dzul"
+                  aria-label="Nombres de los alumnos, uno por línea"
+                ></textarea>
+
+                <div class="alumnos-acciones">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [disabled]="leyendoLista() || !textoPegado().trim()"
+                    (click)="leerTextoPegado()"
+                  >
+                    Leer la lista pegada
+                  </button>
+                  @if (modoReemplazo()) {
+                    <button
+                      type="button"
+                      class="btn btn-outline"
+                      (click)="modoReemplazo.set(false)"
+                    >
+                      Volver a la lista guardada
+                    </button>
+                  }
+                  @if (leyendoLista()) {
+                    <span class="muted">Leyendo…</span>
+                  }
+                </div>
+              </div>
+            } @else if (listaAlumnos(); as lista) {
+              <p class="muted">
+                {{ lista.resumen.total }} alumnos · {{ lista.resumen.incluidos }} entran en los
+                certificados
+                @if (lista.resumen.sinCorreo > 0) {
+                  · {{ lista.resumen.sinCorreo }} sin correo (a esos hay que entregarles el
+                  certificado impreso)
+                }
+                · la subió {{ lista.subidaPor }}
               </p>
+
+              <div class="alumnos-scroll">
+                <table class="alumnos-tabla">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nombre</th>
+                      <th>Matrícula</th>
+                      <th>Correo</th>
+                      <th>Certificado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (alumno of lista.alumnos; track alumno.id) {
+                      <tr [class.alumnos-fila--fuera]="!alumno.incluido">
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ alumno.nombre }}</td>
+                        <td>{{ alumno.matricula || '—' }}</td>
+                        <td>{{ alumno.correo || 'sin correo' }}</td>
+                        <td>
+                          <label class="alumnos-interruptor">
+                            <input
+                              type="checkbox"
+                              [checked]="alumno.incluido"
+                              (change)="alternarIncluido(alumno)"
+                            />
+                            <span>{{ alumno.incluido ? 'Sí' : 'No' }}</span>
+                          </label>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            class="link-button"
+                            (click)="eliminarAlumno(alumno)"
+                          >
+                            Quitar
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+
+          <!-- Certificados (fases 4 y 5): sale de la lista de arriba y solo se emite
+             con la clase cerrada. El docente ve aquí el folio, la descarga, el
+             enlace público de verificación, el envío por correo y la anulación. -->
+          <section class="card" id="certificados">
+            <div class="card-head">
+              <div class="card-head-title">
+                <span class="card-head-icon" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="8" r="6" />
+                    <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+                  </svg>
+                </span>
+                <h2 id="certificados-titulo">Certificados</h2>
+                @if (certificadosEstado(); as estado) {
+                  <span class="card-head-count">
+                    {{ estado.resumen.emitidos }} de {{ estado.resumen.alumnos }}
+                  </span>
+                }
+              </div>
+              <div class="card-head-actions">
+                @if (certificadosEstado(); as estado) {
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    data-accion="enviar-todos"
+                    [disabled]="
+                      enviandoTodos() ||
+                      !puedeEnviarCertificados() ||
+                      estado.certificados.length === 0
+                    "
+                    (click)="enviarCertificadosATodos()"
+                  >
+                    {{ enviandoTodos() ? 'Enviando…' : 'Enviar a todos por correo' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    [disabled]="descargandoZip() || estado.resumen.emitidos === 0"
+                    (click)="descargarCertificadosZip()"
+                  >
+                    {{ descargandoZip() ? 'Preparando…' : 'Descargar todos (.zip)' }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <p class="muted">
+              Un certificado por alumno de <strong>tu</strong> lista, con folio único. Se emiten al
+              <strong>cerrar</strong> la clase espejo y el PDF se guarda tal como sale: cambiar la
+              plantilla después no altera lo ya emitido. Cada certificado lleva impreso un
+              <strong>QR</strong> que abre su verificación pública, y desde aquí se le puede
+              <strong>enviar por correo</strong> al alumno o <strong>anularlo</strong>
+              con su motivo.
+            </p>
+
+            @if (errorCertificados()) {
+              <div class="alert alert-error" role="alert">{{ errorCertificados() }}</div>
+            }
+            @if (avisoCertificados()) {
+              <div class="alert alert-success" role="status">{{ avisoCertificados() }}</div>
+            }
+
+            <!-- Lo que el envío no pudo entregar. Se enseña aparte porque un envío
+               a varios alumnos no se cae por uno: hay que decir qué pasó con cada
+               uno para poder arreglarlo. -->
+            @if (envioSinCorreo().length > 0) {
+              <div class="alert alert-warning" role="status">
+                <strong>{{ envioSinCorreo().length }} alumno(s) sin correo en la lista:</strong>
+                no se les pudo enviar.
+                <ul class="alumnos-avisos">
+                  @for (sin of envioSinCorreo(); track sin.certificadoId) {
+                    <li>{{ sin.alumno }} ({{ sin.folio }})</li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (envioOmitidos().length > 0) {
+              <ul class="alumnos-avisos">
+                @for (omitido of envioOmitidos(); track omitido.certificadoId) {
+                  <li>{{ omitido.alumno }} ({{ omitido.folio }}): {{ omitido.motivo }}</li>
+                }
+              </ul>
+            }
+            @if (envioFallidos().length > 0) {
+              <div class="alert alert-error" role="alert">
+                <strong>{{ envioFallidos().length }} envío(s) fallaron:</strong>
+                <ul class="alumnos-avisos">
+                  @for (fallido of envioFallidos(); track fallido.certificadoId) {
+                    <li>{{ fallido.alumno }} ({{ fallido.correo }}): {{ fallido.motivo }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (cargandoCertificados()) {
+              <p class="muted">Cargando los certificados…</p>
+            } @else if (certificadosEstado(); as estado) {
+              @if (estado.motivoNoEmitir) {
+                <div class="alert alert-info" role="status">{{ estado.motivoNoEmitir }}</div>
+              }
+
+              <div class="certificado-acciones">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="!puedeEmitirCertificados() || emitiendoCertificados()"
+                  (click)="emitirCertificados()"
+                >
+                  @if (emitiendoCertificados()) {
+                    <span class="spinner" aria-hidden="true"></span>
+                  }
+                  {{ emitiendoCertificados() ? 'Emitiendo...' : 'Emitir certificados' }}
+                </button>
+                @if (estado.plantilla; as plantilla) {
+                  <span class="text-sm muted"> Plantilla versión {{ plantilla.version }} </span>
+                }
+                @if (estado.resumen.pendientes > 0) {
+                  <span class="chip-estado chip-estado--aviso">
+                    Faltan {{ estado.resumen.pendientes }} por emitir
+                  </span>
+                }
+              </div>
+
+              @if (certificadosOmitidos().length > 0) {
+                <ul class="alumnos-avisos">
+                  @for (omitido of certificadosOmitidos(); track omitido.alumnoId) {
+                    <li>{{ omitido.alumno }}: {{ omitido.motivo }}</li>
+                  }
+                </ul>
+              }
+
+              <!-- Correos que faltan: la lista pegada a mano puede no traerlos, y
+                 sin correo no hay envío. Se dicen cuántos son y quiénes, y se
+                 deja añadírselo aquí mismo. -->
+              @if (estado.lista && estado.lista.sinCorreoAlumnos.length > 0) {
+                <div class="certificado-sin-correo">
+                  <p class="muted">
+                    <strong>
+                      {{ estado.lista.sinCorreoAlumnos.length }} alumno(s) de tu lista no tienen
+                      correo:
+                    </strong>
+                    a esos no se les puede enviar el certificado (habría que entregárselo impreso).
+                    Añade el correo aquí y podrás enviárselo.
+                  </p>
+                  <ul class="certificado-sin-correo-lista">
+                    @for (alumno of estado.lista.sinCorreoAlumnos; track alumno.alumnoId) {
+                      <li>
+                        <span class="certificado-sin-correo-nombre">{{ alumno.alumno }}</span>
+                        <input
+                          type="email"
+                          class="alumnos-input"
+                          [value]="correoDe(alumno.alumnoId)"
+                          (input)="cambiarCorreo(alumno.alumnoId, $any($event.target).value)"
+                          placeholder="correo@institucion.edu"
+                          [attr.aria-label]="'Correo de ' + alumno.alumno"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-mini btn-secondary"
+                          [disabled]="guardandoCorreo() === alumno.alumnoId"
+                          (click)="guardarCorreo(alumno.alumnoId)"
+                        >
+                          {{ guardandoCorreo() === alumno.alumnoId ? 'Guardando…' : 'Guardar' }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (estado.certificados.length === 0) {
+                <p class="muted">Todavía no hay ningún certificado emitido en esta clase espejo.</p>
+              } @else {
+                <div class="alumnos-scroll">
+                  <table class="alumnos-tabla">
+                    <thead>
+                      <tr>
+                        <th>Folio</th>
+                        <th>Alumno</th>
+                        <th>Estado</th>
+                        <th>Emitido</th>
+                        <th>Envío</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (certificado of estado.certificados; track certificado.id) {
+                        <tr [class.alumnos-fila--fuera]="certificado.estado !== 'EMITIDO'">
+                          <td>
+                            <strong>{{ certificado.folio }}</strong>
+                          </td>
+                          <td>
+                            {{ certificado.alumnoNombre }}
+                            @if (certificado.matricula) {
+                              <span class="muted"> · {{ certificado.matricula }}</span>
+                            }
+                          </td>
+                          <td>
+                            <span
+                              class="chip-estado"
+                              [class.chip-estado--ok]="certificado.estado === 'EMITIDO'"
+                              [class.chip-estado--error]="certificado.estado !== 'EMITIDO'"
+                            >
+                              {{ estadoCertificadoLabel(certificado.estado) }}
+                            </span>
+                            @if (certificado.anuladoMotivo) {
+                              <span class="alumnos-aviso">{{ certificado.anuladoMotivo }}</span>
+                            }
+                          </td>
+                          <td>{{ formatearFecha(certificado.emitidoEn) }}</td>
+                          <td>
+                            @if (certificado.enviadoEn) {
+                              {{ certificado.enviadoA }}
+                            } @else {
+                              <span class="muted">sin enviar</span>
+                            }
+                          </td>
+                          <td class="certificado-celda-acciones">
+                            <button
+                              type="button"
+                              class="link-button"
+                              data-accion="copiar-enlace"
+                              (click)="copiarEnlace(certificado)"
+                            >
+                              {{
+                                enlaceCopiado() === certificado.folio
+                                  ? 'Enlace copiado ✓'
+                                  : 'Copiar enlace'
+                              }}
+                            </button>
+                            <button
+                              type="button"
+                              class="link-button"
+                              [disabled]="descargandoCertificado() === certificado.id"
+                              (click)="descargarCertificado(certificado)"
+                            >
+                              {{
+                                descargandoCertificado() === certificado.id
+                                  ? 'Descargando…'
+                                  : 'Descargar PDF'
+                              }}
+                            </button>
+                            @if (certificado.estado === 'EMITIDO') {
+                              <button
+                                type="button"
+                                class="link-button"
+                                data-accion="enviar"
+                                [disabled]="enviandoCertificado() === certificado.id"
+                                (click)="enviarCertificado(certificado)"
+                              >
+                                {{
+                                  enviandoCertificado() === certificado.id
+                                    ? 'Enviando…'
+                                    : 'Enviar por correo'
+                                }}
+                              </button>
+                              @if (certificado.enviadoEn) {
+                                <button
+                                  type="button"
+                                  class="link-button"
+                                  [disabled]="enviandoCertificado() === certificado.id"
+                                  (click)="enviarCertificado(certificado, true)"
+                                >
+                                  Reenviar
+                                </button>
+                              }
+                              <button
+                                type="button"
+                                class="link-button"
+                                [disabled]="emitiendoCertificados()"
+                                (click)="reemitirCertificado(certificado)"
+                              >
+                                Reemitir
+                              </button>
+                              <button
+                                type="button"
+                                class="link-button link-button--peligro"
+                                data-accion="anular"
+                                (click)="abrirAnulacion(certificado)"
+                              >
+                                Anular
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <p class="text-sm muted">
+                  El enlace de cada certificado lleva su folio y el código del QR: sin ese código la
+                  página pública no muestra ningún dato del alumno. Un certificado anulado se sigue
+                  descargando (es un documento histórico), pero la verificación ya dice que no vale.
+                </p>
+              }
+            }
+          </section>
+        }
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="m22 8-6 4 6 4V8Z" />
+                  <rect x="2" y="6" width="14" height="12" rx="2" />
+                </svg>
+              </span>
+              <h2 id="sesiones">Sesiones</h2>
+            </div>
+          </div>
+          <p class="text-sm muted">
+            Las horas se muestran en <strong>tu zona horaria</strong> ({{ zonaHoraria }}). El
+            archivo <code>.ics</code> lleva los horarios en UTC, así que cada docente los ve en la
+            suya.
+          </p>
+          @if (sesiones().length === 0) {
+            <p class="muted">Aún no hay sesiones programadas.</p>
+          } @else {
+            <ul class="lista">
+              @for (s of sesiones(); track s.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ s.titulo }}</strong>
+                    <div class="muted">
+                      {{ formatearFecha(s.fechaHora) }} · {{ horaDe(s.fechaHora) }}
+                    </div>
+                    <a class="link-button" [href]="s.enlaceVirtual" target="_blank" rel="noopener"
+                      >Enlace virtual</a
+                    >
+
+                    @if (reporteDeSesion(s.id); as rep) {
+                      <!-- Plegado a propósito: en una clase con varias sesiones, los
+                         reportes completos abruman. Cerrado se ve el estado y si
+                         falta gente por confirmar; se abre si hace falta leerlo. -->
+                      <details class="reporte">
+                        <summary class="reporte-head">
+                          <strong>Reporte de la clase</strong>
+                          <span class="estado" [class.pendiente]="rep.estado !== 'CONFIRMADO'">
+                            {{ estadoReporteLabel(rep.estado) }}
+                          </span>
+                          @if (estadoFirmasReporte(rep); as firma) {
+                            <span
+                              class="chip-estado"
+                              [class.chip-estado--ok]="firma.tono === 'ok'"
+                              [class.chip-estado--aviso]="firma.tono === 'aviso'"
+                              [class.chip-estado--error]="firma.tono === 'error'"
+                            >
+                              {{ firma.texto }}
+                            </span>
+                          }
+                        </summary>
+                        <div class="reporte-cuerpo">
+                          <p>
+                            <span class="meta-label">Desarrollo:</span> {{ rep.desarrolloClase }}
+                          </p>
+                          <p>
+                            <span class="meta-label">Asistentes:</span> {{ rep.totalAsistentes }}
+                          </p>
+                          <p><span class="meta-label">Incidencias:</span> {{ rep.incidencias }}</p>
+                          <p>
+                            <span class="meta-label">Acuerdos siguientes:</span>
+                            {{ rep.acuerdosSiguienteSesion }}
+                          </p>
+
+                          <h3 class="subtitle">Firmas de los docentes</h3>
+                          <ul class="lista">
+                            @for (part of rep.participaciones; track part.id) {
+                              <li class="lista-item">
+                                <span>{{ nombreDocente(part.proyectoDocente) }}</span>
+                                <div class="lista-acciones">
+                                  <span class="estado" [class.pendiente]="!part.confirmadoEn">
+                                    {{ part.confirmadoEn ? 'Confirmado' : 'Pendiente' }}
+                                  </span>
+                                  @if (part.observaciones) {
+                                    <span class="muted">{{ part.observaciones }}</span>
+                                  }
+                                </div>
+                              </li>
+                            }
+                          </ul>
+
+                          @if (
+                            esDocente &&
+                            proyectoAbierto() &&
+                            !miParticipacionReporte(rep)?.confirmadoEn
+                          ) {
+                            @if (reporteAConfirmar() === rep.id) {
+                              <form
+                                [formGroup]="observacionesForm"
+                                (ngSubmit)="confirmarReporte(rep)"
+                                class="form-grid"
+                                novalidate
+                              >
+                                <div class="form-field">
+                                  <label for="rc-obs-{{ rep.id }}">Mis observaciones</label>
+                                  <input
+                                    id="rc-obs-{{ rep.id }}"
+                                    type="text"
+                                    formControlName="observaciones"
+                                    placeholder="Observaciones sobre la clase"
+                                  />
+                                </div>
+                                <div class="form-grid-actions">
+                                  <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    [disabled]="
+                                      observacionesForm.invalid || confirmandoReporteClase()
+                                    "
+                                  >
+                                    {{ confirmandoReporteClase() ? 'Confirmando...' : 'Confirmar' }}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    (click)="cancelarConfirmacion()"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </form>
+                            } @else {
+                              <button class="btn btn-primary" (click)="abrirConfirmacion(rep)">
+                                Confirmar mi participación
+                              </button>
+                            }
+                          }
+                        </div>
+                      </details>
+                    } @else {
+                      <p class="muted">Sin reporte de clase.</p>
+                    }
+
+                    @if (sesionReporteAbierta() === s.id) {
+                      <form
+                        [formGroup]="reporteClaseForm"
+                        (ngSubmit)="guardarReporteClase()"
+                        class="form-grid"
+                        novalidate
+                      >
+                        <div class="form-field">
+                          <label for="rc-desarrollo">Desarrollo de la clase</label>
+                          <input
+                            id="rc-desarrollo"
+                            type="text"
+                            formControlName="desarrolloClase"
+                            placeholder="Cómo se desarrolló la clase"
+                          />
+                        </div>
+                        <div class="form-field">
+                          <label for="rc-asistentes">Total de asistentes</label>
+                          <input
+                            id="rc-asistentes"
+                            type="number"
+                            min="0"
+                            formControlName="totalAsistentes"
+                          />
+                        </div>
+                        <div class="form-field">
+                          <label for="rc-incidencias">Incidencias</label>
+                          <input
+                            id="rc-incidencias"
+                            type="text"
+                            formControlName="incidencias"
+                            placeholder="Incidencias (o 'Ninguna')"
+                          />
+                        </div>
+                        <div class="form-field">
+                          <label for="rc-acuerdos">Acuerdos para la siguiente sesión</label>
+                          <input
+                            id="rc-acuerdos"
+                            type="text"
+                            formControlName="acuerdosSiguienteSesion"
+                            placeholder="Qué se acordó"
+                          />
+                        </div>
+                        <div class="form-grid-actions">
+                          <button
+                            type="submit"
+                            class="btn btn-primary"
+                            [disabled]="reporteClaseForm.invalid || guardandoReporteClase()"
+                          >
+                            {{ guardandoReporteClase() ? 'Guardando...' : 'Guardar reporte' }}
+                          </button>
+                          <button type="button" class="btn btn-secondary" (click)="cerrarReporte()">
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    }
+                  </div>
+                  @if (esDocente && proyectoAbierto()) {
+                    <div class="lista-acciones">
+                      <button class="btn btn-secondary" (click)="abrirReporte(s)">
+                        Reporte de clase
+                      </button>
+                      <button class="btn btn-danger" (click)="eliminarSesion(s.id)">
+                        Eliminar
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+          @if (esDocente && proyectoAbierto()) {
+            <form [formGroup]="sesionForm" (ngSubmit)="crearSesion()" class="form-grid" novalidate>
+              <div class="form-field">
+                <label for="s-titulo">Título</label>
+                <input
+                  id="s-titulo"
+                  type="text"
+                  formControlName="titulo"
+                  placeholder="Título de la sesión"
+                />
+              </div>
+              <div class="form-field">
+                <label for="s-fecha">Fecha y hora</label>
+                <input id="s-fecha" type="datetime-local" formControlName="fechaHora" />
+              </div>
+              <div class="form-field">
+                <label for="s-enlace">Enlace virtual (URL)</label>
+                <input
+                  id="s-enlace"
+                  type="url"
+                  formControlName="enlaceVirtual"
+                  placeholder="https://…"
+                />
+                <small class="file-hint">Debe empezar por http:// o https://</small>
+              </div>
+              <div class="form-grid-actions">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="sesionForm.invalid || guardandoSesion()"
+                >
+                  {{ guardandoSesion() ? 'Agregando...' : 'Agregar sesión' }}
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </span>
+              <h2 id="actividades">Actividades</h2>
+            </div>
+          </div>
+          @if (actividades().length === 0) {
+            <p class="muted">Aún no hay actividades.</p>
+          } @else {
+            <ul class="lista">
+              @for (a of actividades(); track a.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ a.titulo }}</strong>
+                    <div class="muted">Entrega: {{ formatearFecha(a.fechaLimite) }}</div>
+                    <div class="muted">{{ a.instrucciones }}</div>
+                  </div>
+                  @if (esDocente && proyectoAbierto()) {
+                    <button class="btn btn-danger" (click)="eliminarActividad(a.id)">
+                      Eliminar
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+          @if (esDocente && proyectoAbierto()) {
+            <form
+              [formGroup]="actividadForm"
+              (ngSubmit)="crearActividad()"
+              class="form-grid"
+              novalidate
+            >
+              <div class="form-field">
+                <label for="a-titulo">Título</label>
+                <input
+                  id="a-titulo"
+                  type="text"
+                  formControlName="titulo"
+                  placeholder="Título de la actividad"
+                />
+              </div>
+              <div class="form-field">
+                <label for="a-instrucciones">Instrucciones</label>
+                <input
+                  id="a-instrucciones"
+                  type="text"
+                  formControlName="instrucciones"
+                  placeholder="Qué deben hacer los docentes"
+                />
+              </div>
+              <div class="form-field">
+                <label for="a-limite">Fecha límite</label>
+                <input id="a-limite" type="date" formControlName="fechaLimite" />
+              </div>
+              <div class="form-grid-actions">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="actividadForm.invalid || guardandoActividad()"
+                >
+                  {{ guardandoActividad() ? 'Agregando...' : 'Agregar actividad' }}
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"
+                  />
+                </svg>
+              </span>
+              <h2 id="evidencias">Evidencias</h2>
+            </div>
+          </div>
+          @if (evidencias().length === 0) {
+            <p class="muted">Aún no hay evidencias registradas.</p>
+          } @else {
+            <ul class="lista">
+              @for (e of evidencias(); track e.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ e.tipo }}</strong>
+                    @if (e.enlaceUrl) {
+                      <a
+                        class="link-button"
+                        [href]="e.enlaceUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ proveedorEnlace(e.enlaceUrl) }}
+                      </a>
+                    } @else if (e.archivoUrl) {
+                      <a
+                        class="link-button"
+                        [href]="urlArchivo(e.archivoUrl)"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        {{ nombreArchivo(e.archivoUrl) }}
+                      </a>
+                    }
+                    <div class="muted">{{ tituloSesion(e.sesionId) }}</div>
+                  </div>
+                  <span class="muted">{{ formatearFecha(e.registradaEn) }}</span>
+                </li>
+              }
+            </ul>
+          }
+          @if (esDocente && proyectoAbierto()) {
+            <form
+              [formGroup]="evidenciaForm"
+              (ngSubmit)="crearEvidencia()"
+              class="form-grid"
+              novalidate
+            >
+              <div class="form-field">
+                <label for="e-tipo">Tipo (opcional)</label>
+                <input
+                  id="e-tipo"
+                  type="text"
+                  formControlName="tipo"
+                  placeholder="Ej. fotografía, acta, video…"
+                />
+              </div>
+              <div class="form-field">
+                <label for="e-sesion">Sesión (opcional)</label>
+                <select id="e-sesion" formControlName="sesionId">
+                  <option [ngValue]="null">Sin sesión</option>
+                  @for (s of sesiones(); track s.id) {
+                    <option [ngValue]="s.id">
+                      {{ s.titulo }} · {{ formatearFecha(s.fechaHora) }}
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="e-archivo">Tipo de evidencia</label>
+                <div class="form-grid-actions">
+                  <button
+                    type="button"
+                    class="btn"
+                    [class.btn-primary]="modoEvidencia() === 'ARCHIVO'"
+                    [class.btn-secondary]="modoEvidencia() !== 'ARCHIVO'"
+                    (click)="cambiarModoEvidencia('ARCHIVO')"
+                  >
+                    Archivo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn"
+                    [class.btn-primary]="modoEvidencia() === 'ENLACE'"
+                    [class.btn-secondary]="modoEvidencia() !== 'ENLACE'"
+                    (click)="cambiarModoEvidencia('ENLACE')"
+                  >
+                    Enlace
+                  </button>
+                </div>
+              </div>
+              @if (modoEvidencia() === 'ARCHIVO') {
+                <div class="form-field">
+                  <label for="e-archivo">Archivo</label>
+                  <input
+                    id="e-archivo"
+                    type="file"
+                    class="file-input"
+                    (change)="onArchivoSeleccionado($event)"
+                  />
+                  <small class="file-hint">Solo archivos · máx. 10 MB</small>
+                </div>
+              } @else {
+                <div class="form-field">
+                  <label for="e-enlace">Enlace</label>
+                  <input
+                    id="e-enlace"
+                    type="url"
+                    formControlName="enlaceUrl"
+                    placeholder="https://youtu.be/…"
+                  />
+                  <small class="file-hint">
+                    YouTube, Vimeo, Google Drive o OneDrive · solo https
+                  </small>
+                </div>
+              }
+              <div class="form-grid-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="!puedeGuardarEvidencia()">
+                  {{ subiendoEvidencia() ? 'Subiendo...' : 'Registrar evidencia' }}
+                </button>
+              </div>
+            </form>
+          }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <line x1="4" y1="22" x2="4" y2="15" />
+                </svg>
+              </span>
+              <h2 id="cierre">Cierre de la clase espejo</h2>
+            </div>
+            @if (p.estado === 'FINALIZADO') {
+              <span class="estado">Finalizado</span>
+            }
+          </div>
+          @if (p.estado === 'FINALIZADO') {
+            <div class="alert alert-success" role="status">
+              La clase espejo está finalizada: el ciclo se completó correctamente.
+            </div>
+          } @else {
+            <p class="muted">
+              Al cerrar, el proyecto pasa al estado <strong>Finalizado</strong>. Requiere al menos
+              una evaluación final registrada y que cada sesión tenga su reporte de clase confirmado
+              por los docentes.
+            </p>
+            @if (esDocente && proyectoAbierto()) {
+              <button class="btn btn-primary" [disabled]="cerrando()" (click)="cerrarProyecto()">
+                {{ cerrando() ? 'Cerrando...' : 'Cerrar clase espejo' }}
+              </button>
+            } @else {
+              <p class="muted">Solo los docentes participantes pueden cerrar la clase espejo.</p>
             }
           }
         </section>
-      }
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
-            </span>
-            <h2 id="sesiones">Sesiones</h2>
-          </div>
-        </div>
-        <p class="text-sm muted">
-          Las horas se muestran en <strong>tu zona horaria</strong>
-          ({{ zonaHoraria }}). El archivo <code>.ics</code> lleva los horarios en
-          UTC, así que cada docente los ve en la suya.
-        </p>
-        @if (sesiones().length === 0) {
-          <p class="muted">Aún no hay sesiones programadas.</p>
-        } @else {
-          <ul class="lista">
-            @for (s of sesiones(); track s.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ s.titulo }}</strong>
-                  <div class="muted">
-                    {{ formatearFecha(s.fechaHora) }} · {{ horaDe(s.fechaHora) }}
-                  </div>
-                  <a class="link-button" [href]="s.enlaceVirtual" target="_blank" rel="noopener">Enlace virtual</a>
-
-                  @if (reporteDeSesion(s.id); as rep) {
-                    <!-- Plegado a propósito: en una clase con varias sesiones, los
-                         reportes completos abruman. Cerrado se ve el estado y si
-                         falta gente por confirmar; se abre si hace falta leerlo. -->
-                    <details class="reporte">
-                      <summary class="reporte-head">
-                        <strong>Reporte de la clase</strong>
-                        <span class="estado" [class.pendiente]="rep.estado !== 'CONFIRMADO'">
-                          {{ estadoReporteLabel(rep.estado) }}
-                        </span>
-                        @if (estadoFirmasReporte(rep); as firma) {
-                          <span
-                            class="chip-estado"
-                            [class.chip-estado--ok]="firma.tono === 'ok'"
-                            [class.chip-estado--aviso]="firma.tono === 'aviso'"
-                            [class.chip-estado--error]="firma.tono === 'error'"
-                          >
-                            {{ firma.texto }}
-                          </span>
-                        }
-                      </summary>
-                      <div class="reporte-cuerpo">
-                      <p><span class="meta-label">Desarrollo:</span> {{ rep.desarrolloClase }}</p>
-                      <p><span class="meta-label">Asistentes:</span> {{ rep.totalAsistentes }}</p>
-                      <p><span class="meta-label">Incidencias:</span> {{ rep.incidencias }}</p>
-                      <p><span class="meta-label">Acuerdos siguientes:</span> {{ rep.acuerdosSiguienteSesion }}</p>
-
-                      <h3 class="subtitle">Firmas de los docentes</h3>
-                      <ul class="lista">
-                        @for (part of rep.participaciones; track part.id) {
-                          <li class="lista-item">
-                            <span>{{ nombreDocente(part.proyectoDocente) }}</span>
-                            <div class="lista-acciones">
-                              <span class="estado" [class.pendiente]="!part.confirmadoEn">
-                                {{ part.confirmadoEn ? 'Confirmado' : 'Pendiente' }}
-                              </span>
-                              @if (part.observaciones) {
-                                <span class="muted">{{ part.observaciones }}</span>
-                              }
-                            </div>
-                          </li>
-                        }
-                      </ul>
-
-                      @if (esDocente && proyectoAbierto() && !miParticipacionReporte(rep)?.confirmadoEn) {
-                        @if (reporteAConfirmar() === rep.id) {
-                          <form [formGroup]="observacionesForm" (ngSubmit)="confirmarReporte(rep)" class="form-grid" novalidate>
-                            <div class="form-field">
-                              <label for="rc-obs-{{ rep.id }}">Mis observaciones</label>
-                              <input id="rc-obs-{{ rep.id }}" type="text" formControlName="observaciones" placeholder="Observaciones sobre la clase" />
-                            </div>
-                            <div class="form-grid-actions">
-                              <button type="submit" class="btn btn-primary" [disabled]="observacionesForm.invalid || confirmandoReporteClase()">
-                                {{ confirmandoReporteClase() ? 'Confirmando...' : 'Confirmar' }}
-                              </button>
-                              <button type="button" class="btn btn-secondary" (click)="cancelarConfirmacion()">Cancelar</button>
-                            </div>
-                          </form>
-                        } @else {
-                          <button class="btn btn-primary" (click)="abrirConfirmacion(rep)">Confirmar mi participación</button>
-                        }
-                      }
-                      </div>
-                    </details>
-                  } @else {
-                    <p class="muted">Sin reporte de clase.</p>
-                  }
-
-                  @if (sesionReporteAbierta() === s.id) {
-                    <form [formGroup]="reporteClaseForm" (ngSubmit)="guardarReporteClase()" class="form-grid" novalidate>
-                      <div class="form-field">
-                        <label for="rc-desarrollo">Desarrollo de la clase</label>
-                        <input id="rc-desarrollo" type="text" formControlName="desarrolloClase" placeholder="Cómo se desarrolló la clase" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-asistentes">Total de asistentes</label>
-                        <input id="rc-asistentes" type="number" min="0" formControlName="totalAsistentes" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-incidencias">Incidencias</label>
-                        <input id="rc-incidencias" type="text" formControlName="incidencias" placeholder="Incidencias (o 'Ninguna')" />
-                      </div>
-                      <div class="form-field">
-                        <label for="rc-acuerdos">Acuerdos para la siguiente sesión</label>
-                        <input id="rc-acuerdos" type="text" formControlName="acuerdosSiguienteSesion" placeholder="Qué se acordó" />
-                      </div>
-                      <div class="form-grid-actions">
-                        <button type="submit" class="btn btn-primary" [disabled]="reporteClaseForm.invalid || guardandoReporteClase()">
-                          {{ guardandoReporteClase() ? 'Guardando...' : 'Guardar reporte' }}
-                        </button>
-                        <button type="button" class="btn btn-secondary" (click)="cerrarReporte()">Cancelar</button>
-                      </div>
-                    </form>
-                  }
-                </div>
-                @if (esDocente && proyectoAbierto()) {
-                  <div class="lista-acciones">
-                    <button class="btn btn-secondary" (click)="abrirReporte(s)">Reporte de clase</button>
-                    <button class="btn btn-danger" (click)="eliminarSesion(s.id)">Eliminar</button>
-                  </div>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="sesionForm" (ngSubmit)="crearSesion()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="s-titulo">Título</label>
-              <input id="s-titulo" type="text" formControlName="titulo" placeholder="Título de la sesión" />
-            </div>
-            <div class="form-field">
-              <label for="s-fecha">Fecha y hora</label>
-              <input id="s-fecha" type="datetime-local" formControlName="fechaHora" />
-            </div>
-            <div class="form-field">
-              <label for="s-enlace">Enlace virtual (URL)</label>
-              <input id="s-enlace" type="url" formControlName="enlaceVirtual" placeholder="https://…" />
-              <small class="file-hint">Debe empezar por http:// o https://</small>
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="sesionForm.invalid || guardandoSesion()">
-                {{ guardandoSesion() ? 'Agregando...' : 'Agregar sesión' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            </span>
-            <h2 id="actividades">Actividades</h2>
-          </div>
-        </div>
-        @if (actividades().length === 0) {
-          <p class="muted">Aún no hay actividades.</p>
-        } @else {
-          <ul class="lista">
-            @for (a of actividades(); track a.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ a.titulo }}</strong>
-                  <div class="muted">Entrega: {{ formatearFecha(a.fechaLimite) }}</div>
-                  <div class="muted">{{ a.instrucciones }}</div>
-                </div>
-                @if (esDocente && proyectoAbierto()) {
-                  <button class="btn btn-danger" (click)="eliminarActividad(a.id)">Eliminar</button>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="actividadForm" (ngSubmit)="crearActividad()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="a-titulo">Título</label>
-              <input id="a-titulo" type="text" formControlName="titulo" placeholder="Título de la actividad" />
-            </div>
-            <div class="form-field">
-              <label for="a-instrucciones">Instrucciones</label>
-              <input id="a-instrucciones" type="text" formControlName="instrucciones" placeholder="Qué deben hacer los docentes" />
-            </div>
-            <div class="form-field">
-              <label for="a-limite">Fecha límite</label>
-              <input id="a-limite" type="date" formControlName="fechaLimite" />
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="actividadForm.invalid || guardandoActividad()">
-                {{ guardandoActividad() ? 'Agregando...' : 'Agregar actividad' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            </span>
-            <h2 id="evidencias">Evidencias</h2>
-          </div>
-        </div>
-        @if (evidencias().length === 0) {
-          <p class="muted">Aún no hay evidencias registradas.</p>
-        } @else {
-          <ul class="lista">
-            @for (e of evidencias(); track e.id) {
-              <li class="lista-item">
-                <div>
-                  <strong>{{ e.tipo }}</strong>
-                  <a class="link-button" [href]="urlArchivo(e.archivoUrl)" target="_blank" rel="noopener">{{ nombreArchivo(e.archivoUrl) }}</a>
-                  <div class="muted">{{ tituloSesion(e.sesionId) }}</div>
-                </div>
-                <span class="muted">{{ formatearFecha(e.registradaEn) }}</span>
-              </li>
-            }
-          </ul>
-        }
-        @if (esDocente && proyectoAbierto()) {
-          <form [formGroup]="evidenciaForm" (ngSubmit)="crearEvidencia()" class="form-grid" novalidate>
-            <div class="form-field">
-              <label for="e-tipo">Tipo (opcional)</label>
-              <input id="e-tipo" type="text" formControlName="tipo" placeholder="Ej. fotografía, acta, video…" />
-            </div>
-            <div class="form-field">
-              <label for="e-sesion">Sesión (opcional)</label>
-              <select id="e-sesion" formControlName="sesionId">
-                <option [ngValue]="null">Sin sesión</option>
-                @for (s of sesiones(); track s.id) {
-                  <option [ngValue]="s.id">
-                    {{ s.titulo }} · {{ formatearFecha(s.fechaHora) }}
-                  </option>
-                }
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="e-archivo">Archivo</label>
-              <input id="e-archivo" type="file" class="file-input" (change)="onArchivoSeleccionado($event)" />
-              <small class="file-hint">Solo archivos · máx. 10 MB</small>
-            </div>
-            <div class="form-grid-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="!archivoSeleccionado() || subiendoEvidencia()">
-                {{ subiendoEvidencia() ? 'Subiendo...' : 'Registrar evidencia' }}
-              </button>
-            </div>
-          </form>
-        }
-      </section>
-
-
-
-      <section class="card">
-        <div class="card-head">
-          <div class="card-head-title">
-            <span class="card-head-icon" aria-hidden="true">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            </span>
-            <h2 id="cierre">Cierre de la clase espejo</h2>
-          </div>
-          @if (p.estado === 'FINALIZADO') {
-            <span class="estado">Finalizado</span>
-          }
-        </div>
-        @if (p.estado === 'FINALIZADO') {
-          <div class="alert alert-success" role="status">
-            La clase espejo está finalizada: el ciclo se completó correctamente.
-          </div>
-        } @else {
-          <p class="muted">
-            Al cerrar, el proyecto pasa al estado <strong>Finalizado</strong>. Requiere al
-            menos una evaluación final registrada y que cada sesión tenga su reporte de
-            clase confirmado por los docentes.
-          </p>
-          @if (esDocente && proyectoAbierto()) {
-            <button class="btn btn-primary" [disabled]="cerrando()" (click)="cerrarProyecto()">
-              {{ cerrando() ? 'Cerrando...' : 'Cerrar clase espejo' }}
-            </button>
-          } @else {
-            <p class="muted">Solo los docentes participantes pueden cerrar la clase espejo.</p>
-          }
-        }
-      </section>
-
       </div>
 
       @if (chatAbierto()) {
         <app-modal
           [title]="
-            'Chat del proyecto' +
-            (mensajes().length > 0 ? ' · ' + mensajes().length + ' msj' : '')
+            'Chat del proyecto' + (mensajes().length > 0 ? ' · ' + mensajes().length + ' msj' : '')
           "
           size="xs"
           (cerrado)="cerrarChat()"
@@ -1416,8 +1810,7 @@
           <div class="chat" #chatScroll>
             @if (mensajes().length === 0) {
               <p class="chat-vacio muted">
-                Aún no hay mensajes. Inicia la conversación con los docentes del
-                proyecto.
+                Aún no hay mensajes. Inicia la conversación con los docentes del proyecto.
               </p>
             } @else {
               @for (m of mensajes(); track m.id) {
@@ -1461,7 +1854,17 @@
                 @if (enviandoMensaje()) {
                   <span class="spinner" aria-hidden="true"></span>
                 } @else {
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="m22 2-7 20-4-9-9-4Z" />
                     <path d="M22 2 11 13" />
                   </svg>
@@ -1481,14 +1884,21 @@
       }
 
       @if (!chatAbierto()) {
-        <button
-          type="button"
-          class="chat-toggle"
-          aria-haspopup="dialog"
-          (click)="abrirChat()"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
+        <button type="button" class="chat-toggle" aria-haspopup="dialog" (click)="abrirChat()">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
+            />
           </svg>
           Chat del proyecto
           @if (mensajes().length > 0) {
@@ -1522,9 +1932,9 @@
         >
           <p>
             El certificado <strong>{{ c.folio }}</strong> de
-            <strong>{{ c.alumnoNombre }}</strong> quedará marcado como anulado y
-            la página de verificación pasará a decirlo así, con este motivo.
-            El PDF se conserva y se puede seguir descargando.
+            <strong>{{ c.alumnoNombre }}</strong> quedará marcado como anulado y la página de
+            verificación pasará a decirlo así, con este motivo. El PDF se conserva y se puede seguir
+            descargando.
           </p>
           <div class="form-field">
             <label [for]="'motivo-anulacion'">Motivo de la anulación</label>
@@ -1536,8 +1946,7 @@
               placeholder="Por ejemplo: el nombre del alumno estaba mal escrito y se reemitió el certificado."
             ></textarea>
             <p class="muted text-sm">
-              Obligatorio: quien mire el certificado tiene derecho a saber por qué
-              dejó de valer.
+              Obligatorio: quien mire el certificado tiene derecho a saber por qué dejó de valer.
             </p>
           </div>
           @if (errorAnulacion()) {

@@ -237,7 +237,7 @@ ClasesEspejo/
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma    # modelo de datos completo (33 tablas)
-│   │   └── migrations/      # 29 migraciones versionadas
+│   │   └── migrations/      # 30 migraciones versionadas
 │   │
 │   ├── generated/
 │   │   └── prisma/          # cliente generado (NO editar a mano)
@@ -355,7 +355,7 @@ ClasesconjuntasBD
 El proyecto utiliza PostgreSQL como sistema gestor de base de datos.
 
 Las tablas se crean con las **migraciones versionadas** que están en
-`backend/prisma/migrations/` (**29 migraciones**):
+`backend/prisma/migrations/` (**30 migraciones**):
 
 ```bash
 npx prisma migrate deploy
@@ -1900,11 +1900,11 @@ en el puerto `3000` seguirá mostrando la versión anterior.
 * [x] CORS restringido y cabeceras de seguridad globales (CSP, HSTS en producción,
   límite de la verificación pública) y en los archivos servidos
 * [x] Filtro de evidencias antes de escribir en disco
-* [x] **Migraciones formales de Prisma** (29 migraciones versionadas en `backend/prisma/migrations/`)
+* [x] **Migraciones formales de Prisma** (30 migraciones versionadas en `backend/prisma/migrations/`)
 * [x] **CI en cada push** (`.github/workflows/ci.yml`): PostgreSQL 17 de servicio,
   `prisma validate` y `migrate deploy`, lint, tipos en `strict`, unitarias,
   e2e y build
-* [x] **117 pruebas e2e** de los flujos críticos contra una base de prueba
+* [x] **120 pruebas e2e** de los flujos críticos contra una base de prueba
   real (`clasesconjuntasbd_test`), con el correo simulado
 * [x] **Cola de correo con worker** (Fase 2): certificados y calendario se
   encolan, se reintentan con espera creciente y el progreso se consulta por lote
@@ -2033,7 +2033,7 @@ de entorno) y varias reglas CSS y `export` sin uso.
 # 📅 Plan de desarrollo (metas semanales)
 
 > **Meta:** producto terminado en 8 semanas.
-> El **modelo de datos ya está completo** (35 tablas) y el esquema está **migrado y versionado** (29 migraciones). Cada semana termina con un entregable **probable y visible**.
+> El **modelo de datos ya está completo** (35 tablas) y el esquema está **migrado y versionado** (30 migraciones). Cada semana termina con un entregable **probable y visible**.
 > Al completar una semana, marca sus casillas con `[x]`.
 
 ## 🟢 Semana 1 — Catálogo: Materias y asignación docente ↔ materia ✅
