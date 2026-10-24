@@ -1,139 +1,146 @@
-# Plan por fases — prioridad: primera clase espejo real
+# Plan por fases — demo real en servidor temporal
 
-> Reordenado el 24-oct-2026. **Sustituye el orden anterior.** Las funciones de las
-> antiguas fases 7 y 8 no se pierden: pasan a la Fase 4, troceadas para que no
-> bloqueen la primera clase.
+> Reordenado el 24-oct-2026. **Sustituye el orden anterior.** El objetivo ya no es
+> «terminar funciones»: es llegar a la demo con un servidor confiable y con todo lo
+> que se use ese día funcionando de verdad.
 >
-> Regla: si algo no es necesario para que **una clase con dos instituciones
-> reales** funcione de principio a fin, no va antes de la Fase 4.
+> Lo funcional ya existe (solicitud, dos instituciones, lista, sesiones, evidencias,
+> cierre, certificados, ZIP, verificación y cola de correo). Lo que falta es la
+> **operación**: URL pública, respaldos, correo, privacidad y cuentas reales.
+>
+> Regla: **servidor primero**. Las funciones nuevas solo entran si la demo ya está
+> desplegada y probada, y cada una se entrega completa; no se deja media función.
 
-## Qué significa «primera clase real»
+## Qué se va a demostrar
 
-Una clase con **dos instituciones reales**, docentes y alumnos reales, que cumpla:
+Una clase con **dos instituciones**, con el fin de encontrar errores humanos y de
+operación que no aparecen en simulación. Puede ser:
 
-- La solicitud se crea y las dos instituciones la aprueban.
-- La planificación, las sesiones y las evidencias quedan registradas.
-- Se cierra la clase y se emiten los certificados de los alumnos.
-- Cada certificado se puede verificar por su folio y QR.
-- Los correos de invitación, calendario y certificados llegan.
-- Antes y después hay **respaldo y restauración comprobados**.
-- No se usan cuentas de demostración ni datos inventados en producción.
+- **Alumnos ficticios:** más seguro; los certificados llevan marca **DEMO** y no
+  se presentan como oficiales.
+- **Alumnos reales:** solo con aviso de privacidad y consentimiento; los
+  certificados también se marcan como demostración salvo que la CACE autorice lo
+  contrario.
 
-Si algo de esto falla, la clase no está «lista», aunque la pantalla se vea bien.
+La demo **no valida** que el folio sea oficial ni que el certificado tenga validez
+legal. Valida el flujo completo: que la gente pueda entrar, trabajar, cerrar,
+emitir, descargar, recibir y verificar.
 
-## Regla de prioridad
+## Reglas de esta etapa
 
-- **P0 — Sin esto no hay clase real:** dominio/TLS, backups, correo, privacidad,
-  cuentas reales, ensayo general.
-- **P1 — Debe estar antes de abrir la plataforma a más gente:** contraseñas,
-  TOTP si se autoriza, límites de seguridad, plantilla de certificado.
-- **P2 — Después de la primera clase:** panel de desempeño, multi-institución,
-  enlaces de evidencias, plazos configurables.
-- **P3 — Continuo:** paginación, rendimiento, refactor, documentación.
-
-## Cómo se reordena
-
-| Antes | Ahora |
-| --- | --- |
-| Fases 0–2 | Ya cerradas; no se repiten |
-| Fase 3 (integridad) | Solo lo que protege datos reales, en 2.4; el resto, en 4.4 y 5 |
-| Fase 4 (operación) | 1.1–1.6 |
-| Fase 5 (producto) | Privacidad en 2.1; el resto, en 4.4 |
-| Fase 6 (mantenibilidad) | 5 |
-| Fase 7 (funciones pedidas) | 4.1 (plazos y enlaces), 4.3 (multi-institución) y 4.4 (identificador) |
-| Fase 8 (panel) | 4.2, en tres entregas separadas |
+- **P0 — Sin esto no hay demo:** URL pública estable, HTTPS, respaldos con
+  restauración, correo, privacidad y cuentas reales.
+- **P1 — Antes de abrir a más gente:** contraseñas, TOTP si se autoriza, límites de
+  seguridad y plantilla del certificado.
+- **P2 — Después de la demo:** panel de desempeño, multi-institución, identificador
+  interno, paginación y rendimiento.
+- **Terminado significa terminado:** migración, backend, interfaz, pruebas y
+  documentación. Si no está completo, no se despliega.
+- **Nada de cambios de último minuto:** 48 horas antes de la demo solo se corrigen
+  bloqueos; no se estrena una función nueva.
 
 ## Cuadro de conjunto
 
 | Fase | Qué resuelve | Duración | Depende de |
 | --- | --- | --- | --- |
-| **0** | Decidir la clase y preparar a las personas | 2–3 días | — |
-| **1** | Operación mínima: servidor, dominio, backups, correo, seguridad | 1–2 semanas | Fase 0 |
+| **0** | Decidir la demo y congelar el alcance | 2–3 días | — |
+| **1** | Servidor temporal listo: URL, HTTPS, respaldos, correo, seguridad | 1–2 semanas | Fase 0 |
 | **2** | Datos, privacidad y accesos reales | 1 semana | Fase 0 |
-| **3** | Ensayo general y primera clase | 1 semana | Fases 1 y 2 |
-| **4** | Después de la primera clase: mejoras pedidas, por incrementos | 4–6 semanas | Fase 3 |
-| **5** | Endurecimiento y mantenibilidad continua | continuo | — |
+| **3** | Release candidate y ensayo | 1 semana | Fases 1 y 2 |
+| **4** | Funciones opcionales antes de la demo, solo si hay tiempo | 1 semana | Fase 3 |
+| **5** | Demo real y cierre | 2–3 días | Fase 3 (y 4 si se hace) |
+| **6** | Después de la demo: panel, multi-institución y deudas | 4–6 semanas | Fase 5 |
+| **7** | Endurecimiento y mantenibilidad continua | continuo | — |
 
-**Camino crítico:** autorización del proveedor de correo + dominio/DNS + prueba de
-restauración. Si eso se retrasa, la clase se retrasa; el código ya está casi todo.
+**Camino crítico:** dominio/URL estable + autorización de correo + prueba de
+restauración. Si falla uno de los tres, la demo se limita o se retrasa.
 
 ---
 
-## Fase 0 — Decidir la clase y preparar a las personas (2–3 días)
+## Fase 0 — Decidir la demo y congelar el alcance (2–3 días)
 
-No es código; es evitar improvisar el día de la clase.
+No es código. Es evitar improvisar cuando avisen que ya es el momento.
 
 - [ ] Confirmar **fecha, materia, dos instituciones, docentes, agentes y grupos**.
-- [ ] Confirmar que las dos instituciones están **aprobadas por la CACE** y que sus
-  agentes y docentes tienen cuentas activas.
-- [ ] Confirmar que la fecha cumple la antelación mínima (**8 días**); si no, mover
-  la clase o cambiar el plazo antes de abrir solicitudes.
-- [ ] Nombrar un **responsable técnico** y un **responsable académico** durante la
-  clase, con horario de soporte.
-- [ ] Revisar el **aviso de privacidad y el consentimiento** para datos de alumnos;
-  sin esto no se cargan alumnos reales.
-- [ ] Congelar el alcance: dos instituciones, evidencias por archivo, sin panel de
-  desempeño, sin multi-institución y sin documento internacional.
-- [ ] Hacer un **respaldo fresco** de la base y guardarlo fuera del servidor.
-- [ ] Definir el **plan B**: si falla el correo o la plataforma, cómo se comparte el
-  enlace, cómo se recogen evidencias y a quién se avisa.
-- [ ] Escribir el criterio de éxito (el de «primera clase real») y firmarlo.
+- [ ] Confirmar que las dos instituciones están aprobadas por la CACE y que sus
+  cuentas están activas.
+- [ ] Decidir si los alumnos serán **ficticios o reales**. Si son reales, revisar
+  aviso de privacidad y consentimiento **antes** de cargar sus datos.
+- [ ] Decidir el tratamiento del certificado: **marca DEMO en base separada**,
+  certificado normal solo para la prueba, o no emitir. Recomendado: DEMO.
+- [ ] Confirmar **URL pública y dominio**; no se emitirán certificados con una URL
+  que pueda cambiar después.
+- [ ] Nombrar responsable técnico, responsable académico y persona de soporte.
+- [ ] Congelar el alcance: dos instituciones, evidencias por archivo, sin panel, sin
+  multi-institución y sin documento internacional.
+- [ ] Definir el **plan B** si falla el correo, la plataforma o un participante.
+- [ ] Escribir el criterio de éxito y el criterio de **no celebrar la demo** si falta
+  algo crítico.
 
-**Aceptación:** fecha, personas, datos, permisos y plan B confirmados por escrito.
+**Aceptación:** fecha, personas, datos, URL, certificados y plan B confirmados.
 
 ---
 
-## Fase 1 — Operación mínima para salir de localhost (1–2 semanas)
+## Fase 1 — Servidor temporal listo (1–2 semanas)
 
-### 1.1 Servidor, dominio y HTTPS
+### 1.1 URL pública, dominio y HTTPS
 
 - [ ] Publicar el build actual en un servidor accesible por los participantes.
-- [ ] Dominio y certificado TLS; una sola URL, sin puertos raros.
-- [ ] Variables de entorno reales; secretos fuera del repositorio.
-- [ ] **Desactivar o eliminar las cuentas de demostración** en producción.
-- [ ] Revisar que el frontend compilado se sirve desde `backend/public` y que las
-  rutas de la API no devuelven el `index.html`.
+- [ ] Dominio y certificado TLS; una sola URL, sin `localhost` ni puertos raros.
+- [ ] Configurar `FRONTEND_URL` y `URL_PUBLICA` con la URL definitiva **antes** de
+  emitir certificados: el QR y los correos dependen de ella.
+- [ ] Si se usa un túnel, que sea con nombre estable o dominio propio; no una URL
+  gratuita que cambie en cada arranque.
+- [ ] Disco persistente para uploads, PDFs y respaldos.
 
-### 1.2 Respaldos y restauración
+### 1.2 Despliegue, migraciones y cola
 
-- [ ] Respaldo **automático diario** de la base y de los archivos subidos.
-- [ ] Retención definida (por ejemplo 7 diarios, 4 semanales) y copia fuera del
-  servidor.
-- [ ] **Prueba de restauración real** en una base aparte, documentada, antes de
-  cargar alumnos reales.
-- [ ] Comprobar que los certificados y las evidencias también se restauran.
+- [ ] `prisma migrate deploy`, nunca `db push` sobre datos reales.
+- [ ] Frontend compilado servido desde `backend/public`; rutas de API fuera del
+  fallback de la SPA.
+- [ ] Worker de correo activo, con reintentos y sin procesos duplicados.
+- [ ] Guion de despliegue reproducible y vuelta atrás documentada.
+- [ ] Probar el despliegue completo una vez antes de la demo.
 
 ### 1.3 Correo real
 
 - [ ] Autorizar el proveedor de correo (está al final del plan).
-- [ ] Dominio de envío con SPF, DKIM y DMARC; remitente visible.
-- [ ] Probar: invitación, recuperación de contraseña, calendario, certificado y
-  rebote.
-- [ ] Worker de la cola activo y con reintentos; límite de envío conocido.
-- [ ] No usar Gmail personal para lotes de certificados.
+- [ ] Dominio de envío con SPF, DKIM y DMARC.
+- [ ] Probar invitación, recuperación, calendario, certificado y rebote.
+- [ ] Conocer el límite de envío y no prometer lotes mayores.
+- [ ] Si no hay autorización, limitar la demo: no se promete entrega de correos.
 
-### 1.4 Seguridad mínima
+### 1.4 Respaldos y restauración
+
+- [ ] Respaldo automático diario de base, uploads y certificados.
+- [ ] Copia fuera del servidor y retención definida.
+- [ ] **Restauración real** en una base aparte, documentada.
+- [ ] Repetir respaldo antes y después de la demo.
+
+### 1.5 Seguridad mínima
 
 - [ ] `helmet` con HSTS, `X-Frame-Options` y CSP global.
 - [ ] Límite de intentos en login, registro y verificación pública.
-- [ ] Cookies seguras, sin trazas internas en las respuestas y sin endpoints de
-  depuración.
+- [ ] Cookies seguras, sin trazas internas ni endpoints de depuración.
 - [ ] Límite de subida y extensiones permitidas para evidencias.
+- [ ] **Cuentas de demostración desactivadas** en el entorno de la demo.
 
-### 1.5 Monitorización y logs
+### 1.6 Monitorización y logs
 
-- [ ] Comprobar `/health` desde fuera del servidor y avisar si cae.
+- [ ] `/health` comprobado desde fuera y aviso si cae.
 - [ ] Logs con identificador de petición y errores 5xx.
 - [ ] Aviso de disco lleno y de cola de correo atascada.
 
-### 1.6 Despliegue y migraciones
+### 1.7 Entorno de demostración
 
-- [ ] `prisma migrate deploy` en el despliegue, no `db push`.
-- [ ] Guion de despliegue reproducible y vuelta atrás documentada.
-- [ ] Probar el despliegue completo una vez antes de la clase.
+- [ ] Base **separada** de cualquier base real; restaurar copia demo o sembrar datos.
+- [ ] Plantilla de certificado con marca **DEMO** o leyenda de demostración.
+- [ ] Instituciones, agentes y docentes de demo; alumnos ficticios si no hay
+  consentimiento.
+- [ ] Forma de reiniciar la demo sin tocar producción.
 
-**Aceptación:** URL pública con HTTPS, correo entregado, restauración comprobada,
-`/health` vigilado y migraciones aplicadas sin pasos manuales ocultos.
+**Aceptación:** URL pública con HTTPS, correo probado, restauración comprobada,
+`/health` vigilado, cola activa y base demo separada.
 
 ---
 
@@ -141,156 +148,196 @@ No es código; es evitar improvisar el día de la clase.
 
 ### 2.1 Privacidad y consentimiento
 
-- [ ] Aviso de privacidad y términos, con versión y fecha de aceptación.
-- [ ] Consentimiento o base legal para cargar nombre, matrícula y correo de alumnos.
-- [ ] Política de retención: institución dada de baja queda **inoperable y
-  archivada**, con historial; certificados conservados y, si procede, anulados.
-- [ ] Enlace al aviso desde el registro y el pie de la aplicación.
+- [ ] Aviso de privacidad y términos con versión y fecha de aceptación.
+- [ ] Base legal o consentimiento para nombre, matrícula y correo de alumnos.
+- [ ] Política de retención: institución dada de baja queda inoperable y archivada,
+  con historial; certificados conservados y anulados si procede.
+- [ ] Enlace al aviso desde el registro y el pie.
 
 ### 2.2 Contraseñas y segundo factor
 
-- [ ] Aplicar la política acordada: mínimo **12**, sin regla del carácter repetido,
+- [ ] Política acordada: mínimo **12**, sin regla del carácter repetido,
   comprobación de contraseñas comunes/filtradas, aviso y desbloqueo administrativo.
-- [ ] Mantener 5 intentos fallidos / 15 minutos, con aviso al usuario.
-- [ ] Si se autoriza, TOTP obligatorio para presidencia y secretaría, con códigos
-  de respaldo y reset auditado.
+- [ ] Mantener 5 intentos/15 minutos.
+- [ ] Si se autoriza, TOTP para presidencia y secretaría, con códigos de respaldo y
+  reset auditado.
 
-### 2.3 Cuentas y roles reales
+### 2.3 Cuentas y roles
 
-- [ ] Crear las cuentas reales de presidencia, secretaría, agentes y docentes.
-- [ ] Revisar que cada rol ve solo lo suyo; probar un 403 y un 401.
-- [ ] Quitar las credenciales de demostración de la documentación de producción.
-- [ ] Verificar la plantilla y el logo del certificado con la CACE.
+- [ ] Crear las cuentas reales o de demo que se usarán ese día.
+- [ ] Probar cada rol: presidencia, secretaría, agente y docente; verificar 401/403.
+- [ ] Quitar credenciales de demostración de la documentación de producción.
+- [ ] Comprobar que cada docente solo ve su institución y su lista.
 
-### 2.4 Integridad que afecta a datos reales
+### 2.4 Certificado y folio
+
+- [ ] Plantilla activa, logo y datos de la CACE revisados.
+- [ ] Entender que el folio lo genera el sistema (`CACE-AAAA-####`); **no hace falta
+  un folio externo**.
+- [ ] La emisión solo se bloquea si la clase no está `FINALIZADO`, falta plantilla,
+  falta lista o se pasa de 500 certificados.
+- [ ] Definir si el certificado de la demo lleva marca DEMO y cómo se explica a los
+  participantes.
+
+### 2.5 Integridad que afecta a datos reales
 
 - [ ] Revisar duplicados antes de añadir `@@unique` de asignaciones y materias.
-- [ ] Añadir solo las restricciones que protegen la clase real; **paginación, N+1
-  y `ENUM`/`CHECK` pueden esperar** a la Fase 4.
-- [ ] Comprobar que el folio del certificado es único y que la verificación no
-  filtra datos personales.
+- [ ] Añadir solo restricciones que protejan la demo; paginación, N+1, `ENUM`/`CHECK`
+  pueden esperar a la Fase 6.
+- [ ] Comprobar que el folio es único y que la verificación no filtra datos.
 
-**Aceptación:** alumnos reales con aviso de privacidad, cuentas reales sin demo,
-contraseñas acordes y certificado de prueba verificable.
+**Aceptación:** alumnos con consentimiento o ficticios, cuentas y roles probados,
+plantilla DEMO verificable y folio generado sin pasos manuales.
 
 ---
 
-## Fase 3 — Ensayo general y primera clase (1 semana)
+## Fase 3 — Release candidate y ensayo (1 semana)
 
-### 3.1 Ensayo con datos ficticios
+### 3.1 Release candidate
+
+- [ ] Etiquetar el commit que se va a demostrar; no desplegar cambios sueltos.
+- [ ] Congelar la configuración y las migraciones 48 horas antes.
+- [ ] Guardar el build, el `.env` de demo (sin secretos en git) y el respaldo.
+- [ ] Verificar que se puede volver a la versión anterior.
+
+### 3.2 Ensayo con datos ficticios
 
 En el servidor de pruebas (`:3001`, nunca el `:3000`):
 
 - [ ] Crear la clase con dos instituciones y recorrer todo el flujo.
-- [ ] Subir lista, crear sesiones, adjuntar evidencias y cerrar la clase.
-- [ ] Emitir certificados, descargar el ZIP y verificar folio y QR.
-- [ ] Probar la cola de correo y el calendario.
-- [ ] Anotar cada fricción y corregir solo lo que impida la clase.
+- [ ] Subir lista, sesiones, evidencias y cerrar.
+- [ ] Emitir, descargar ZIP, verificar folio y QR.
+- [ ] Probar cola de correo y calendario.
+- [ ] Anotar cada fricción; corregir solo lo que impida la demo.
 
-### 3.2 Ensayo con las cuentas reales
+### 3.3 Ensayo con las cuentas reales
 
-- [ ] Repetir el flujo con docentes y agentes reales, sin alumnos reales todavía.
+- [ ] Repetir el flujo con docentes y agentes reales, sin alumnos reales.
 - [ ] Medir quién puede entrar, qué correo recibe y qué pantalla confunde.
-- [ ] Confirmar el enlace de la sesión y el canal de soporte del día.
+- [ ] Confirmar enlace de sesión, soporte y horario.
 
-### 3.3 Día de la clase
+**Aceptación:** release candidate desplegado y ensayado con datos
+ficticios y con cuentas reales. La demo se celebra en la Fase 5.
 
-- [ ] Checklist de accesos, sesión, lista de alumnos y evidencias.
-- [ ] Una persona de soporte pendiente del correo y de la plataforma.
-- [ ] Registrar hora, incidencias y quién las resolvió.
+---
 
-### 3.4 Después de la clase
+## Fase 4 — Funciones opcionales antes de la demo (1 semana)
 
-- [ ] Emitir los certificados y comprobar que llegan.
+**Puerta de entrada:** solo se empieza si las Fases 1 y 2 están verdes, el release
+candidate está desplegado y los ensayos 3.2/3.3 están hechos. Se trabaja en una rama
+aparte; si no se termina **antes del congelamiento de 48 horas**, se descarta la
+rama y se demuestra el release candidate.
+
+### 4.1 Plazos configurables (1–2 días)
+
+- [ ] Campos en `CONFIGURACION_CACE`: 8 días para proponer y 7 para revisar.
+- [ ] Pantalla de presidencia y uso en alta, edición, caducidad y formulario.
+- [ ] e2e: 7 rechaza, 8 acepta; el cambio de la presidencia se aplica.
+
+### 4.2 Evidencias por enlace (3–5 días)
+
+- [ ] `archivoUrl` opcional y `enlaceUrl` con lista blanca: YouTube, Vimeo, Google
+  Drive y OneDrive; solo `https` y enlaces públicos.
+- [ ] Validación sin descargar el enlace en el servidor; abrir en pestaña nueva.
+- [ ] e2e: enlace válido, dominio no permitido y `javascript:` rechazado.
+
+### 4.3 Lo que **no** entra antes de la demo
+
+- Multi-institución.
+- Identificador interno por alumno.
+- Panel de desempeño completo; como mucho, la entrega A de métricas después de la
+  demo.
+- Refactors, paginación o cambios de diseño que no afecten la demo.
+
+Cada función debe salir con migración, backend, interfaz, pruebas y documentación.
+Si el tiempo no alcanza, no se despliega a medias.
+
+---
+
+## Fase 5 — Demo real y cierre (2–3 días)
+
+### 5.1 Día de la demo
+
+- [ ] Checklist de accesos, sesión, lista, evidencias y certificados.
+- [ ] Una persona de soporte pendiente de la plataforma y del correo.
+- [ ] Observadores con guion: login, invitación, roles, móvil, lista, archivos,
+  zona horaria, cierre, emisión, QR y correo.
+- [ ] Registrar cada incidencia con rol, hora, pantalla y captura.
+- [ ] **No corregir código durante la demo** salvo bloqueo total; usar el plan B.
+
+### 5.2 Después de la demo
+
+- [ ] Emitir o completar certificados y comprobar que llegan.
 - [ ] Verificar varios folios desde el QR y desde la URL pública.
-- [ ] Hacer un respaldo posterior y probar una restauración.
-- [ ] Reunión de cierre: qué falló, qué se corrige y qué se pospone.
+- [ ] Respaldo posterior y restauración de prueba.
+- [ ] Reunión de cierre: errores humanos, errores técnicos y qué se pospone.
 
-**Aceptación:** una clase real completa, certificados verificables, correos
-entregados y respaldo restaurado. Recién entonces se abre la Fase 4.
-
----
-
-## Fase 4 — Después de la primera clase (4–6 semanas)
-
-Nada de esto bloquea la primera clase. Se hace **por incrementos pequeños**, no
-todo de golpe.
-
-### 4.1 Mejoras rápidas (1–2 semanas)
-
-- [ ] Plazos configurables por la presidencia: **8 días para proponer, 7 para
-  revisar**.
-- [ ] Evidencias por enlace con lista blanca: YouTube, Vimeo, Google Drive y
-  OneDrive, solo `https` y enlaces públicos; sin descargar el enlace en el servidor.
-- [ ] Correos de hitos y preferencias, sin duplicar los recordatorios del `.ics`.
-
-### 4.2 Panel de desempeño, en tres entregas
-
-No se implementa completo en una sola fase.
-
-1. **Entrega A — métricas y ranking (1 semana).** Solicitudes y proyectos por
-   estado, una sola métrica de cierre (`FINALIZADO`), tasa de caducidad, tiempo de
-   respuesta, tasa de no conclusión y proyectos estancados; filtro mensual
-   ajustable; presidencia y secretaría. Sin acciones ni mensajes.
-2. **Entrega B — plan de acción (3–5 días).** Prioridad, nota, responsable, fecha
-   y estado por institución, con historial; secretaría en lectura.
-3. **Entrega C — vista del agente y canal (1 semana).** Versión simplificada de su
-   institución y sus docentes y canal **solo dentro de la app**, sin correo.
-
-### 4.3 Clases con múltiples instituciones (3–5 semanas)
-
-- [ ] Tabla de participantes, migración del destino actual y revisión por destino.
-- [ ] Mínimo 2 participantes; un rechazo no tumba la clase si quedan 2 o más.
-- [ ] Participantes congelados al crear el proyecto, observadores sin certificado,
-  cierre por el docente de origen con supervisión de la CACE.
-- [ ] Certificados y calendario con todas las instituciones.
-- [ ] Solo se hace si hay demanda real; la primera clase funciona con dos.
-
-### 4.4 Identificador interno y deudas técnicas
-
-- [ ] Si la CACE lo confirma, código interno por alumno para distinguir matrículas
-  repetidas; nunca impreso ni público (el folio sigue siendo el identificador).
-- [ ] `ENUM`/`CHECK`, paginación y revisión de N+1 en los listados grandes.
-- [ ] Exportar datos y baja de usuario, centro de ayuda y accesibilidad.
+**Aceptación:** una demo completa, certificados DEMO verificables, correos
+entregados (si se autorizó), respaldo restaurado y lista de incidencias.
 
 ---
 
-## Fase 5 — Endurecimiento y mantenibilidad (continuo)
+## Fase 6 — Después de la demo (4–6 semanas)
+
+### 6.1 Panel de desempeño, en tres entregas
+
+1. **Métricas y ranking:** una sola métrica de cierre, caducidad, tiempo de
+   respuesta, no conclusión y estancados; filtro mensual; presidencia y secretaría.
+2. **Plan de acción:** prioridad, responsable, fecha y estado por institución.
+3. **Vista del agente y canal in-app:** su institución y sus docentes; sin correo.
+
+### 6.2 Multi-institución
+
+- [ ] Participantes, migración del destino actual, revisión por destino.
+- [ ] Mínimo 2; rechazo no tumba la clase si quedan 2 o más.
+- [ ] Participantes congelados, observadores sin certificado y cierre por el docente
+  de origen con supervisión de la CACE.
+
+### 6.3 Identificador y deudas
+
+- [ ] Código interno por alumno solo si la CACE lo confirma; nunca impreso ni público.
+- [ ] `ENUM`/`CHECK`, paginación y revisión de N+1.
+- [ ] Exportar datos, baja de usuario, ayuda contextual y accesibilidad.
+
+---
+
+## Fase 7 — Endurecimiento y mantenibilidad (continuo)
 
 - [ ] Extraer componentes comunes de agente/docente.
 - [ ] Trocear `cace.component.ts` y `proyecto.component.ts`.
 - [ ] `prisma/seed.ts` y borrar el andamiaje SSR inerte.
-- [ ] Swagger interno, despliegue reproducible y automatización de migraciones.
+- [ ] Swagger interno, despliegue reproducible y migraciones automatizadas.
 - [ ] Documentación y `.docx` fuera de git.
 
 ---
 
 ## Decisiones cerradas
 
+- **Demo:** base separada, certificados con marca DEMO salvo autorización expresa.
+- **Folio:** el sistema genera `CACE-AAAA-####`; no se requiere folio externo.
 - **Plazos:** 8 días para proponer y 7 para revisar; configurables por presidencia.
-- **Participantes:** mínimo 2 instituciones en total; un rechazo no tumba la clase
-  si quedan 2 o más; un solo proyecto; participantes congelados al crear; el
-  docente de origen cierra con supervisión de la CACE.
+- **Participantes:** mínimo 2 instituciones; un rechazo no tumba la clase si quedan
+  2 o más; un solo proyecto; congelados al crear; cierra el docente de origen.
 - **Contraseñas:** mínimo 12, sin regla del carácter repetido, comprobación de
   filtradas, 5 intentos/15 minutos, aviso y desbloqueo administrativo.
 - **Notificaciones:** correo para hitos y seguridad; el resto dentro de la app; no
   duplicar el `.ics`.
 - **Baja de institución:** inoperable y archivada, con historial; certificados
-  conservados y anulados si procede; sin borrado en cascada.
-- **Sede:** una sola instancia y una sola base de datos.
+  conservados y anulados si procede.
+- **Sede:** una sola instancia y una sola base.
 - **Identificador:** sin pasaporte/DNI; el folio es el identificador público.
 - **Enlaces:** YouTube, Vimeo, Google Drive y OneDrive, solo `https` y públicos.
-- **Panel:** una sola métrica de cierre (`FINALIZADO`); periodo mensual ajustable;
-  presidencia y secretaría ven todo (secretaría en lectura); agentes ven su
-  institución y sus docentes; canal solo in-app.
+- **Panel:** una sola métrica de cierre; periodo mensual ajustable; presidencia y
+  secretaría ven todo (secretaría en lectura); agentes ven su institución y sus
+  docentes; canal solo in-app.
 
 ## Pendientes de autorización (al final, para la próxima reunión)
 
 ### TOTP para presidencia y secretaría
 
 - Qué se decide: exigir un código de app autenticadora además de la contraseña.
-- Recomendación: obligatorio para presidencia y secretaría, con códigos de
-  respaldo y reset auditado.
+- Recomendación: obligatorio para presidencia y secretaría, con códigos de respaldo
+  y reset auditado.
 - Falta: quién resetea, cuántos códigos y si se extiende a agentes.
 - Mientras no se autorice: no se toca el login actual.
 
@@ -301,10 +348,10 @@ No se implementa completo en una sola fase.
 - Recomendación: proveedor transaccional con dominio propio, SPF/DKIM/DMARC,
   rebotes y la cola actual.
 - Falta: dominio, presupuesto, volumen estimado y quién administra el DNS.
-- Mientras no se autorice: las pruebas siguen con el correo actual; no se promete
-  envío masivo en producción.
+- Mientras no se autorice: la demo puede hacerse, pero no se promete entrega
+  masiva ni confiable de correos.
 
-## Decisiones menores que pueden esperar a la Fase 4
+## Decisiones menores que pueden esperar
 
 - ¿Código interno por alumno o basta el folio?
 - ¿El agente ve el detalle por docente o solo el agregado de su institución?
