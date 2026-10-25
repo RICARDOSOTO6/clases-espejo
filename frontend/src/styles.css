@@ -104,8 +104,8 @@
   --shadow-card-elevated: 0 8px 24px rgba(15, 23, 42, 0.08);
 
   /* — Tipografía — */
-  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  --font:
+    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
   /* — Espaciado — */
   --space-1: 4px;
@@ -293,7 +293,9 @@ img {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .navbar-toggle:hover {
@@ -388,7 +390,9 @@ img {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .navbar-icon:hover {
@@ -493,7 +497,9 @@ img {
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .sidebar-link svg {
@@ -550,8 +556,11 @@ img {
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease,
-    color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .btn:disabled {
@@ -675,7 +684,9 @@ textarea {
   color: var(--text);
   font-family: inherit;
   font-size: 0.9375rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 input::placeholder {
@@ -719,6 +730,51 @@ textarea.ng-invalid.ng-touched:focus {
   color: var(--text-muted);
 }
 
+/* Aceptación del aviso: el checkbox no debe ocupar todo el ancho del campo. */
+.legal-check label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.legal-check input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--primary-700);
+}
+
+.legal-check a {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+.legal-foot {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
+.legal-foot a {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
+.app-footer {
+  padding: 24px 0 8px;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.app-footer a {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
 .password-field {
   position: relative;
 }
@@ -742,7 +798,9 @@ textarea.ng-invalid.ng-touched:focus {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .password-toggle:hover {
@@ -1340,7 +1398,9 @@ textarea.ng-invalid.ng-touched:focus {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .flag-pais:hover {
@@ -1459,7 +1519,9 @@ textarea.ng-invalid.ng-touched:focus {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .collapse-toggle:hover {
@@ -1631,7 +1693,9 @@ textarea.ng-invalid.ng-touched:focus {
   font-weight: 600;
   cursor: pointer;
   box-shadow: var(--shadow-card-elevated);
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .chat-toggle:hover {
@@ -1797,7 +1861,9 @@ textarea.ng-invalid.ng-touched:focus {
   background: var(--primary-700);
   color: #fff;
   cursor: pointer;
-  transition: filter 0.15s ease, transform 0.15s ease;
+  transition:
+    filter 0.15s ease,
+    transform 0.15s ease;
 }
 
 .chat-send:hover:not(:disabled) {
@@ -2938,7 +3004,9 @@ textarea.ng-invalid.ng-touched:focus {
   font-family: inherit;
   color: var(--text);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .calendario-dia:hover {

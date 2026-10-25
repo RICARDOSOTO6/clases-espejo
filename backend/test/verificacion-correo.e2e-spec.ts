@@ -56,6 +56,7 @@ describe('Fase 1: verificación de correo y cambio de dirección', () => {
     dni: 'VERI0001',
     correo: correoNuevoAgente,
     password: PASSWORD_PRUEBA,
+    aceptaAviso: true,
     nombreInstitucion: 'Universidad de Verificación',
     pais: 'México',
     codigoPais: 'MX',

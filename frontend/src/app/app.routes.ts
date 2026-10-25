@@ -25,32 +25,31 @@ export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth/login/login.component').then(
-        (m) => m.LoginComponent,
-      ),
+      import('./features/auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
+    // Página pública: la lee quien todavía no tiene cuenta y la enlazan el
+    // registro, la activación y el acceso.
+    path: 'privacidad',
+    loadComponent: () =>
+      import('./features/privacidad/privacidad.component').then((m) => m.PrivacidadComponent),
   },
   {
     path: 'register',
     loadComponent: () =>
-      import('./features/auth/register/register.component').then(
-        (m) => m.RegisterComponent,
-      ),
+      import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
     path: 'activate',
     loadComponent: () =>
-      import('./features/auth/activate/activate.component').then(
-        (m) => m.ActivateComponent,
-      ),
+      import('./features/auth/activate/activate.component').then((m) => m.ActivateComponent),
   },
   {
     // Recuperación de contraseña (Fase 1): pedir el enlace y usarlo. Son
     // pantallas públicas: quien las usa no tiene sesión.
     path: 'recuperar',
     loadComponent: () =>
-      import('./features/auth/recuperar/recuperar.component').then(
-        (m) => m.RecuperarComponent,
-      ),
+      import('./features/auth/recuperar/recuperar.component').then((m) => m.RecuperarComponent),
   },
   {
     path: 'restablecer',
@@ -75,22 +74,18 @@ export const routes: Routes = [
     // que va dentro del QR.
     path: 'verificar/:folio',
     loadComponent: () =>
-      import('./features/verificacion/verificacion.component').then(
-        (m) => m.VerificacionComponent,
-      ),
+      import('./features/verificacion/verificacion.component').then((m) => m.VerificacionComponent),
   },
 
   // --- Secciones de la CACE (páginas propias dentro del mismo panel) ---
   {
     path: 'panel/personalizacion',
-    loadComponent: () =>
-      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    loadComponent: () => import('./features/cace/cace.component').then((m) => m.CaceComponent),
     canActivate: [authGuard, roleGuard('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
   },
   {
     path: 'panel/certificado',
-    loadComponent: () =>
-      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    loadComponent: () => import('./features/cace/cace.component').then((m) => m.CaceComponent),
     canActivate: [authGuard, roleGuard('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
   },
 
@@ -100,25 +95,20 @@ export const routes: Routes = [
     pathMatch: 'full',
     canMatch: [panelDeRol('AGENTE')],
     loadComponent: () =>
-      import('./features/agente/agente.component').then(
-        (m) => m.AgenteComponent,
-      ),
+      import('./features/agente/agente.component').then((m) => m.AgenteComponent),
   },
   {
     path: 'panel',
     pathMatch: 'full',
     canMatch: [panelDeRol('DOCENTE')],
     loadComponent: () =>
-      import('./features/docente/docente.component').then(
-        (m) => m.DocenteComponent,
-      ),
+      import('./features/docente/docente.component').then((m) => m.DocenteComponent),
   },
   {
     path: 'panel',
     pathMatch: 'full',
     canMatch: [panelDeRol('PRESIDENTE_CACE', 'SECRETARIA_CACE')],
-    loadComponent: () =>
-      import('./features/cace/cace.component').then((m) => m.CaceComponent),
+    loadComponent: () => import('./features/cace/cace.component').then((m) => m.CaceComponent),
   },
 
   // --- Compatibilidad con enlaces guardados de antes ---
@@ -139,9 +129,7 @@ export const routes: Routes = [
   {
     path: 'proyectos/:id',
     loadComponent: () =>
-      import('./features/proyecto/proyecto.component').then(
-        (m) => m.ProyectoComponent,
-      ),
+      import('./features/proyecto/proyecto.component').then((m) => m.ProyectoComponent),
     canActivate: [authGuard],
   },
   {

@@ -837,11 +837,31 @@
                 </table>
               </div>
 
+              <div class="form-field legal-check">
+                <label for="consentimiento-alumnos">
+                  <input
+                    id="consentimiento-alumnos"
+                    type="checkbox"
+                    [checked]="declaraConsentimientoAlumnos()"
+                    (change)="declaraConsentimientoAlumnos.set($any($event.target).checked)"
+                  />
+                  <span>
+                    Declaro que mi institución cuenta con la autorización o base legal para cargar
+                    el nombre, la matrícula y el correo de estos alumnos. Ver
+                    <a routerLink="/privacidad" target="_blank" rel="noopener">
+                      aviso de privacidad</a
+                    >.
+                  </span>
+                </label>
+              </div>
+
               <div class="alumnos-acciones">
                 <button
                   type="button"
                   class="btn btn-primary"
-                  [disabled]="guardandoLista() || vista.filas.length === 0"
+                  [disabled]="
+                    guardandoLista() || vista.filas.length === 0 || !declaraConsentimientoAlumnos()
+                  "
                   (click)="guardarLista()"
                 >
                   @if (guardandoLista()) {

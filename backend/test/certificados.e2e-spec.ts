@@ -68,6 +68,19 @@ describe('Flujo 4: certificados y verificación pública', () => {
     await app.close();
   });
 
+  it('0. no guarda la lista sin declarar la autorización de los alumnos', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .put(`/proyectos/${proyectoId}/listas-alumnos`)
+      .set(autenticado(tokenDocenteA))
+      .send({
+        origen: 'PEGADO',
+        alumnos: [{ nombre: 'Alumno Sin Consentimiento' }],
+        declaraConsentimiento: false,
+      })
+      .expect(400);
+    expect(JSON.stringify(respuesta.body.message)).toContain('autorización');
+  });
+
   it('1. el docente sube la lista de SUS alumnos', async () => {
     const respuesta = await request(app.getHttpServer())
       .put(`/proyectos/${proyectoId}/listas-alumnos`)
@@ -86,6 +99,7 @@ describe('Flujo 4: certificados y verificación pública', () => {
             correo: 'alumno.dos@prueba.mx',
           },
         ],
+        declaraConsentimiento: true,
       })
       .expect(200);
 
@@ -93,6 +107,13 @@ describe('Flujo 4: certificados y verificación pública', () => {
     expect(alumnos).toHaveLength(2);
     alumnoId = alumnos[0].id;
     otroAlumnoId = alumnos[1].id;
+
+    const lista = await prisma.listaAlumnos.findFirstOrThrow({
+      where: { proyectoId },
+      select: { consentimientoVersion: true, consentimientoEn: true },
+    });
+    expect(lista.consentimientoVersion).toBe('2026-10-25');
+    expect(lista.consentimientoEn).toBeInstanceOf(Date);
   });
 
   it('2. con la clase abierta no se puede emitir (400)', async () => {

@@ -1,9 +1,4 @@
-export type Rol =
-  | 'AGENTE'
-  | 'DOCENTE'
-  | 'PRESIDENTE_CACE'
-  | 'SECRETARIA_CACE'
-  | null;
+export type Rol = 'AGENTE' | 'DOCENTE' | 'PRESIDENTE_CACE' | 'SECRETARIA_CACE' | null;
 
 export interface Usuario {
   id: number;
@@ -37,6 +32,8 @@ export interface RegisterDto {
   dni: string;
   correo: string;
   password: string;
+  /** Debe venir en true: sin aceptar el aviso no se crea la cuenta. */
+  aceptaAviso: boolean;
   /**
    * Institución existente a la que se une (buscar antes de crear). Cuando viene,
    * los datos de la institución no se envían.
@@ -155,4 +152,6 @@ export interface ActivateAccountDto {
   gradoAcademico: string;
   especialidad: string;
   password: string;
+  /** Aceptación del aviso al activar la invitación. */
+  aceptaAviso: boolean;
 }

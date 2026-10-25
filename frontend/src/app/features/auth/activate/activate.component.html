@@ -12,173 +12,213 @@
 
   <main class="auth-main">
     <section class="auth-card wide">
-
-    @if (success()) {
-      <h1 class="auth-title">¡Cuenta creada!</h1>
-      <p class="auth-subtitle">
-        Tu cuenta se activó correctamente. Ya puedes iniciar sesión.
-      </p>
-      <a class="btn btn-primary" routerLink="/login">Ir a iniciar sesión</a>
-    } @else if (tokenInvalido()) {
-      <h1 class="auth-title">Enlace no válido</h1>
-      <p class="auth-subtitle">
-        {{ error() ?? 'El enlace de activación no es válido o ha expirado.' }}
-      </p>
-      <p class="auth-alt">
-        Si necesitas ayuda, contacta a tu agente de internacionalización.
-      </p>
-    } @else {
-      <h1 class="auth-title">Completa tu registro</h1>
-      <p class="auth-subtitle">
-        @if (correo()) {
-          Has sido invitado como docente. Completa tus datos para
-          <strong>{{ correo() }}</strong>.
-        } @else {
-          Completa tus datos para terminar tu registro.
-        }
-      </p>
-
-      <div class="alert alert-info">
-        Los campos de texto (nombres, apellidos y especialidad) solo aceptan
-        letras. Evita números, símbolos y combinaciones aleatorias.
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="row">
-          <div class="col form-field">
-            <label for="nombres">Nombres</label>
-            <input id="nombres" type="text" formControlName="nombres" />
-            <p class="field-hint">Solo letras, sin números ni símbolos</p>
-            @if (mensajeDe('nombres'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-          <div class="col form-field">
-            <label for="apellidoPaterno">Apellido paterno</label>
-            <input id="apellidoPaterno" type="text" formControlName="apellidoPaterno" />
-            <p class="field-hint">Solo letras, sin números ni símbolos</p>
-            @if (mensajeDe('apellidoPaterno'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col form-field">
-            <label for="apellidoMaterno">Apellido materno</label>
-            <input id="apellidoMaterno" type="text" formControlName="apellidoMaterno" />
-            <p class="field-hint">Solo letras, sin números ni símbolos</p>
-            @if (mensajeDe('apellidoMaterno'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-          <div class="col form-field">
-            <label for="tipoDocumento">Tipo de documento</label>
-            <select id="tipoDocumento" formControlName="tipoDocumento">
-              @for (t of tiposDocumento; track t) {
-                <option [value]="t">{{ t }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col form-field">
-            <label for="dni">Número de documento</label>
-            <input id="dni" type="text" formControlName="dni" />
-            @if (mensajeDe('dni'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-          <div class="col form-field">
-            <label for="gradoAcademico">Grado académico</label>
-            <select id="gradoAcademico" formControlName="gradoAcademico">
-              <option value="" disabled>Selecciona un grado</option>
-              @for (g of grados; track g) {
-                <option [value]="g">{{ g }}</option>
-              }
-            </select>
-            @if (mensajeDe('gradoAcademico'); as msg) {
-              <p class="field-error">{{ msg }}</p>
-            }
-          </div>
-        </div>
-
-        <div class="form-field">
-          <label for="especialidad">Especialidad</label>
-          <input id="especialidad" type="text" formControlName="especialidad" />
-          <p class="field-hint">Solo letras, sin números ni símbolos</p>
-          @if (mensajeDe('especialidad'); as msg) {
-            <p class="field-error">{{ msg }}</p>
+      @if (success()) {
+        <h1 class="auth-title">¡Cuenta creada!</h1>
+        <p class="auth-subtitle">Tu cuenta se activó correctamente. Ya puedes iniciar sesión.</p>
+        <a class="btn btn-primary" routerLink="/login">Ir a iniciar sesión</a>
+      } @else if (tokenInvalido()) {
+        <h1 class="auth-title">Enlace no válido</h1>
+        <p class="auth-subtitle">
+          {{ error() ?? 'El enlace de activación no es válido o ha expirado.' }}
+        </p>
+        <p class="auth-alt">Si necesitas ayuda, contacta a tu agente de internacionalización.</p>
+      } @else {
+        <h1 class="auth-title">Completa tu registro</h1>
+        <p class="auth-subtitle">
+          @if (correo()) {
+            Has sido invitado como docente. Completa tus datos para
+            <strong>{{ correo() }}</strong
+            >.
+          } @else {
+            Completa tus datos para terminar tu registro.
           }
+        </p>
+
+        <div class="alert alert-info">
+          Los campos de texto (nombres, apellidos y especialidad) solo aceptan letras. Evita
+          números, símbolos y combinaciones aleatorias.
         </div>
 
-        <div class="form-field">
-          <label for="password">Contraseña</label>
-          <div class="password-field">
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="row">
+            <div class="col form-field">
+              <label for="nombres">Nombres</label>
+              <input id="nombres" type="text" formControlName="nombres" />
+              <p class="field-hint">Solo letras, sin números ni símbolos</p>
+              @if (mensajeDe('nombres'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+            <div class="col form-field">
+              <label for="apellidoPaterno">Apellido paterno</label>
+              <input id="apellidoPaterno" type="text" formControlName="apellidoPaterno" />
+              <p class="field-hint">Solo letras, sin números ni símbolos</p>
+              @if (mensajeDe('apellidoPaterno'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col form-field">
+              <label for="apellidoMaterno">Apellido materno</label>
+              <input id="apellidoMaterno" type="text" formControlName="apellidoMaterno" />
+              <p class="field-hint">Solo letras, sin números ni símbolos</p>
+              @if (mensajeDe('apellidoMaterno'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+            <div class="col form-field">
+              <label for="tipoDocumento">Tipo de documento</label>
+              <select id="tipoDocumento" formControlName="tipoDocumento">
+                @for (t of tiposDocumento; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col form-field">
+              <label for="dni">Número de documento</label>
+              <input id="dni" type="text" formControlName="dni" />
+              @if (mensajeDe('dni'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+            <div class="col form-field">
+              <label for="gradoAcademico">Grado académico</label>
+              <select id="gradoAcademico" formControlName="gradoAcademico">
+                <option value="" disabled>Selecciona un grado</option>
+                @for (g of grados; track g) {
+                  <option [value]="g">{{ g }}</option>
+                }
+              </select>
+              @if (mensajeDe('gradoAcademico'); as msg) {
+                <p class="field-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="especialidad">Especialidad</label>
+            <input id="especialidad" type="text" formControlName="especialidad" />
+            <p class="field-hint">Solo letras, sin números ni símbolos</p>
+            @if (mensajeDe('especialidad'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="password">Contraseña</label>
+            <div class="password-field">
+              <input
+                id="password"
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="••••••"
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="showPassword = !showPassword"
+                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="showPassword"
+              >
+                @if (showPassword) {
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"
+                    />
+                    <path
+                      d="M6.61 6.61A13.5 13.5 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"
+                    />
+                    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                    <line x1="2" y1="2" x2="22" y2="22" />
+                  </svg>
+                } @else {
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                }
+              </button>
+            </div>
+            @if (mensajeDe('password'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="confirmar">Confirmar contraseña</label>
             <input
-              id="password"
-              [type]="showPassword ? 'text' : 'password'"
-              formControlName="password"
+              id="confirmar"
+              type="password"
+              formControlName="confirmar"
               placeholder="••••••"
               autocomplete="new-password"
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="showPassword = !showPassword"
-              [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
-              [attr.aria-pressed]="showPassword"
-            >
-              @if (showPassword) {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                  <path d="M6.61 6.61A13.5 13.5 0 0 0 2 11s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-                  <line x1="2" y1="2" x2="22" y2="22" />
-                </svg>
-              } @else {
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              }
-            </button>
+            @if (mensajeDe('confirmar'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+            @if (passwordsNoCoinciden && form.get('confirmar')?.touched) {
+              <p class="field-error">Las contraseñas no coinciden</p>
+            }
           </div>
-          @if (mensajeDe('password'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-        </div>
 
-        <div class="form-field">
-          <label for="confirmar">Confirmar contraseña</label>
-          <input
-            id="confirmar"
-            type="password"
-            formControlName="confirmar"
-            placeholder="••••••"
-            autocomplete="new-password"
-          />
-          @if (mensajeDe('confirmar'); as msg) {
-            <p class="field-error">{{ msg }}</p>
-          }
-          @if (passwordsNoCoinciden && form.get('confirmar')?.touched) {
-            <p class="field-error">Las contraseñas no coinciden</p>
-          }
-        </div>
+          <div class="form-field legal-check">
+            <label for="aceptaAviso">
+              <input id="aceptaAviso" type="checkbox" formControlName="aceptaAviso" />
+              <span>
+                He leído y acepto el
+                <a routerLink="/privacidad" target="_blank" rel="noopener">
+                  aviso de privacidad y los términos</a
+                >.
+              </span>
+            </label>
+            @if (mensajeDe('aceptaAviso'); as msg) {
+              <p class="field-error">{{ msg }}</p>
+            }
+          </div>
 
-        @if (error()) {
-          <div class="alert alert-error" role="alert">{{ error() }}</div>
-        }
-
-        <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading()">
-          @if (loading()) {
-            <span class="spinner" aria-hidden="true"></span>
+          @if (error()) {
+            <div class="alert alert-error" role="alert">{{ error() }}</div>
           }
-          {{ loading() ? 'Creando cuenta...' : 'Crear mi cuenta' }}
-        </button>
-      </form>
-    }
+
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || loading()">
+            @if (loading()) {
+              <span class="spinner" aria-hidden="true"></span>
+            }
+            {{ loading() ? 'Creando cuenta...' : 'Crear mi cuenta' }}
+          </button>
+        </form>
+      }
+      <p class="legal-foot">
+        <a routerLink="/privacidad" target="_blank" rel="noopener">
+          Aviso de privacidad y términos
+        </a>
+      </p>
     </section>
   </main>
 </div>

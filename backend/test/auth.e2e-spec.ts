@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Flujo crítico 1: registro de un agente → aprobación de su institución por la
  * CACE → invitación de un docente → activación de la cuenta del docente.
  *
@@ -20,6 +20,7 @@ import {
   type Semilla,
 } from './base-e2e';
 import type { PrismaService } from '../src/prisma/prisma.service';
+import { VERSION_AVISO_PRIVACIDAD } from '../src/common/privacidad';
 
 jest.setTimeout(60000);
 
@@ -58,6 +59,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
     dni: 'NUEVA001',
     correo: correoAgenteNuevo,
     password: PASSWORD_PRUEBA,
+    aceptaAviso: true,
     nombreInstitucion: 'Universidad Nueva de Prueba',
     pais: 'México',
     codigoPais: 'MX',
@@ -91,6 +93,21 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
     expect(respuesta.body.institucion.estadoCace).toBe('PENDIENTE');
     institucionId = respuesta.body.institucion.id;
     expect(institucionId).toBeGreaterThan(0);
+
+    const guardado = await prisma.usuario.findUniqueOrThrow({
+      where: { correo: correoAgenteNuevo },
+      select: { aceptoAvisoVersion: true, aceptoAvisoEn: true },
+    });
+    expect(guardado.aceptoAvisoVersion).toBe(VERSION_AVISO_PRIVACIDAD);
+    expect(guardado.aceptoAvisoEn).toBeInstanceOf(Date);
+  });
+
+  it('1b. sin aceptar el aviso no se crea la cuenta (400)', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ ...altaAgente, aceptaAviso: false })
+      .expect(400);
+    expect(JSON.stringify(respuesta.body.message)).toContain('aviso');
   });
 
   it('2. sin confirmar el correo no se puede entrar; con el enlace, sí', async () => {
@@ -239,6 +256,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
         gradoAcademico: 'Maestría',
         especialidad: 'Redes de Computadoras',
         password: 'PracticaSegura12',
+        aceptaAviso: true,
       })
       .expect(201);
   });
@@ -264,6 +282,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
         gradoAcademico: 'Maestría',
         especialidad: 'Redes de Computadoras',
         password: 'PracticaSegura12',
+        aceptaAviso: true,
       })
       .expect(400);
   });

@@ -11,6 +11,10 @@
  */
 import 'dotenv/config';
 
+// Las suites no deben arrancar el worker periódico de correo: la cola se procesa
+// a mano para que el resultado sea determinista (el worker lo comprueba).
+process.env.NODE_ENV = 'test';
+
 if (process.env.TEST_DATABASE_URL) {
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 }

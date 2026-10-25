@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  Equals,
   IsArray,
   IsBoolean,
   IsIn,
@@ -39,6 +40,16 @@ export class GuardarListaDto {
   @ValidateNested({ each: true })
   @Type(() => AlumnoDto)
   alumnos!: AlumnoDto[];
+
+  /**
+   * Declaración de que la institución cuenta con base legal o consentimiento
+   * para compartir nombre, matrícula y correo de los alumnos.
+   */
+  @Equals(true, {
+    message:
+      'Debes declarar que cuentas con autorización para cargar los datos de los alumnos',
+  })
+  declaraConsentimiento!: boolean;
 }
 
 /** Para el caso de pegar la lista a mano (sin archivo). */

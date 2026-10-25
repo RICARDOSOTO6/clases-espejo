@@ -21,16 +21,11 @@ export class ListasAlumnosService {
 
   /** La lista guardada, o `null` si todavía no hay. */
   obtener(proyectoId: number): Observable<ListaAlumnos | null> {
-    return this.http.get<ListaAlumnos | null>(
-      `${API_URL}/proyectos/${proyectoId}/listas-alumnos`,
-    );
+    return this.http.get<ListaAlumnos | null>(`${API_URL}/proyectos/${proyectoId}/listas-alumnos`);
   }
 
   /** Lee un archivo de Excel o CSV y devuelve la vista previa, sin guardar. */
-  previsualizarArchivo(
-    proyectoId: number,
-    archivo: File,
-  ): Observable<PrevisualizacionLista> {
+  previsualizarArchivo(proyectoId: number, archivo: File): Observable<PrevisualizacionLista> {
     const datos = new FormData();
     datos.append('archivo', archivo);
     return this.http.post<PrevisualizacionLista>(
@@ -40,10 +35,7 @@ export class ListasAlumnosService {
   }
 
   /** Lee la lista pegada a mano (un alumno por línea). */
-  previsualizarTexto(
-    proyectoId: number,
-    texto: string,
-  ): Observable<PrevisualizacionLista> {
+  previsualizarTexto(proyectoId: number, texto: string): Observable<PrevisualizacionLista> {
     return this.http.post<PrevisualizacionLista>(
       `${API_URL}/proyectos/${proyectoId}/listas-alumnos/previsualizar`,
       { texto },
@@ -55,11 +47,13 @@ export class ListasAlumnosService {
     proyectoId: number,
     origen: OrigenLista,
     alumnos: AlumnoAGuardar[],
+    declaraConsentimiento = true,
   ): Observable<ListaAlumnos> {
-    return this.http.put<ListaAlumnos>(
-      `${API_URL}/proyectos/${proyectoId}/listas-alumnos`,
-      { origen, alumnos },
-    );
+    return this.http.put<ListaAlumnos>(`${API_URL}/proyectos/${proyectoId}/listas-alumnos`, {
+      origen,
+      alumnos,
+      declaraConsentimiento,
+    });
   }
 
   /** Corrige un alumno o lo deja fuera de los certificados. */
@@ -75,10 +69,7 @@ export class ListasAlumnosService {
   }
 
   /** Saca a un alumno de la lista. */
-  eliminarAlumno(
-    proyectoId: number,
-    alumnoId: number,
-  ): Observable<ListaAlumnos> {
+  eliminarAlumno(proyectoId: number, alumnoId: number): Observable<ListaAlumnos> {
     return this.http.delete<ListaAlumnos>(
       `${API_URL}/proyectos/${proyectoId}/listas-alumnos/alumnos/${alumnoId}`,
     );

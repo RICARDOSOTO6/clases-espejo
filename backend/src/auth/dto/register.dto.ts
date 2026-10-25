@@ -1,4 +1,5 @@
 import {
+  Equals,
   IsEmail,
   IsInt,
   IsNotEmpty,
@@ -31,6 +32,12 @@ export class RegisterDto extends DatosPersonaDto {
     message: `La contraseña debe tener al menos ${PASSWORD_MINIMO} caracteres`,
   })
   password!: string;
+
+  /** Sin aceptar el aviso no se crea la cuenta; la UI lo exige con un checkbox. */
+  @Equals(true, {
+    message: 'Debes aceptar el aviso de privacidad y los términos',
+  })
+  aceptaAviso!: boolean;
 
   /** Institución existente a la que se une el agente (buscar antes de crear). */
   @IsOptional()

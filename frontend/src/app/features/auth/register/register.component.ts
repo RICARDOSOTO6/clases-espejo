@@ -1,24 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { InstitucionesService } from '../../../core/services/instituciones.service';
-import {
-  InstitucionDirectorio,
-  RegisterDto,
-} from '../../../core/models/auth.models';
+import { InstitucionDirectorio, RegisterDto } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import { urlDeArchivo } from '../../../core/utils/url-archivo.util';
-import {
-  CARGOS,
-  PAISES,
-  TIPOS_DOCUMENTO,
-} from '../../../core/constants/catalogos';
+import { CARGOS, PAISES, TIPOS_DOCUMENTO } from '../../../core/constants/catalogos';
 import { esTextoValido } from '../../../core/utils/validators';
 import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
@@ -61,6 +50,7 @@ export class RegisterComponent {
     dni: ['', Validators.required],
     correo: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(12)]],
+    aceptaAviso: [false, Validators.requiredTrue],
     nombreInstitucion: [''],
     paisCodigo: [''],
     estado: [''],
@@ -93,11 +83,7 @@ export class RegisterComponent {
     const lista = this.directorio();
     if (!texto) return lista.slice(0, 30);
     return lista
-      .filter(
-        (i) =>
-          i.nombre.toLowerCase().includes(texto) ||
-          i.pais.toLowerCase().includes(texto),
-      )
+      .filter((i) => i.nombre.toLowerCase().includes(texto) || i.pais.toLowerCase().includes(texto))
       .slice(0, 30);
   });
 
@@ -186,23 +172,12 @@ export class RegisterComponent {
 
   /** Los campos de la institución solo cuentan cuando se crea una nueva. */
   private activarDatosDeInstitucion(): void {
-    this.form.get('nombreInstitucion')?.setValidators([
-      Validators.required,
-      esTextoValido(),
-    ]);
+    this.form.get('nombreInstitucion')?.setValidators([Validators.required, esTextoValido()]);
     this.form.get('paisCodigo')?.setValidators([Validators.required]);
-    this.form.get('estado')?.setValidators([
-      Validators.required,
-      esTextoValido(),
-    ]);
-    this.form.get('ciudad')?.setValidators([
-      Validators.required,
-      esTextoValido(),
-    ]);
+    this.form.get('estado')?.setValidators([Validators.required, esTextoValido()]);
+    this.form.get('ciudad')?.setValidators([Validators.required, esTextoValido()]);
     this.form.get('telefono')?.setValidators([Validators.required]);
-    this.form
-      .get('correoInstitucional')
-      ?.setValidators([Validators.required, Validators.email]);
+    this.form.get('correoInstitucional')?.setValidators([Validators.required, Validators.email]);
     this.actualizarValidaciones();
   }
 
@@ -230,8 +205,7 @@ export class RegisterComponent {
       required: 'Este campo es obligatorio',
       email: 'Introduce un correo válido',
       minlength: 'Mínimo 12 caracteres',
-      textoInvalido:
-        'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
+      textoInvalido: 'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
     });
   }
 
@@ -269,6 +243,7 @@ export class RegisterComponent {
       dni: v.dni ?? '',
       correo: v.correo ?? '',
       password: v.password ?? '',
+      aceptaAviso: v.aceptaAviso === true,
       cargo: v.cargo ?? '',
     };
 

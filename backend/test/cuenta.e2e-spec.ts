@@ -182,6 +182,7 @@ describe('Fase 1: cuenta y acceso', () => {
       tipoDocumento: 'DNI',
       dni: 'POLI0001',
       correo: 'politica@prueba.mx',
+      aceptaAviso: true,
       nombreInstitucion: 'Universidad de Política',
       pais: 'México',
       codigoPais: 'MX',

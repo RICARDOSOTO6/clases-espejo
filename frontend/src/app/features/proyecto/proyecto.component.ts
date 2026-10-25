@@ -110,6 +110,8 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly cargandoLista = signal(false);
   readonly leyendoLista = signal(false);
   readonly guardandoLista = signal(false);
+  /** Declaración expresa antes de guardar datos de alumnos. */
+  readonly declaraConsentimientoAlumnos = signal(false);
   readonly errorLista = signal<string | null>(null);
   readonly avisoLista = signal<string | null>(null);
 
@@ -653,6 +655,12 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   guardarLista(): void {
     const vista = this.vistaPrevia();
     if (!vista || vista.filas.length === 0) return;
+    if (!this.declaraConsentimientoAlumnos()) {
+      this.errorLista.set(
+        'Marca la declaración de autorización para cargar los datos de los alumnos.',
+      );
+      return;
+    }
 
     this.guardandoLista.set(true);
     this.errorLista.set(null);
@@ -665,6 +673,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           matricula: fila.matricula,
           correo: fila.correo,
         })),
+        true,
       )
       .subscribe({
         next: (lista) => {
@@ -672,6 +681,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
           this.vistaPrevia.set(null);
           this.textoPegado.set('');
           this.modoReemplazo.set(false);
+          this.declaraConsentimientoAlumnos.set(false);
           this.guardandoLista.set(false);
           this.avisoLista.set(`Lista guardada: ${lista.resumen.total} alumno(s).`);
           // Los certificados salen de esta lista: la sección se recalcula.

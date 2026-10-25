@@ -177,11 +177,15 @@ instituciones ni alumnos precargados.
 
 ### 2.1 Privacidad y consentimiento
 
-- [ ] Aviso de privacidad y términos con versión y fecha de aceptación.
-- [ ] Base legal o consentimiento para nombre, matrícula y correo de alumnos.
+- [x] Aviso de privacidad y términos con versión y fecha de aceptación
+  (`2026-10-25`): se guarda en `USUARIO` y se exige al registrarse y al activar
+  una invitación.
+- [x] Base legal o consentimiento para nombre, matrícula y correo de alumnos:
+  declaración obligatoria al guardar la lista, con versión y fecha en
+  `LISTA_ALUMNOS`.
 - [ ] Política de retención: institución dada de baja queda inoperable y archivada,
   con historial; certificados conservados y anulados si procede.
-- [ ] Enlace al aviso desde el registro y el pie.
+- [x] Enlace al aviso desde el registro, la activación, el acceso y el pie.
 
 ### 2.2 Contraseñas y segundo factor
 

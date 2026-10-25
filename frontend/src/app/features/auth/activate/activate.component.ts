@@ -1,18 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { ActivateAccountDto } from '../../../core/models/auth.models';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
-import {
-  GRADOS_ACADEMICOS,
-  TIPOS_DOCUMENTO,
-} from '../../../core/constants/catalogos';
+import { GRADOS_ACADEMICOS, TIPOS_DOCUMENTO } from '../../../core/constants/catalogos';
 import { esTextoValido } from '../../../core/utils/validators';
 import { mensajeDeControl } from '../../../core/utils/formulario.util';
 
@@ -43,6 +36,7 @@ export class ActivateComponent implements OnInit {
     especialidad: ['', [Validators.required, esTextoValido()]],
     password: ['', [Validators.required, Validators.minLength(12)]],
     confirmar: ['', Validators.required],
+    aceptaAviso: [false, Validators.requiredTrue],
   });
 
   error = signal<string | null>(null);
@@ -65,9 +59,7 @@ export class ActivateComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.tokenInvalido.set(true);
-        this.error.set(
-          extraerMensajeError(err, 'El enlace no es válido o ha expirado.'),
-        );
+        this.error.set(extraerMensajeError(err, 'El enlace no es válido o ha expirado.'));
       },
     });
   }
@@ -76,8 +68,7 @@ export class ActivateComponent implements OnInit {
     return mensajeDeControl(this.form, campo, {
       required: 'Este campo es obligatorio',
       minlength: 'Mínimo 12 caracteres',
-      textoInvalido:
-        'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
+      textoInvalido: 'Escribe un valor válido (solo letras, sin secuencias aleatorias)',
     });
   }
 
@@ -108,6 +99,7 @@ export class ActivateComponent implements OnInit {
       gradoAcademico: v.gradoAcademico!,
       especialidad: v.especialidad!,
       password: v.password!,
+      aceptaAviso: v.aceptaAviso === true,
     };
 
     this.auth.activarCuenta(dto).subscribe({

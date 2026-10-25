@@ -70,6 +70,10 @@ model Usuario {
   /// Correo confirmado (Fase 1). Las cuentas que ya existían quedan verificadas;
   /// los registros nuevos nacen en `false` hasta abrir el enlace del correo.
   correoVerificado Boolean                    @default(true) @map("correo_verificado")
+  /// Versión del aviso de privacidad aceptada (vacío = nunca aceptó).
+  aceptoAvisoVersion String                   @default("") @map("acepto_aviso_version")
+  /// Momento de la aceptación, para poder demostrarla.
+  aceptoAvisoEn   DateTime?                   @map("acepto_aviso_en")
   recuperaciones  RecuperacionPassword[]
   verificacionesCorreo VerificacionCorreo[]
   enviosCorreo   EnvioCorreo[]
@@ -453,6 +457,9 @@ model ListaAlumnos {
   subidaPorUsuarioId Int                 @map("subida_por_usuario_id")
   /// De dónde salió la lista: EXCEL, CSV o PEGADO.
   origen             String
+  /// Declaración de que se tiene base legal o consentimiento de los alumnos.
+  consentimientoVersion String          @default("") @map("consentimiento_version")
+  consentimientoEn   DateTime?           @map("consentimiento_en")
   creadoEn           DateTime            @default(now()) @map("creado_en")
   actualizadoEn      DateTime            @default(now()) @updatedAt @map("actualizado_en")
   alumnos            Alumno[]

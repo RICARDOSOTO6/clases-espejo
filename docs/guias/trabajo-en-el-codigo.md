@@ -186,7 +186,7 @@ Y siempre, separado y claro: **lo que no está verificado**.
 
 - `backend/src`: módulos por área (`auth`, `usuarios`, `agentes`, `instituciones`,
   `solicitudes`, `proyectos`, `certificados`, `cace`, `recordatorios`).
-- `backend/prisma/schema.prisma`: el modelo (35 tablas, 30 migraciones).
+- `backend/prisma/schema.prisma`: el modelo (35 tablas, 32 migraciones).
 - `frontend/src/app/features`: pantallas; `core/` servicios, modelos y constantes;
   `shared/` componentes reutilizables (layout, modal, guía, carrusel).
 - `docs/`: `producto/` (plan y diagramas), `guias/` (usuario, despliegue, respaldo,

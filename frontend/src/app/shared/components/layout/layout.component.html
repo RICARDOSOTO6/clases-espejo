@@ -9,7 +9,15 @@
         aria-label="Alternar menú"
         aria-controls="sidebar"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
           <line x1="4" y1="6" x2="20" y2="6" />
           <line x1="4" y1="12" x2="20" y2="12" />
           <line x1="4" y1="18" x2="20" y2="18" />
@@ -25,7 +33,15 @@
     </div>
 
     <div class="navbar-search" (click)="$event.stopPropagation()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
         @for (d of trazos('buscar'); track d) {
           <path [attr.d]="d" />
         }
@@ -38,8 +54,21 @@
         (input)="alEscribirBusqueda($event)"
       />
       @if (ui.busqueda()) {
-        <button type="button" class="navbar-search-clear" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button
+          type="button"
+          class="navbar-search-clear"
+          (click)="limpiarBusqueda()"
+          aria-label="Limpiar búsqueda"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             @for (d of trazos('cerrar'); track d) {
               <path [attr.d]="d" />
             }
@@ -57,9 +86,21 @@
           (click)="alternarPanel('notificaciones')"
           [attr.aria-expanded]="panelAbierto() === 'notificaciones'"
           aria-haspopup="true"
-          [attr.aria-label]="totalPendientes() > 0 ? 'Notificaciones: ' + totalPendientes() + ' pendientes' : 'Notificaciones'"
+          [attr.aria-label]="
+            totalPendientes() > 0
+              ? 'Notificaciones: ' + totalPendientes() + ' pendientes'
+              : 'Notificaciones'
+          "
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             @for (d of trazos('campana'); track d) {
               <path [attr.d]="d" />
             }
@@ -79,7 +120,11 @@
                 @for (pendiente of ui.pendientes(); track pendiente.titulo) {
                   <li>
                     <button type="button" class="dropdown-item" (click)="irAPendiente(pendiente)">
-                      <span class="dropdown-dot" [class.dropdown-dot--ok]="pendiente.tono === 'ok'" [class.dropdown-dot--error]="pendiente.tono === 'error'"></span>
+                      <span
+                        class="dropdown-dot"
+                        [class.dropdown-dot--ok]="pendiente.tono === 'ok'"
+                        [class.dropdown-dot--error]="pendiente.tono === 'error'"
+                      ></span>
                       <span class="dropdown-item-text">
                         <span class="dropdown-item-title">{{ pendiente.titulo }}</span>
                         @if (pendiente.detalle) {
@@ -103,9 +148,19 @@
           (click)="alternarPanel('mensajes')"
           [attr.aria-expanded]="panelAbierto() === 'mensajes'"
           aria-haspopup="true"
-          [attr.aria-label]="ui.chats().length > 0 ? 'Mensajes: ' + ui.chats().length + ' clases espejo' : 'Mensajes'"
+          [attr.aria-label]="
+            ui.chats().length > 0 ? 'Mensajes: ' + ui.chats().length + ' clases espejo' : 'Mensajes'
+          "
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             @for (d of trazos('mensajes'); track d) {
               <path [attr.d]="d" />
             }
@@ -120,8 +175,8 @@
             <p class="dropdown-title">Chat de las clases espejo</p>
             @if (ui.chats().length === 0) {
               <p class="dropdown-empty">
-                El chat vive dentro de cada clase espejo. Abre una para conversar con
-                el otro docente.
+                El chat vive dentro de cada clase espejo. Abre una para conversar con el otro
+                docente.
               </p>
             } @else {
               <ul class="dropdown-list">
@@ -158,12 +213,25 @@
             <img class="navbar-flag" [src]="flagUrl" [alt]="flagAlt" width="22" height="16" />
           }
           @if (foto(); as imagen) {
-            <img class="avatar-img avatar-img--navbar" [src]="imagen" [alt]="'Foto de ' + userName" />
+            <img
+              class="avatar-img avatar-img--navbar"
+              [src]="imagen"
+              [alt]="'Foto de ' + userName"
+            />
           } @else {
             <span class="navbar-avatar" aria-hidden="true">{{ iniciales() }}</span>
           }
           <span class="navbar-user-name">{{ userName }}</span>
-          <svg class="navbar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg
+            class="navbar-chevron"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             <path d="m6 9 6 6 6-6" />
           </svg>
         </button>
@@ -172,7 +240,11 @@
           <div class="dropdown-panel dropdown-panel--user" role="dialog" aria-label="Tu cuenta">
             <div class="dropdown-user">
               @if (foto(); as imagen) {
-                <img class="avatar-img avatar-img--dropdown" [src]="imagen" [alt]="'Foto de ' + userName" />
+                <img
+                  class="avatar-img avatar-img--dropdown"
+                  [src]="imagen"
+                  [alt]="'Foto de ' + userName"
+                />
               } @else {
                 <span class="dropdown-user-avatar" aria-hidden="true">{{ iniciales() }}</span>
               }
@@ -184,7 +256,15 @@
             <ul class="dropdown-list">
               <li>
                 <button type="button" class="dropdown-item" (click)="abrirPerfil()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     @for (d of trazos('perfil'); track d) {
                       <path [attr.d]="d" />
                     }
@@ -194,7 +274,15 @@
               </li>
               <li>
                 <button type="button" class="dropdown-item" (click)="abrirAyuda()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     @for (d of trazos('ayuda'); track d) {
                       <path [attr.d]="d" />
                     }
@@ -203,8 +291,20 @@
                 </button>
               </li>
               <li>
-                <button type="button" class="dropdown-item dropdown-item--danger" (click)="cerrarSesion()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <button
+                  type="button"
+                  class="dropdown-item dropdown-item--danger"
+                  (click)="cerrarSesion()"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     @for (d of trazos('salir'); track d) {
                       <path [attr.d]="d" />
                     }
@@ -233,9 +333,19 @@
               (click)="irA(item)"
               [attr.aria-current]="seccionActiva() === item.id ? 'page' : null"
               [attr.title]="item.etiqueta"
-              [attr.aria-label]="contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta"
+              [attr.aria-label]="
+                contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta
+              "
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 @for (d of trazos(item.icono); track d) {
                   <path [attr.d]="d" />
                 }
@@ -252,10 +362,20 @@
               [class.is-active]="seccionActiva() === item.id"
               (click)="irA(item)"
               [attr.aria-current]="seccionActiva() === item.id ? 'true' : null"
-               [attr.title]="item.etiqueta"
-              [attr.aria-label]="contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta"
+              [attr.title]="item.etiqueta"
+              [attr.aria-label]="
+                contadorDe(item) > 0 ? item.etiqueta + ': ' + contadorDe(item) : item.etiqueta
+              "
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
                 @for (d of trazos(item.icono); track d) {
                   <path [attr.d]="d" />
                 }
@@ -273,16 +393,44 @@
         <!-- La CACE ya tiene «Mi perfil» y «Ayuda» en el menú de la plataforma:
              aquí solo queda cerrar sesión, para no repetir entradas. -->
         @if (!esCace) {
-          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirPerfil()" title="Mi perfil" aria-label="Mi perfil">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <button
+            type="button"
+            class="sidebar-link sidebar-link--button"
+            (click)="abrirPerfil()"
+            title="Mi perfil"
+            aria-label="Mi perfil"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
               @for (d of trazos('perfil'); track d) {
                 <path [attr.d]="d" />
               }
             </svg>
             <span class="sidebar-label">Mi perfil</span>
           </button>
-          <button type="button" class="sidebar-link sidebar-link--button" (click)="abrirAyuda()" title="Ayuda" aria-label="Ayuda">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <button
+            type="button"
+            class="sidebar-link sidebar-link--button"
+            (click)="abrirAyuda()"
+            title="Ayuda"
+            aria-label="Ayuda"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
               @for (d of trazos('ayuda'); track d) {
                 <path [attr.d]="d" />
               }
@@ -290,8 +438,22 @@
             <span class="sidebar-label">Ayuda</span>
           </button>
         }
-        <button type="button" class="sidebar-link sidebar-link--button sidebar-link--danger" (click)="cerrarSesion()" title="Cerrar sesión" aria-label="Cerrar sesión">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <button
+          type="button"
+          class="sidebar-link sidebar-link--button sidebar-link--danger"
+          (click)="cerrarSesion()"
+          title="Cerrar sesión"
+          aria-label="Cerrar sesión"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
             @for (d of trazos('salir'); track d) {
               <path [attr.d]="d" />
             }
@@ -312,6 +474,11 @@
 
     <div class="shell-content">
       <ng-content />
+      <footer class="app-footer">
+        <a routerLink="/privacidad" target="_blank" rel="noopener">
+          Aviso de privacidad y términos
+        </a>
+      </footer>
     </div>
   </div>
 </div>
@@ -322,11 +489,7 @@
     <div class="perfil">
       <div class="perfil-head">
         @if (foto(); as imagen) {
-          <img
-            class="avatar-img avatar-img--perfil"
-            [src]="imagen"
-            [alt]="'Foto de ' + userName"
-          />
+          <img class="avatar-img avatar-img--perfil" [src]="imagen" [alt]="'Foto de ' + userName" />
         } @else {
           <span class="perfil-avatar" aria-hidden="true">{{ iniciales() }}</span>
         }
@@ -350,7 +513,7 @@
             (click)="fotoInput.click()"
             [disabled]="subiendoFoto()"
           >
-            {{ subiendoFoto() ? 'Subiendo…' : (foto() ? 'Cambiar foto' : 'Añadir foto') }}
+            {{ subiendoFoto() ? 'Subiendo…' : foto() ? 'Cambiar foto' : 'Añadir foto' }}
           </button>
           @if (foto()) {
             <button
@@ -372,8 +535,8 @@
           />
         </div>
         <p class="muted perfil-foto-nota">
-          Cualquier foto vale: se recorta en cuadrado y se reduce sola antes de
-          guardarla. Si no pones ninguna, se muestran tus iniciales.
+          Cualquier foto vale: se recorta en cuadrado y se reduce sola antes de guardarla. Si no
+          pones ninguna, se muestran tus iniciales.
         </p>
         @if (errorFoto(); as errorFotoTexto) {
           <div class="alert alert-error" role="alert">
@@ -392,7 +555,9 @@
       } @else if (errorPerfil(); as error) {
         <div class="alert alert-error" role="alert">
           <span>{{ error }}</span>
-          <button type="button" class="btn btn-secondary" (click)="abrirPerfil()">Reintentar</button>
+          <button type="button" class="btn btn-secondary" (click)="abrirPerfil()">
+            Reintentar
+          </button>
         </div>
       } @else if (perfil(); as datos) {
         <dl class="perfil-datos">
@@ -419,7 +584,11 @@
           <div class="perfil-fila">
             <dt>Estado de la cuenta</dt>
             <dd>
-              <span class="estado" [class.aprobada]="datos.activo" [class.pendiente]="!datos.activo">
+              <span
+                class="estado"
+                [class.aprobada]="datos.activo"
+                [class.pendiente]="!datos.activo"
+              >
                 {{ datos.activo ? 'Activa' : 'Desactivada' }}
               </span>
             </dd>
@@ -429,8 +598,8 @@
         <div class="perfil-correo">
           <h3>Cambiar el correo</h3>
           <p class="muted text-sm">
-            Te enviaremos un enlace a la dirección nueva. Hasta que lo confirmes,
-            el acceso sigue siendo con el correo actual.
+            Te enviaremos un enlace a la dirección nueva. Hasta que lo confirmes, el acceso sigue
+            siendo con el correo actual.
           </p>
           <div class="form-field">
             <label for="correo-nuevo">Correo nuevo</label>
@@ -469,45 +638,99 @@
     <div class="ayuda">
       @if (rol === 'AGENTE') {
         <p class="ayuda-intro">
-          Como agente de internacionalización gestionas los recursos de tu institución
-          y revisas las propuestas que llegan de otras.
+          Como agente de internacionalización gestionas los recursos de tu institución y revisas las
+          propuestas que llegan de otras.
         </p>
         <ol class="ayuda-pasos">
-          <li><strong>Completa tu institución</strong> en <em>Mi institución</em>: otras instituciones la verán al recibir tus propuestas.</li>
-          <li><strong>Invita docentes</strong> y asígnales materias por periodo. Sin asignación, un docente no puede proponer una clase espejo.</li>
-          <li><strong>Revisa las solicitudes</strong> en la sección <em>Solicitudes</em>: primero las revisa la institución de origen y después la de destino.</li>
-          <li>Al <strong>aprobar como destino</strong>, la clase espejo se crea automáticamente.</li>
-          <li>Puedes <strong>ver cualquier clase espejo</strong> de tu institución y sumar docentes de tu institución (no puedes tocarla: la organizan los docentes).</li>
+          <li>
+            <strong>Completa tu institución</strong> en <em>Mi institución</em>: otras instituciones
+            la verán al recibir tus propuestas.
+          </li>
+          <li>
+            <strong>Invita docentes</strong> y asígnales materias por periodo. Sin asignación, un
+            docente no puede proponer una clase espejo.
+          </li>
+          <li>
+            <strong>Revisa las solicitudes</strong> en la sección <em>Solicitudes</em>: primero las
+            revisa la institución de origen y después la de destino.
+          </li>
+          <li>
+            Al <strong>aprobar como destino</strong>, la clase espejo se crea automáticamente.
+          </li>
+          <li>
+            Puedes <strong>ver cualquier clase espejo</strong> de tu institución y sumar docentes de
+            tu institución (no puedes tocarla: la organizan los docentes).
+          </li>
         </ol>
       } @else if (esCace) {
         <p class="ayuda-intro">
-          Como parte de la CACE revisas las instituciones que se registran en la
-          plataforma, cuidas su identidad y los reconocimientos, y decides el
-          borrado con autorización. Cada rol ve solo lo que puede hacer: la
-          presidencia aprueba, veta, gestiona miembros y firma certificados; la
-          secretaría ayuda con la imagen, los premios y pide los borrados.
+          Como parte de la CACE revisas las instituciones que se registran en la plataforma, cuidas
+          su identidad y los reconocimientos, y decides el borrado con autorización. Cada rol ve
+          solo lo que puede hacer: la presidencia aprueba, veta, gestiona miembros y firma
+          certificados; la secretaría ayuda con la imagen, los premios y pide los borrados.
         </p>
         <ol class="ayuda-pasos">
-          <li><strong>Revisa las pendientes</strong> en <em>Instituciones</em>: aparecen siempre primero, con su país y su agente de contacto.</li>
-          <li><strong>Aprobar</strong> deja operar a la institución con normalidad: sus agentes ya pueden invitar docentes y proponer clases espejo.</li>
-          <li><strong>Rechazar y vetar</strong> exigen un motivo, y el agente de la institución lo recibe por correo. El veto es la decisión más dura.</li>
-          <li><strong>Reactivar</strong> una institución rechazada o vetada la devuelve al juego si lo arregla; una rechazada sin historia también se puede borrar definitivamente.</li>
-          <li>En <em>Miembros</em> la presidencia reparte las secretarías y puede transmitir el cargo; el borrado va aparte, en <em>Solicitudes</em>: la secretaría lo pide y la presidencia lo autoriza.</li>
-          <li>En <em>Personalización</em> se cambia el logo, los textos y el tema; en <em>Certificado</em>, la plantilla de los certificados; en <em>Premios</em>, los reconocimientos de la comunidad.</li>
-          <li>La <strong>campana</strong> te dice cuántas instituciones esperan tu decisión y te baja a la sección.</li>
+          <li>
+            <strong>Revisa las pendientes</strong> en <em>Instituciones</em>: aparecen siempre
+            primero, con su país y su agente de contacto.
+          </li>
+          <li>
+            <strong>Aprobar</strong> deja operar a la institución con normalidad: sus agentes ya
+            pueden invitar docentes y proponer clases espejo.
+          </li>
+          <li>
+            <strong>Rechazar y vetar</strong> exigen un motivo, y el agente de la institución lo
+            recibe por correo. El veto es la decisión más dura.
+          </li>
+          <li>
+            <strong>Reactivar</strong> una institución rechazada o vetada la devuelve al juego si lo
+            arregla; una rechazada sin historia también se puede borrar definitivamente.
+          </li>
+          <li>
+            En <em>Miembros</em> la presidencia reparte las secretarías y puede transmitir el cargo;
+            el borrado va aparte, en <em>Solicitudes</em>: la secretaría lo pide y la presidencia lo
+            autoriza.
+          </li>
+          <li>
+            En <em>Personalización</em> se cambia el logo, los textos y el tema; en
+            <em>Certificado</em>, la plantilla de los certificados; en <em>Premios</em>, los
+            reconocimientos de la comunidad.
+          </li>
+          <li>
+            La <strong>campana</strong> te dice cuántas instituciones esperan tu decisión y te baja
+            a la sección.
+          </li>
         </ol>
       } @else {
         <p class="ayuda-intro">
-          Como docente propones clases espejo y, una vez aprobadas, organizas la clase
-          con el docente de la otra institución.
+          Como docente propones clases espejo y, una vez aprobadas, organizas la clase con el
+          docente de la otra institución.
         </p>
         <ol class="ayuda-pasos">
-          <li><strong>Crea una solicitud</strong> desde <em>Mis solicitudes</em>: elige tu materia, la institución destino y una fecha futura.</li>
-          <li>Si te la <strong>rechazan</strong>, ábrela con <em>Corregir y reenviar</em>: vuelve a quedar pendiente.</li>
-          <li>Cuando la aprueban, la clase espejo aparece en <em>Mis clases espejo</em>. Ahí completas la <strong>planificación conjunta</strong> y confirmas tu participación.</li>
-          <li>Después programa <strong>sesiones</strong>, registra <strong>actividades</strong> y sube <strong>evidencias</strong> (hasta 10 MB).</li>
-          <li>Al terminar cada sesión, captura su <strong>reporte de clase</strong> y fírmalo. Si alguien cambia el texto, las firmas se reinician.</li>
-          <li>Para cerrar la clase necesitas <strong>una evaluación final</strong> y <strong>todos los reportes confirmados</strong>.</li>
+          <li>
+            <strong>Crea una solicitud</strong> desde <em>Mis solicitudes</em>: elige tu materia, la
+            institución destino y una fecha futura.
+          </li>
+          <li>
+            Si te la <strong>rechazan</strong>, ábrela con <em>Corregir y reenviar</em>: vuelve a
+            quedar pendiente.
+          </li>
+          <li>
+            Cuando la aprueban, la clase espejo aparece en <em>Mis clases espejo</em>. Ahí completas
+            la <strong>planificación conjunta</strong> y confirmas tu participación.
+          </li>
+          <li>
+            Después programa <strong>sesiones</strong>, registra <strong>actividades</strong> y sube
+            <strong>evidencias</strong> (hasta 10 MB).
+          </li>
+          <li>
+            Al terminar cada sesión, captura su <strong>reporte de clase</strong> y fírmalo. Si
+            alguien cambia el texto, las firmas se reinician.
+          </li>
+          <li>
+            Para cerrar la clase necesitas <strong>una evaluación final</strong> y
+            <strong>todos los reportes confirmados</strong>.
+          </li>
         </ol>
       }
 
@@ -519,19 +742,30 @@
         </button>
         <p class="muted ayuda-inicio-nota">
           Estás en <strong>{{ guiaDelApartado().titulo }}</strong
-          >. {{ guiaDelApartado().resumen }} Te voy señalando los botones y los
-          campos uno por uno, sin salir de la pantalla. Puedes cortar cuando
-          quieras con <kbd>Esc</kbd>.
+          >. {{ guiaDelApartado().resumen }} Te voy señalando los botones y los campos uno por uno,
+          sin salir de la pantalla. Puedes cortar cuando quieras con <kbd>Esc</kbd>.
         </p>
       </div>
 
       <div class="ayuda-atajos">
         <p class="ayuda-atajos-title">Atajos y detalles útiles</p>
         <ul>
-          <li>El <strong>buscador</strong> de la barra superior filtra los listados de la pantalla en la que estás.</li>
-          <li>La <strong>campana</strong> muestra lo que está pendiente en esa misma pantalla; al pulsarlo bajas a la sección.</li>
-          <li>El <strong>sobre</strong> lista tus clases espejo: el chat vive dentro de cada una.</li>
-          <li>En una <strong>clase espejo</strong>, «Enviar el calendario por correo» manda el <code>.ics</code> a los docentes participantes; los recordatorios (1 h, 30 y 15 min) los pone el calendario de cada persona, no la plataforma.</li>
+          <li>
+            El <strong>buscador</strong> de la barra superior filtra los listados de la pantalla en
+            la que estás.
+          </li>
+          <li>
+            La <strong>campana</strong> muestra lo que está pendiente en esa misma pantalla; al
+            pulsarlo bajas a la sección.
+          </li>
+          <li>
+            El <strong>sobre</strong> lista tus clases espejo: el chat vive dentro de cada una.
+          </li>
+          <li>
+            En una <strong>clase espejo</strong>, «Enviar el calendario por correo» manda el
+            <code>.ics</code> a los docentes participantes; los recordatorios (1 h, 30 y 15 min) los
+            pone el calendario de cada persona, no la plataforma.
+          </li>
           <li>Con <kbd>Esc</kbd> se cierran los menús y las ventanas.</li>
         </ul>
       </div>
@@ -542,11 +776,7 @@
           <ul>
             @for (guia of otrosRecorridos(); track guia.id) {
               <li>
-                <button
-                  type="button"
-                  class="ayuda-guia"
-                  (click)="iniciarGuia(guia.id)"
-                >
+                <button type="button" class="ayuda-guia" (click)="iniciarGuia(guia.id)">
                   <span class="ayuda-guia-titulo">{{ guia.titulo }}</span>
                   <span class="ayuda-guia-resumen">{{ guia.resumen }}</span>
                 </button>

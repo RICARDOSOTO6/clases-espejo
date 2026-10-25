@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
+import { VERSION_AVISO_PRIVACIDAD } from '../common/privacidad';
 import {
   EditarAlumnoDto,
   GuardarListaDto,
@@ -398,8 +399,15 @@ export class ListasAlumnosService {
           institucionId,
           subidaPorUsuarioId: usuarioId,
           origen: dto.origen,
+          consentimientoVersion: VERSION_AVISO_PRIVACIDAD,
+          consentimientoEn: new Date(),
         },
-        update: { subidaPorUsuarioId: usuarioId, origen: dto.origen },
+        update: {
+          subidaPorUsuarioId: usuarioId,
+          origen: dto.origen,
+          consentimientoVersion: VERSION_AVISO_PRIVACIDAD,
+          consentimientoEn: new Date(),
+        },
       });
       await tx.alumno.deleteMany({ where: { listaId: lista.id } });
       await tx.alumno.createMany({

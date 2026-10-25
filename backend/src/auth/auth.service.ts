@@ -29,6 +29,7 @@ import {
   INTENTOS_MAXIMOS,
   exigirPoliticaPassword,
 } from '../common/politica-password';
+import { VERSION_AVISO_PRIVACIDAD } from '../common/privacidad';
 import {
   VIGENCIA_RECUPERACION_MS,
   VIGENCIA_VERIFICACION_MS,
@@ -150,6 +151,8 @@ export class AuthService {
           activo: true,
           // Nace sin confirmar: el enlace del correo lo pone en verdadero.
           correoVerificado: false,
+          aceptoAvisoVersion: VERSION_AVISO_PRIVACIDAD,
+          aceptoAvisoEn: new Date(),
         },
       });
 
@@ -221,6 +224,8 @@ export class AuthService {
             activo: true,
             // Nace sin confirmar: el enlace del correo lo pone en verdadero.
             correoVerificado: false,
+            aceptoAvisoVersion: VERSION_AVISO_PRIVACIDAD,
+            aceptoAvisoEn: new Date(),
           },
         });
 
@@ -681,6 +686,8 @@ export class AuthService {
           activo: true,
           // La invitación llegó a ese correo: queda confirmado de origen.
           correoVerificado: true,
+          aceptoAvisoVersion: VERSION_AVISO_PRIVACIDAD,
+          aceptoAvisoEn: new Date(),
         },
       });
 
