@@ -1,13 +1,11 @@
-/**
- * Empaqueta una entrega reproducible sin secretos, sin node_modules y sin
- * archivos subidos.
- *
- * Uso:
- *   powershell -ExecutionPolicy Bypass -File scripts/empaquetar-entrega.ps1
- *
- * Genera `release/ClasesEspejo-entrega-AAAA-MM-DD.zip` y su SHA-256.
- * No hace commit, no sube nada y no toca la base de datos.
- */
+# Empaqueta una entrega reproducible sin secretos, sin node_modules y sin
+# archivos subidos.
+#
+# Uso:
+#   powershell -ExecutionPolicy Bypass -File scripts/empaquetar-entrega.ps1
+#
+# Genera `release/ClasesEspejo-entrega-AAAA-MM-DD.zip` y su SHA-256.
+# No hace commit, no sube nada y no toca la base de datos.
 $ErrorActionPreference = 'Stop'
 
 $raiz = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
