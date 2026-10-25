@@ -37,10 +37,14 @@ export interface InstitucionCace {
   pais: string;
   /** Logo de la institución (`/logos/…`), si lo tiene. */
   logoUrl: string | null;
-  /** PENDIENTE, APROBADA, RECHAZADA o VETADA. */
+  /** PENDIENTE, APROBADA, RECHAZADA, VETADA o ARCHIVADA. */
   estadoCace: string;
   /** Motivo del rechazo o del veto (vacío si no lo hay). */
   motivoCace: string;
+  /** Baja con historial: cuándo y por qué quedó inoperable. */
+  archivadaEn: string | null;
+  archivadaPorUsuarioId: number | null;
+  motivoArchivo: string;
   revisadaEn: string | null;
   revisadaPor: string | null;
   agentes: AgenteContacto[];
@@ -208,10 +212,18 @@ export class CaceService {
    * `pedirBorradoInstitucion`, y quien lo autoriza y lo ejecuta es el
    * presidente.
    */
-  eliminarInstitucion(id: number): Observable<{ mensaje: string; id: number; nombre: string }> {
-    return this.http.delete<{ mensaje: string; id: number; nombre: string }>(
-      `${API_URL}/cace/instituciones/${id}`,
-    );
+  eliminarInstitucion(id: number): Observable<{
+    mensaje: string;
+    id: number;
+    nombre: string;
+    archivada?: boolean;
+  }> {
+    return this.http.delete<{
+      mensaje: string;
+      id: number;
+      nombre: string;
+      archivada?: boolean;
+    }>(`${API_URL}/cace/instituciones/${id}`);
   }
 
   // --- Capacidades del usuario que está dentro (fase 6) ---

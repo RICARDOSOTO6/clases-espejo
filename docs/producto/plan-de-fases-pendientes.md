@@ -183,8 +183,10 @@ instituciones ni alumnos precargados.
 - [x] Base legal o consentimiento para nombre, matrícula y correo de alumnos:
   declaración obligatoria al guardar la lista, con versión y fecha en
   `LISTA_ALUMNOS`.
-- [ ] Política de retención: institución dada de baja queda inoperable y archivada,
-  con historial; certificados conservados y anulados si procede.
+- [x] Política de retención: una institución rechazada con historial pasa a
+  `ARCHIVADA` (inoperable, con todo su historial); sin historial se puede
+  eliminar. Los certificados se conservan y su folio sigue verificable; la
+  anulación es una acción aparte.
 - [x] Enlace al aviso desde el registro, la activación, el acceso y el pie.
 
 ### 2.2 Contraseñas y segundo factor

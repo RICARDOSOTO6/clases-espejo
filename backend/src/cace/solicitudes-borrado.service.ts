@@ -311,13 +311,14 @@ export class SolicitudesBorradoService {
       },
     });
 
+    let resultado: { archivada?: boolean };
     try {
-      // Mismas reglas que el borrado directo. Si se niega, lanza con el motivo
-      // ya redactado (institución con historia, o que dejó de estar rechazada).
-      await this.instituciones.eliminar(usuarioId, institucionId);
+      // Mismas reglas que el borrado directo. Sin historial se borra; con
+      // historial queda archivada e inoperable, sin perder nada.
+      resultado = await this.instituciones.eliminar(usuarioId, institucionId);
     } catch (error) {
-      // No se pudo borrar: la solicitud vuelve a quedar pendiente, para que la
-      // presidencia pueda mirarla (por ejemplo, porque tiene historia).
+      // No se pudo ejecutar: la solicitud vuelve a quedar pendiente para que la
+      // presidencia pueda mirarla.
       await this.prisma.solicitudBorradoInstitucion.update({
         where: { id: solicitudId },
         data: {
@@ -329,13 +330,19 @@ export class SolicitudesBorradoService {
       throw error;
     }
 
+    const archivada = resultado.archivada === true;
+
     this.logger.warn(
       `Solicitud de borrado ${solicitudId} aprobada por ${resueltaPor} (usuario ${usuarioId}) el ${resueltaEn.toISOString()}: ` +
-        `se borró definitivamente «${nombre}» (institución ${institucionId}); la solicitud se conserva.`,
+        (archivada
+          ? `se archivó «${nombre}» (institución ${institucionId}); la solicitud se conserva.`
+          : `se borró definitivamente «${nombre}» (institución ${institucionId}); la solicitud se conserva.`),
     );
 
     return {
-      mensaje: `Solicitud aprobada: «${nombre}» se eliminó definitivamente con tu autorización. La solicitud se conserva en el historial con quién la autorizó y cuándo.`,
+      mensaje: archivada
+        ? `Solicitud aprobada: «${nombre}» quedó archivada e inoperable con todo su historial. La solicitud se conserva con quién la autorizó y cuándo.`
+        : `Solicitud aprobada: «${nombre}» se eliminó definitivamente con tu autorización. La solicitud se conserva en el historial con quién la autorizó y cuándo.`,
       solicitud: {
         ...this.aFila({
           ...solicitud,
@@ -343,7 +350,8 @@ export class SolicitudesBorradoService {
           resueltaPor: resolutor,
           resueltaEn,
         }),
-        institucionBorrada: true,
+        institucionBorrada: !archivada,
+        institucionArchivada: archivada,
       },
     };
   }

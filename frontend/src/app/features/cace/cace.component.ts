@@ -1390,9 +1390,9 @@ export class CaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  // --- Borrado definitivo (solo instituciones rechazadas y sin historia) ---
+  // --- Baja de instituciones ---
 
-  /** El borrado es irreversible: se confirma antes de enviarlo. */
+  /** La baja es irreversible desde la interfaz: se confirma antes de enviarla. */
   pedirBorrado(institucion: InstitucionCace): void {
     this.avisoInstituciones.set(null);
     this.errorInstituciones.set(null);
@@ -2362,6 +2362,8 @@ export class CaceComponent implements OnInit, OnDestroy {
         return 'Rechazada';
       case 'VETADA':
         return 'Vetada';
+      case 'ARCHIVADA':
+        return 'Archivada (baja)';
       default:
         return estadoCace;
     }
@@ -2377,6 +2379,8 @@ export class CaceComponent implements OnInit, OnDestroy {
         return 'estado rechazada';
       case 'VETADA':
         return 'estado vetada';
+      case 'ARCHIVADA':
+        return 'estado cancelada';
       default:
         return 'estado cancelada';
     }

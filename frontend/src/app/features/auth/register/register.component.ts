@@ -87,10 +87,10 @@ export class RegisterComponent {
       .slice(0, 30);
   });
 
-  /** Una institución rechazada o vetada no admite registros nuevos. */
+  /** Una institución rechazada, vetada o archivada no admite registros nuevos. */
   readonly elegidaBloqueada = computed(() => {
     const estado = this.elegida()?.estadoCace;
-    return estado === 'RECHAZADA' || estado === 'VETADA';
+    return estado === 'RECHAZADA' || estado === 'VETADA' || estado === 'ARCHIVADA';
   });
 
   private temporizador?: ReturnType<typeof setTimeout>;
@@ -165,6 +165,8 @@ export class RegisterComponent {
         return 'Rechazada: no admite registros';
       case 'VETADA':
         return 'Vetada: no admite registros';
+      case 'ARCHIVADA':
+        return 'Archivada: no admite registros';
       default:
         return estadoCace;
     }

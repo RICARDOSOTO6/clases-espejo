@@ -11,6 +11,7 @@ import {
   ESTADO_BORRADO_APROBADA,
   ESTADO_BORRADO_PENDIENTE,
   ESTADO_CACE_APROBADA,
+  ESTADO_CACE_ARCHIVADA,
   ESTADO_CACE_RECHAZADA,
   ESTADO_CACE_VETADA,
 } from '../common/estados';
@@ -31,7 +32,8 @@ const ORDEN_ESTADO: Record<string, number> = {
   PENDIENTE: 0,
   RECHAZADA: 1,
   VETADA: 2,
-  APROBADA: 3,
+  ARCHIVADA: 3,
+  APROBADA: 4,
 };
 
 /** Etiqueta del estado para los mensajes de error y de correo. */
@@ -40,6 +42,7 @@ const ETIQUETA_ESTADO: Record<string, string> = {
   APROBADA: 'aprobada',
   RECHAZADA: 'rechazada',
   VETADA: 'vetada',
+  ARCHIVADA: 'archivada (dada de baja)',
 };
 
 /**
@@ -99,6 +102,9 @@ export class InstitucionesCaceService {
         registroCompleto: true,
         estadoCace: true,
         motivoCace: true,
+        archivadaEn: true,
+        archivadaPorUsuarioId: true,
+        motivoArchivo: true,
         logoUrl: true,
         creadoEn: true,
         revisadaEn: true,
@@ -214,19 +220,59 @@ export class InstitucionesCaceService {
 
     const historia = await this.contarHistoria(id);
     if (historia.bloqueos.length > 0) {
-      throw new BadRequestException(
-        `No se puede borrar «${institucion.nombre}»: tiene historia (${historia.bloqueos.join(', ')}). ` +
-          'Déjala como rechazada: borrarla haría perder ese historial.',
-      );
+      await this.archivar(usuarioId, id, historia.bloqueos);
+      return {
+        mensaje:
+          `«${institucion.nombre}» quedó archivada e inoperable, con su historial (${historia.bloqueos.join(', ')}). ` +
+          'No se borró ningún dato; los certificados y sus folios siguen verificables.',
+        id: institucion.id,
+        nombre: institucion.nombre,
+        estadoCace: ESTADO_CACE_ARCHIVADA,
+        archivada: true,
+      };
     }
 
     await this.borrarSinHistoria(usuarioId, id);
 
     return {
-      mensaje: `Institución «${institucion.nombre}» eliminada definitivamente`,
+      mensaje: `Institución «${institucion.nombre}» eliminada definitivamente (no tenía historial)`,
       id: institucion.id,
       nombre: institucion.nombre,
+      archivada: false,
     };
+  }
+
+  /**
+   * Baja con historial: la institución deja de operar y se conserva todo. Las
+   * solicitudes de borrado pendientes se cierran como aprobadas, para que nadie
+   * siga esperando una decisión que ya se tomó.
+   */
+  private async archivar(
+    usuarioId: number,
+    id: number,
+    motivos: string[],
+  ): Promise<void> {
+    const ahora = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      await tx.institucion.update({
+        where: { id },
+        data: {
+          estadoCace: ESTADO_CACE_ARCHIVADA,
+          activa: false,
+          archivadaEn: ahora,
+          archivadaPorUsuarioId: usuarioId,
+          motivoArchivo: `Baja con historial: ${motivos.join(', ')}`,
+        },
+      });
+      await tx.solicitudBorradoInstitucion.updateMany({
+        where: { institucionId: id, estado: ESTADO_BORRADO_PENDIENTE },
+        data: {
+          estado: ESTADO_BORRADO_APROBADA,
+          resueltaPorUsuarioId: usuarioId,
+          resueltaEn: ahora,
+        },
+      });
+    });
   }
 
   /**
@@ -415,6 +461,14 @@ export class InstitucionesCaceService {
         motivoCace: motivo,
         revisadaPorUsuarioId: usuarioId,
         revisadaEn: new Date(),
+        ...(estado === ESTADO_CACE_APROBADA
+          ? {
+              activa: true,
+              archivadaEn: null,
+              archivadaPorUsuarioId: null,
+              motivoArchivo: '',
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -532,6 +586,9 @@ export class InstitucionesCaceService {
       logoUrl: string | null;
       estadoCace: string;
       motivoCace: string;
+      archivadaEn: Date | null;
+      archivadaPorUsuarioId: number | null;
+      motivoArchivo: string;
       revisadaEn: Date | null;
       revisadaPor: {
         nombres: string;
@@ -568,6 +625,9 @@ export class InstitucionesCaceService {
       logoUrl: institucion.logoUrl,
       estadoCace: institucion.estadoCace,
       motivoCace: institucion.motivoCace,
+      archivadaEn: institucion.archivadaEn,
+      archivadaPorUsuarioId: institucion.archivadaPorUsuarioId,
+      motivoArchivo: institucion.motivoArchivo,
       revisadaEn: institucion.revisadaEn,
       revisadaPor: this.nombreCompleto(institucion.revisadaPor),
       agentes: institucion.agentes.map((agente) => ({

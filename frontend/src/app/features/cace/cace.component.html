@@ -246,6 +246,7 @@
                   <option value="APROBADA">Aprobadas</option>
                   <option value="RECHAZADA">Rechazadas</option>
                   <option value="VETADA">Vetadas</option>
+                  <option value="ARCHIVADA">Archivadas</option>
                 </select>
               </div>
               <p class="cace-filtros-resumen" aria-live="polite">
@@ -371,7 +372,9 @@
                     }
 
                     @if (
-                      institucion.estadoCace === 'RECHAZADA' || institucion.estadoCace === 'VETADA'
+                      institucion.estadoCace === 'RECHAZADA' ||
+                      institucion.estadoCace === 'VETADA' ||
+                      institucion.estadoCace === 'ARCHIVADA'
                     ) {
                       <button
                         type="button"
@@ -405,7 +408,7 @@
                         [disabled]="enProceso() !== null"
                         (click)="pedirBorrado(institucion)"
                       >
-                        Borrar definitivamente
+                        Borrar / dar de baja
                       </button>
                     }
 
@@ -1260,7 +1263,11 @@
                         <span class="text-sm muted">{{ solicitud.institucionPais }}</span>
                       }
                       <span [class]="claseEstadoSolicitud(solicitud.estado)">
-                        {{ etiquetaEstadoSolicitud(solicitud.estado) }}
+                        {{
+                          solicitud.institucionArchivada
+                            ? 'Autorizada y archivada'
+                            : etiquetaEstadoSolicitud(solicitud.estado)
+                        }}
                       </span>
                     </div>
 

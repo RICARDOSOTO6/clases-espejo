@@ -98,6 +98,8 @@ export interface SolicitudBorradoCace {
   resueltaEn: string | null;
   /** Verdadero solo en la respuesta del borrado ya ejecutado. */
   institucionBorrada?: boolean;
+  /** Verdadero cuando la baja conservó la institución por tener historial. */
+  institucionArchivada?: boolean;
 }
 
 /** Respuesta de `GET /cace/solicitudes-borrado`. */

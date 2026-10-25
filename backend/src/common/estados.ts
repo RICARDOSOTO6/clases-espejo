@@ -70,6 +70,8 @@ export const ESTADO_CACE_PENDIENTE = 'PENDIENTE';
 export const ESTADO_CACE_APROBADA = 'APROBADA';
 export const ESTADO_CACE_RECHAZADA = 'RECHAZADA';
 export const ESTADO_CACE_VETADA = 'VETADA';
+/** Baja con historial: no opera, pero no se borra. */
+export const ESTADO_CACE_ARCHIVADA = 'ARCHIVADA';
 
 // --- Solicitudes de borrado de una institución (fase 6) ---
 /**

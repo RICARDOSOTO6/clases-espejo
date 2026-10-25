@@ -24,6 +24,10 @@ model Institucion {
   estadoCace          String                       @default("APROBADA") @map("estado_cace")
   /// Motivo del rechazo o del veto (obligatorio en los dos).
   motivoCace          String                       @default("") @map("motivo_cace")
+  /// Baja con historial: la institución queda inoperable pero no se borra.
+  archivadaEn         DateTime?                    @map("archivada_en")
+  archivadaPorUsuarioId Int?                       @map("archivada_por_usuario_id")
+  motivoArchivo       String                       @default("") @map("motivo_archivo")
   /// Logo de la institución, para reconocerla en el catálogo.
   logoUrl             String?                      @map("logo_url")
   revisadaPorUsuarioId Int?                        @map("revisada_por_usuario_id")
