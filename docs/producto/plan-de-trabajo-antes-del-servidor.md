@@ -12,6 +12,28 @@ quedan al final, como anexos, para no bloquear el avance.
 
 ---
 
+## 0. Escenario confirmado: piloto real, no demo preparada
+
+La primera vez que la CACE usará la aplicación **no es una demo con datos
+conocidos**. Es una **clase espejo real de prueba**:
+
+- los participantes no se conocen hasta el día del piloto;
+- no se pueden crear de antemano sus instituciones, agentes ni docentes;
+- todavía no hay dominio propio;
+- el servidor será rentado por un mes para la prueba;
+- la CACE espera descubrir **nuevos requisitos** a partir de cómo gestionan la
+  clase, no solo validar que la aplicación “se vea bonita”;
+- el éxito es que puedan **organizar y gestionar la clase completa** y salir con
+  una lista de mejoras, no que todo sea perfecto.
+
+Esto cambia el riesgo principal. El problema ya no es solo el certificado: es
+que **una persona que no existe en la base pueda entrar, registrarse, ser
+aprobada, invitar a su docente y llegar a la clase sin ayuda técnica intensiva**.
+El piloto se trata en el anexo E; la preparación local para ese escenario es la
+fase L1.5.
+
+---
+
 ## 1. Punto de partida
 
 ### Lo que ya está cerrado
@@ -112,6 +134,39 @@ datos ficticios y sin correos reales.
 
 **Entregable:** guion de ensayo y lista de fricciones priorizadas (solo se
 corrige lo que bloquee la demo).
+
+---
+
+### Fase L1.5 — Preparar el piloto con participantes desconocidos (1–2 días)
+
+**Objetivo:** medir el alta real desde cero, como ocurrirá el día del piloto.
+
+No se crean cuentas reales antes. Se ensaya con dos personas ficticias que
+**actúan como si no existieran en la base** y solo reciben una URL o un QR.
+
+- [ ] Probar el registro de una institución nueva desde un dispositivo limpio.
+- [ ] Probar que la CACE pueda aprobarla durante la misma sesión.
+- [ ] Probar la invitación del docente desde el panel del agente.
+- [ ] Probar la activación del docente desde el enlace recibido.
+- [ ] Comprobar si el enlace de activación se puede copiar o compartir sin
+      depender del correo; si no, anotarlo como cambio bloqueante.
+- [ ] Simular un correo que no llega y definir la entrega manual del enlace.
+- [ ] Medir cuánto tarda cada paso y dónde se bloquea una persona nueva.
+- [ ] Definir qué se hace si el correo de invitación no llega: enlace copiable,
+      entrega manual o cuenta provisional.
+- [ ] Definir qué se hace si el participante no tiene correo institucional.
+- [ ] Comprobar el recorrido desde un teléfono y desde una computadora.
+- [ ] Preparar un “kit de piloto”: URL/QR, guion de 15 minutos, responsables de
+      soporte y plan B.
+- [ ] No cargar datos reales ni crear cuentas de participantes antes del día.
+
+**Aceptación:** dos personas que no existen en la base pueden registrarse, ser
+aprobadas, invitar/activar a su docente y entrar, usando solo una URL o QR y con
+acompañamiento mínimo. Si algo no se logra, queda identificado como requisito
+bloqueante del piloto.
+
+**Entregable:** guion de alta exprés, tiempos medidos y lista de bloqueos de
+entrada.
 
 ---
 
@@ -350,6 +405,48 @@ para no bloquear el trabajo si no hay respuesta.
     *Recomendado:* una métrica de cierre mensual, 30 días de gracia y
     responsables por institución.
 
+### Piloto con participantes desconocidos
+
+17. **¿Cómo recibirán el acceso los participantes el mismo día?**  
+    *Recomendado:* URL/QR + registro self-service; el correo solo para
+    confirmaciones e invitaciones.
+
+18. **¿Todos tendrán correo electrónico disponible y podrán abrirlo durante la
+    sesión?**  
+    *Recomendado:* confirmar antes; si no, definir entrega manual del enlace de
+    activación.
+
+19. **¿Cuántas personas, dispositivos y redes participarán?**  
+    *Recomendado:* máximo dos instituciones, un agente y un docente por lado,
+    con una persona de soporte.
+
+20. **Sin dominio, ¿aceptan una URL por IP para el piloto o prefieren un túnel
+    temporal con HTTPS?**  
+    *Recomendado:* túnel HTTPS temporal para no enviar credenciales por HTTP;
+    si no se puede, limitar el piloto a una red de confianza.
+
+21. **¿Quién aprueba las instituciones en vivo y quién atiende los bloqueos?**  
+    *Recomendado:* una persona de la CACE y una persona técnica con acceso al
+    servidor.
+
+22. **¿El piloto usará alumnos reales o solo docentes/agentes?**  
+    *Recomendado:* solo docentes y agentes; alumnos ficticios si hace falta
+    probar certificados.
+
+23. **¿Cómo se recogerán los nuevos requisitos y quién decide qué se corrige
+    antes de la siguiente sesión?**  
+    *Recomendado:* un registro único por incidencia y una reunión de triage al
+    terminar, sin cambiar código durante la clase.
+
+24. **¿Cuándo empieza el mes de servidor y alcanza para ensayo, piloto y
+    recogida de requisitos?**  
+    *Recomendado:* reservar el servidor con al menos una semana de margen antes
+    del piloto.
+
+25. **¿Qué condición hace cancelar o posponer el piloto?**  
+    *Recomendado:* si nadie puede entrar o no hay forma de entregar el enlace de
+    activación, se pospone y se usa el ensayo local.
+
 ---
 
 ## Anexo D — Criterio para pasar al servidor
@@ -368,3 +465,62 @@ No se pasa al anexo A hasta que se cumpla esto:
 Si algo del anexo A falla, el paquete local y el ensayo siguen sirviendo como
 entrega funcional; no se debe prometer una demo pública sin servidor, correo y
 respaldo probados.
+
+---
+
+## Anexo E — Operación del piloto real
+
+Este anexo no se ejecuta en local: se usa cuando el servidor rentado esté
+disponible. El piloto se trata como una **prueba de producto**, no como una
+presentación.
+
+### Antes del día
+
+- [ ] Tener el servidor rentado y accesible desde fuera de la red local.
+- [ ] Elegir la URL del piloto: IP pública o túnel temporal con HTTPS. Evitar
+      HTTP para credenciales si hay cualquier alternativa.
+- [ ] Configurar `URL_PUBLICA` y `FRONTEND_URL` con esa URL **antes** de probar
+      enlaces, QR o correos.
+- [ ] Configurar un correo real de prueba; si no hay proveedor, definir entrega
+      manual de enlaces de activación.
+- [ ] Base de datos vacía con solo presidencia y secretaría.
+- [ ] Probar el registro y la activación con dos cuentas ficticias desde fuera
+      de la red local.
+- [ ] Preparar QR y enlace corto de acceso.
+- [ ] Nombrar: aprobador de instituciones, soporte técnico, observador y quien
+      toma notas.
+- [ ] Acordar una ventana de 15 minutos para altas antes de la clase.
+- [ ] Respaldo previo y plan B (posponer o usar entorno local).
+
+### Durante el piloto
+
+1. Compartir la URL/QR y pedir que cada agente cree su institución.
+2. La CACE aprueba las instituciones en vivo, una por una.
+3. Cada agente invita a su docente; el docente activa su cuenta.
+4. Crear materias, asignación, solicitud y clase espejo.
+5. Gestionar la clase: planificación, sesiones, evidencias, lista, reporte,
+   evaluación, cierre y certificados si corresponde.
+6. Registrar cada fricción con rol, paso, hora y captura.
+7. **No cambiar código durante el piloto.** Si algo bloquea, usar el plan B.
+
+### Plan B
+
+| Falla | Respuesta |
+|---|---|
+| El correo de invitación no llega | Entregar el enlace de activación por el canal acordado (manual) |
+| El participante no tiene correo | Usar el correo de la institución o una cuenta de apoyo, nunca inventar datos de alumnos |
+| La IP o el túnel no responde | Cambiar a red de confianza o posponer; no improvisar otra base |
+| La institución no aparece o no se aprueba | El aprobador revisa el estado; no se edita la base a mano |
+| La clase no llega al cierre | Cerrar lo que se pueda y emitir certificados después; registrar el bloqueo |
+
+### Después del piloto
+
+- [ ] Respaldo inmediato de la base y de los archivos generados.
+- [ ] Reunión de cierre: qué funcionó, qué confundió y qué requisito nuevo salió.
+- [ ] Clasificar requisitos: bloqueante, importante, deseable, descartado.
+- [ ] No prometer fechas hasta tener el alcance y el servidor definitivo.
+- [ ] Guardar las cuentas y datos del piloto según la política de retención.
+
+**Éxito del piloto:** que la CACE pueda gestionar la clase completa y salir con
+requisitos claros. **No** es éxito que no exista ninguna fricción.
+

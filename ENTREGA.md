@@ -93,6 +93,8 @@ Las pruebas e2e requieren una base cuyo nombre termine en `_test` o `_ci`.
 
 ## Pendiente antes de producción
 
+- Validar el **piloto real con participantes desconocidos**: registro sobre la
+  marcha, aprobación en vivo, invitación/activación y URL sin dominio estable.
 - Contratar/validar URL pública y HTTPS.
 - Autorizar proveedor de correo real.
 - Validar respaldo y restauración en el servidor.
@@ -100,4 +102,5 @@ Las pruebas e2e requieren una base cuyo nombre termine en `_test` o `_ci`.
 - Crear cuentas reales y plantilla DEMO en la base de producción.
 - Si se autoriza: TOTP para presidencia y secretaría.
 
-La lista detallada está en `docs/producto/plan-de-fases-pendientes.md`.
+La lista detallada está en `docs/producto/plan-de-fases-pendientes.md` y el
+plan local-first en `docs/producto/plan-de-trabajo-antes-del-servidor.md`.
