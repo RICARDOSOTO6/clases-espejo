@@ -35,6 +35,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | [`guias/respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) | El respaldo de la base (`clasesconjuntas_respaldo_20261013`) y cómo restaurarlo. |
 | [`producto/plan-de-accion.md`](producto/plan-de-accion.md) | El plan por fases de la CACE, las instituciones y los certificados. |
 | [`producto/plan-de-fases-pendientes.md`](producto/plan-de-fases-pendientes.md) | El plan por fases de **lo que falta** para uso real (cuenta, correo, integridad, operación, privacidad y mantenibilidad), con criterios de aceptación. |
+| [`producto/plan-de-trabajo-antes-del-servidor.md`](producto/plan-de-trabajo-antes-del-servidor.md) | El **plan reordenado para trabajar sin servidor**: release candidate, ensayo local, certificado DEMO, privacidad y mantenibilidad. Servidor y autorizaciones quedan como anexos, con preguntas para la junta. |
 | [`producto/certificados-diseno.md`](producto/certificados-diseno.md) | Las decisiones de diseño de los certificados (plantilla universal, emisión, verificación y entrega). |
 | [`producto/rendimiento.md`](producto/rendimiento.md) | Qué se optimizó y cuánto: cifras de carga fría/caliente, gzip, caché, índices de base de datos y lo que queda pendiente. |
 | [`informes/informe-de-actividades.md`](informes/informe-de-actividades.md) | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
