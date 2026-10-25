@@ -53,3 +53,6 @@ corregir_informe.py
 
 # Entorno de Docker (secretos locales)
 .env.docker
+
+# Paquetes de entrega generados por scripts/empaquetar-entrega.ps1
+/release/
