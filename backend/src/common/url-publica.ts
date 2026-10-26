@@ -1,8 +1,8 @@
 import type { Request } from 'express';
 
 /**
- * URL pública del frontend, la que va dentro de los enlaces que se envían por
- * correo (invitación de docentes).
+ * URL pública del frontend: la que va dentro de los enlaces de invitación
+ * (docentes y secretarías), se envíen por correo o se copien a mano.
  *
  * El orden de prioridad es:
  *
@@ -13,7 +13,9 @@ import type { Request } from 'express';
  *    siempre que **no** sea localhost. Esto es lo que hace que funcione un túnel
  *    (`cloudflared`, `ngrok`), un proxy inverso o una demo por IP de la red
  *    local sin tocar la configuración.
- * 3. El primer valor de `FRONTEND_URL` (aunque sea localhost), como último
+ * 3. `URL_PUBLICA`, para que el frontend compilado que comparte el :3000 no
+ *    genere enlaces hacia el :4200 del servidor de desarrollo.
+ * 4. El primer valor de `FRONTEND_URL` (aunque sea localhost), como último
  *    recurso para desarrollo.
  *
  * Seguridad: la opción 2 confía en cabeceras que puede enviar el cliente, así
@@ -55,6 +57,11 @@ export function resolverUrlPublica(peticion?: Request): string {
 
   const deLaPeticion = origenDeLaPeticion(peticion);
   if (deLaPeticion) return deLaPeticion;
+
+  // En local el frontend compilado y la API comparten el :3000; `URL_PUBLICA`
+  // evita que un enlace copiado apunte al :4200 del servidor de desarrollo.
+  const urlPublica = (process.env.URL_PUBLICA ?? '').trim();
+  if (urlPublica) return sinBarraFinal(urlPublica);
 
   return sinBarraFinal(configurados[0] ?? 'http://localhost:4200');
 }

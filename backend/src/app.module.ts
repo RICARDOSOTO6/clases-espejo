@@ -6,6 +6,7 @@ import { SeguridadCabecerasMiddleware } from './common/seguridad-cabeceras.middl
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { AgentesModule } from './agentes/agentes.module';
+import { SecretariasModule } from './secretarias/secretarias.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { MateriasModule } from './materias/materias.module';
 import { AsignacionesModule } from './asignaciones/asignaciones.module';
@@ -26,6 +27,7 @@ import { EnviosModule } from './envios/envios.module';
     CertificadosModule,
     AuthModule,
     AgentesModule,
+    SecretariasModule,
     UsuariosModule,
     MateriasModule,
     AsignacionesModule,

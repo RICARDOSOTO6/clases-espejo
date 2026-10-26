@@ -201,7 +201,12 @@ instituciones ni alumnos precargados.
 ### 2.3 Cuentas y roles
 
 - [ ] Crear las cuentas reales o de demo que se usarán ese día.
-- [ ] Probar cada rol: presidencia, secretaría, agente y docente; verificar 401/403.
+- [ ] Probar cada rol: presidencia, secretaría de la CACE, secretaría de
+  institución, agente y docente; verificar 401/403.
+- [ ] Probar que la secretaría de institución no accede a clases, listas
+  nominales ni certificados, y que solo hay una activa por institución.
+- [ ] Quitar credenciales de demostración de la documentación de producción.
+- [ ] Comprobar que cada docente solo ve su institución y su lista.
 - [ ] Quitar credenciales de demostración de la documentación de producción.
 - [ ] Comprobar que cada docente solo ve su institución y su lista.
 

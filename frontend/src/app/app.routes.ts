@@ -45,6 +45,13 @@ export const routes: Routes = [
       import('./features/auth/activate/activate.component').then((m) => m.ActivateComponent),
   },
   {
+    path: 'activar-secretaria',
+    loadComponent: () =>
+      import('./features/auth/activar-secretaria/activar-secretaria.component').then(
+        (m) => m.ActivarSecretariaComponent,
+      ),
+  },
+  {
     // Recuperación de contraseña (Fase 1): pedir el enlace y usarlo. Son
     // pantallas públicas: quien las usa no tiene sesión.
     path: 'recuperar',
@@ -100,6 +107,15 @@ export const routes: Routes = [
   {
     path: 'panel',
     pathMatch: 'full',
+    canMatch: [panelDeRol('SECRETARIA_INSTITUCION')],
+    loadComponent: () =>
+      import('./features/secretaria-institucion/secretaria-institucion.component').then(
+        (m) => m.SecretariaInstitucionComponent,
+      ),
+  },
+  {
+    path: 'panel',
+    pathMatch: 'full',
     canMatch: [panelDeRol('DOCENTE')],
     loadComponent: () =>
       import('./features/docente/docente.component').then((m) => m.DocenteComponent),
@@ -113,6 +129,7 @@ export const routes: Routes = [
 
   // --- Compatibilidad con enlaces guardados de antes ---
   { path: 'agente', redirectTo: 'panel', pathMatch: 'full' },
+  { path: 'secretaria', redirectTo: 'panel', pathMatch: 'full' },
   { path: 'docente', redirectTo: 'panel', pathMatch: 'full' },
   { path: 'cace', redirectTo: 'panel', pathMatch: 'full' },
   {

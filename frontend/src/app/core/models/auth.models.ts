@@ -1,4 +1,5 @@
-export type Rol = 'AGENTE' | 'DOCENTE' | 'PRESIDENTE_CACE' | 'SECRETARIA_CACE' | null;
+export type Rol =
+  'AGENTE' | 'DOCENTE' | 'SECRETARIA_INSTITUCION' | 'PRESIDENTE_CACE' | 'SECRETARIA_CACE' | null;
 
 export interface Usuario {
   id: number;

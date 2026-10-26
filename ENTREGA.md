@@ -77,7 +77,8 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **124 pruebas e2e** contra una base de prueba aislada.
+- **132 pruebas e2e** contra una base de prueba aislada, incluidas las de
+  secretaría de institución.
 - **36 pruebas unitarias**.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 
@@ -95,6 +96,8 @@ Las pruebas e2e requieren una base cuyo nombre termine en `_test` o `_ci`.
 
 - Validar el **piloto real con participantes desconocidos**: registro sobre la
   marcha, aprobación en vivo, invitación/activación y URL sin dominio estable.
+- Probar la secretaría de institución con una persona real: enlace copiable,
+  alta, contacto y docentes; y confirmar que no accede a clases ni certificados.
 - Contratar/validar URL pública y HTTPS.
 - Autorizar proveedor de correo real.
 - Validar respaldo y restauración en el servidor.

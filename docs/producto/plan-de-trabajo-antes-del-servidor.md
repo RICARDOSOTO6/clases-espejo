@@ -40,7 +40,11 @@ fase L1.5.
 
 - Autenticación, recuperación, verificación de correo y cambio de correo.
 - Política de contraseñas, bloqueo por intentos y aviso por correo.
-- Roles y capacidades de docente, agente, presidencia y secretaría.
+- Roles y capacidades de docente, agente, presidencia, secretaría de la CACE y
+  secretaría de institución.
+- Secretaría de institución: una por institución, invitada por el agente
+  principal con enlace copiable; mantiene contacto y docentes, sin aprobar
+  clases ni tocar listas o certificados.
 - Solicitudes, doble revisión, proyectos, planificación, sesiones, evidencias,
   evaluación, cierre, certificados, ZIP y verificación de folio.
 - Cola de correo con reintentos, progreso por lote y calendario `.ics`.
@@ -167,6 +171,46 @@ bloqueante del piloto.
 
 **Entregable:** guion de alta exprés, tiempos medidos y lista de bloqueos de
 entrada.
+
+---
+
+### Fase L1.6 — Secretaría de institución (4–6 días, prioritaria)
+
+**Objetivo:** que el agente principal tenga apoyo administrativo sin crear un
+segundo agente ni compartir sus privilegios.
+
+Decisiones cerradas con la CACE:
+
+- La invita el **agente principal**, no la presidencia.
+- Es **una sola** secretaría activa por institución.
+- Puede **invitar y activar docentes**, mantener teléfono, correo, estado y
+  ciudad de la institución.
+- **No** puede cambiar el nombre ni el país, invitar agentes, confirmar altas,
+  aprobar clases, ver listas nominales ni emitir/firmar/anular certificados.
+- El enlace se puede crear **sin correo**, se copia y se comparte por WhatsApp u
+  otro canal. Vale por uso o por tiempo, lo que ocurra primero.
+- El auto-registro sigue existiendo como solicitud; no se elimina.
+
+Implementado:
+
+- [x] Rol relacional `SECRETARIA_INSTITUCION`, independiente de `AGENTE`.
+- [x] Tabla `SECRETARIA_INSTITUCION` con una fila por institución.
+- [x] Tabla `INVITACION_SECRETARIA` con token, expiración y uso.
+- [x] Invitación desde el agente principal, con o sin correo, y enlace copiable.
+- [x] Cuestionario público en `/activar-secretaria`.
+- [x] Activación transaccional: consume el enlace una sola vez y crea el vínculo.
+- [x] Panel `/panel` con contacto, docentes, invitación de docentes y conteos.
+- [x] Prohibiciones de agente/clases/certificados aplicadas en el servicio.
+- [x] Pruebas e2e del flujo completo, límite y permisos.
+- [ ] Reemplazo o desactivación de una secretaría desde la interfaz (siguiente
+  iteración; hoy el cambio se hace por base de datos).
+- [ ] Envío automático de correo al invitar (el enlace ya es la vía principal).
+
+**Aceptación:** el agente principal genera el enlace sin correo, la persona lo
+abre, completa el cuestionario, entra como secretaría y no puede realizar las
+acciones reservadas. Una segunda secretaría activa se rechaza.
+
+**Entregable:** migración, API, pantallas, pruebas y esta documentación.
 
 ---
 

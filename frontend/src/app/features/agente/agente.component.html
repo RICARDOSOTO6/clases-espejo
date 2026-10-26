@@ -8,6 +8,9 @@
 >
 
   <main class="content">
+    @if (institucionCargada() && institucionCompleta() && !bloqueado()) {
+      <app-invitar-secretaria />
+    }
     @if (avisoPanel(); as aviso) {
       <div
         class="alert"

@@ -25,6 +25,7 @@ import {
   GUIA_AGENTE,
   GUIA_CACE,
   GUIA_DOCENTE,
+  GUIA_SECRETARIA,
   GuiaSeccion,
   PasoGuia,
   buscarGuia,
@@ -133,6 +134,7 @@ const ICONOS: Record<string, string[]> = {
 type RolLayout =
   | 'DOCENTE'
   | 'AGENTE'
+  | 'SECRETARIA_INSTITUCION'
   | 'PRESIDENTE_CACE'
   | 'SECRETARIA_CACE';
 
@@ -294,6 +296,7 @@ export class LayoutComponent implements OnInit {
         (guia) => guia.id === 'completo' || visibles.has(guia.id),
       );
     }
+    if (this.rol === 'SECRETARIA_INSTITUCION') return GUIA_SECRETARIA;
     return this.rol === 'AGENTE' ? GUIA_AGENTE : GUIA_DOCENTE;
   });
 
@@ -418,6 +421,27 @@ export class LayoutComponent implements OnInit {
       return items.filter((item) => this.puedeVer(item));
     }
 
+    if (this.rol === 'SECRETARIA_INSTITUCION') {
+      return [
+        { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
+        {
+          id: 'institucion',
+          etiqueta: 'Mi institución',
+          icono: 'institucion',
+          ancla: 'institucion',
+        },
+        {
+          id: 'docentes',
+          etiqueta: 'Docentes',
+          icono: 'docentes',
+          ancla: 'docentes',
+          contador: 'docentes',
+        },
+        { id: 'perfil', etiqueta: 'Mi perfil', icono: 'perfil', accion: 'perfil' },
+        { id: 'ayuda', etiqueta: 'Ayuda', icono: 'ayuda', accion: 'ayuda' },
+      ];
+    }
+
     if (this.rol === 'AGENTE') {
       return [
         { id: 'inicio', etiqueta: 'Inicio', icono: 'inicio', ruta: this.homeRoute },
@@ -504,6 +528,8 @@ export class LayoutComponent implements OnInit {
     switch (this.rol) {
       case 'AGENTE':
         return 'Agente de internacionalización';
+      case 'SECRETARIA_INSTITUCION':
+        return 'Secretaría de institución';
       case 'PRESIDENTE_CACE':
         return 'Presidencia de la CACE';
       case 'SECRETARIA_CACE':

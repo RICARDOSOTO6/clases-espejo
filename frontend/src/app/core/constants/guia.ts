@@ -68,6 +68,83 @@ export function buscarGuia(
 const CAMPANA = '.navbar-icon[aria-label^="Notificaciones"]';
 
 // ---------------------------------------------------------------------------
+// SECRETARÍA DE INSTITUCIÓN
+// ---------------------------------------------------------------------------
+
+export const GUIA_SECRETARIA: GuiaSeccion[] = [
+  {
+    id: 'completo',
+    titulo: 'Tu apoyo administrativo (de principio a fin)',
+    resumen:
+      'El recorrido corto: revisar el contacto de la institución, invitar docentes y compartir el enlace.',
+    pasos: [
+      {
+        selector: '.welcome',
+        titulo: 'Este es tu panel',
+        texto:
+          'Aquí ayudas con la parte administrativa de tu institución. No puedes aprobar clases ni emitir certificados.',
+      },
+      {
+        selector: '#sec-telefono',
+        titulo: 'Datos de contacto',
+        texto:
+          'Mantén actualizados el teléfono, el correo, el estado y la ciudad. El nombre y el país los conserva la CACE.',
+      },
+      {
+        selector: '#sec-docente-correo',
+        titulo: 'Invitar docentes',
+        texto:
+          'Escribe el correo del docente. El enlace de activación se mostrará al terminar; cópialo y compártelo.',
+      },
+      {
+        selector: '#sec-enlace-docente',
+        titulo: 'Comparte el enlace',
+        texto:
+          'Este enlace es de un solo uso. Si el docente no lo abre a tiempo, pide uno nuevo al agente principal.',
+      },
+    ],
+  },
+  {
+    id: 'institucion',
+    titulo: 'Contacto de la institución',
+    resumen: 'Teléfono, correo, estado y ciudad; sin tocar la identidad aprobada por la CACE.',
+    pasos: [
+      {
+        selector: '#sec-telefono',
+        titulo: 'Teléfono y correo',
+        texto:
+          'Son los datos que verán otros agentes en el directorio. Guárdalos con el botón «Guardar contacto».',
+      },
+      {
+        selector: '#sec-estado',
+        titulo: 'Ubicación',
+        texto:
+          'Puedes actualizar el estado y la ciudad. El nombre y el país no se cambian desde la secretaría.',
+      },
+    ],
+  },
+  {
+    id: 'docentes',
+    titulo: 'Docentes',
+    resumen: 'Invitar, activar o desactivar docentes de tu institución.',
+    pasos: [
+      {
+        selector: '#sec-docente-correo',
+        titulo: 'Correo del docente',
+        texto:
+          'El docente recibirá un enlace de activación. La secretaría no le asigna materias ni revisa sus clases.',
+      },
+      {
+        selector: '#sec-enlace-docente',
+        titulo: 'Enlace de un solo uso',
+        texto:
+          'Cópialo y envíalo por WhatsApp o correo. Caduca por tiempo o cuando se usa la primera vez.',
+      },
+    ],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // DOCENTE
 // ---------------------------------------------------------------------------
 

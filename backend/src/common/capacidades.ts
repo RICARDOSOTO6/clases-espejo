@@ -10,6 +10,7 @@
 const ROLES = [
   'DOCENTE',
   'AGENTE',
+  'SECRETARIA_INSTITUCION',
   'PRESIDENTE_CACE',
   'SECRETARIA_CACE',
 ] as const;
@@ -60,6 +61,12 @@ export const CAPACIDADES = [
    * responde por lo que firma la CACE.
    */
   'anularCertificados',
+  /** La secretaría institucional mantiene el contacto y el logo de su institución. */
+  'editarContactoInstitucion',
+  /** La secretaría institucional puede invitar y activar docentes de su institución. */
+  'gestionarDocentesInstitucion',
+  /** Ver conteos de su institución sin datos nominales de alumnos. */
+  'verResumenInstitucion',
 ] as const;
 export type Capacidad = (typeof CAPACIDADES)[number];
 
@@ -67,6 +74,11 @@ export type Capacidad = (typeof CAPACIDADES)[number];
 const MATRIZ: Record<Rol, Capacidad[]> = {
   DOCENTE: ['emitirCertificados', 'anularCertificados'],
   AGENTE: ['confirmarAgenteInstitucion'],
+  SECRETARIA_INSTITUCION: [
+    'editarContactoInstitucion',
+    'gestionarDocentesInstitucion',
+    'verResumenInstitucion',
+  ],
   PRESIDENTE_CACE: [
     'aprobarInstituciones',
     'borrarInstituciones',
@@ -102,6 +114,7 @@ function esRolValido(rol: string | null | undefined): rol is Rol {
 export function rolDeVinculos(vinculos: {
   agente?: unknown;
   docente?: unknown;
+  secretariaInstitucion?: { activo: boolean } | null;
   miembroCace?: { cargo: string; activo: boolean } | null;
 }): Rol | null {
   const miembro = vinculos.miembroCace?.activo ? vinculos.miembroCace : null;
@@ -110,6 +123,7 @@ export function rolDeVinculos(vinculos: {
       ? 'SECRETARIA_CACE'
       : 'PRESIDENTE_CACE';
   }
+  if (vinculos.secretariaInstitucion?.activo) return 'SECRETARIA_INSTITUCION';
   if (vinculos.agente) return 'AGENTE';
   if (vinculos.docente) return 'DOCENTE';
   return null;
@@ -132,6 +146,7 @@ export function puede(
 export const ETIQUETA_ROL: Record<Rol, string> = {
   DOCENTE: 'Docente',
   AGENTE: 'Agente de internacionalización',
-  PRESIDENTE_CACE: 'Presidente de la CACE',
+  SECRETARIA_INSTITUCION: 'Secretaría de institución',
+  PRESIDENTE_CACE: 'Presidencia de la CACE',
   SECRETARIA_CACE: 'Secretaría de la CACE',
 };

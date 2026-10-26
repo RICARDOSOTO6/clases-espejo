@@ -40,6 +40,8 @@ model Institucion {
   materias            Materia[]
   solicitudesDestino  SolicitudClaseEspejo[]
   invitaciones        Invitacion[]
+  invitacionesSecretaria InvitacionSecretaria[]
+  secretaria          SecretariaInstitucion?
   listasAlumnos       ListaAlumnos[]
   premios             Premio[]
   solicitudesBorrado  SolicitudBorradoInstitucion[]
@@ -86,6 +88,8 @@ model Usuario {
   agente          AgenteInternacionalizacion?
   docente         Docente?
   miembroCace     MiembroCace?
+  secretariaInstitucion SecretariaInstitucion?
+  invitacionesSecretariaCreadas InvitacionSecretaria[] @relation("InvitacionSecretariaCreada")
   listasAlumnos   ListaAlumnos[]
   institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
   agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
@@ -116,11 +120,47 @@ model Invitacion {
   @@map("INVITACION")
 }
 
+/// Invitación de una secretaría de institución. La crea el agente principal y
+/// puede entregarse por enlace copiable, sin correo.
+model InvitacionSecretaria {
+  id                  Int         @id @default(autoincrement())
+  institucionId       Int         @map("institucion_id")
+  creadaPorUsuarioId  Int         @map("creada_por_usuario_id")
+  correo              String?
+  token               String      @unique
+  expiracion          DateTime
+  usadaEn             DateTime?   @map("usada_en")
+  creadoEn            DateTime    @default(now()) @map("creado_en")
+  institucion         Institucion @relation(fields: [institucionId], references: [id])
+  creadaPor           Usuario     @relation("InvitacionSecretariaCreada", fields: [creadaPorUsuarioId], references: [id])
+
+  @@index([institucionId])
+  @@index([correo])
+  @@map("INVITACION_SECRETARIA")
+}
+
+/// Una secretaría por institución. No es un agente: no hereda sus permisos.
+model SecretariaInstitucion {
+  id            Int         @id @default(autoincrement())
+  usuarioId     Int         @unique @map("usuario_id")
+  institucionId Int         @unique @map("institucion_id")
+  activo        Boolean     @default(true)
+  creadoEn      DateTime    @default(now()) @map("creado_en")
+  actualizadoEn DateTime    @default(now()) @updatedAt @map("actualizado_en")
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id])
+  institucion   Institucion @relation(fields: [institucionId], references: [id])
+
+  @@map("SECRETARIA_INSTITUCION")
+}
+
 model AgenteInternacionalizacion {
   id            Int                 @id @default(autoincrement())
   usuarioId     Int                 @unique @map("usuario_id")
   institucionId Int                 @map("institucion_id")
   cargo         String
+  /// El primer agente de la institución es principal; los invitados después
+  /// pueden ser asistentes con menos permisos administrativos.
+  esPrincipal   Boolean             @default(true) @map("es_principal")
   /// Cuando un agente se une a una institucion **ya aprobada**, su alta la
   /// confirma el agente de esa institucion (no el presidente): hasta entonces
   /// queda en null. El agente fundador nace confirmado y de la institucion se

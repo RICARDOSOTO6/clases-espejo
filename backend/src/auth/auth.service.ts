@@ -375,6 +375,7 @@ export class AuthService {
       include: {
         agente: true,
         docente: { include: { instituciones: true } },
+        secretariaInstitucion: { select: { activo: true } },
         // El rol de la CACE también es relacional: sin esta fila el presidente
         // entraría sin rol y el frontend no sabría a qué pantalla mandarlo.
         miembroCace: { select: { cargo: true, activo: true } },

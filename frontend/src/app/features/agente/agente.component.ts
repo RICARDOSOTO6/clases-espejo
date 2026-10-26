@@ -46,6 +46,7 @@ import {
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
+import { InvitarSecretariaComponent } from './invitar-secretaria.component';
 import {
   PendienteUi,
   UiStateService,
@@ -75,6 +76,7 @@ import { PremioTarjetaComponent } from '../../shared/components/premio-tarjeta/p
     AgendaComponent,
     CarruselComponent,
     PremioTarjetaComponent,
+    InvitarSecretariaComponent,
   ],
   templateUrl: './agente.component.html',
 })

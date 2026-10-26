@@ -54,7 +54,10 @@ export class JwtAuthGuard implements CanActivate {
 
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: usuarioId },
-      include: { docente: { include: { instituciones: true } } },
+      include: {
+        docente: { include: { instituciones: true } },
+        secretariaInstitucion: { select: { activo: true } },
+      },
     });
 
     if (!usuario) {
@@ -82,6 +85,14 @@ export class JwtAuthGuard implements CanActivate {
     if (vinculos.length > 0 && !vinculos.some((v) => v.activo)) {
       throw new UnauthorizedException(
         'Tu cuenta de docente está desactivada por tu institución.',
+      );
+    }
+    if (
+      usuario.secretariaInstitucion &&
+      !usuario.secretariaInstitucion.activo
+    ) {
+      throw new UnauthorizedException(
+        'Tu cuenta de secretaría está desactivada por tu institución.',
       );
     }
   }
