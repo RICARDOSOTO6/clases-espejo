@@ -216,6 +216,7 @@ describe('Flujo 4: certificados y verificación pública', () => {
       .expect(200);
 
     expect(respuesta.body.estado).toBe('VALIDO');
+    expect(respuesta.body.modoDemo).toBe(true);
     expect(respuesta.body.certificado.alumno).toContain('Alumno Uno');
   });
 

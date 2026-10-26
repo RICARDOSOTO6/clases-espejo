@@ -258,18 +258,24 @@ su institución, la CACE la aprueba, y el enlace no puede reutilizarse.
 **Objetivo:** comprobar que el certificado se puede emitir y verificar antes de
 la entrega.
 
-- [ ] Crear o revisar la plantilla activa en la base de ensayo.
-- [ ] Usar la identidad de la CACE y una marca **DEMO** provisional, de acuerdo
+- [x] Crear o revisar la plantilla activa en la base de ensayo.
+- [x] Usar la identidad de la CACE y una marca **DEMO** provisional, de acuerdo
       con la decisión ya cerrada (“certificados con marca DEMO salvo
-      autorización expresa”).
-- [ ] Emitir dos certificados de alumnos ficticios.
-- [ ] Descargar PDF y ZIP.
-- [ ] Verificar el folio, el código y el QR desde la URL local.
-- [ ] Comprobar que un certificado anulado deja de aparecer como válido.
+      autorización expresa”). Se controla con `CERTIFICADO_MODO_DEMO`.
+- [x] Emitir dos certificados de alumnos ficticios.
+- [x] Descargar PDF y ZIP.
+- [x] Verificar el folio, el código y el QR desde la URL local.
+- [x] Comprobar que un certificado anulado deja de aparecer como válido.
 - [ ] Anotar qué datos de la plantilla necesitan aprobación oficial (anexo B).
 
 **Aceptación:** folio `CACE-AAAA-####`, QR verificable en local y PDF con marca
 DEMO, sin usar datos de alumnos reales.
+
+**Datos de plantilla que necesitan aprobación oficial:** firma y cargo de la
+presidencia, leyenda legal, uso del logo de la CACE, correo de contacto, formato
+definitivo del folio y URL pública del QR. Hasta esa aprobación, los certificados
+se emiten con `CERTIFICADO_MODO_DEMO=true` y la verificación pública muestra el
+aviso DEMO; para una entrega oficial se cambia a `false`.
 
 **No incluye:** plantilla oficial ni URL pública definitiva. El QR de la demo
 solo debe apuntar a una URL que exista durante el ensayo.

@@ -28,6 +28,12 @@
           Reintentar
         </button>
       } @else if (resultado(); as r) {
+        @if (r.modoDemo && r.certificado) {
+          <div class="alert alert-info" role="status">
+            <strong>Certificado DEMO.</strong> Este documento es de prueba y no
+            tiene validez oficial.
+          </div>
+        }
         @switch (r.estado) {
           @case ('VALIDO') {
             <div class="verificacion-icono verificacion-icono--ok" aria-hidden="true">

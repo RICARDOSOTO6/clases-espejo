@@ -228,6 +228,7 @@ type EstadoVerificacion =
 export interface VerificacionCertificado {
   estado: EstadoVerificacion;
   mensaje: string;
+  modoDemo: boolean;
   certificado: {
     folio: string;
     alumno: string;

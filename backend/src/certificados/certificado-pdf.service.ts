@@ -18,6 +18,7 @@ import {
   FONDOS_CERTIFICADO_DIR,
   direccionVerificacion,
 } from './rutas-certificado';
+import { certificadoModoDemo } from './modo-demo';
 
 /**
  * Genera el PDF de un certificado: el diseño (la imagen que subió la
@@ -191,6 +192,10 @@ export class CertificadoPdfService {
         continue;
       }
       await this.dibujarQr(doc, caja, datos.folio, avisos);
+    }
+
+    if (certificadoModoDemo()) {
+      this.dibujarMarcaDemo(doc);
     }
 
     doc.end();
@@ -475,6 +480,43 @@ export class CertificadoPdfService {
    * solo: así el PDF no lleva dibujada una imagen más grande que la hoja (que
    * algunos visores enseñan fuera del papel al imprimir sin márgenes).
    */
+  /**
+   * Marca provisional para que un certificado de ensayo no se confunda con uno
+   * oficial. Se puede desactivar con `CERTIFICADO_MODO_DEMO=false` cuando la
+   * CACE apruebe la plantilla y el uso definitivo.
+   */
+  private dibujarMarcaDemo(doc: any): void {
+    const ancho = doc.page.width;
+    const alto = doc.page.height;
+    const fuente = this.fuente(doc, true, false);
+
+    doc.save();
+    doc.fillOpacity(0.09);
+    doc.fillColor('#111827');
+    doc.font(fuente).fontSize(150);
+    doc.rotate(-30, { origin: [ancho / 2, alto / 2] });
+    doc.text('DEMO', 0, alto / 2 - 95, {
+      width: ancho,
+      align: 'center',
+      lineBreak: false,
+    });
+    doc.restore();
+
+    doc.save();
+    doc.fillOpacity(1);
+    doc.rect(0, 0, ancho, 26).fill('#0b5d3b');
+    doc
+      .fillColor('#ffffff')
+      .font(fuente)
+      .fontSize(10.5)
+      .text('CERTIFICADO DEMO · SIN VALIDEZ OFICIAL', 0, 8, {
+        width: ancho,
+        align: 'center',
+        lineBreak: false,
+      });
+    doc.restore();
+  }
+
   private dibujarFondo(doc: any, fondo: Buffer, avisos: string[]): void {
     try {
       const imagen = doc.openImage(fondo);

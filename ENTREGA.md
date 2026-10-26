@@ -1,6 +1,6 @@
 # Entrega funcional — Clases Conjuntas
 
-Versión de entrega: **2026-10-25**
+Versión de entrega: **2026-10-26**
 
 Este paquete contiene el código fuente, las migraciones y el frontend ya
 compilado. **No contiene** `node_modules`, `.env`, archivos subidos, base de
@@ -79,8 +79,10 @@ debe validarse en el servidor.
 
 - **140 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución y la invitación de agente por la presidencia.
-- **36 pruebas unitarias**.
+- **39 pruebas unitarias**.
 - `tsc`, `eslint`, `ngc` y builds correctos.
+- Los certificados llevan marca **DEMO** y se pueden desactivar con
+  `CERTIFICADO_MODO_DEMO=false`.
 
 Para repetirlas:
 

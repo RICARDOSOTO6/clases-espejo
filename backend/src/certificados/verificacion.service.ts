@@ -5,6 +5,7 @@ import {
   formatoFolioValido,
   normalizarFolio,
 } from './codigo-verificacion';
+import { certificadoModoDemo } from './modo-demo';
 
 /** Los cuatro desenlaces que puede tener una consulta pública. */
 type EstadoVerificacion = 'VALIDO' | 'ANULADO' | 'NO_ENCONTRADO' | 'INVALIDO';
@@ -35,6 +36,8 @@ export interface ResultadoVerificacion {
   mensaje: string;
   /** `null` salvo que el folio exista **y** el código sea el correcto. */
   certificado: CertificadoVerificado | null;
+  /** El certificado se emitió en modo DEMO (sin validez oficial). */
+  modoDemo: boolean;
 }
 
 const ESTADO_ANULADO = 'ANULADO';
@@ -110,6 +113,7 @@ export class VerificacionService {
         mensaje:
           'No encontramos ningún certificado con ese folio. Comprueba que esté bien escrito o escanea el código QR del certificado.',
         certificado: null,
+        modoDemo: certificadoModoDemo(),
       };
     }
 
@@ -134,6 +138,7 @@ export class VerificacionService {
         mensaje:
           'Este certificado fue anulado por la CACE y ya no tiene validez.',
         certificado: datos,
+        modoDemo: certificadoModoDemo(),
       };
     }
 
@@ -141,6 +146,7 @@ export class VerificacionService {
       estado: 'VALIDO',
       mensaje: 'Certificado auténtico: lo emitió la CACE y está vigente.',
       certificado: datos,
+      modoDemo: certificadoModoDemo(),
     };
   }
 
@@ -154,6 +160,7 @@ export class VerificacionService {
       mensaje:
         'Este enlace de verificación no es válido. Para comprobar un certificado, escanea el código QR que viene impreso en él.',
       certificado: null,
+      modoDemo: certificadoModoDemo(),
     };
   }
 }
