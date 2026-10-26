@@ -155,6 +155,8 @@ export class AgenteComponent implements OnInit, OnDestroy {
   inviteLoading = signal(false);
   inviteError = signal<string | null>(null);
   inviteSuccess = signal<string | null>(null);
+  inviteLink = signal<string | null>(null);
+  inviteCopiado = signal(false);
 
   inviteForm = this.fb.group({
     correo: ['', [Validators.required, Validators.email]],
@@ -528,7 +530,13 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.agentes.reenviarInvitacion(invitacion.id).subscribe({
       next: (res) => {
         this.reenviandoId.set(null);
-        this.avisar('ok', `${res.mensaje} (${res.correo})`);
+        this.showInviteModal = true;
+        this.inviteError.set(null);
+        this.inviteLink.set(res.enlace);
+        this.inviteCopiado.set(false);
+        this.inviteSuccess.set(
+          [res.mensaje, res.avisoCorreo].filter(Boolean).join(' '),
+        );
         this.cargarInvitaciones();
       },
       error: (err: HttpErrorResponse) => {
@@ -983,11 +991,26 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.showInviteModal = true;
     this.inviteError.set(null);
     this.inviteSuccess.set(null);
+    this.inviteLink.set(null);
+    this.inviteCopiado.set(false);
     this.inviteForm.reset();
   }
 
   closeInvite(): void {
     this.showInviteModal = false;
+    this.inviteLink.set(null);
+    this.inviteCopiado.set(false);
+  }
+
+  copiarInvitacion(): void {
+    const enlace = this.inviteLink();
+    if (!enlace) return;
+    navigator.clipboard
+      .writeText(enlace)
+      .then(() => this.inviteCopiado.set(true))
+      .catch(() =>
+        this.inviteError.set('Selecciona el enlace y cópialo manualmente.'),
+      );
   }
 
   submitInvite(): void {
@@ -997,17 +1020,20 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.inviteLoading.set(true);
     this.inviteError.set(null);
     this.inviteSuccess.set(null);
+    this.inviteCopiado.set(false);
 
     this.agentes
       .invitarDocente(this.inviteForm.value as InviteDocenteDto)
       .subscribe({
         next: (res) => {
           this.inviteLoading.set(false);
+          this.inviteLink.set(res.enlace);
+          this.inviteSuccess.set(
+            [res.mensaje, res.avisoCorreo].filter(Boolean).join(' '),
+          );
           this.inviteForm.reset();
-          this.showInviteModal = false;
           this.cargarDocentes();
           this.cargarInvitaciones();
-          this.avisar('ok', `Invitación enviada a ${res.correo}`);
         },
         error: (err: HttpErrorResponse) => {
           this.inviteLoading.set(false);

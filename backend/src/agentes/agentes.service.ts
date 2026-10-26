@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -83,10 +82,28 @@ export class AgentesService {
         usadaEn: null,
         expiracion: { gt: new Date() },
       },
+      select: {
+        id: true,
+        institucionId: true,
+        token: true,
+        expiracion: true,
+      },
     });
     if (pendiente) {
+      if (pendiente.institucionId === agente.institucionId) {
+        return {
+          mensaje:
+            'Ya existe una invitación vigente para ese correo. Se reutiliza para que no se pierda.',
+          correo: dto.correo,
+          correoEnviado: false,
+          avisoCorreo:
+            'El correo pudo no haberse enviado; comparte el enlace que aparece abajo.',
+          enlace: `${urlPublica}/activate?token=${encodeURIComponent(pendiente.token)}`,
+          expiracion: pendiente.expiracion,
+        };
+      }
       throw new ConflictException(
-        'Ya existe una invitación pendiente para ese correo. Pídele que revise su bandeja o espera a que caduque.',
+        'Ya existe una invitación pendiente para ese correo.',
       );
     }
 
@@ -99,7 +116,7 @@ export class AgentesService {
     // La misma duración del token, para que no queden dos vencimientos distintos.
     const expiracion = new Date(Date.now() + duracionEnMs(expiraEn));
 
-    const invitacion = await this.prisma.invitacion.create({
+    await this.prisma.invitacion.create({
       data: {
         correo: dto.correo,
         numeroEmpleado: dto.numeroEmpleado,
@@ -109,20 +126,25 @@ export class AgentesService {
       },
     });
 
+    let correoEnviado = false;
+    let avisoCorreo: string | null = null;
     try {
       await this.mailService.sendInvitation(dto.correo, token, urlPublica);
+      correoEnviado = true;
     } catch {
-      // Si el correo no sale, la invitación no debe quedarse bloqueando el
-      // reenvío durante días sin que nadie reciba nada.
-      await this.prisma.invitacion.delete({ where: { id: invitacion.id } });
-      throw new ServiceUnavailableException(
-        'No se pudo enviar el correo de invitación. Revisa la configuración de correo e inténtalo de nuevo.',
-      );
+      avisoCorreo =
+        'El correo no salió, pero la invitación sigue vigente: copia el enlace y compártelo.';
     }
 
     return {
-      mensaje: 'Invitación enviada al docente',
+      mensaje: correoEnviado
+        ? 'Invitación enviada al docente y enlace disponible para copiar.'
+        : 'Invitación creada. Copia el enlace y compártelo con el docente.',
       correo: dto.correo,
+      correoEnviado,
+      avisoCorreo,
+      enlace: `${urlPublica}/activate?token=${encodeURIComponent(token)}`,
+      expiracion,
     };
   }
 
@@ -158,8 +180,8 @@ export class AgentesService {
    *
    * Genera un token **nuevo**: el anterior deja de valer en el acto, que es lo
    * que se quiere si el primero pudo acabar en una bandeja equivocada. Si el
-   * correo no sale, se restaura el token anterior para no dejar la invitación
-   * con un enlace que nadie ha recibido.
+   * correo no sale, la invitación se conserva con el token nuevo y el enlace se
+   * devuelve para copiarlo; así el alta no depende del correo.
    */
   async reenviarInvitacion(
     agenteId: number,
@@ -198,35 +220,34 @@ export class AgentesService {
       { expiresIn: expiraEn as any },
     );
     const expiracion = new Date(Date.now() + duracionEnMs(expiraEn));
-    const anterior = {
-      token: invitacion.token,
-      expiracion: invitacion.expiracion,
-    };
 
     await this.prisma.invitacion.update({
       where: { id: invitacion.id },
       data: { token, expiracion },
     });
 
+    let correoEnviado = false;
+    let avisoCorreo: string | null = null;
     try {
       await this.mailService.sendInvitation(
         invitacion.correo,
         token,
         urlPublica,
       );
+      correoEnviado = true;
     } catch {
-      await this.prisma.invitacion.update({
-        where: { id: invitacion.id },
-        data: anterior,
-      });
-      throw new ServiceUnavailableException(
-        'No se pudo enviar el correo de invitación. Revisa la configuración de correo e inténtalo de nuevo.',
-      );
+      avisoCorreo =
+        'El correo no salió, pero el enlace nuevo está vigente: cópialo y compártelo.';
     }
 
     return {
-      mensaje: 'Invitación reenviada al docente',
+      mensaje: correoEnviado
+        ? 'Invitación reenviada al docente y enlace disponible para copiar.'
+        : 'Enlace renovado. Copia el enlace y compártelo con el docente.',
       correo: invitacion.correo,
+      correoEnviado,
+      avisoCorreo,
+      enlace: `${urlPublica}/activate?token=${encodeURIComponent(token)}`,
       expiracion,
     };
   }

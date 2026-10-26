@@ -141,6 +141,10 @@ export interface InviteDocenteDto {
 export interface InviteResponse {
   mensaje: string;
   correo: string;
+  correoEnviado: boolean;
+  avisoCorreo: string | null;
+  enlace: string;
+  expiracion: string;
 }
 
 export interface ActivateAccountDto {

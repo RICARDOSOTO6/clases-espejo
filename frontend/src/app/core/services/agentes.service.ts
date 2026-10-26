@@ -79,10 +79,20 @@ export class AgentesService {
   /** Reenvía una invitación con un enlace nuevo: el anterior deja de valer. */
   reenviarInvitacion(
     id: number,
-  ): Observable<{ mensaje: string; correo: string; expiracion: string }> {
+  ): Observable<{
+    mensaje: string;
+    correo: string;
+    correoEnviado: boolean;
+    avisoCorreo: string | null;
+    enlace: string;
+    expiracion: string;
+  }> {
     return this.http.post<{
       mensaje: string;
       correo: string;
+      correoEnviado: boolean;
+      avisoCorreo: string | null;
+      enlace: string;
       expiracion: string;
     }>(`${API_URL}/agentes/invitaciones/${id}/reenviar`, {});
   }

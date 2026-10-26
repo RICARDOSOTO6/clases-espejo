@@ -825,32 +825,53 @@
 
 @if (showInviteModal) {
   <app-modal title="Invitar docente" (cerrado)="closeInvite()">
-    <form [formGroup]="inviteForm" (ngSubmit)="submitInvite()">
+    @if (inviteLink(); as link) {
+      @if (inviteSuccess()) {
+        <div class="alert alert-success" role="status">{{ inviteSuccess() }}</div>
+      }
       <div class="form-field">
-        <label for="d-correo">Correo del docente</label>
-        <input id="d-correo" type="email" formControlName="correo" />
+        <label for="d-enlace">Enlace de activación</label>
+        <input id="d-enlace" type="text" [value]="link" readonly />
       </div>
-
-      <div class="form-field">
-        <label for="d-numero">Número de empleado</label>
-        <input id="d-numero" type="text" formControlName="numeroEmpleado" />
+      <p class="text-sm muted">
+        Este enlace es de un solo uso. Compártelo por WhatsApp o correo.
+      </p>
+      <div class="form-grid-actions">
+        <button type="button" class="btn btn-primary" (click)="copiarInvitacion()">
+          {{ inviteCopiado() ? 'Copiado' : 'Copiar enlace' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeInvite()">
+          Cerrar
+        </button>
       </div>
-
       @if (inviteError()) {
         <div class="alert alert-error" role="alert">{{ inviteError() }}</div>
       }
-      @if (inviteSuccess()) {
-        <div class="alert alert-success">{{ inviteSuccess() }}</div>
-      }
+    } @else {
+      <form [formGroup]="inviteForm" (ngSubmit)="submitInvite()">
+        <div class="form-field">
+          <label for="d-correo">Correo del docente</label>
+          <input id="d-correo" type="email" formControlName="correo" />
+        </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [disabled]="inviteForm.invalid || inviteLoading()"
-      >
-        {{ inviteLoading() ? 'Enviando...' : 'Enviar invitación' }}
-      </button>
-    </form>
+        <div class="form-field">
+          <label for="d-numero">Número de empleado</label>
+          <input id="d-numero" type="text" formControlName="numeroEmpleado" />
+        </div>
+
+        @if (inviteError()) {
+          <div class="alert alert-error" role="alert">{{ inviteError() }}</div>
+        }
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="inviteForm.invalid || inviteLoading()"
+        >
+          {{ inviteLoading() ? 'Creando enlace…' : 'Crear invitación' }}
+        </button>
+      </form>
+    }
   </app-modal>
 }
 

@@ -54,11 +54,13 @@ describe('Fase 1: reenvío de invitaciones', () => {
   });
 
   it('1. el agente invita y la invitación aparece como pendiente', async () => {
-    await request(app.getHttpServer())
+    const respuesta = await request(app.getHttpServer())
       .post('/agentes/invitar-docente')
       .set(autenticado(tokenAgenteA))
       .send({ correo: correoDocente, numeroEmpleado: 'DOC-R-001' })
       .expect(201);
+    expect(respuesta.body.enlace).toContain('/activate?token=');
+    expect(respuesta.body.correoEnviado).toBe(true);
 
     const lista = await request(app.getHttpServer())
       .get('/agentes/invitaciones')
@@ -88,6 +90,7 @@ describe('Fase 1: reenvío de invitaciones', () => {
       .set(autenticado(tokenAgenteA))
       .expect(201);
     expect(respuesta.body.mensaje).toContain('reenviada');
+    expect(respuesta.body.enlace).toContain('/activate?token=');
 
     const enBase = await prisma.invitacion.findUnique({
       where: { id: invitacionId },

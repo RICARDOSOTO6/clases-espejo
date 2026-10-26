@@ -45,6 +45,8 @@ fase L1.5.
 - Secretaría de institución: una por institución, invitada por el agente
   principal con enlace copiable; mantiene contacto y docentes, sin aprobar
   clases ni tocar listas o certificados.
+- Invitación de docentes con enlace copiable: si el correo falla, la invitación
+  no se borra y el agente puede compartir el enlace manualmente.
 - Solicitudes, doble revisión, proyectos, planificación, sesiones, evidencias,
   evaluación, cierre, certificados, ZIP y verificación de folio.
 - Cola de correo con reintentos, progreso por lote y calendario `.ics`.
@@ -151,6 +153,8 @@ No se crean cuentas reales antes. Se ensaya con dos personas ficticias que
 - [ ] Probar el registro de una institución nueva desde un dispositivo limpio.
 - [ ] Probar que la CACE pueda aprobarla durante la misma sesión.
 - [ ] Probar la invitación del docente desde el panel del agente.
+- [ ] Probar que el enlace del docente se pueda copiar aunque el correo no salga;
+      la invitación conserva el enlace y no se borra.
 - [ ] Probar la activación del docente desde el enlace recibido.
 - [ ] Comprobar si el enlace de activación se puede copiar o compartir sin
       depender del correo; si no, anotarlo como cambio bloqueante.
