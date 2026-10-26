@@ -77,8 +77,8 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **135 pruebas e2e** contra una base de prueba aislada, incluidas las de
-  secretaría de institución (enlace, logo, desactivación y permisos).
+- **140 pruebas e2e** contra una base de prueba aislada, incluidas las de
+  secretaría de institución y la invitación de agente por la presidencia.
 - **36 pruebas unitarias**.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 

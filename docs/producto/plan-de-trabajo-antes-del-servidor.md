@@ -215,6 +215,37 @@ acciones reservadas. Una segunda secretaría activa se rechaza.
 
 ---
 
+### Fase L1.7 — Invitación del agente por la presidencia (3–5 días, prioritaria)
+
+**Objetivo:** que la presidencia pueda incorporar a una persona que todavía no
+existe en la base y que esa persona cree su institución desde cero.
+
+Decisiones cerradas:
+
+- La **presidencia** crea el enlace; no se pide correo ni se envía
+  automáticamente.
+- El agente completa sus datos personales, los de la institución y su cargo.
+- La institución nace **PENDIENTE** y la presidencia la aprueba después.
+- El agente queda confirmado como **principal** y puede entrar mientras espera
+  la aprobación.
+- El enlace es de un solo uso y caduca por uso o por tiempo.
+- La invitación es distinta de la de secretaría y de la de docentes.
+
+Implementado:
+
+- [x] Tabla `INVITACION_AGENTE` con token, expiración y uso.
+- [x] Creación y revocación desde la presidencia.
+- [x] Cuestionario público en `/activar-agente`.
+- [x] Alta transaccional de usuario, institución pendiente y agente principal.
+- [x] Aprobación posterior con el flujo actual de la CACE.
+- [x] Pruebas e2e de permiso de la secretaría, activación, aprobación y enlace
+  de un solo uso.
+
+**Aceptación:** la presidencia genera un enlace, otra persona crea su cuenta y
+su institución, la CACE la aprueba, y el enlace no puede reutilizarse.
+
+---
+
 ### Fase L2 — Certificado DEMO local (1–2 días)
 
 **Objetivo:** comprobar que el certificado se puede emitir y verificar antes de
@@ -539,7 +570,9 @@ presentación.
 
 ### Durante el piloto
 
-1. Compartir la URL/QR y pedir que cada agente cree su institución.
+1. La presidencia crea los enlaces de agente y los comparte; cada agente crea
+   su institución. Si se usa el auto-registro, se trata como solicitud
+   excepcional.
 2. La CACE aprueba las instituciones en vivo, una por una.
 3. Cada agente invita a su docente; el docente activa su cuenta.
 4. Crear materias, asignación, solicitud y clase espejo.

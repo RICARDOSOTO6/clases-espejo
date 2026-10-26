@@ -52,6 +52,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'activar-agente',
+    loadComponent: () =>
+      import('./features/auth/activar-agente/activar-agente.component').then(
+        (m) => m.ActivarAgenteComponent,
+      ),
+  },
+  {
     // Recuperación de contraseña (Fase 1): pedir el enlace y usarlo. Son
     // pantallas públicas: quien las usa no tiene sesión.
     path: 'recuperar',

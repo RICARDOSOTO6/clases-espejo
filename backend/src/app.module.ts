@@ -7,6 +7,7 @@ import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { AgentesModule } from './agentes/agentes.module';
 import { SecretariasModule } from './secretarias/secretarias.module';
+import { InvitacionesAgenteModule } from './invitaciones-agente/invitaciones-agente.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { MateriasModule } from './materias/materias.module';
 import { AsignacionesModule } from './asignaciones/asignaciones.module';
@@ -28,6 +29,7 @@ import { EnviosModule } from './envios/envios.module';
     AuthModule,
     AgentesModule,
     SecretariasModule,
+    InvitacionesAgenteModule,
     UsuariosModule,
     MateriasModule,
     AsignacionesModule,

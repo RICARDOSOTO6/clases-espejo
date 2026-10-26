@@ -90,6 +90,7 @@ model Usuario {
   miembroCace     MiembroCace?
   secretariaInstitucion SecretariaInstitucion?
   invitacionesSecretariaCreadas InvitacionSecretaria[] @relation("InvitacionSecretariaCreada")
+  invitacionesAgenteCreadas InvitacionAgente[] @relation("InvitacionAgenteCreada")
   listasAlumnos   ListaAlumnos[]
   institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
   agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
@@ -135,6 +136,22 @@ model InvitacionSecretaria {
 
   @@index([institucionId])
   @@map("INVITACION_SECRETARIA")
+}
+
+/// Invitación de un agente fundador creada por la presidencia de la CACE. Se
+/// entrega como enlace copiable; el agente completa después los datos de su
+/// institución.
+model InvitacionAgente {
+  id                 Int      @id @default(autoincrement())
+  creadaPorUsuarioId Int      @map("creada_por_usuario_id")
+  token              String   @unique
+  expiracion         DateTime
+  usadaEn            DateTime? @map("usada_en")
+  creadoEn           DateTime @default(now()) @map("creado_en")
+  creadaPor          Usuario  @relation("InvitacionAgenteCreada", fields: [creadaPorUsuarioId], references: [id])
+
+  @@index([creadaPorUsuarioId])
+  @@map("INVITACION_AGENTE")
 }
 
 /// Una secretaría por institución. No es un agente: no hereda sus permisos.

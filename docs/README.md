@@ -18,7 +18,7 @@
 
 Una clase espejo permite que docentes de distintas instituciones coordinen una experiencia académica conjunta utilizando herramientas de comunicación y colaboración virtual.
 
-> **Última actualización:** semana 8 (ciclo completo hasta *Finalizado*) más las auditorías v3, v4 y de código muerto v5, las fases de la CACE y de los certificados (instituciones con estado ante la CACE, identidad de la CACE, secretarías, presidencia transmisible, listas de alumnos, emisión, anulación, envío y verificación pública de certificados) y la **secretaría de institución** (rol separado, invitación por enlace, contacto y docentes sin acceso a clases ni certificados).
+> **Última actualización:** semana 8 (ciclo completo hasta *Finalizado*) más las auditorías v3, v4 y de código muerto v5, las fases de la CACE y de los certificados (instituciones con estado ante la CACE, identidad de la CACE, secretarías, presidencia transmisible, listas de alumnos, emisión, anulación, envío y verificación pública de certificados), la **secretaría de institución** (rol separado, invitación por enlace, contacto y docentes sin acceso a clases ni certificados) y la **invitación de agente fundador por la presidencia**.
 
 ---
 

@@ -17,6 +17,7 @@ import { PlantillaCertificadoService } from '../../core/services/plantilla-certi
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { DisenoCertificadoComponent } from './diseno-certificado/diseno-certificado.component';
+import { InvitarAgenteComponent } from './invitar-agente.component';
 import { InstitucionOpcion, PaisComunidad, Premio } from '../../core/models/cace-identidad.models';
 import {
   HistorialPresidenciaCace,
@@ -114,7 +115,13 @@ function normalizarBusqueda(valor: string | null | undefined): string {
  */
 @Component({
   selector: 'app-cace',
-  imports: [ReactiveFormsModule, RouterLink, LayoutComponent, DisenoCertificadoComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    LayoutComponent,
+    DisenoCertificadoComponent,
+    InvitarAgenteComponent,
+  ],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',
 })
