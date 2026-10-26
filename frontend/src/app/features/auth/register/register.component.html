@@ -12,8 +12,18 @@
 
   <main class="auth-main">
     <section class="auth-card wide">
-      <h1 class="auth-title">Registro de institución</h1>
-      <p class="auth-subtitle">Regístrate como Agente de Internacionalización</p>
+      <h1 class="auth-title">Solicitud de alta</h1>
+      <p class="auth-subtitle">
+        Solicita incorporarte como Agente de Internacionalización. La solicitud
+        será revisada antes de habilitar la institución.
+      </p>
+
+      <div class="alert alert-info">
+        <strong>¿Ya recibiste una invitación?</strong> Abre el enlace que te
+        compartió la presidencia o tu agente; no necesitas llenar este
+        formulario. Esta vía es para quienes todavía no tienen invitación y
+        quedará pendiente de revisión.
+      </div>
 
       <div class="alert alert-info">
         Los campos de texto (nombres, apellidos, institución y lugares) solo aceptan letras. Evita
@@ -364,7 +374,7 @@
           @if (loading()) {
             <span class="spinner" aria-hidden="true"></span>
           }
-          {{ loading() ? 'Registrando...' : 'Registrarme' }}
+          {{ loading() ? 'Enviando solicitud...' : 'Enviar solicitud' }}
         </button>
       </form>
 

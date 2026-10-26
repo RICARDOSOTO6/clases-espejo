@@ -104,7 +104,7 @@ export class AuthService {
     return {
       ...resultado,
       mensaje:
-        `Registro exitoso. Te enviamos un correo a ${dto.correo} para confirmar tu cuenta; hasta que lo confirmes no podrás entrar.` +
+        `Solicitud de alta registrada. Te enviamos un correo a ${dto.correo} para confirmar tu cuenta; hasta que lo confirmes no podrás entrar.` +
         (enviado
           ? ''
           : ' No se pudo enviar el correo ahora: pide que te lo reenvíen desde el acceso.') +
@@ -174,8 +174,8 @@ export class AuthService {
 
     return {
       mensaje: requiereConfirmacion
-        ? `Registro exitoso. Tu alta en «${institucion.nombre}» está pendiente de que la confirme un agente de esa institución: hasta entonces solo puedes completar los datos de la institución.`
-        : `Registro exitoso. Te uniste a «${institucion.nombre}», que está pendiente de aprobación por la CACE: mientras la revisan, completa sus datos.`,
+        ? `Tu alta en «${institucion.nombre}» está pendiente de que la confirme un agente de esa institución: hasta entonces solo puedes completar los datos de la institución.`
+        : `Te uniste a «${institucion.nombre}», que está pendiente de aprobación por la CACE: mientras la revisan, completa sus datos.`,
       usuario: this.toUsuarioSeguro(usuario, 'AGENTE'),
       institucion: {
         id: institucion.id,
@@ -260,7 +260,7 @@ export class AuthService {
 
     return {
       mensaje:
-        `Registro exitoso. «${institucion.nombre}» quedó pendiente de aprobación ` +
+        `«${institucion.nombre}» quedó pendiente de aprobación ` +
         'por la CACE: mientras el presidente la revisa, entra y completa sus ' +
         'datos (incluido el logo).',
       usuario: this.toUsuarioSeguro(usuario, 'AGENTE'),

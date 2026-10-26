@@ -47,6 +47,9 @@ fase L1.5.
   clases ni tocar listas o certificados.
 - Invitación de docentes con enlace copiable: si el correo falla, la invitación
   no se borra y el agente puede compartir el enlace manualmente.
+- Auto-registro presentado como **Solicitud de alta** en `/solicitud` (con
+  `/register` conservado por compatibilidad), pendiente de aprobación o
+  confirmación según el caso.
 - Solicitudes, doble revisión, proyectos, planificación, sesiones, evidencias,
   evaluación, cierre, certificados, ZIP y verificación de folio.
 - Cola de correo con reintentos, progreso por lote y calendario `.ics`.

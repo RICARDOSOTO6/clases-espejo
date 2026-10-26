@@ -17,7 +17,7 @@
 
       @if (success) {
         <div class="alert alert-success" role="status">
-          {{ avisoRegistro || 'Cuenta creada correctamente. Ya puedes iniciar sesión.' }}
+          {{ avisoRegistro || 'Solicitud registrada. Revisa tu correo para continuar.' }}
         </div>
       }
 
@@ -123,7 +123,9 @@
         </button>
       </form>
 
-      <p class="auth-alt">¿No tienes cuenta? <a routerLink="/register">Regístrate</a></p>
+      <p class="auth-alt">
+        ¿No tienes cuenta? <a routerLink="/solicitud">Solicita tu alta</a>
+      </p>
 
       <p class="auth-alt">
         <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>

@@ -276,7 +276,7 @@ export class RegisterComponent {
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);
-        this.error.set(extraerMensajeError(err, 'Error al registrarse'));
+        this.error.set(extraerMensajeError(err, 'Error al enviar la solicitud'));
       },
     });
   }

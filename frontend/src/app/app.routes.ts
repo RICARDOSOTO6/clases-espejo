@@ -40,6 +40,13 @@ export const routes: Routes = [
       import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
   },
   {
+    // Nombre nuevo de la misma pantalla: el auto-registro se presenta como
+    // solicitud de alta, no como una vía principal de acceso.
+    path: 'solicitud',
+    loadComponent: () =>
+      import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
+  },
+  {
     path: 'activate',
     loadComponent: () =>
       import('./features/auth/activate/activate.component').then((m) => m.ActivateComponent),
