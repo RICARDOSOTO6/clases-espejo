@@ -54,9 +54,6 @@ export class ActivarSecretariaComponent implements OnInit {
         this.cargando.set(false);
         this.valido.set(true);
         this.institucion.set(respuesta.institucion.nombre);
-        if (respuesta.correo) {
-          this.form.controls.correo.setValue(respuesta.correo);
-        }
       },
       error: (err: HttpErrorResponse) => {
         this.cargando.set(false);

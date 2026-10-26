@@ -126,7 +126,6 @@ model InvitacionSecretaria {
   id                  Int         @id @default(autoincrement())
   institucionId       Int         @map("institucion_id")
   creadaPorUsuarioId  Int         @map("creada_por_usuario_id")
-  correo              String?
   token               String      @unique
   expiracion          DateTime
   usadaEn             DateTime?   @map("usada_en")
@@ -135,7 +134,6 @@ model InvitacionSecretaria {
   creadaPor           Usuario     @relation("InvitacionSecretariaCreada", fields: [creadaPorUsuarioId], references: [id])
 
   @@index([institucionId])
-  @@index([correo])
   @@map("INVITACION_SECRETARIA")
 }
 

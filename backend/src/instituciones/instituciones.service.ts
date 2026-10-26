@@ -119,33 +119,35 @@ export class InstitucionesService {
    * foto de perfil, para no dejar archivos huérfanos en el disco.
    */
   async guardarLogo(usuarioId: number, archivo: { filename: string }) {
-    const agente = await this.getAgente(usuarioId);
+    const administrador = await this.getAdministradorInstitucion(usuarioId);
     const actual = await this.prisma.institucion.findUnique({
-      where: { id: agente.institucionId },
+      where: { id: administrador.institucionId },
       select: { logoUrl: true },
     });
     if (!actual) throw new NotFoundException('Institución no encontrada');
 
     const institucion = await this.prisma.institucion.update({
-      where: { id: agente.institucionId },
+      where: { id: administrador.institucionId },
       data: { logoUrl: `/logos/${archivo.filename}` },
     });
 
     borrarLogo(actual.logoUrl);
-    return this.conHabilitacion(institucion, agente);
+    return administrador.agente
+      ? this.conHabilitacion(institucion, administrador.agente)
+      : institucion;
   }
 
   /** Quita el logo de la institución y borra el archivo del disco. */
   async quitarLogo(usuarioId: number) {
-    const agente = await this.getAgente(usuarioId);
+    const administrador = await this.getAdministradorInstitucion(usuarioId);
     const actual = await this.prisma.institucion.findUnique({
-      where: { id: agente.institucionId },
+      where: { id: administrador.institucionId },
       select: { logoUrl: true },
     });
     if (!actual) throw new NotFoundException('Institución no encontrada');
 
     await this.prisma.institucion.update({
-      where: { id: agente.institucionId },
+      where: { id: administrador.institucionId },
       data: { logoUrl: null },
     });
     borrarLogo(actual.logoUrl);
@@ -197,6 +199,33 @@ export class InstitucionesService {
       );
     }
     return agente;
+  }
+
+  /**
+   * Para el logo también vale la secretaría activa: es parte del perfil
+   * administrativo que puede mantener, sin heredar el resto del panel de agente.
+   */
+  private async getAdministradorInstitucion(usuarioId: number): Promise<{
+    institucionId: number;
+    agente: { institucionId: number; confirmadoEn: Date | null } | null;
+  }> {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
+      select: { institucionId: true, confirmadoEn: true },
+    });
+    if (agente) return { institucionId: agente.institucionId, agente };
+
+    const secretaria = await this.prisma.secretariaInstitucion.findUnique({
+      where: { usuarioId },
+      select: { institucionId: true, activo: true },
+    });
+    if (secretaria?.activo) {
+      return { institucionId: secretaria.institucionId, agente: null };
+    }
+
+    throw new UnauthorizedException(
+      'Solo el agente principal o la secretaría activa pueden gestionar el logo de la institución',
+    );
   }
 
   private async institucionesPropias(usuarioId: number): Promise<number[]> {

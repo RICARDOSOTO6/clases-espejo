@@ -21,6 +21,7 @@ const PREFIJOS_API_CONOCIDOS = [
   '/proyectos',
   '/recordatorios',
   '/cace',
+  '/secretarias',
   '/health',
   // Cola de correo (Fase 2): el progreso de un lote también es API.
   '/envios',

@@ -52,9 +52,8 @@ describe('Secretaría de institución (e2e)', () => {
       .send({})
       .expect(201);
 
-    expect(respuesta.body.correo).toBeNull();
-    expect(respuesta.body.correoEnviado).toBe(false);
     expect(respuesta.body.enlace).toContain('/activar-secretaria?token=');
+    expect(respuesta.body.correo).toBeUndefined();
     enlaceInvitacion = respuesta.body.enlace as string;
   });
 
@@ -145,13 +144,62 @@ describe('Secretaría de institución (e2e)', () => {
     expect(fila?.institucionId).toBe(semilla.institucionAId);
   });
 
+  it('la secretaría puede subir y quitar el logo', async () => {
+    const subida = await request(app.getHttpServer())
+      .post('/instituciones/mia/logo')
+      .set(autenticado(tokenSecretaria))
+      .attach('logo', Buffer.from('PNG-DE-PRUEBA'), 'logo-secretaria.png')
+      .expect(201);
+    expect(subida.body.logoUrl).toContain('/logos/');
+
+    await request(app.getHttpServer())
+      .delete('/instituciones/mia/logo')
+      .set(autenticado(tokenSecretaria))
+      .expect(200);
+
+    const perfil = await request(app.getHttpServer())
+      .get('/secretarias/institucion')
+      .set(autenticado(tokenSecretaria))
+      .expect(200);
+    expect(perfil.body.institucion.logoUrl).toBeNull();
+  });
+
   it('no se puede tener una segunda secretaría activa', async () => {
     const respuesta = await request(app.getHttpServer())
       .post('/secretarias/invitacion')
       .set(autenticado(tokenAgente))
-      .send({ correo: 'otra.secretaria@prueba.mx' })
+      .send({})
       .expect(409);
     expect(String(respuesta.body.message)).toContain('secretaría activa');
+  });
+
+  it('el agente principal consulta y desactiva la secretaría', async () => {
+    const antes = await request(app.getHttpServer())
+      .get('/secretarias/actual')
+      .set(autenticado(tokenAgente))
+      .expect(200);
+    expect(antes.body.secretaria.activo).toBe(true);
+    expect(antes.body.secretaria.nombre).toContain('Secretaria');
+
+    await request(app.getHttpServer())
+      .delete('/secretarias/actual')
+      .set(autenticado(tokenAgente))
+      .expect(200);
+
+    const despues = await request(app.getHttpServer())
+      .get('/secretarias/actual')
+      .set(autenticado(tokenAgente))
+      .expect(200);
+    expect(despues.body.secretaria.activo).toBe(false);
+  });
+
+  it('después de desactivarla se puede generar un enlace nuevo', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .post('/secretarias/invitacion')
+      .set(autenticado(tokenAgente))
+      .send({})
+      .expect(201);
+    expect(respuesta.body.enlace).toContain('/activar-secretaria?token=');
   });
 
   it('un agente no entra al panel de secretaría', async () => {

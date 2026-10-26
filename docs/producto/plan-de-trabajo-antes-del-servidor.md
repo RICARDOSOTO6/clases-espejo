@@ -183,11 +183,11 @@ Decisiones cerradas con la CACE:
 
 - La invita el **agente principal**, no la presidencia.
 - Es **una sola** secretaría activa por institución.
-- Puede **invitar y activar docentes**, mantener teléfono, correo, estado y
-  ciudad de la institución.
+- Puede **invitar y activar docentes**, mantener teléfono, correo, estado,
+  ciudad y logo de la institución.
 - **No** puede cambiar el nombre ni el país, invitar agentes, confirmar altas,
   aprobar clases, ver listas nominales ni emitir/firmar/anular certificados.
-- El enlace se puede crear **sin correo**, se copia y se comparte por WhatsApp u
+- El enlace se crea **sin correo**: solo se copia y se comparte por WhatsApp u
   otro canal. Vale por uso o por tiempo, lo que ocurra primero.
 - El auto-registro sigue existiendo como solicitud; no se elimina.
 
@@ -196,15 +196,16 @@ Implementado:
 - [x] Rol relacional `SECRETARIA_INSTITUCION`, independiente de `AGENTE`.
 - [x] Tabla `SECRETARIA_INSTITUCION` con una fila por institución.
 - [x] Tabla `INVITACION_SECRETARIA` con token, expiración y uso.
-- [x] Invitación desde el agente principal, con o sin correo, y enlace copiable.
+- [x] Invitación desde el agente principal **solo con enlace copiable**, sin
+  correo.
 - [x] Cuestionario público en `/activar-secretaria`.
-- [x] Activación transaccional: consume el enlace una sola vez y crea el vínculo.
-- [x] Panel `/panel` con contacto, docentes, invitación de docentes y conteos.
+- [x] Activación transaccional: consume el enlace una sola vez y crea o
+  reemplaza el vínculo de secretaría.
+- [x] Panel `/panel` con contacto, logo, docentes, invitación de docentes y
+  conteos.
 - [x] Prohibiciones de agente/clases/certificados aplicadas en el servicio.
-- [x] Pruebas e2e del flujo completo, límite y permisos.
-- [ ] Reemplazo o desactivación de una secretaría desde la interfaz (siguiente
-  iteración; hoy el cambio se hace por base de datos).
-- [ ] Envío automático de correo al invitar (el enlace ya es la vía principal).
+- [x] Consulta, desactivación y revocación de enlaces desde el panel del agente.
+- [x] Pruebas e2e del flujo completo, logo, límite, revocación y permisos.
 
 **Aceptación:** el agente principal genera el enlace sin correo, la persona lo
 abre, completa el cuestionario, entra como secretaría y no puede realizar las

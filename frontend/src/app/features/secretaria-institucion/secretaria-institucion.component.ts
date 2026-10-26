@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { InstitucionesService } from '../../core/services/instituciones.service';
 import {
   DocenteSecretaria,
   PerfilSecretaria,
@@ -27,6 +28,7 @@ export class SecretariaInstitucionComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly secretarias = inject(SecretariasService);
+  private readonly instituciones = inject(InstitucionesService);
 
   readonly usuario = this.auth.currentUser;
   readonly nombreUsuario = signal('');
@@ -35,6 +37,7 @@ export class SecretariaInstitucionComponent implements OnInit {
   readonly resumen = signal<ResumenSecretaria | null>(null);
   readonly cargando = signal(true);
   readonly guardando = signal(false);
+  readonly logoSubiendo = signal(false);
   readonly invitando = signal(false);
   readonly error = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
@@ -159,6 +162,46 @@ export class SecretariaInstitucionComponent implements OnInit {
     } catch {
       this.error.set('Selecciona el enlace y cópialo manualmente.');
     }
+  }
+
+  subirLogo(evento: Event): void {
+    const entrada = evento.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    if (!archivo || this.logoSubiendo()) return;
+    this.logoSubiendo.set(true);
+    this.error.set(null);
+    this.aviso.set(null);
+    this.instituciones.subirLogo(archivo).subscribe({
+      next: () => {
+        this.logoSubiendo.set(false);
+        this.aviso.set('Logo actualizado.');
+        entrada.value = '';
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.logoSubiendo.set(false);
+        entrada.value = '';
+        this.error.set(extraerMensajeError(err, 'No se pudo subir el logo.'));
+      },
+    });
+  }
+
+  quitarLogo(): void {
+    if (!this.perfil()?.institucion.logoUrl) return;
+    if (!confirm('¿Quitar el logo de la institución?')) return;
+    this.logoSubiendo.set(true);
+    this.error.set(null);
+    this.instituciones.quitarLogo().subscribe({
+      next: () => {
+        this.logoSubiendo.set(false);
+        this.aviso.set('Logo eliminado.');
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.logoSubiendo.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo quitar el logo.'));
+      },
+    });
   }
 
   logoUrl(): string | null {

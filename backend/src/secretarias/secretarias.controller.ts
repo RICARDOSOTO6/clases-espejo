@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -16,7 +17,6 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { UpdateEstadoDocenteDto } from '../agentes/dto/update-estado.dto';
 import { resolverUrlPublica } from '../common/url-publica';
 import { SecretariasService } from './secretarias.service';
-import { CrearInvitacionSecretariaDto } from './dto/crear-invitacion-secretaria.dto';
 import { ActivarSecretariaDto } from './dto/activar-secretaria.dto';
 import { ActualizarContactoInstitucionDto } from './dto/actualizar-contacto.dto';
 import { InvitarDocenteSecretariaDto } from './dto/invitar-docente.dto';
@@ -36,14 +36,30 @@ export class SecretariasController {
   @Post('invitacion')
   crearInvitacion(
     @CurrentUser('sub') usuarioId: number,
-    @Body() dto: CrearInvitacionSecretariaDto,
     @Req() peticion: Request,
   ) {
     return this.secretarias.crearInvitacion(
       usuarioId,
-      dto,
       resolverUrlPublica(peticion),
     );
+  }
+
+  @Get('actual')
+  actual(@CurrentUser('sub') usuarioId: number) {
+    return this.secretarias.actual(usuarioId);
+  }
+
+  @Delete('actual')
+  desactivar(@CurrentUser('sub') usuarioId: number) {
+    return this.secretarias.desactivar(usuarioId);
+  }
+
+  @Delete('invitaciones/:id')
+  revocarInvitacion(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.secretarias.revocarInvitacion(usuarioId, id);
   }
 
   @Get('institucion')

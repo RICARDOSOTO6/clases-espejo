@@ -41,10 +41,21 @@ export interface EnlaceInvitacionSecretaria {
   mensaje: string;
   id: number;
   institucion: string;
-  correo: string | null;
-  correoEnviado: boolean;
   enlace: string;
   expiracion: string;
+}
+
+export interface SecretariaActual {
+  institucion: string;
+  secretaria: {
+    id: number;
+    usuarioId: number;
+    activo: boolean;
+    nombre: string;
+    correo: string;
+    desde: string;
+  } | null;
+  invitacionPendiente: { id: number; expiracion: string } | null;
 }
 
 export interface EnlaceInvitacionDocente {
@@ -59,7 +70,6 @@ export interface EnlaceInvitacionDocente {
 
 export interface ValidacionInvitacionSecretaria {
   valido: boolean;
-  correo: string | null;
   institucion: { id: number; nombre: string; pais: string; estadoCace: string };
 }
 
@@ -68,10 +78,24 @@ export interface ValidacionInvitacionSecretaria {
 export class SecretariasService {
   private readonly http = inject(HttpClient);
 
-  crearInvitacion(correo?: string): Observable<EnlaceInvitacionSecretaria> {
+  crearInvitacion(): Observable<EnlaceInvitacionSecretaria> {
     return this.http.post<EnlaceInvitacionSecretaria>(
       `${API_URL}/secretarias/invitacion`,
-      correo ? { correo } : {},
+      {},
+    );
+  }
+
+  actual(): Observable<SecretariaActual> {
+    return this.http.get<SecretariaActual>(`${API_URL}/secretarias/actual`);
+  }
+
+  desactivar(): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${API_URL}/secretarias/actual`);
+  }
+
+  revocarInvitacion(id: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(
+      `${API_URL}/secretarias/invitaciones/${id}`,
     );
   }
 

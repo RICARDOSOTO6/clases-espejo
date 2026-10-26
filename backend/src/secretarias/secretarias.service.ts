@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -14,7 +15,6 @@ import { ESTADO_CACE_APROBADA } from '../common/estados';
 import { VERSION_AVISO_PRIVACIDAD } from '../common/privacidad';
 import { exigirPoliticaPassword } from '../common/politica-password';
 import { ActivarSecretariaDto } from './dto/activar-secretaria.dto';
-import { CrearInvitacionSecretariaDto } from './dto/crear-invitacion-secretaria.dto';
 import { ActualizarContactoInstitucionDto } from './dto/actualizar-contacto.dto';
 import { InvitarDocenteSecretariaDto } from './dto/invitar-docente.dto';
 
@@ -45,31 +45,11 @@ export class SecretariasService {
   ) {}
 
   /**
-   * La secretaría se invita desde el agente principal de la institución. El
-   * correo es opcional: el enlace se devuelve siempre para copiarlo.
+   * La secretaría se invita desde el agente principal de la institución. Solo
+   * se devuelve el enlace: no se envía ni se pide correo para la invitación.
    */
-  async crearInvitacion(
-    usuarioId: number,
-    dto: CrearInvitacionSecretariaDto,
-    urlPublica: string,
-  ) {
-    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
-      where: { usuarioId },
-      select: {
-        institucionId: true,
-        esPrincipal: true,
-        institucion: {
-          select: { nombre: true, estadoCace: true, activa: true },
-        },
-      },
-    });
-    if (!agente || !agente.esPrincipal) {
-      throw new ForbiddenException(
-        'Solo el agente principal puede invitar a la secretaría de su institución.',
-      );
-    }
-    await exigirAgenteHabilitado(this.prisma, usuarioId);
-
+  async crearInvitacion(usuarioId: number, urlPublica: string) {
+    const agente = await this.agentePrincipal(usuarioId);
     const yaTiene = await this.prisma.secretariaInstitucion.findUnique({
       where: { institucionId: agente.institucionId },
       select: { id: true, activo: true },
@@ -85,7 +65,7 @@ export class SecretariasService {
         usadaEn: null,
         expiracion: { gt: new Date() },
       },
-      select: { id: true, token: true, expiracion: true, correo: true },
+      select: { id: true, token: true, expiracion: true },
     });
     if (pendiente) {
       return {
@@ -93,18 +73,21 @@ export class SecretariasService {
           'Ya hay un enlace de secretaría vigente. Se reutiliza para que no se pierda.',
         id: pendiente.id,
         institucion: agente.institucion.nombre,
-        correo: pendiente.correo,
-        correoEnviado: false,
         enlace: `${urlPublica}/activar-secretaria?token=${encodeURIComponent(pendiente.token)}`,
         expiracion: pendiente.expiracion,
       };
     }
 
-    const correo = (dto.correo ?? '').trim().toLowerCase() || null;
     const expiraEn =
       process.env.INVITATION_EXPIRES_IN ?? INVITACION_POR_DEFECTO;
     const token = await this.jwt.signAsync(
-      { type: 'invitacion_secretaria', institucionId: agente.institucionId },
+      {
+        type: 'invitacion_secretaria',
+        institucionId: agente.institucionId,
+        // Sin `jti`, dos enlaces del mismo segundo serían idénticos y el
+        // segundo chocaría con la clave única de la tabla.
+        jti: randomUUID(),
+      },
       { expiresIn: expiraEn as any },
     );
     const expiracion = new Date(Date.now() + duracionEnMs(expiraEn));
@@ -112,23 +95,110 @@ export class SecretariasService {
       data: {
         institucionId: agente.institucionId,
         creadaPorUsuarioId: usuarioId,
-        correo,
         token,
         expiracion,
       },
     });
 
     return {
-      mensaje: correo
-        ? 'Enlace de secretaría creado. Compártelo o envía el correo desde tu canal habitual.'
-        : 'Enlace de secretaría creado. Cópialo y compártelo con la persona.',
+      mensaje:
+        'Enlace de secretaría creado. Cópialo y compártelo con la persona.',
       id: invitacion.id,
       institucion: agente.institucion.nombre,
-      correo,
-      correoEnviado: false,
       enlace: `${urlPublica}/activar-secretaria?token=${encodeURIComponent(token)}`,
       expiracion,
     };
+  }
+
+  /** Estado actual para el agente principal: secretaría y enlace pendiente. */
+  async actual(usuarioId: number) {
+    const agente = await this.agentePrincipal(usuarioId);
+    const [secretaria, pendiente] = await Promise.all([
+      this.prisma.secretariaInstitucion.findUnique({
+        where: { institucionId: agente.institucionId },
+        include: {
+          usuario: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidoPaterno: true,
+              apellidoMaterno: true,
+              correo: true,
+            },
+          },
+        },
+      }),
+      this.prisma.invitacionSecretaria.findFirst({
+        where: {
+          institucionId: agente.institucionId,
+          usadaEn: null,
+          expiracion: { gt: new Date() },
+        },
+        select: { id: true, expiracion: true },
+      }),
+    ]);
+
+    return {
+      institucion: agente.institucion.nombre,
+      secretaria: secretaria
+        ? {
+            id: secretaria.id,
+            usuarioId: secretaria.usuarioId,
+            activo: secretaria.activo,
+            nombre:
+              `${secretaria.usuario.nombres} ${secretaria.usuario.apellidoPaterno} ${secretaria.usuario.apellidoMaterno}`.trim(),
+            correo: secretaria.usuario.correo,
+            desde: secretaria.creadoEn,
+          }
+        : null,
+      invitacionPendiente: pendiente
+        ? { id: pendiente.id, expiracion: pendiente.expiracion }
+        : null,
+    };
+  }
+
+  /** Desactiva la secretaría y anula cualquier enlace pendiente. */
+  async desactivar(usuarioId: number) {
+    const agente = await this.agentePrincipal(usuarioId);
+    const [resultado] = await this.prisma.$transaction([
+      this.prisma.secretariaInstitucion.updateMany({
+        where: { institucionId: agente.institucionId, activo: true },
+        data: { activo: false },
+      }),
+      this.prisma.invitacionSecretaria.updateMany({
+        where: {
+          institucionId: agente.institucionId,
+          usadaEn: null,
+        },
+        data: { usadaEn: new Date() },
+      }),
+    ]);
+    if (resultado.count === 0) {
+      throw new NotFoundException(
+        'La institución no tiene una secretaría activa que desactivar.',
+      );
+    }
+    return {
+      mensaje:
+        'Secretaría desactivada. Ya puedes crear un enlace para reemplazarla.',
+    };
+  }
+
+  /** Anula un enlace pendiente para que no pueda usarse. */
+  async revocarInvitacion(usuarioId: number, invitacionId: number) {
+    const agente = await this.agentePrincipal(usuarioId);
+    const resultado = await this.prisma.invitacionSecretaria.updateMany({
+      where: {
+        id: invitacionId,
+        institucionId: agente.institucionId,
+        usadaEn: null,
+      },
+      data: { usadaEn: new Date() },
+    });
+    if (resultado.count === 0) {
+      throw new NotFoundException('Invitación pendiente no encontrada');
+    }
+    return { mensaje: 'Enlace revocado. Puedes crear uno nuevo.' };
   }
 
   /** Valida un token antes de mostrar el cuestionario público. */
@@ -165,7 +235,6 @@ export class SecretariasService {
     }
     return {
       valido: true,
-      correo: invitacion.correo,
       institucion: invitacion.institucion,
     };
   }
@@ -201,13 +270,12 @@ export class SecretariasService {
     if (existente) {
       throw new ConflictException('Ya existe un usuario con ese correo o DNI');
     }
-    const secretariaActiva = await this.prisma.secretariaInstitucion.findUnique(
-      {
+    const secretariaExistente =
+      await this.prisma.secretariaInstitucion.findUnique({
         where: { institucionId: invitacion.institucionId },
         select: { id: true, activo: true },
-      },
-    );
-    if (secretariaActiva?.activo) {
+      });
+    if (secretariaExistente?.activo) {
       throw new ConflictException(
         'La institución ya tiene una secretaría activa',
       );
@@ -240,13 +308,20 @@ export class SecretariasService {
           aceptoAvisoEn: ahora,
         },
       });
-      await tx.secretariaInstitucion.create({
-        data: {
-          usuarioId: creado.id,
-          institucionId: invitacion.institucionId,
-          activo: true,
-        },
-      });
+      if (secretariaExistente) {
+        await tx.secretariaInstitucion.update({
+          where: { id: secretariaExistente.id },
+          data: { usuarioId: creado.id, activo: true },
+        });
+      } else {
+        await tx.secretariaInstitucion.create({
+          data: {
+            usuarioId: creado.id,
+            institucionId: invitacion.institucionId,
+            activo: true,
+          },
+        });
+      }
       return creado;
     });
 
@@ -255,6 +330,26 @@ export class SecretariasService {
       usuarioId: usuario.id,
       institucion: invitacion.institucion.nombre,
     };
+  }
+
+  private async agentePrincipal(usuarioId: number) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
+      select: {
+        institucionId: true,
+        esPrincipal: true,
+        institucion: {
+          select: { nombre: true, estadoCace: true, activa: true },
+        },
+      },
+    });
+    if (!agente || !agente.esPrincipal) {
+      throw new ForbiddenException(
+        'Solo el agente principal puede administrar la secretaría de su institución.',
+      );
+    }
+    await exigirAgenteHabilitado(this.prisma, usuarioId);
+    return agente;
   }
 
   private async contexto(usuarioId: number) {
@@ -476,14 +571,5 @@ export class SecretariasService {
       proyectos,
       // La secretaría no recibe nombres de alumnos ni de certificados.
     };
-  }
-
-  /** Comprueba que el usuario sea agente principal; se usa en el controlador. */
-  async esAgentePrincipal(usuarioId: number): Promise<boolean> {
-    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
-      where: { usuarioId },
-      select: { esPrincipal: true },
-    });
-    return !!agente?.esPrincipal;
   }
 }
