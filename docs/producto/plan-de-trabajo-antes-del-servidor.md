@@ -309,13 +309,13 @@ conservación definitivos (anexo B).
 **Objetivo:** evitar que el ensayo se caiga por una regresión visual o de
 permisos.
 
-- [ ] Ejecutar todas las pruebas unitarias y e2e.
-- [ ] Compilar backend y frontend desde cero.
-- [ ] Revisar acceso, registro, panel, proyecto y certificado en ancho móvil.
-- [ ] Revisar navegación por teclado, foco, textos alternativos y contraste
+- [x] Ejecutar todas las pruebas unitarias y e2e.
+- [x] Compilar backend y frontend desde cero.
+- [x] Revisar acceso, registro, panel, proyecto y certificado en ancho móvil.
+- [x] Revisar navegación por teclado, foco, textos alternativos y contraste
       básico.
-- [ ] Revisar que la CSP no bloquee CSS, fuentes, imágenes ni descargas.
-- [ ] Repetir el empaquetado y comprobar que no incluye secretos.
+- [x] Revisar que la CSP no bloquee CSS, fuentes, imágenes ni descargas.
+- [x] Repetir el empaquetado y comprobar que no incluye secretos.
 
 **Aceptación:** pruebas en verde, build reproducible y recorrido móvil sin
 pérdida de funciones.

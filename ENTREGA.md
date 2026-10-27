@@ -1,6 +1,6 @@
 # Entrega funcional — Clases Conjuntas
 
-Versión de entrega: **2026-10-26**
+Versión de entrega: **2026-10-27**
 
 Este paquete contiene el código fuente, las migraciones y el frontend ya
 compilado. **No contiene** `node_modules`, `.env`, archivos subidos, base de
