@@ -174,6 +174,12 @@ export class CertificadoPdfService {
       this.dibujarFondo(doc, fondo, avisos);
     }
 
+    // La marca va debajo de los datos: el nombre y el folio deben leerse sin
+    // que la marca DEMO los tape.
+    if (certificadoModoDemo()) {
+      this.dibujarMarcaDemo(doc);
+    }
+
     // --- Los tres datos que cambian ---
     const escalaX = ANCHO_PT / datos.plantilla.anchoPx;
     const escalaY = ALTO_PT / datos.plantilla.altoPx;
@@ -192,10 +198,6 @@ export class CertificadoPdfService {
         continue;
       }
       await this.dibujarQr(doc, caja, datos.folio, avisos);
-    }
-
-    if (certificadoModoDemo()) {
-      this.dibujarMarcaDemo(doc);
     }
 
     doc.end();
@@ -491,11 +493,11 @@ export class CertificadoPdfService {
     const fuente = this.fuente(doc, true, false);
 
     doc.save();
-    doc.fillOpacity(0.09);
+    doc.fillOpacity(0.07);
     doc.fillColor('#111827');
-    doc.font(fuente).fontSize(150);
+    doc.font(fuente).fontSize(120);
     doc.rotate(-30, { origin: [ancho / 2, alto / 2] });
-    doc.text('DEMO', 0, alto / 2 - 95, {
+    doc.text('DEMO', 0, alto / 2 - 80, {
       width: ancho,
       align: 'center',
       lineBreak: false,
