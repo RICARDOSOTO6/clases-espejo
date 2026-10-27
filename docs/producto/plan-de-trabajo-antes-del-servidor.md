@@ -345,15 +345,22 @@ el tiempo aprieta, se hacen 1–4 y se dejan 5–6 para después de la demo.
 
 **Objetivo:** fijar la versión que se va a ensayar y entregar.
 
-- [ ] Etiquetar el commit con una etiqueta local, por ejemplo
-      `demo-local-2026-10-25`.
-- [ ] Congelar migraciones y configuración de demo local.
-- [ ] Guardar el paquete final y su SHA-256.
-- [ ] Verificar que se puede volver a la versión anterior sin tocar la base real.
-- [ ] Repetir el ensayo corto (humo) sobre el paquete final.
+- [x] Etiquetar el commit con una etiqueta local, por ejemplo
+      `demo-local-2026-10-27`.
+- [x] Congelar migraciones y configuración de demo local.
+- [x] Guardar el paquete final y su SHA-256.
+- [x] Verificar que se puede volver a la versión anterior sin tocar la base real.
+- [x] Repetir el ensayo corto (humo) sobre el paquete final.
 
 **Aceptación:** paquete final reproducible, etiqueta local, respaldo y prueba de
 rollback documentada.
+
+**Registro L6 (27-oct-2026):** etiqueta `demo-local-2026-10-27`; commit
+`a67ad51`; 35 migraciones validadas; la migración `20261025130000_invitacion_agente`
+se registró como aplicada porque su tabla ya existía. Respaldo en
+`release/l6/ClasesconjuntasBD-2026-10-27.dump`, restaurado en una base temporal;
+rollback de código comprobado con un worktree del commit `d872cf1`. El SHA-256
+final se guarda junto al paquete en `release/ClasesEspejo-entrega-2026-10-27.zip.sha256`.
 
 ---
 
