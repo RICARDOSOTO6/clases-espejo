@@ -164,6 +164,10 @@
         veía la sección y se comía un 403 al abrirla): su camino es la sección de
         solicitudes de borrado.
       -->
+      @if (!soloSeccion() && puede('aprobarInstituciones')) {
+        <app-desempeno ambito="cace" />
+      }
+
       @if (mostrarSeccion('instituciones') && puede('aprobarInstituciones')) {
         <app-invitar-agente />
         <section class="card" id="instituciones" data-seccion="instituciones">

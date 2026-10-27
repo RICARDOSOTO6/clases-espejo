@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AgentesController } from './agentes.controller';
 import { AgentesService } from './agentes.service';
+import { DesempenoAgenteController } from './desempeno-agente.controller';
+import { DesempenoService } from '../desempeno/desempeno.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [AuthModule],
-  controllers: [AgentesController],
-  providers: [AgentesService],
+  controllers: [AgentesController, DesempenoAgenteController],
+  providers: [AgentesService, DesempenoService],
 })
 export class AgentesModule {}

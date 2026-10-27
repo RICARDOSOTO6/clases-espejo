@@ -1,0 +1,275 @@
+/* Panel de desempeño: tarjetas, barras y tabla. Todo con los tokens del tema. */
+.desempeno {
+  margin-bottom: var(--space-5);
+}
+
+.desempeno-subtitulo {
+  margin: 2px 0 0;
+  max-width: 70ch;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.desempeno-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-3) 0 var(--space-5);
+}
+
+.desempeno-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2, var(--neutral-50));
+}
+
+.desempeno-kpi--destacado {
+  border-color: var(--primary-300, var(--border));
+  background: var(--primary-50);
+}
+
+.desempeno-kpi-valor {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.15;
+}
+
+.desempeno-kpi-etiqueta {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.desempeno-graficas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.desempeno-grafica {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.desempeno-grafica h3 {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+}
+
+.desempeno-grafica > .text-sm {
+  margin: 0 0 var(--space-3);
+}
+
+.desempeno-barras,
+.desempeno-apiladas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.desempeno-fila {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) minmax(90px, 1fr) 42px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.desempeno-fila--apilada {
+  grid-template-columns: minmax(120px, 1.2fr) minmax(90px, 1fr);
+}
+
+.desempeno-nombre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  min-width: 0;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.desempeno-nombre small {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.desempeno-logo {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border-radius: 4px;
+  background: var(--surface);
+}
+
+.desempeno-barra,
+.barra-apilada {
+  display: flex;
+  min-width: 0;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--neutral-200);
+}
+
+.desempeno-barra > span {
+  display: block;
+  min-width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success-700);
+  transition: width 0.25s ease;
+}
+
+.desempeno-valor {
+  text-align: right;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.barra-apilada {
+  height: 12px;
+}
+
+.segmento {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.segmento--aprobada {
+  background: var(--success-700);
+}
+
+.segmento--pendiente {
+  background: var(--warning-700);
+}
+
+.segmento--rechazada {
+  background: var(--danger-700);
+}
+
+.segmento--caducada {
+  background: var(--neutral-500);
+}
+
+.desempeno-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.desempeno-leyenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.punto--aprobada {
+  background: var(--success-700);
+}
+
+.punto--pendiente {
+  background: var(--warning-700);
+}
+
+.punto--rechazada {
+  background: var(--danger-700);
+}
+
+.punto--caducada {
+  background: var(--neutral-500);
+}
+
+.desempeno-tabla-scroll {
+  overflow-x: auto;
+}
+
+.desempeno-tabla {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.desempeno-tabla th,
+.desempeno-tabla td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--neutral-100);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.desempeno-tabla thead th {
+  color: var(--text-aux);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.desempeno-tabla th:first-child,
+.desempeno-tabla td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+.desempeno-tabla tbody th {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.desempeno-tabla tbody th small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.desempeno-tabla tbody tr:last-child th,
+.desempeno-tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .desempeno-fila {
+    grid-template-columns: minmax(105px, 1.2fr) minmax(70px, 1fr) 38px;
+  }
+
+  .desempeno-valor {
+    text-align: right;
+  }
+}

@@ -12,6 +12,8 @@ import { PresidenciaCaceController } from './presidencia-cace.controller';
 import { PresidenciaCaceService } from './presidencia-cace.service';
 import { SolicitudesBorradoController } from './solicitudes-borrado.controller';
 import { SolicitudesBorradoService } from './solicitudes-borrado.service';
+import { DesempenoCaceController } from './desempeno-cace.controller';
+import { DesempenoService } from '../desempeno/desempeno.service';
 
 /**
  * Panel de la CACE: el alta automática de la presidencia al arrancar
@@ -33,6 +35,7 @@ import { SolicitudesBorradoService } from './solicitudes-borrado.service';
     MiembrosCaceController,
     PresidenciaCaceController,
     SolicitudesBorradoController,
+    DesempenoCaceController,
   ],
   providers: [
     CaceService,
@@ -41,6 +44,7 @@ import { SolicitudesBorradoService } from './solicitudes-borrado.service';
     MiembrosCaceService,
     PresidenciaCaceService,
     SolicitudesBorradoService,
+    DesempenoService,
   ],
 })
 export class CaceModule {}

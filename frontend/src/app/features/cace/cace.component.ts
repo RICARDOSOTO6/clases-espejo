@@ -18,6 +18,7 @@ import { PendienteUi, UiStateService } from '../../core/services/ui-state.servic
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { DisenoCertificadoComponent } from './diseno-certificado/diseno-certificado.component';
 import { InvitarAgenteComponent } from './invitar-agente.component';
+import { DesempenoComponent } from '../../shared/components/desempeno/desempeno.component';
 import { InstitucionOpcion, PaisComunidad, Premio } from '../../core/models/cace-identidad.models';
 import {
   HistorialPresidenciaCace,
@@ -121,6 +122,7 @@ function normalizarBusqueda(valor: string | null | undefined): string {
     LayoutComponent,
     DisenoCertificadoComponent,
     InvitarAgenteComponent,
+    DesempenoComponent,
   ],
   templateUrl: './cace.component.html',
   styleUrl: './cace.component.css',

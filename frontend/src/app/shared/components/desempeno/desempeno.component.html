@@ -1,0 +1,186 @@
+<section class="card desempeno" id="desempeno" [attr.aria-label]="titulo()">
+  <div class="card-head">
+    <div class="card-head-title">
+      <span class="card-head-icon" aria-hidden="true">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 3v18h18" />
+          <path d="m7 15 4-4 3 3 5-6" />
+        </svg>
+      </span>
+      <div>
+        <h2>{{ titulo() }}</h2>
+        <p class="desempeno-subtitulo">{{ subtitulo() }}</p>
+      </div>
+    </div>
+    <div class="card-head-actions">
+      <button
+        type="button"
+        class="btn btn-outline btn-mini"
+        [disabled]="cargando()"
+        (click)="cargar()"
+      >
+        {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+      </button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <p class="muted" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      Cargando el desempeño…
+    </p>
+  } @else if (error()) {
+    <div class="alert alert-error" role="alert">{{ error() }}</div>
+  } @else if (resumen(); as r) {
+    <div class="desempeno-resumen">
+      <div class="desempeno-kpi">
+        <span class="desempeno-kpi-valor">{{ r.proyectos.finalizados }}</span>
+        <span class="desempeno-kpi-etiqueta">Clases concluidas</span>
+      </div>
+      <div class="desempeno-kpi">
+        <span class="desempeno-kpi-valor">{{ r.proyectos.enCurso }}</span>
+        <span class="desempeno-kpi-etiqueta">En curso</span>
+      </div>
+      <div class="desempeno-kpi">
+        <span class="desempeno-kpi-valor">{{ r.proyectos.noConcluidos }}</span>
+        <span class="desempeno-kpi-etiqueta">No concluidas</span>
+      </div>
+      <div class="desempeno-kpi">
+        <span class="desempeno-kpi-valor">{{ r.solicitudes.rechazadas }}</span>
+        <span class="desempeno-kpi-etiqueta">Solicitudes rechazadas</span>
+      </div>
+      <div class="desempeno-kpi">
+        <span class="desempeno-kpi-valor">{{ r.solicitudes.caducadas }}</span>
+        <span class="desempeno-kpi-etiqueta">Solicitudes caducadas</span>
+      </div>
+      <div class="desempeno-kpi desempeno-kpi--destacado">
+        <span class="desempeno-kpi-valor">{{ r.tasaCierre }}%</span>
+        <span class="desempeno-kpi-etiqueta">Tasa de cierre global</span>
+      </div>
+    </div>
+
+    <div class="desempeno-graficas">
+      <div class="desempeno-grafica">
+        <h3>Tasa de cierre</h3>
+        <p class="muted text-sm">Porcentaje de clases terminadas sobre el total.</p>
+        @if (filas().length === 0) {
+          <p class="muted">Todavía no hay datos por {{ etiquetaFila().toLowerCase() }}.</p>
+        } @else {
+          <div class="desempeno-barras" role="img" aria-label="Tasa de cierre por fila">
+            @for (fila of filas(); track fila.id) {
+              <div class="desempeno-fila">
+                <div class="desempeno-nombre">
+                  @if (imagen(fila.logoUrl); as logo) {
+                    <img class="desempeno-logo" [src]="logo" alt="" />
+                  }
+                  <span>{{ fila.nombre }}</span>
+                  <small>{{ fila.detalle }}</small>
+                </div>
+                <div class="desempeno-barra" aria-hidden="true">
+                  <span [style.width.%]="fila.tasaCierre"></span>
+                </div>
+                <strong class="desempeno-valor">{{ fila.tasaCierre }}%</strong>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="desempeno-grafica">
+        <h3>Solicitudes por estado</h3>
+        <p class="muted text-sm">Aprobadas, pendientes, rechazadas y caducadas.</p>
+        @if (filas().length === 0) {
+          <p class="muted">Todavía no hay solicitudes.</p>
+        } @else {
+          <div class="desempeno-leyenda">
+            <span><i class="punto punto--aprobada"></i>Aprobadas</span>
+            <span><i class="punto punto--pendiente"></i>Pendientes</span>
+            <span><i class="punto punto--rechazada"></i>Rechazadas</span>
+            <span><i class="punto punto--caducada"></i>Caducadas</span>
+          </div>
+          <div class="desempeno-apiladas" role="img" aria-label="Solicitudes por estado">
+            @for (fila of filas(); track fila.id) {
+              <div class="desempeno-fila desempeno-fila--apilada">
+                <div class="desempeno-nombre">
+                  <span>{{ fila.nombre }}</span>
+                  <small>{{ fila.solicitudes.total }} solicitud(es)</small>
+                </div>
+                <div class="barra-apilada" aria-hidden="true">
+                  <span
+                    class="segmento segmento--aprobada"
+                    [style.width.%]="porcentaje(fila.solicitudes.aprobadas, fila.solicitudes.total)"
+                  ></span>
+                  <span
+                    class="segmento segmento--pendiente"
+                    [style.width.%]="
+                      porcentaje(fila.solicitudes.pendientes, fila.solicitudes.total)
+                    "
+                  ></span>
+                  <span
+                    class="segmento segmento--rechazada"
+                    [style.width.%]="
+                      porcentaje(fila.solicitudes.rechazadas, fila.solicitudes.total)
+                    "
+                  ></span>
+                  <span
+                    class="segmento segmento--caducada"
+                    [style.width.%]="porcentaje(fila.solicitudes.caducadas, fila.solicitudes.total)"
+                  ></span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (filas().length > 0) {
+      <div class="desempeno-tabla-scroll">
+        <table class="desempeno-tabla">
+          <caption class="sr-only">
+            Detalle de desempeño por
+            {{
+              etiquetaFila().toLowerCase()
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ etiquetaFila() }}</th>
+              <th scope="col">Concluidas</th>
+              <th scope="col">En curso</th>
+              <th scope="col">No concluidas</th>
+              <th scope="col">Rechazadas</th>
+              <th scope="col">Caducadas</th>
+              <th scope="col">Cierre</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of filas(); track fila.id) {
+              <tr>
+                <th scope="row">
+                  <span>{{ fila.nombre }}</span>
+                  <small>{{ fila.detalle }}</small>
+                </th>
+                <td>{{ fila.proyectos.finalizados }}</td>
+                <td>{{ fila.proyectos.enCurso }}</td>
+                <td>{{ fila.proyectos.noConcluidos }}</td>
+                <td>{{ fila.solicitudes.rechazadas }}</td>
+                <td>{{ fila.solicitudes.caducadas }}</td>
+                <td>{{ fila.tasaCierre }}%</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>
