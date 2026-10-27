@@ -185,6 +185,12 @@ export class DisenoCertificadoComponent {
 
   // --- Estado de la edición ---
 
+  /**
+   * La pestaña abierta en la caja de herramientas. Se enseña una cosa a la vez
+   * para que la hoja se quede con el ancho: el certificado es lo importante y
+   * las herramientas se turnan al lado.
+   */
+  readonly pestana = signal<'diseno' | 'textos' | 'versiones'>('diseno');
   /** Hueco cuyos controles se están enseñando. */
   readonly seleccion = signal<ClaveCampoCertificado | null>('nombre');
   /** Hueco que se está marcando ahora mismo (mientras se dibuja el rectángulo). */

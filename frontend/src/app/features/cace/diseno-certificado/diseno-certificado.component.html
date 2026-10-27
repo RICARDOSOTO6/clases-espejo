@@ -1,696 +1,818 @@
 <!--
   Panel de diseño del certificado.
 
-  Tres columnas para que cada cosa esté donde se busca: a la izquierda las
-  herramientas y las versiones, en el centro la hoja (el lienzo con los tres
-  huecos) y a la derecha las propiedades del hueco, la vista previa y la salud
-  del diseño. Los huecos se marcan arrastrando el ratón sobre el lienzo, como
-  cuando se recorta una foto.
+  Dos columnas: a la izquierda la caja de herramientas y a la derecha la hoja.
+  La hoja se lleva el ancho porque es lo que se está mirando; las herramientas
+  se turnan en tres pestañas (diseño, textos y versiones) para no robárselo.
+
+  Los huecos se marcan arrastrando el ratón sobre el lienzo, como cuando se
+  recorta una foto. La salud del diseño y «Guardar» viven al pie de la hoja,
+  a la vista sin bajar hasta el final del formulario.
 -->
 <div class="diseno">
-  <!-- ============ 1. Herramientas y acciones ============ -->
+  <!-- ============ 1. La caja de herramientas ============ -->
   <div class="columna--herramientas" data-columna="herramientas">
-    <!-- La imagen terminada: el diseño entero, hecho fuera. -->
-    <div class="panel">
-      <h3 class="panel-titulo">Imagen del diseño</h3>
-      <label class="subir-diseno" for="certificado-fondo">
-        <span>Subir o cambiar diseño</span>
-        <input
-          id="certificado-fondo"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          [disabled]="subiendoFondo()"
-          (change)="alElegirFondo($event)"
-        />
-      </label>
-      @if (subiendoFondo()) {
-        <p class="panel-nota">Subiendo la imagen…</p>
-      }
-      <ul class="vinetas">
-        <li>PNG, JPG o WEBP, hasta 2 MB.</li>
-        <li>Subir una imagen crea una <strong>versión nueva</strong>.</li>
-        <li>Se recorta para tapar la hoja: <strong>nunca se deforma</strong>.</li>
-      </ul>
-    </div>
-
-    <!-- Los dos archivos de apoyo del diseño, siempre a mano. -->
-    <div class="panel">
-      <h3 class="panel-titulo">Archivos de apoyo</h3>
-      @if (urlZonas(); as url) {
-        <a
-          class="btn btn-secondary btn-ancho btn-mini"
-          data-accion="descargar-zonas"
-          data-peso="secundario"
-          [href]="url"
-          download="certificado-zonas.png"
-          title="La capa con las tres zonas y el margen seguro, para superponerla al diseño"
+    <section class="panel caja-herramientas">
+      <div class="pestanas" role="group" aria-label="Herramientas del certificado">
+        <button
+          type="button"
+          class="pestana"
+          data-pestana="diseno"
+          [class.pestana--activa]="pestana() === 'diseno'"
+          [attr.aria-pressed]="pestana() === 'diseno'"
+          (click)="pestana.set('diseno')"
         >
-          Descargar la imagen de zonas
-        </a>
-      }
-      @if (urlGuia(); as url) {
-        <a
-          class="btn btn-secondary btn-ancho btn-mini"
-          data-accion="descargar-guia"
-          data-peso="secundario"
-          [href]="url"
-          download="guia-diseno-certificado.docx"
-          title="La guía de diseño del certificado, en Word"
+          Diseño
+        </button>
+        <button
+          type="button"
+          class="pestana"
+          data-pestana="textos"
+          [class.pestana--activa]="pestana() === 'textos'"
+          [attr.aria-pressed]="pestana() === 'textos'"
+          (click)="pestana.set('textos')"
         >
-          Descargar la guía
-        </a>
-      }
-    </div>
-
-    <!-- Volver a leer la plantilla del servidor. -->
-    <div class="panel">
-      <h3 class="panel-titulo">Servidor</h3>
-      <button
-        type="button"
-        class="btn btn-primary"
-        data-accion="actualizar"
-        data-peso="primario"
-        [disabled]="actualizando()"
-        title="Vuelve a leer del servidor la plantilla y sus versiones"
-        (click)="actualizar.emit()"
-      >
-        @if (actualizando()) {
-          <span class="spinner" aria-hidden="true"></span>
-        }
-        {{ actualizando() ? 'Actualizando...' : 'Actualizar' }}
-      </button>
-    </div>
-
-    <!-- Versiones: una tabla compacta, sin repetir la auditoría en cada fila. -->
-    <details class="panel panel--plegable" data-versiones open>
-      <summary class="panel-titulo">
-        Versiones
-        @if (versiones().length > 0) {
-          <span class="panel-cuenta">{{ versiones().length }}</span>
-        }
-      </summary>
-
-      @if (versiones().length === 0) {
-        <p class="panel-nota">
-          Todavía no hay ninguna versión guardada. Lo que se ve en el lienzo son
-          los tres huecos de la guía: guárdalos para tener la primera.
-        </p>
-      } @else {
-        <div class="tabla-scroll">
-          <table class="tabla-versiones">
-            <thead>
-              <tr>
-                <th scope="col">Versión</th>
-                <th scope="col">Estado</th>
-                <th scope="col" title="Certificados emitidos">Emitidos</th>
-                <th scope="col">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (version of versiones(); track version.id) {
-                <tr
-                  [attr.data-version]="version.id"
-                  [attr.data-estado]="version.activa ? 'activa' : 'inactiva'"
-                  [attr.data-puede-borrar]="puedeBorrar(version) ? 'true' : 'false'"
-                  [attr.data-motivo-borrado]="motivoNoBorrar(version)"
-                >
-                  <td [attr.title]="auditoriaDe(version)">
-                    <strong>v{{ version.version }}</strong>
-                    <span class="version-fondo">
-                      {{ version.fondoUrl ? 'con diseño' : 'sin diseño' }}
-                    </span>
-                  </td>
-                  <td>
-                    @if (version.activa) {
-                      <span class="chip-estado chip-estado--ok">Activa</span>
-                    } @else {
-                      <span class="chip-estado">Inactiva</span>
-                    }
-                  </td>
-                  <td class="version-certificados">{{ version.certificados }}</td>
-                  <td>
-                    <div class="version-acciones">
-                      <button
-                        type="button"
-                        class="btn btn-secondary btn-mini"
-                        data-accion="ver-version"
-                        data-peso="secundario"
-                        [disabled]="actualizando()"
-                        (click)="verVersion.emit(version)"
-                      >
-                        Ver
-                      </button>
-                      @if (!version.activa) {
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-mini"
-                          data-accion="activar"
-                          data-peso="terciario"
-                          [disabled]="
-                            activando() !== null || gravesDeVersion(version).length > 0
-                          "
-                          [attr.title]="
-                            gravesDeVersion(version).length > 0
-                              ? 'Esa versión tiene un problema grave: ábrela con «Ver» y corrígelo'
-                              : 'Deja esta versión como la activa'
-                          "
-                          (click)="activarVersion.emit(version)"
-                        >
-                          {{ activando() === version.id ? 'Activando…' : 'Activar' }}
-                        </button>
-                      }
-                      @if (versionAConfirmar() === version.id) {
-                        <button
-                          type="button"
-                          class="btn btn-danger btn-mini"
-                          data-accion="confirmar-borrar-plantilla"
-                          [disabled]="borrando() !== null"
-                          (click)="confirmarBorrar(version)"
-                        >
-                          {{ borrando() === version.id ? 'Borrando…' : 'Confirmar' }}
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-mini"
-                          [disabled]="borrando() !== null"
-                          (click)="cancelarBorrar()"
-                        >
-                          Cancelar
-                        </button>
-                      } @else {
-                        <button
-                          type="button"
-                          class="btn btn-ghost btn-mini"
-                          data-accion="borrar-plantilla"
-                          data-peso="terciario"
-                          [disabled]="!puedeBorrar(version) || borrando() !== null"
-                          [attr.title]="
-                            puedeBorrar(version)
-                              ? 'Borra esta versión suelta y su imagen de diseño'
-                              : motivoNoBorrar(version)
-                          "
-                          (click)="pedirBorrar(version)"
-                        >
-                          {{ borrando() === version.id ? 'Borrando…' : 'Borrar' }}
-                        </button>
-                      }
-                    </div>
-                    @if (!puedeBorrar(version)) {
-                      <p class="version-grave" [attr.data-motivo-no-borrar]="version.id">
-                        <span class="icono icono--grave" aria-hidden="true">✕</span>
-                        {{ motivoNoBorrar(version) }}
-                      </p>
-                    }
-                    @if (versionAConfirmar() === version.id) {
-                      <div class="alert alert-error" role="status">
-                        ¿Borrar la versión {{ version.version }}? Se borra su fila y
-                        su imagen de diseño. No se puede deshacer.
-                      </div>
-                    }
-                    @if (gravesDeVersion(version).length > 0) {
-                      <p
-                        class="version-grave"
-                        [attr.data-problemas-version]="version.id"
-                      >
-                        <span class="icono icono--grave" aria-hidden="true">✕</span>
-                        {{ motivoGraveDeVersion(version) }}
-                      </p>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-      <p class="panel-nota">
-        Solo una está activa: es la que se usa al emitir. Activar una anterior no
-        toca los certificados ya emitidos. Las versiones sueltas se pueden
-        <strong>borrar</strong> (con su imagen), salvo la activa y las que ya
-        tienen certificados emitidos: ahí el botón queda deshabilitado con el
-        motivo a la vista. Pasa el ratón por una versión para ver quién la creó y
-        cuándo.
-      </p>
-    </details>
-  </div>
-
-  <!-- ============ 2. El lienzo (la hoja) ============ -->
-  <div class="columna--editor" data-columna="editor">
-    <!-- El zoom, flotando en la esquina de la hoja. Va fuera de la mesa para
-         que no se vaya con el desplazamiento al acercar. -->
-    <div class="zoom" role="group" aria-label="Zoom del lienzo">
-      <button
-        type="button"
-        class="zoom-boton"
-        data-zoom="menos"
-        data-accion="zoom-menos"
-        data-peso="terciario"
-        [disabled]="!puedeAlejar()"
-        title="Alejar el lienzo"
-        (click)="cambiarZoom(-pasoZoom)"
-      >
-        −
-      </button>
-      <button
-        type="button"
-        class="zoom-nivel"
-        data-accion="zoom-ajustar"
-        data-peso="terciario"
-        title="Volver al 100 %"
-        (click)="ajustarZoom()"
-      >
-        {{ zoomEnPorcentaje() }}%
-      </button>
-      <button
-        type="button"
-        class="zoom-boton"
-        data-zoom="mas"
-        data-accion="zoom-mas"
-        data-peso="terciario"
-        [disabled]="!puedeAcercar()"
-        title="Acercar el lienzo"
-        (click)="cambiarZoom(pasoZoom)"
-      >
-        +
-      </button>
-    </div>
-
-    <div class="lienzo-mesa" [class.lienzo-mesa--marcando]="!!marcando()">
-      <!-- La hoja: un rectángulo con sombra sobre la mesa gris. -->
-      <div class="lienzo-papel" [style.width.%]="zoomEnPorcentaje()">
-        <div
-          #marco
-          class="lienzo"
-          data-lienzo
-          [attr.data-ancho-px]="lienzo().anchoPx"
-          [attr.data-alto-px]="lienzo().altoPx"
-          [class.lienzo--sin-diseno]="!fondo()"
-          [class.lienzo--marcando]="!!marcando()"
-          [style.aspect-ratio]="lienzo().anchoPx + ' / ' + lienzo().altoPx"
-          (pointerdown)="alPulsarLienzo($event)"
+          Textos
+        </button>
+        <button
+          type="button"
+          class="pestana"
+          data-pestana="versiones"
+          [class.pestana--activa]="pestana() === 'versiones'"
+          [attr.aria-pressed]="pestana() === 'versiones'"
+          (click)="pestana.set('versiones')"
         >
-          @if (fondo(); as url) {
-            <img
-              class="lienzo-diseno"
-              [src]="url"
-              crossorigin="anonymous"
-              alt="Diseño del certificado"
-              (load)="alCargarDiseno($event)"
-            />
+          Versiones
+          @if (versiones().length > 0) {
+            <span class="pestana-cuenta">{{ versiones().length }}</span>
           }
-
-          <!-- Mientras se marca: el resto de la imagen se oscurece, para que se
-               note que el lienzo está en modo edición. -->
-          @if (marcando()) {
-            <div class="lienzo-velo" aria-hidden="true"></div>
-          }
-
-          <!-- El margen seguro del 5 % (unos 1,5 cm): nada importante fuera. -->
-          <div class="lienzo-margen" aria-hidden="true"></div>
-
-          @for (item of cajas(); track item.clave) {
-            <div
-              class="caja"
-              [class.caja--seleccionada]="esSeleccionada(item.clave)"
-              [attr.data-campo]="item.clave"
-              [attr.data-x]="item.caja.x"
-              [attr.data-y]="item.caja.y"
-              [attr.data-ancho]="item.caja.ancho"
-              [attr.data-alto]="item.caja.alto"
-              [attr.data-estado-salud]="estadoDeCampo(item.clave)"
-              [attr.title]="
-                item.etiqueta +
-                ' — arrastra para mover, tira de la esquina para agrandar'
-              "
-              [style.left]="porcentaje(item.caja.x, 'x')"
-              [style.top]="porcentaje(item.caja.y, 'y')"
-              [style.width]="porcentaje(item.caja.ancho, 'x')"
-              [style.height]="porcentaje(item.caja.alto, 'y')"
-              (pointerdown)="arrastrar($event, item.clave)"
-            >
-              <span class="caja-contenido">
-                @if (item.clave === 'qr') {
-                  @if (qrUrl(); as url) {
-                    <img class="caja-qr" [src]="url" alt="" />
-                  } @else {
-                    <span class="caja-qr-vacia">QR</span>
-                  }
-                } @else {
-                  <span
-                    class="caja-texto"
-                    [style.font-size]="tamanoEnCqw(item.tamano)"
-                    [style.font-weight]="item.caja.negrita ? 700 : 400"
-                    [style.font-style]="item.caja.cursiva ? 'italic' : 'normal'"
-                    [style.color]="item.caja.color"
-                    [style.text-align]="item.caja.alineacion"
-                    >{{ item.texto }}</span
-                  >
-                }
-              </span>
-
-              <!-- El aviso del dato, justo encima de su hueco. -->
-              @if (estadoDeCampo(item.clave) !== 'ok') {
-                <span
-                  class="caja-aviso"
-                  [class.caja-aviso--grave]="estadoDeCampo(item.clave) === 'grave'"
-                  [attr.data-aviso-campo]="item.clave"
-                  aria-hidden="true"
-                  >{{ iconoDe(estadoDeCampo(item.clave)) }}</span
-                >
-              }
-
-              <!-- Puntos de las esquinas: solo al pasar el ratón por encima. -->
-              <span class="caja-esquinas" aria-hidden="true">
-                <i></i><i></i><i></i><i></i>
-              </span>
-
-              @if (esSeleccionada(item.clave)) {
-                <span
-                  class="tirador"
-                  data-tirador="se"
-                  (pointerdown)="redimensionar($event, item.clave)"
-                ></span>
-              }
-            </div>
-          }
-
-          @if (rectangulo(); as r) {
-            <div
-              class="rectangulo"
-              [style.left]="porcentaje(r.x, 'x')"
-              [style.top]="porcentaje(r.y, 'y')"
-              [style.width]="porcentaje(r.ancho, 'x')"
-              [style.height]="porcentaje(r.alto, 'y')"
-            ></div>
-          }
-        </div>
+        </button>
       </div>
-    </div>
 
-    <!-- Instrucciones, plegadas por defecto para no saturar. -->
-    <details class="ayuda-lienzo">
-      <summary>¿Cómo marcar los huecos?</summary>
-      <ul class="vinetas">
-        <li>
-          Elige el hueco en <strong>«Marcar huecos»</strong> y arrastra el ratón
-          sobre la hoja para dibujarlo.
-        </li>
-        <li>Mueve el rectángulo arrastrándolo y agrándalo tirando de la esquina.</li>
-        <li>La imagen se recorta por el centro: nunca se estira.</li>
-      </ul>
-      <p class="nota-pie">
-        Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px (A4 horizontal a
-        300 ppp). Es la misma proporción y la misma escala que la hoja del PDF: lo
-        que se ve aquí es lo que sale impreso.
-      </p>
-    </details>
-  </div>
+      <!-- --- Pestaña «Diseño»: la imagen, los huecos y los apoyos --- -->
+      @if (pestana() === 'diseno') {
+        <div class="pestana-panel">
+          <h3 class="panel-titulo">Imagen del diseño</h3>
 
-  <!-- ============ 3. Propiedades ============ -->
-  <aside class="columna--propiedades" data-columna="propiedades" aria-label="Ajustes del certificado">
-    <!-- Marcar los huecos: desde aquí se elige el que se va a dibujar. -->
-    <div class="panel">
-      <h3 class="panel-titulo">Marcar huecos</h3>
-      <div class="panel-fila">
-        @for (entrada of catalogo(); track entrada.clave) {
+          <label class="subir-diseno" for="certificado-fondo">
+            <svg
+              class="subir-diseno-icono"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 16V4" />
+              <path d="m7 9 5-5 5 5" />
+              <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            <span>Subir o cambiar diseño</span>
+            <input
+              id="certificado-fondo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              [disabled]="subiendoFondo()"
+              (change)="alElegirFondo($event)"
+            />
+          </label>
+
+          @if (subiendoFondo()) {
+            <p class="panel-nota">Subiendo la imagen…</p>
+          }
+
+          <p class="panel-nota">
+            PNG, JPG o WEBP, hasta 2 MB. Se recorta para tapar la hoja:
+            <strong>nunca se deforma</strong>, y subirla crea una versión nueva.
+            El título, los logos y las firmas van <strong>dentro</strong> de la imagen.
+          </p>
+
+          <h3 class="panel-titulo panel-titulo--seccion">Marcar los huecos</h3>
+          <div class="huecos">
+            @for (entrada of catalogo(); track entrada.clave) {
+              <button
+                type="button"
+                class="hueco"
+                [class.hueco--activo]="marcando() === entrada.clave"
+                [attr.data-accion]="'marcar-' + entrada.clave"
+                data-peso="secundario"
+                [attr.aria-pressed]="marcando() === entrada.clave"
+                (click)="marcar(entrada.clave)"
+              >
+                <span
+                  [class]="'hueco-icono icono icono--' + estadoDeCampo(entrada.clave)"
+                  aria-hidden="true"
+                  >{{ iconoDe(estadoDeCampo(entrada.clave)) }}</span
+                >
+                <span class="hueco-texto">
+                  <strong>{{ entrada.etiqueta }}</strong>
+                  <small>
+                    {{
+                      marcando() === entrada.clave
+                        ? 'Dibuja el rectángulo…'
+                        : 'Pulsa aquí y arrastra sobre la hoja'
+                    }}
+                  </small>
+                </span>
+              </button>
+            }
+          </div>
+
+          <div class="huecos-pie">
+            @if (marcando()) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-mini btn-ancho"
+                data-accion="cancelar-marcado"
+                data-peso="terciario"
+                (click)="cancelarMarcado()"
+              >
+                Cancelar el marcado
+              </button>
+            }
+            <button
+              type="button"
+              class="btn btn-ghost btn-mini btn-ancho"
+              data-accion="restaurar"
+              data-peso="terciario"
+              title="Vuelve a poner los tres huecos donde los deja la guía"
+              (click)="restaurarHuecos()"
+            >
+              Restaurar los huecos de la guía
+            </button>
+          </div>
+
+          <h3 class="panel-titulo panel-titulo--seccion">Archivos de apoyo</h3>
+          <div class="apoyo">
+            @if (urlZonas(); as url) {
+              <a
+                class="btn btn-secondary btn-mini apoyo-boton"
+                data-accion="descargar-zonas"
+                data-peso="secundario"
+                [href]="url"
+                download="certificado-zonas.png"
+                title="La capa con las tres zonas y el margen seguro, para superponerla al diseño"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 4v12" />
+                  <path d="m7 11 5 5 5-5" />
+                  <path d="M4 20h16" />
+                </svg>
+                Imagen de zonas
+              </a>
+            }
+            @if (urlGuia(); as url) {
+              <a
+                class="btn btn-secondary btn-mini apoyo-boton"
+                data-accion="descargar-guia"
+                data-peso="secundario"
+                [href]="url"
+                download="guia-diseno-certificado.docx"
+                title="La guía de diseño del certificado, en Word"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M4 5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" />
+                  <path d="M13 3v5h5" />
+                </svg>
+                Guía de diseño
+              </a>
+            }
+          </div>
+          <p class="panel-nota">
+            La guía explica qué textos van en la imagen y dónde caen los tres datos
+            que estampa la aplicación.
+          </p>
+        </div>
+      }
+
+      <!-- --- Pestaña «Textos»: el hueco elegido y la prueba con datos --- -->
+      @if (pestana() === 'textos') {
+        <div class="pestana-panel">
+          @if (seleccionada(); as sel) {
+            <h3 class="panel-titulo panel-titulo--campo">
+              <span class="campo-nombre" [attr.data-seleccion]="sel.clave">{{
+                sel.etiqueta
+              }}</span>
+              @if (estadoDeCampo(sel.clave) !== 'ok') {
+                <span
+                  [class]="'icono icono--' + estadoDeCampo(sel.clave)"
+                  aria-hidden="true"
+                  >{{ iconoDe(estadoDeCampo(sel.clave)) }}</span
+                >
+              }
+            </h3>
+
+            @if (sel.esTexto) {
+              <label class="campo">
+                <span>Tipografía</span>
+                <select
+                  data-accion="tipografia"
+                  [value]="tipografiaSeleccionada()"
+                  (change)="cambiarTipografia($event)"
+                >
+                  @for (opcion of tipografias; track opcion.valor) {
+                    <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+                  }
+                </select>
+              </label>
+
+              <div class="campo">
+                <span>Alineación</span>
+                <div class="panel-fila panel-fila--alineacion">
+                  @for (opcion of alineaciones; track opcion.valor) {
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-mini"
+                      [attr.data-accion]="'alinear-' + opcion.valor"
+                      data-peso="secundario"
+                      [class.activo]="sel.caja.alineacion === opcion.valor"
+                      [attr.aria-pressed]="sel.caja.alineacion === opcion.valor"
+                      (click)="cambiarAlineacion(opcion.valor)"
+                    >
+                      {{ opcion.etiqueta }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="panel-fila panel-fila--color">
+                <label class="campo campo--color">
+                  <span>Color</span>
+                  <input
+                    type="color"
+                    data-accion="color"
+                    [value]="sel.caja.color"
+                    (input)="cambiarColor($event)"
+                  />
+                </label>
+                @if (sel.clave === 'nombre') {
+                  <label class="campo campo--corto">
+                    <span>Mínimo (pt)</span>
+                    <input
+                      type="number"
+                      data-accion="tamano-minimo"
+                      [min]="tamanoMinimo"
+                      [max]="sel.caja.tamano"
+                      [value]="sel.caja.tamanoMinimo"
+                      (change)="cambiarTamano($event, 'minimo')"
+                    />
+                  </label>
+                  <label class="campo campo--corto">
+                    <span>Máximo (pt)</span>
+                    <input
+                      type="number"
+                      data-accion="tamano-maximo"
+                      [min]="tamanoMinimo"
+                      [max]="tamanoMaximo"
+                      [value]="sel.caja.tamano"
+                      (change)="cambiarTamano($event, 'maximo')"
+                    />
+                  </label>
+                } @else {
+                  <label class="campo campo--corto">
+                    <span>Tamaño (pt)</span>
+                    <input
+                      type="number"
+                      data-accion="tamano"
+                      [min]="tamanoMinimo"
+                      [max]="tamanoMaximo"
+                      [value]="sel.caja.tamano"
+                      (change)="cambiarTamano($event, 'maximo')"
+                    />
+                  </label>
+                }
+              </div>
+
+              @if (sel.clave === 'nombre') {
+                <ul class="vinetas vinetas--compactas">
+                  <li>
+                    El nombre sale con el tamaño más grande del rango que quepa
+                    ({{ minimoLegible }} pt es el mínimo legible recomendado).
+                  </li>
+                  <li>Si no cabe, baja hasta el mínimo; después parte en dos líneas.</li>
+                </ul>
+              } @else {
+                <ul class="vinetas vinetas--compactas">
+                  <li>El folio no se ajusta solo: se imprime al tamaño elegido.</li>
+                </ul>
+              }
+            } @else {
+              <ul class="vinetas vinetas--compactas">
+                <li>El QR va siempre en negro sobre blanco y con su margen.</li>
+                <li>Deja el hueco cuadrado y limpio: un teléfono tiene que leerlo.</li>
+              </ul>
+            }
+
+            <p class="nota-pie nota-pie--coordenadas">
+              x {{ sel.caja.x }} · y {{ sel.caja.y }} · {{ sel.caja.ancho }} ×
+              {{ sel.caja.alto }} px de la imagen
+            </p>
+          }
+
+          <h3 class="panel-titulo panel-titulo--seccion">Vista previa con datos</h3>
+          <label class="campo">
+            <span>Nombre del alumno</span>
+            <input
+              type="text"
+              data-accion="nombre-prueba"
+              maxlength="200"
+              [value]="nombrePrueba()"
+              (input)="cambiarNombrePrueba($any($event.target).value)"
+            />
+          </label>
+          <label class="campo">
+            <span>Folio</span>
+            <input
+              type="text"
+              data-accion="folio-prueba"
+              maxlength="40"
+              [value]="folioPrueba()"
+              (input)="cambiarFolioPrueba($any($event.target).value)"
+            />
+          </label>
           <button
             type="button"
             class="btn btn-secondary btn-ancho btn-mini"
-            [attr.data-accion]="'marcar-' + entrada.clave"
+            data-accion="probar-nombre-largo"
             data-peso="secundario"
-            [class.activo]="marcando() === entrada.clave"
-            [attr.aria-pressed]="marcando() === entrada.clave"
-            (click)="marcar(entrada.clave)"
+            (click)="probarNombreLargo()"
           >
-            <span
-              [class]="'icono icono--' + estadoDeCampo(entrada.clave)"
-              aria-hidden="true"
-              >{{ iconoDe(estadoDeCampo(entrada.clave)) }}</span
-            >
-            {{
-              marcando() === entrada.clave
-                ? 'Dibuja el rectángulo…'
-                : 'Marcar ' + entrada.etiqueta
-            }}
+            Probar con el nombre más largo
+            {{ nombreLargoEsDeLaClase() ? 'de la clase' : '(ejemplo)' }}
           </button>
-        }
-        @if (marcando()) {
-          <button
-            type="button"
-            class="btn btn-ghost btn-mini btn-ancho"
-            data-accion="cancelar-marcado"
-            data-peso="terciario"
-            (click)="cancelarMarcado()"
-          >
-            Cancelar
-          </button>
-        }
-      </div>
-      <ul class="vinetas">
-        <li>Al marcar, el cursor se vuelve una cruz sobre la hoja.</li>
-        <li>Un clic suelto no marca nada: hay que dibujar el rectángulo.</li>
-      </ul>
-      <button
-        type="button"
-        class="btn btn-ghost btn-mini btn-ancho"
-        data-accion="restaurar"
-        data-peso="terciario"
-        (click)="restaurarHuecos()"
-      >
-        Restaurar los huecos de la guía
-      </button>
-    </div>
+          <p class="panel-nota">
+            El nombre se mide con la tipografía elegida y <strong>se ajusta solo</strong>:
+            @if (ajusteNombre().desborda) {
+              <span class="texto-grave">
+                no cabe ni con el mínimo ({{ minimoLegible }} pt) en dos líneas.
+              </span>
+            } @else if (ajusteNombre().lineas.length > 1) {
+              sale en dos líneas a {{ ajusteNombre().tamano }} pt.
+            } @else {
+              sale en una línea a {{ ajusteNombre().tamano }} pt.
+            }
+            El QR apunta a la verificación pública del folio.
+          </p>
+        </div>
+      }
 
-    <!-- Los ajustes del hueco seleccionado, en una tarjeta con su nombre. -->
-    @if (seleccionada(); as sel) {
-      <div class="panel">
-        <h3 class="panel-titulo panel-titulo--campo">
-          <span [attr.data-seleccion]="sel.clave">{{ sel.etiqueta }}</span>
-          @if (estadoDeCampo(sel.clave) !== 'ok') {
-            <span
-              [class]="'icono icono--' + estadoDeCampo(sel.clave)"
-              aria-hidden="true"
-              >{{ iconoDe(estadoDeCampo(sel.clave)) }}</span
+      <!-- --- Pestaña «Versiones»: lo guardado, para mirar y activar --- -->
+      @if (pestana() === 'versiones') {
+        <div class="pestana-panel" data-versiones>
+          <div class="panel-cabecera">
+            <h3 class="panel-titulo">Versiones</h3>
+            <button
+              type="button"
+              class="btn btn-ghost btn-mini actualizar"
+              data-accion="actualizar"
+              data-peso="terciario"
+              [disabled]="actualizando()"
+              title="Vuelve a leer del servidor la plantilla y sus versiones"
+              (click)="actualizar.emit()"
             >
-          }
-        </h3>
-
-        @if (sel.esTexto) {
-          <label class="campo">
-            <span>Tipografía</span>
-            <select
-              data-accion="tipografia"
-              [value]="tipografiaSeleccionada()"
-              (change)="cambiarTipografia($event)"
-            >
-              @for (opcion of tipografias; track opcion.valor) {
-                <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
-              }
-            </select>
-          </label>
-
-          <div class="campo">
-            <span>Alineación</span>
-            <div class="panel-fila">
-              @for (opcion of alineaciones; track opcion.valor) {
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-mini"
-                  [attr.data-accion]="'alinear-' + opcion.valor"
-                  data-peso="secundario"
-                  [class.activo]="sel.caja.alineacion === opcion.valor"
-                  [attr.aria-pressed]="sel.caja.alineacion === opcion.valor"
-                  (click)="cambiarAlineacion(opcion.valor)"
-                >
-                  {{ opcion.etiqueta }}
-                </button>
-              }
-            </div>
+              <svg
+                class="actualizar-icono"
+                [class.actualizar-icono--girando]="actualizando()"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 11a8 8 0 1 0-3.1 6.3" />
+                <path d="M20 5v6h-6" />
+              </svg>
+              {{ actualizando() ? 'Leyendo…' : 'Actualizar' }}
+            </button>
           </div>
 
-          <label class="campo campo--color">
-            <span>Color</span>
-            <input
-              type="color"
-              data-accion="color"
-              [value]="sel.caja.color"
-              (input)="cambiarColor($event)"
-            />
-          </label>
-
-          @if (sel.clave === 'nombre') {
-            <div class="panel-fila panel-fila--campos">
-              <label class="campo campo--corto">
-                <span>Mínimo</span>
-                <input
-                  type="number"
-                  data-accion="tamano-minimo"
-                  [min]="tamanoMinimo"
-                  [max]="sel.caja.tamano"
-                  [value]="sel.caja.tamanoMinimo"
-                  (change)="cambiarTamano($event, 'minimo')"
-                />
-              </label>
-              <label class="campo campo--corto">
-                <span>Máximo</span>
-                <input
-                  type="number"
-                  data-accion="tamano-maximo"
-                  [min]="tamanoMinimo"
-                  [max]="tamanoMaximo"
-                  [value]="sel.caja.tamano"
-                  (change)="cambiarTamano($event, 'maximo')"
-                />
-              </label>
-              <span class="campo-unidad">pt</span>
-            </div>
-            <ul class="vinetas">
-              <li>
-                El nombre sale con el tamaño más grande del rango que quepa
-                ({{ minimoLegible }} pt es el mínimo legible recomendado).
-              </li>
-              <li>Si no cabe, baja hasta el mínimo; después parte en dos líneas.</li>
-            </ul>
+          @if (versiones().length === 0) {
+            <p class="panel-nota">
+              Todavía no hay ninguna versión guardada. Lo que se ve en el lienzo son
+              los tres huecos de la guía: guárdalos para tener la primera.
+            </p>
           } @else {
-            <div class="panel-fila panel-fila--campos">
-              <label class="campo campo--corto">
-                <span>Tamaño</span>
-                <input
-                  type="number"
-                  data-accion="tamano"
-                  [min]="tamanoMinimo"
-                  [max]="tamanoMaximo"
-                  [value]="sel.caja.tamano"
-                  (change)="cambiarTamano($event, 'maximo')"
-                />
-              </label>
-              <span class="campo-unidad">pt</span>
+            <div class="tabla-scroll">
+              <table class="tabla-versiones">
+                <thead>
+                  <tr>
+                    <th scope="col">Versión</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" title="Certificados emitidos">Emitidos</th>
+                    <th scope="col">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (version of versiones(); track version.id) {
+                    <tr
+                      [attr.data-version]="version.id"
+                      [attr.data-estado]="version.activa ? 'activa' : 'inactiva'"
+                      [attr.data-puede-borrar]="puedeBorrar(version) ? 'true' : 'false'"
+                      [attr.data-motivo-borrado]="motivoNoBorrar(version)"
+                    >
+                      <td [attr.title]="auditoriaDe(version)">
+                        <strong class="version-numero">v{{ version.version }}</strong>
+                        <span class="version-fondo">
+                          {{ version.fondoUrl ? 'con diseño' : 'sin diseño' }}
+                        </span>
+                      </td>
+                      <td class="version-estado">
+                        @if (version.activa) {
+                          <span class="chip-estado chip-estado--ok">Activa</span>
+                        } @else {
+                          <span class="chip-estado">Inactiva</span>
+                        }
+                      </td>
+                      <td class="version-certificados">
+                        {{ version.certificados }} <span>emitidos</span>
+                      </td>
+                      <td class="version-celda-acciones">
+                        <div class="version-acciones">
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-mini"
+                            data-accion="ver-version"
+                            data-peso="secundario"
+                            [disabled]="actualizando()"
+                            (click)="verVersion.emit(version)"
+                          >
+                            Ver
+                          </button>
+                          @if (!version.activa) {
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-mini"
+                              data-accion="activar"
+                              data-peso="terciario"
+                              [disabled]="
+                                activando() !== null || gravesDeVersion(version).length > 0
+                              "
+                              [attr.title]="
+                                gravesDeVersion(version).length > 0
+                                  ? 'Esa versión tiene un problema grave: ábrela con «Ver» y corrígelo'
+                                  : 'Deja esta versión como la activa'
+                              "
+                              (click)="activarVersion.emit(version)"
+                            >
+                              {{ activando() === version.id ? 'Activando…' : 'Activar' }}
+                            </button>
+                          }
+                          @if (versionAConfirmar() === version.id) {
+                            <button
+                              type="button"
+                              class="btn btn-danger btn-mini"
+                              data-accion="confirmar-borrar-plantilla"
+                              [disabled]="borrando() !== null"
+                              (click)="confirmarBorrar(version)"
+                            >
+                              {{ borrando() === version.id ? 'Borrando…' : 'Confirmar' }}
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-mini"
+                              [disabled]="borrando() !== null"
+                              (click)="cancelarBorrar()"
+                            >
+                              Cancelar
+                            </button>
+                          } @else {
+                            <button
+                              type="button"
+                              class="btn btn-ghost btn-mini"
+                              data-accion="borrar-plantilla"
+                              data-peso="terciario"
+                              [disabled]="!puedeBorrar(version) || borrando() !== null"
+                              [attr.title]="
+                                puedeBorrar(version)
+                                  ? 'Borra esta versión suelta y su imagen de diseño'
+                                  : motivoNoBorrar(version)
+                              "
+                              (click)="pedirBorrar(version)"
+                            >
+                              {{ borrando() === version.id ? 'Borrando…' : 'Borrar' }}
+                            </button>
+                          }
+                        </div>
+                        @if (!puedeBorrar(version)) {
+                          <p class="version-grave" [attr.data-motivo-no-borrar]="version.id">
+                            <span class="icono icono--grave" aria-hidden="true">✕</span>
+                            {{ motivoNoBorrar(version) }}
+                          </p>
+                        }
+                        @if (versionAConfirmar() === version.id) {
+                          <div class="alert alert-error" role="status">
+                            ¿Borrar la versión {{ version.version }}? Se borra su fila y
+                            su imagen de diseño. No se puede deshacer.
+                          </div>
+                        }
+                        @if (gravesDeVersion(version).length > 0) {
+                          <p class="version-grave" [attr.data-problemas-version]="version.id">
+                            <span class="icono icono--grave" aria-hidden="true">✕</span>
+                            {{ motivoGraveDeVersion(version) }}
+                          </p>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
             </div>
-            <ul class="vinetas">
-              <li>El folio no se ajusta solo: se imprime al tamaño elegido.</li>
-            </ul>
           }
-        } @else {
-          <ul class="vinetas">
-            <li>El QR va siempre en negro sobre blanco y con su margen.</li>
-            <li>Deja el hueco cuadrado y limpio: un teléfono tiene que leerlo.</li>
-          </ul>
-        }
 
-        <p class="nota-pie">
-          x {{ sel.caja.x }} · y {{ sel.caja.y }} · {{ sel.caja.ancho }} ×
-          {{ sel.caja.alto }} px de la imagen
-        </p>
-      </div>
-    }
+          <p class="panel-nota">
+            Solo una está activa: es la que se usa al emitir. Activar una anterior no
+            toca los certificados ya emitidos. Pasa el ratón por una versión para ver
+            quién la creó y cuándo.
+          </p>
+        </div>
+      }
+    </section>
+  </div>
 
-    <!-- Vista previa con datos de verdad. -->
-    <div class="panel">
-      <h3 class="panel-titulo">Vista previa con datos</h3>
-      <label class="campo">
-        <span>Nombre del alumno</span>
-        <input
-          type="text"
-          data-accion="nombre-prueba"
-          maxlength="200"
-          [value]="nombrePrueba()"
-          (input)="cambiarNombrePrueba($any($event.target).value)"
-        />
-      </label>
-      <label class="campo">
-        <span>Folio</span>
-        <input
-          type="text"
-          data-accion="folio-prueba"
-          maxlength="40"
-          [value]="folioPrueba()"
-          (input)="cambiarFolioPrueba($any($event.target).value)"
-        />
-      </label>
-      <button
-        type="button"
-        class="btn btn-secondary btn-ancho btn-mini"
-        data-accion="probar-nombre-largo"
-        data-peso="secundario"
-        (click)="probarNombreLargo()"
-      >
-        Probar con el nombre más largo
-        {{ nombreLargoEsDeLaClase() ? 'de la clase' : '(ejemplo)' }}
-      </button>
-      <ul class="vinetas">
-        <li>
-          El nombre se mide con la tipografía elegida y <strong>se ajusta solo</strong>:
-          @if (ajusteNombre().desborda) {
-            <span class="texto-grave">
-              no cabe ni con el mínimo ({{ minimoLegible }} pt) en dos líneas.
-            </span>
-          } @else if (ajusteNombre().lineas.length > 1) {
-            sale en dos líneas a {{ ajusteNombre().tamano }} pt.
-          } @else {
-            sale en una línea a {{ ajusteNombre().tamano }} pt.
-          }
-        </li>
-        <li>El QR apunta a la verificación pública del folio.</li>
-      </ul>
+  <!-- ============ 2. La hoja ============ -->
+  <div class="columna--editor" data-columna="editor">
+    <!-- Cabecera de la hoja: qué es y de qué tamaño, sin ocupar sitio. -->
+    <div class="editor-cabecera">
+      <span class="editor-etiqueta">
+        <svg
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 15l4-4 4 4 3-3 3 3" />
+        </svg>
+        Hoja del certificado
+      </span>
+      <span class="editor-medidas">
+        A4 horizontal · {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px
+      </span>
     </div>
 
-    <!-- La salud del diseño: semáforo y, después, guardar. -->
-    <div
-      class="panel panel--salud"
-      data-salud
-      data-problemas
-      [attr.data-graves]="graves().length"
-      [attr.data-avisos]="avisos().length"
-      role="status"
-    >
-      <h3 class="panel-titulo">Salud del diseño</h3>
-
-      <p [class]="'salud-resumen salud-resumen--' + estadoGeneral()">
-        <span
-          [class]="'icono icono--' + estadoGeneral()"
-          aria-hidden="true"
-          >{{ iconoDe(estadoGeneral()) }}</span
+    <!-- El zoom flota sobre la mesa: este marco le da su referencia. -->
+    <div class="editor-marco">
+      <div class="zoom" role="group" aria-label="Zoom del lienzo">
+        <button
+          type="button"
+          class="zoom-boton"
+          data-zoom="menos"
+          data-accion="zoom-menos"
+          data-peso="terciario"
+          [disabled]="!puedeAlejar()"
+          title="Alejar el lienzo"
+          (click)="cambiarZoom(-pasoZoom)"
         >
-        @if (graves().length > 0) {
-          {{ graves().length }} problema(s) grave(s): no se puede guardar.
-        } @else if (avisos().length > 0) {
-          Sin problemas graves; {{ avisos().length }} aviso(s) que conviene mirar.
-        } @else {
-          Todo en orden: la plantilla se puede guardar.
-        }
-      </p>
+          −
+        </button>
+        <button
+          type="button"
+          class="zoom-nivel"
+          data-accion="zoom-ajustar"
+          data-peso="terciario"
+          title="Volver al 100 %"
+          (click)="ajustarZoom()"
+        >
+          {{ zoomEnPorcentaje() }}%
+        </button>
+        <button
+          type="button"
+          class="zoom-boton"
+          data-zoom="mas"
+          data-accion="zoom-mas"
+          data-peso="terciario"
+          [disabled]="!puedeAcercar()"
+          title="Acercar el lienzo"
+          (click)="cambiarZoom(pasoZoom)"
+        >
+          +
+        </button>
+      </div>
 
-      <ul class="salud-lista">
-        @for (grupo of salud(); track grupo.clave) {
-          <li
-            class="salud-fila"
-            [attr.data-salud-campo]="grupo.clave"
-            [attr.data-estado-salud]="grupo.estado"
+      <div class="lienzo-mesa" [class.lienzo-mesa--marcando]="!!marcando()">
+        <!-- La hoja: un rectángulo con sombra sobre la mesa gris. -->
+        <div class="lienzo-papel" [style.width.%]="zoomEnPorcentaje()">
+          <div
+            #marco
+            class="lienzo"
+            data-lienzo
+            [attr.data-ancho-px]="lienzo().anchoPx"
+            [attr.data-alto-px]="lienzo().altoPx"
+            [class.lienzo--sin-diseno]="!fondo()"
+            [class.lienzo--marcando]="!!marcando()"
+            [style.aspect-ratio]="lienzo().anchoPx + ' / ' + lienzo().altoPx"
+            (pointerdown)="alPulsarLienzo($event)"
           >
-            <span
-              [class]="'icono icono--' + grupo.estado"
-              aria-hidden="true"
-              >{{ iconoDe(grupo.estado) }}</span
-            >
-            <div class="salud-texto">
-              <strong>{{ grupo.etiqueta }}</strong>
-              @if (grupo.problemas.length === 0) {
-                <span class="salud-bien">Sin problemas.</span>
-              } @else {
-                @for (problema of grupo.problemas; track problema.mensaje) {
-                  <span [class]="'salud-mensaje salud-mensaje--' + problema.gravedad">
-                    {{ problema.mensaje }}
-                  </span>
+            @if (fondo(); as url) {
+              <img
+                class="lienzo-diseno"
+                [src]="url"
+                crossorigin="anonymous"
+                alt="Diseño del certificado"
+                (load)="alCargarDiseno($event)"
+              />
+            } @else {
+              <!-- Hoja en blanco: se dice qué falta, sin tapar los huecos. -->
+              <div class="lienzo-vacio" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="26"
+                  height="26"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="16" rx="2" />
+                  <circle cx="9" cy="10" r="1.6" />
+                  <path d="m4 18 5-5 3 3 3-3 5 5" />
+                </svg>
+                <p>
+                  <strong>Esta hoja todavía está en blanco.</strong> Sube la imagen del
+                  diseño y después coloca los tres huecos encima.
+                </p>
+              </div>
+            }
+
+            <!-- Mientras se marca, el resto de la imagen se oscurece. -->
+            @if (marcando()) {
+              <div class="lienzo-velo" aria-hidden="true"></div>
+            }
+
+            <!-- El margen seguro del 5 % (unos 1,5 cm): nada importante fuera. -->
+            <div class="lienzo-margen" aria-hidden="true"></div>
+
+            @for (item of cajas(); track item.clave) {
+              <div
+                class="caja"
+                [class.caja--seleccionada]="esSeleccionada(item.clave)"
+                [attr.data-campo]="item.clave"
+                [attr.data-x]="item.caja.x"
+                [attr.data-y]="item.caja.y"
+                [attr.data-ancho]="item.caja.ancho"
+                [attr.data-alto]="item.caja.alto"
+                [attr.data-estado-salud]="estadoDeCampo(item.clave)"
+                [attr.title]="
+                  item.etiqueta + ' — arrastra para mover, tira de la esquina para agrandar'
+                "
+                [style.left]="porcentaje(item.caja.x, 'x')"
+                [style.top]="porcentaje(item.caja.y, 'y')"
+                [style.width]="porcentaje(item.caja.ancho, 'x')"
+                [style.height]="porcentaje(item.caja.alto, 'y')"
+                (pointerdown)="arrastrar($event, item.clave)"
+              >
+                <span class="caja-contenido">
+                  @if (item.clave === 'qr') {
+                    @if (qrUrl(); as url) {
+                      <img class="caja-qr" [src]="url" alt="" />
+                    } @else {
+                      <span class="caja-qr-vacia">QR</span>
+                    }
+                  } @else {
+                    <span
+                      class="caja-texto"
+                      [style.font-size]="tamanoEnCqw(item.tamano)"
+                      [style.font-weight]="item.caja.negrita ? 700 : 400"
+                      [style.font-style]="item.caja.cursiva ? 'italic' : 'normal'"
+                      [style.color]="item.caja.color"
+                      [style.text-align]="item.caja.alineacion"
+                      >{{ item.texto }}</span
+                    >
+                  }
+                </span>
+
+                <!-- El aviso del dato, justo encima de su hueco. -->
+                @if (estadoDeCampo(item.clave) !== 'ok') {
+                  <span
+                    class="caja-aviso"
+                    [class.caja-aviso--grave]="estadoDeCampo(item.clave) === 'grave'"
+                    [attr.data-aviso-campo]="item.clave"
+                    aria-hidden="true"
+                    >{{ iconoDe(estadoDeCampo(item.clave)) }}</span
+                  >
                 }
-              }
-            </div>
-          </li>
-        }
-      </ul>
+
+                <!-- Puntos de las esquinas: solo al pasar el ratón por encima. -->
+                <span class="caja-esquinas" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i>
+                </span>
+
+                @if (esSeleccionada(item.clave)) {
+                  <span
+                    class="tirador"
+                    data-tirador="se"
+                    (pointerdown)="redimensionar($event, item.clave)"
+                  ></span>
+                }
+              </div>
+            }
+
+            @if (rectangulo(); as r) {
+              <div
+                class="rectangulo"
+                [style.left]="porcentaje(r.x, 'x')"
+                [style.top]="porcentaje(r.y, 'y')"
+                [style.width]="porcentaje(r.ancho, 'x')"
+                [style.height]="porcentaje(r.alto, 'y')"
+              ></div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pie de la hoja: la salud del diseño y guardar, a la vista. -->
+    <div class="editor-barra">
+      <details
+        class="salud"
+        data-salud
+        data-problemas
+        [attr.data-graves]="graves().length"
+        [attr.data-avisos]="avisos().length"
+      >
+        <summary [class]="'salud-chip salud-chip--' + estadoGeneral()">
+          <span [class]="'icono icono--' + estadoGeneral()" aria-hidden="true">{{
+            iconoDe(estadoGeneral())
+          }}</span>
+          <span class="salud-chip-texto">
+            @if (graves().length > 0) {
+              {{ graves().length }}
+              {{ graves().length === 1 ? 'problema grave' : 'problemas graves' }}, no
+              se puede guardar.
+            } @else if (avisos().length > 0) {
+              {{ avisos().length }}
+              {{ avisos().length === 1 ? 'aviso' : 'avisos' }} que conviene mirar.
+            } @else {
+              Todo en orden: se puede guardar.
+            }
+          </span>
+          <span class="salud-chip-ver">Detalles</span>
+        </summary>
+
+        <ul class="salud-lista">
+          @for (grupo of salud(); track grupo.clave) {
+            <li
+              class="salud-fila"
+              [attr.data-salud-campo]="grupo.clave"
+              [attr.data-estado-salud]="grupo.estado"
+            >
+              <span [class]="'icono icono--' + grupo.estado" aria-hidden="true">{{
+                iconoDe(grupo.estado)
+              }}</span>
+              <div class="salud-texto">
+                <strong>{{ grupo.etiqueta }}</strong>
+                @if (grupo.problemas.length === 0) {
+                  <span class="salud-mensaje">Sin problemas.</span>
+                } @else {
+                  @for (problema of grupo.problemas; track problema.mensaje) {
+                    <span [class]="'salud-mensaje salud-mensaje--' + problema.gravedad">
+                      {{ problema.mensaje }}
+                    </span>
+                  }
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      </details>
 
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary guardar"
         data-accion="guardar"
         data-peso="primario"
         [disabled]="!puedeGuardar()"
@@ -707,10 +829,28 @@
         }
         {{ guardando() ? 'Guardando...' : 'Guardar como versión nueva' }}
       </button>
-      <ul class="vinetas">
-        <li>Guardar no sobrescribe: crea una versión nueva y la deja activa.</li>
-        <li>Las anteriores se conservan y se pueden volver a activar.</li>
-      </ul>
     </div>
-  </aside>
+
+    <p class="nota-pie nota-pie--guardar">
+      Guardar no sobrescribe: crea una versión nueva y deja intactas las anteriores.
+    </p>
+
+    <!-- Instrucciones del lienzo, plegadas para no saturar. -->
+    <details class="ayuda-lienzo">
+      <summary>¿Cómo marcar los huecos?</summary>
+      <ul class="vinetas">
+        <li>
+          Elige el hueco en <strong>«Diseño · Marcar los huecos»</strong> y arrastra el
+          ratón sobre la hoja para dibujarlo.
+        </li>
+        <li>Mueve el rectángulo arrastrándolo y agrándalo tirando de la esquina.</li>
+        <li>La imagen se recorta por el centro: nunca se estira.</li>
+      </ul>
+      <p class="nota-pie">
+        Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px (A4 horizontal a
+        300 ppp). Es la misma proporción y la misma escala que la hoja del PDF: lo
+        que se ve aquí es lo que sale impreso.
+      </p>
+    </details>
+  </div>
 </div>
