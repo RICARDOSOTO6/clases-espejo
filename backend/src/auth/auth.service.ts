@@ -48,6 +48,7 @@ type UsuarioSeguro = {
   fotoUrl: string | null;
   activo: boolean;
   debeCambiarPassword: boolean;
+  aceptoAvisoVersion: string;
 };
 
 @Injectable()
@@ -910,6 +911,22 @@ export class AuthService {
     };
   }
 
+  async aceptarAviso(usuarioId: number) {
+    const usuario = await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        aceptoAvisoVersion: VERSION_AVISO_PRIVACIDAD,
+        aceptoAvisoEn: new Date(),
+      },
+      select: { aceptoAvisoVersion: true },
+    });
+
+    return {
+      mensaje: 'Aviso de privacidad aceptado. Ya puedes usar la plataforma.',
+      aceptoAvisoVersion: usuario.aceptoAvisoVersion,
+    };
+  }
+
   private toUsuarioSeguro(usuario: UsuarioSeguro, rol: Rol | null) {
     return {
       id: usuario.id,
@@ -921,6 +938,10 @@ export class AuthService {
       correo: usuario.correo,
       fotoUrl: usuario.fotoUrl,
       activo: usuario.activo,
+      // El frontend bloquea la aplicación hasta que se acepte la versión
+      // vigente; una cuenta antigua con la versión vacía entra por aquí.
+      aceptoAvisoVersion: usuario.aceptoAvisoVersion,
+      debeAceptarAviso: usuario.aceptoAvisoVersion !== VERSION_AVISO_PRIVACIDAD,
       // El frontend lo usa para no dejar pasar del primer acceso: mientras sea
       // verdadero, la única pantalla es la de cambio de contraseña.
       debeCambiarPassword: usuario.debeCambiarPassword,

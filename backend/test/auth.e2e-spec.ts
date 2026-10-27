@@ -297,4 +297,34 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
   it('14. una ruta protegida sin token responde 401', async () => {
     await request(app.getHttpServer()).get('/cace/instituciones').expect(401);
   });
+
+  it('15. una cuenta anterior acepta el aviso y deja de estar pendiente', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ correo: semilla.correos.agenteA, password: PASSWORD_PRUEBA })
+      .expect(201);
+
+    expect(login.body.usuario.aceptoAvisoVersion).toBe('');
+    expect(login.body.usuario.debeAceptarAviso).toBe(true);
+
+    const aceptacion = await request(app.getHttpServer())
+      .post('/auth/aceptar-aviso')
+      .set('Authorization', `Bearer ${login.body.access_token}`)
+      .expect(201);
+
+    expect(aceptacion.body.aceptoAvisoVersion).toBe(VERSION_AVISO_PRIVACIDAD);
+
+    const enBase = await prisma.usuario.findUnique({
+      where: { correo: semilla.correos.agenteA },
+      select: { aceptoAvisoVersion: true, aceptoAvisoEn: true },
+    });
+    expect(enBase?.aceptoAvisoVersion).toBe(VERSION_AVISO_PRIVACIDAD);
+    expect(enBase?.aceptoAvisoEn).toBeTruthy();
+
+    const segundoLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ correo: semilla.correos.agenteA, password: PASSWORD_PRUEBA })
+      .expect(201);
+    expect(segundoLogin.body.usuario.debeAceptarAviso).toBe(false);
+  });
 });

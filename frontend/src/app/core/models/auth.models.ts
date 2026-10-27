@@ -17,6 +17,10 @@ export interface Usuario {
    * de la CACE). Mientras sea verdadero no se puede usar el resto del panel.
    */
   debeCambiarPassword: boolean;
+  /** Versión del aviso de privacidad que aceptó la cuenta. */
+  aceptoAvisoVersion?: string;
+  /** Verdadero en cuentas anteriores a la versión vigente del aviso. */
+  debeAceptarAviso?: boolean;
   rol: Rol;
 }
 

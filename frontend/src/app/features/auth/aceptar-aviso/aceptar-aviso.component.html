@@ -1,0 +1,62 @@
+<div class="auth-layout">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-logo-chip">
+        <img [src]="logo()" alt="Logo de la CACE" />
+      </div>
+
+      <p class="auth-hero-lema">{{ lema() }}</p>
+      <p class="auth-hero-tag">{{ descripcion() }}</p>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <section class="auth-card wide">
+      <h1 class="auth-title">Aviso de privacidad</h1>
+      <p class="auth-subtitle">
+        Antes de continuar, confirma que leíste y aceptas la versión vigente del aviso de privacidad
+        y los términos.
+      </p>
+
+      <div class="alert alert-info">
+        Este aviso es un <strong>borrador de trabajo</strong> para el piloto. La CACE todavía debe
+        revisarlo y aprobar la versión legal definitiva.
+      </div>
+
+      <label class="legal-check" for="acepta-aviso">
+        <input
+          id="acepta-aviso"
+          type="checkbox"
+          [checked]="acepta()"
+          (change)="acepta.set($any($event.target).checked)"
+        />
+        <span>
+          He leído y acepto el
+          <a routerLink="/privacidad" target="_blank" rel="noopener">
+            aviso de privacidad y los términos</a
+          >.
+        </span>
+      </label>
+
+      @if (error()) {
+        <div class="alert alert-error" role="alert">{{ error() }}</div>
+      }
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!acepta() || guardando()"
+        (click)="aceptar()"
+      >
+        @if (guardando()) {
+          <span class="spinner" aria-hidden="true"></span>
+        }
+        {{ guardando() ? 'Guardando…' : 'Aceptar y continuar' }}
+      </button>
+
+      <p class="auth-alt">
+        <button type="button" class="link-button" (click)="salir()">Usar otra cuenta</button>
+      </p>
+    </section>
+  </main>
+</div>

@@ -286,13 +286,14 @@ solo debe apuntar a una URL que exista durante el ensayo.
 
 **Objetivo:** cerrar los huecos que no necesitan revisión legal externa.
 
-- [ ] Forzar la aceptación del aviso a cuentas existentes con versión vacía.
-- [ ] Verificar con pruebas locales que presidencia, secretaría, agente y
+- [x] Forzar la aceptación del aviso a cuentas existentes con versión vacía.
+- [x] Verificar con pruebas locales que presidencia, secretaría, agente y
       docente reciben 401/403 donde corresponde.
-- [ ] Verificar que un docente solo ve su institución y su lista.
-- [ ] Quitar credenciales de demostración de la documentación de producción;
-      dejarlas solo en el material local de demo.
-- [ ] Conservar el aviso actual como **borrador**, sin afirmar que ya es la
+- [x] Verificar que un docente solo ve su institución y su lista.
+- [x] Quitar credenciales de demostración de la documentación de producción;
+      quedaron únicamente en secciones rotuladas como demo local (README,
+      manual de recorrido, receta y guía de desarrollo).
+- [x] Conservar el aviso actual como **borrador**, sin afirmar que ya es la
       versión legal definitiva.
 
 **Aceptación:** ninguna cuenta entra sin aceptar el aviso vigente; las pruebas de

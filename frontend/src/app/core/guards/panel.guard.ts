@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanMatchFn } from '@angular/router';
+import { CanMatchFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { Rol } from '../models/auth.models';
 
@@ -19,7 +19,18 @@ import { Rol } from '../models/auth.models';
 export const panelDeRol = (...roles: Exclude<Rol, null>[]): CanMatchFn => {
   return () => {
     const auth = inject(AuthService);
-    const rol = auth.currentUser()?.rol ?? null;
-    return auth.isAuthenticated && !!rol && roles.includes(rol);
+    const router = inject(Router);
+    const usuario = auth.currentUser();
+    const rol = usuario?.rol ?? null;
+
+    if (!auth.isAuthenticated || !rol || !roles.includes(rol)) {
+      return false;
+    }
+
+    if (usuario?.debeAceptarAviso !== false) {
+      return router.createUrlTree(['/aceptar-aviso']);
+    }
+
+    return true;
   };
 };

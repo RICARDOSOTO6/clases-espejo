@@ -17,6 +17,10 @@ export const roleGuard = (...roles: Exclude<Rol, null>[]): CanActivateFn => {
     const router = inject(Router);
     const user = auth.currentUser();
 
+    if (auth.isAuthenticated && user?.debeAceptarAviso !== false) {
+      return router.createUrlTree(['/aceptar-aviso']);
+    }
+
     if (auth.isAuthenticated && user?.rol && roles.includes(user.rol)) {
       return true;
     }

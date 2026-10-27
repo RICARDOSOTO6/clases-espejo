@@ -28,6 +28,13 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'aceptar-aviso',
+    loadComponent: () =>
+      import('./features/auth/aceptar-aviso/aceptar-aviso.component').then(
+        (m) => m.AceptarAvisoComponent,
+      ),
+  },
+  {
     // Página pública: la lee quien todavía no tiene cuenta y la enlazan el
     // registro, la activación y el acceso.
     path: 'privacidad',

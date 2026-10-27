@@ -1,9 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
@@ -58,8 +54,13 @@ export class LoginComponent implements OnInit {
 
     const user = this.auth.currentUser();
     if (this.auth.isAuthenticated && user) {
-      this.router.navigate(['/panel']);
+      this.irDespuesDeEntrar();
     }
+  }
+
+  private irDespuesDeEntrar(): void {
+    const usuario = this.auth.currentUser();
+    this.router.navigate([usuario?.debeAceptarAviso !== false ? '/aceptar-aviso' : '/panel']);
   }
 
   mensajeDe(campo: 'correo' | 'password'): string | null {
@@ -87,9 +88,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.reenviando.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'No se pudo reenviar la confirmación'),
-        );
+        this.error.set(extraerMensajeError(err, 'No se pudo reenviar la confirmación'));
       },
     });
   }
@@ -111,7 +110,7 @@ export class LoginComponent implements OnInit {
       next: () => {
         this.loading.set(false);
         this.form.reset();
-        this.router.navigate(['/panel']);
+        this.irDespuesDeEntrar();
       },
       error: (err: HttpErrorResponse) => {
         this.loading.set(false);

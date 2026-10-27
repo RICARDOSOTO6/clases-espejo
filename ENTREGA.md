@@ -77,10 +77,12 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **140 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **141 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución y la invitación de agente por la presidencia.
 - **39 pruebas unitarias**.
 - `tsc`, `eslint`, `ngc` y builds correctos.
+- Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
+  `/aceptar-aviso` hasta que lo acepten.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 

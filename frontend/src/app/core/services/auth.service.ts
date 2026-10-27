@@ -44,6 +44,25 @@ export class AuthService {
     return this.http.post<RegisterResponse>(`${API_URL}/auth/register`, dto);
   }
 
+  /** Deja constancia de la aceptación del aviso para una cuenta existente. */
+  aceptarAviso(): Observable<{
+    mensaje: string;
+    aceptoAvisoVersion: string;
+  }> {
+    return this.http.post<{
+      mensaje: string;
+      aceptoAvisoVersion: string;
+    }>(`${API_URL}/auth/aceptar-aviso`, {});
+  }
+
+  /** Actualiza la sesión local después de aceptar el aviso. */
+  marcarAvisoAceptado(version: string): void {
+    this.guardarUsuario({
+      aceptoAvisoVersion: version,
+      debeAceptarAviso: false,
+    });
+  }
+
   getPerfil(): Observable<Perfil> {
     return this.http.get<Perfil>(`${API_URL}/usuarios/me`);
   }
@@ -53,49 +72,32 @@ export class AuthService {
    * (Fase 1), así que quien la cambia debe volver a entrar; eso lo hace la
    * pantalla que llama.
    */
-  cambiarPassword(
-    actual: string,
-    nueva: string,
-  ): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(
-      `${API_URL}/usuarios/me/password`,
-      { actual, nueva },
-    );
+  cambiarPassword(actual: string, nueva: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_URL}/usuarios/me/password`, {
+      actual,
+      nueva,
+    });
   }
 
   /** Pide el enlace de recuperación (la respuesta no revela si la cuenta existe). */
   recuperarPassword(correo: string): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(
-      `${API_URL}/auth/recuperar`,
-      { correo },
-    );
+    return this.http.post<{ mensaje: string }>(`${API_URL}/auth/recuperar`, { correo });
   }
 
   /** Comprueba el enlace del correo antes de mostrar el formulario. */
-  validarRecuperacion(
-    token: string,
-  ): Observable<{ valido: boolean; correo: string }> {
-    return this.http.get<{ valido: boolean; correo: string }>(
-      `${API_URL}/auth/recuperar/validar`,
-      { params: { token } },
-    );
+  validarRecuperacion(token: string): Observable<{ valido: boolean; correo: string }> {
+    return this.http.get<{ valido: boolean; correo: string }>(`${API_URL}/auth/recuperar/validar`, {
+      params: { token },
+    });
   }
 
   /** Restablece la contraseña con el token del correo (de un solo uso). */
-  restablecerPassword(
-    token: string,
-    password: string,
-  ): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(
-      `${API_URL}/auth/restablecer`,
-      { token, password },
-    );
+  restablecerPassword(token: string, password: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_URL}/auth/restablecer`, { token, password });
   }
 
   /** Confirma el correo con el token del enlace (registro o cambio de correo). */
-  confirmarCorreo(
-    token: string,
-  ): Observable<{ mensaje: string; tipo: string; correo: string }> {
+  confirmarCorreo(token: string): Observable<{ mensaje: string; tipo: string; correo: string }> {
     return this.http.get<{ mensaje: string; tipo: string; correo: string }>(
       `${API_URL}/auth/confirmar-correo`,
       { params: { token } },
@@ -104,10 +106,9 @@ export class AuthService {
 
   /** Pide otro enlace de confirmación de correo. */
   reenviarConfirmacion(correo: string): Observable<{ mensaje: string }> {
-    return this.http.post<{ mensaje: string }>(
-      `${API_URL}/auth/confirmar-correo/reenviar`,
-      { correo },
-    );
+    return this.http.post<{ mensaje: string }>(`${API_URL}/auth/confirmar-correo/reenviar`, {
+      correo,
+    });
   }
 
   /** Pide cambiar el correo de la cuenta (se confirma en la dirección nueva). */
@@ -121,25 +122,18 @@ export class AuthService {
    * Sube la foto de perfil y actualiza la sesión en memoria y en el navegador,
    * para que la barra superior muestre la imagen sin recargar.
    */
-  subirFotoPerfil(
-    archivo: File,
-  ): Observable<{ id: number; fotoUrl: string | null }> {
+  subirFotoPerfil(archivo: File): Observable<{ id: number; fotoUrl: string | null }> {
     const datos = new FormData();
     datos.append('foto', archivo);
     return this.http
-      .post<{ id: number; fotoUrl: string | null }>(
-        `${API_URL}/usuarios/me/foto`,
-        datos,
-      )
+      .post<{ id: number; fotoUrl: string | null }>(`${API_URL}/usuarios/me/foto`, datos)
       .pipe(tap((res) => this.guardarUsuario({ fotoUrl: res.fotoUrl })));
   }
 
   /** Quita la foto de perfil y vuelve a las iniciales. */
   quitarFotoPerfil(): Observable<{ mensaje: string; fotoUrl: null }> {
     return this.http
-      .delete<{ mensaje: string; fotoUrl: null }>(
-        `${API_URL}/usuarios/me/foto`,
-      )
+      .delete<{ mensaje: string; fotoUrl: null }>(`${API_URL}/usuarios/me/foto`)
       .pipe(tap(() => this.guardarUsuario({ fotoUrl: null })));
   }
 
@@ -153,13 +147,8 @@ export class AuthService {
     }>(`${API_URL}/auth/activate`, { params: { token } });
   }
 
-  activarCuenta(
-    dto: ActivateAccountDto,
-  ): Observable<{ mensaje: string; correo: string }> {
-    return this.http.post<{ mensaje: string; correo: string }>(
-      `${API_URL}/auth/activate`,
-      dto,
-    );
+  activarCuenta(dto: ActivateAccountDto): Observable<{ mensaje: string; correo: string }> {
+    return this.http.post<{ mensaje: string; correo: string }>(`${API_URL}/auth/activate`, dto);
   }
 
   logout(): void {

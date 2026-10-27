@@ -104,6 +104,16 @@ export class AuthController {
     return this.authService.reenviarVerificacionCorreo(dto.correo, peticion);
   }
 
+  /**
+   * Deja constancia de que la cuenta aceptó la versión vigente del aviso.
+   * Hace falta para las cuentas creadas antes de que existiera esta versión.
+   */
+  @Post('aceptar-aviso')
+  @UseGuards(JwtAuthGuard)
+  aceptarAviso(@CurrentUser('sub') usuarioId: number) {
+    return this.authService.aceptarAviso(usuarioId);
+  }
+
   /** Pide cambiar el correo de la cuenta (se confirma en la dirección nueva). */
   @Put('correo')
   @UseGuards(JwtAuthGuard)
