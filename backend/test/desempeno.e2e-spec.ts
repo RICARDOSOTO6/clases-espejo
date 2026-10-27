@@ -81,6 +81,14 @@ describe('Panel de desempeño', () => {
     expect(filaA.solicitudes.rechazadas).toBe(1);
     expect(filaA.solicitudes.caducadas).toBe(1);
     expect(filaA.tasaCierre).toBe(100);
+    expect(filaA.actividad).toEqual({
+      sesiones: 0,
+      reportes: 0,
+      evidencias: 0,
+      certificados: 0,
+      evaluaciones: 0,
+    });
+    expect(respuesta.body.resumen.actividad.sesiones).toBe(0);
   });
 
   it('el agente solo ve el desempeño de sus docentes', async () => {

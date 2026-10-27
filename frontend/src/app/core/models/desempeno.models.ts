@@ -16,6 +16,14 @@ export interface ContadoresSolicitudes {
   caducadas: number;
 }
 
+export interface ContadoresActividad {
+  sesiones: number;
+  reportes: number;
+  evidencias: number;
+  certificados: number;
+  evaluaciones: number;
+}
+
 export interface FilaDesempeno {
   id: number;
   nombre: string;
@@ -23,13 +31,16 @@ export interface FilaDesempeno {
   logoUrl: string | null;
   proyectos: ContadoresProyectos;
   solicitudes: ContadoresSolicitudes;
+  actividad: ContadoresActividad;
   tasaCierre: number;
   tasaRechazo: number;
+  tasaReportes: number;
 }
 
 export interface ResumenDesempeno {
   proyectos: ContadoresProyectos;
   solicitudes: ContadoresSolicitudes;
+  actividad: ContadoresActividad;
   tasaCierre: number;
   tasaRechazo: number;
 }

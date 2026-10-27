@@ -68,6 +68,14 @@
       </div>
     </div>
 
+    <div class="desempeno-actividad">
+      <span><strong>{{ r.actividad.sesiones }}</strong> sesiones</span>
+      <span><strong>{{ r.actividad.reportes }}</strong> reportes</span>
+      <span><strong>{{ r.actividad.evidencias }}</strong> evidencias</span>
+      <span><strong>{{ r.actividad.certificados }}</strong> certificados</span>
+      <span><strong>{{ r.actividad.evaluaciones }}</strong> evaluaciones</span>
+    </div>
+
     <div class="desempeno-graficas">
       <div class="desempeno-grafica">
         <h3>Tasa de cierre</h3>
@@ -141,6 +149,31 @@
           </div>
         }
       </div>
+
+      <div class="desempeno-grafica desempeno-grafica--ancha">
+        <h3>Reportes por sesión</h3>
+        <p class="muted text-sm">
+          Porcentaje de sesiones con reporte registrado. Sirve para ver si la actividad se está documentando.
+        </p>
+        @if (filas().length === 0) {
+          <p class="muted">Todavía no hay sesiones registradas.</p>
+        } @else {
+          <div class="desempeno-barras" role="img" aria-label="Reportes por sesión">
+            @for (fila of filas(); track fila.id) {
+              <div class="desempeno-fila">
+                <div class="desempeno-nombre">
+                  <span>{{ fila.nombre }}</span>
+                  <small>{{ fila.actividad.sesiones }} sesión(es)</small>
+                </div>
+                <div class="desempeno-barra" aria-hidden="true">
+                  <span [style.width.%]="fila.tasaReportes"></span>
+                </div>
+                <strong class="desempeno-valor">{{ fila.tasaReportes }}%</strong>
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
 
     @if (filas().length > 0) {
@@ -161,6 +194,11 @@
               <th scope="col">Rechazadas</th>
               <th scope="col">Caducadas</th>
               <th scope="col">Cierre</th>
+              <th scope="col">Sesiones</th>
+              <th scope="col">Reportes</th>
+              <th scope="col">Evidencias</th>
+              <th scope="col">Certificados</th>
+              <th scope="col">Evaluaciones</th>
             </tr>
           </thead>
           <tbody>
@@ -176,6 +214,11 @@
                 <td>{{ fila.solicitudes.rechazadas }}</td>
                 <td>{{ fila.solicitudes.caducadas }}</td>
                 <td>{{ fila.tasaCierre }}%</td>
+                <td>{{ fila.actividad.sesiones }}</td>
+                <td>{{ fila.actividad.reportes }}</td>
+                <td>{{ fila.actividad.evidencias }}</td>
+                <td>{{ fila.actividad.certificados }}</td>
+                <td>{{ fila.actividad.evaluaciones }}</td>
               </tr>
             }
           </tbody>

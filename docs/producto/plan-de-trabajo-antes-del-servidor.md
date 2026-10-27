@@ -364,8 +364,9 @@ la demo**. No se empiezan hasta que la demo se haya celebrado.
 
 > **Adelanto por petición:** antes del piloto se implementó una primera versión
 > del panel de desempeño por institución (CACE) y por docente (agente), con
-> conteos y gráficas de barras. El ranking, el plan de acción y la ampliación
-> posterior siguen reservados para después de la demo.
+> conteos y gráficas de barras. También muestra actividad ya guardada: sesiones,
+> reportes, evidencias, certificados y evaluaciones. El ranking, el plan de
+> acción y la ampliación posterior siguen reservados para después de la demo.
 
 - Panel de desempeño: métricas, ranking, plan de acción y vista del agente.
 - Multi-institución: participantes, revisión por destino y cierre por origen.

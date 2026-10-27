@@ -84,7 +84,8 @@ debe validarse en el servidor.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
 - Panel de desempeño inicial por institución (CACE) y por docente (agente), con
-  barras y tabla de métricas.
+  barras, tabla de estados y actividad ya existente: sesiones, reportes,
+  evidencias, certificados y evaluaciones.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 

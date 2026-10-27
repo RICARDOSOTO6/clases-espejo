@@ -26,6 +26,15 @@ export interface ContadoresSolicitudes {
   caducadas: number;
 }
 
+/** Datos de actividad que ya existen en la base y antes no se mostraban. */
+export interface ContadoresActividad {
+  sesiones: number;
+  reportes: number;
+  evidencias: number;
+  certificados: number;
+  evaluaciones: number;
+}
+
 export interface FilaDesempeno {
   id: number;
   nombre: string;
@@ -33,14 +42,17 @@ export interface FilaDesempeno {
   logoUrl: string | null;
   proyectos: ContadoresProyectos;
   solicitudes: ContadoresSolicitudes;
+  actividad: ContadoresActividad;
   /** Porcentaje entero, de 0 a 100. */
   tasaCierre: number;
   tasaRechazo: number;
+  tasaReportes: number;
 }
 
 export interface ResumenDesempeno {
   proyectos: ContadoresProyectos;
   solicitudes: ContadoresSolicitudes;
+  actividad: ContadoresActividad;
   tasaCierre: number;
   tasaRechazo: number;
 }
@@ -58,6 +70,7 @@ export interface DesempenoAgente {
 type Contador = {
   proyectos: ContadoresProyectos;
   solicitudes: ContadoresSolicitudes;
+  actividad: ContadoresActividad;
 };
 
 function contadoresVacios(): Contador {
@@ -76,6 +89,13 @@ function contadoresVacios(): Contador {
       pendientes: 0,
       rechazadas: 0,
       caducadas: 0,
+    },
+    actividad: {
+      sesiones: 0,
+      reportes: 0,
+      evidencias: 0,
+      certificados: 0,
+      evaluaciones: 0,
     },
   };
 }
@@ -97,6 +117,17 @@ function sumarProyecto(contador: ContadoresProyectos, estado: string): void {
       contador.noConcluidos += 1;
       break;
   }
+}
+
+function sumarActividad(
+  contador: ContadoresActividad,
+  proyecto: ProyectoBase,
+): void {
+  contador.sesiones += proyecto._count.sesiones;
+  contador.reportes += proyecto.sesiones.filter((s) => !!s.reporte).length;
+  contador.evidencias += proyecto._count.evidencias;
+  contador.certificados += proyecto.certificados.length;
+  contador.evaluaciones += proyecto._count.evaluaciones;
 }
 
 function sumarSolicitud(contador: ContadoresSolicitudes, estado: string): void {
@@ -144,8 +175,13 @@ function fila(
     logoUrl,
     proyectos: contador.proyectos,
     solicitudes: contador.solicitudes,
+    actividad: contador.actividad,
     tasaCierre: tasaCierre(contador.proyectos),
     tasaRechazo: tasaRechazo(contador.solicitudes),
+    tasaReportes: porcentaje(
+      contador.actividad.reportes,
+      contador.actividad.sesiones,
+    ),
   };
 }
 
@@ -156,6 +192,13 @@ type ProyectoBase = {
       docenteInstitucion: { institucionId: number; docenteId: number };
     };
   }[];
+  _count: {
+    sesiones: number;
+    evidencias: number;
+    evaluaciones: number;
+  };
+  sesiones: { reporte: { id: number } | null }[];
+  certificados: { id: number }[];
 };
 
 type SolicitudBase = {
@@ -194,6 +237,11 @@ export class DesempenoService {
               },
             },
           },
+          _count: {
+            select: { sesiones: true, evidencias: true, evaluaciones: true },
+          },
+          sesiones: { select: { reporte: { select: { id: true } } } },
+          certificados: { where: { estado: 'EMITIDO' }, select: { id: true } },
         },
       }),
       this.prisma.solicitudClaseEspejo.findMany({
@@ -226,6 +274,7 @@ export class DesempenoService {
     const resumen = contadoresVacios();
     for (const proyecto of proyectos as ProyectoBase[]) {
       sumarProyecto(resumen.proyectos, proyecto.estado);
+      sumarActividad(resumen.actividad, proyecto);
       const ids = new Set(
         proyecto.docentes.map(
           (d) => d.asignacionDocente.docenteInstitucion.institucionId,
@@ -233,7 +282,10 @@ export class DesempenoService {
       );
       for (const id of ids) {
         const contador = porInstitucion.get(id);
-        if (contador) sumarProyecto(contador.proyectos, proyecto.estado);
+        if (contador) {
+          sumarProyecto(contador.proyectos, proyecto.estado);
+          sumarActividad(contador.actividad, proyecto);
+        }
       }
     }
 
@@ -253,6 +305,7 @@ export class DesempenoService {
       resumen: {
         proyectos: resumen.proyectos,
         solicitudes: resumen.solicitudes,
+        actividad: resumen.actividad,
         tasaCierre: tasaCierre(resumen.proyectos),
         tasaRechazo: tasaRechazo(resumen.solicitudes),
       },
@@ -313,6 +366,7 @@ export class DesempenoService {
         resumen: {
           proyectos: contadoresVacios().proyectos,
           solicitudes: contadoresVacios().solicitudes,
+          actividad: contadoresVacios().actividad,
           tasaCierre: 0,
           tasaRechazo: 0,
         },
@@ -344,6 +398,11 @@ export class DesempenoService {
               },
             },
           },
+          _count: {
+            select: { sesiones: true, evidencias: true, evaluaciones: true },
+          },
+          sesiones: { select: { reporte: { select: { id: true } } } },
+          certificados: { where: { estado: 'EMITIDO' }, select: { id: true } },
         },
       }),
       this.prisma.solicitudClaseEspejo.findMany({
@@ -385,6 +444,7 @@ export class DesempenoService {
     const resumen = contadoresVacios();
     for (const proyecto of proyectos as ProyectoBase[]) {
       sumarProyecto(resumen.proyectos, proyecto.estado);
+      sumarActividad(resumen.actividad, proyecto);
       const ids = new Set(
         proyecto.docentes.map(
           (d) => d.asignacionDocente.docenteInstitucion.docenteId,
@@ -392,7 +452,10 @@ export class DesempenoService {
       );
       for (const id of ids) {
         const contador = porDocente.get(id);
-        if (contador) sumarProyecto(contador.proyectos, proyecto.estado);
+        if (contador) {
+          sumarProyecto(contador.proyectos, proyecto.estado);
+          sumarActividad(contador.actividad, proyecto);
+        }
       }
     }
 
@@ -413,6 +476,7 @@ export class DesempenoService {
       resumen: {
         proyectos: resumen.proyectos,
         solicitudes: resumen.solicitudes,
+        actividad: resumen.actividad,
         tasaCierre: tasaCierre(resumen.proyectos),
         tasaRechazo: tasaRechazo(resumen.solicitudes),
       },
