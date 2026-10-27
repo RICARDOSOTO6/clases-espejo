@@ -951,6 +951,7 @@ textarea.ng-invalid.ng-touched:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
@@ -962,6 +963,7 @@ textarea.ng-invalid.ng-touched:focus {
 .card-head-title {
   display: flex;
   align-items: center;
+  flex: 1 1 220px;
   gap: var(--space-2);
   min-width: 0;
 }
@@ -985,7 +987,10 @@ textarea.ng-invalid.ng-touched:focus {
 .card-head-actions {
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: var(--space-2);
+  max-width: 100%;
 }
 
 .card-head-count {
@@ -3446,6 +3451,96 @@ textarea.ng-invalid.ng-touched:focus {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
+}
+
+/* Resumen de certificados en la tarjeta: la tabla completa vive en un modal
+   para que no comprima el resto de la planificación. */
+.certificados-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2, var(--neutral-50));
+}
+
+.certificados-resumen-texto {
+  min-width: 0;
+}
+
+.certificados-resumen-cifra {
+  margin: 0 0 2px;
+  font-size: 1rem;
+}
+
+.certificados-resumen-texto .muted {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.certificados-modal-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.certificado-modal-item {
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.certificado-modal-item--anulado {
+  opacity: 0.65;
+}
+
+.certificado-modal-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.certificado-modal-alumno {
+  margin: var(--space-1) 0 var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.certificado-modal-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.certificado-modal-datos dt {
+  font-size: 0.72rem;
+  color: var(--text-aux);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.certificado-modal-datos dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.certificado-modal-motivo {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8rem;
+  color: var(--warning-700);
+  overflow-wrap: anywhere;
+}
+
+.certificado-modal-acciones {
+  margin-top: var(--space-2);
 }
 
 .link-button--peligro {

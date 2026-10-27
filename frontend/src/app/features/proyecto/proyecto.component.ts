@@ -156,6 +156,9 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   readonly anulandoCertificado = signal(false);
   readonly errorAnulacion = signal<string | null>(null);
 
+  /** Lista de certificados emitidos en un modal: la tabla no cabe bien en la tarjeta. */
+  readonly verCertificados = signal(false);
+
   /** Folio cuyo enlace de verificación se acaba de copiar. */
   readonly enlaceCopiado = signal<string | null>(null);
 
@@ -824,6 +827,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   /** Pide confirmación antes de reemitir: el anterior queda anulado. */
   reemitirCertificado(certificado: CertificadoEmitido): void {
+    this.verCertificados.set(false);
     this.confirmarAccion(
       'Reemitir certificado',
       `Se emitirá un certificado nuevo para ${certificado.alumnoNombre} y el ${certificado.folio} quedará anulado. ¿Continuar?`,
@@ -962,8 +966,17 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   // --- Anulación (fase 5) ---
 
+  abrirCertificados(): void {
+    this.verCertificados.set(true);
+  }
+
+  cerrarCertificados(): void {
+    this.verCertificados.set(false);
+  }
+
   /** Abre el cuadro del motivo: la anulación siempre se explica. */
   abrirAnulacion(certificado: CertificadoEmitido): void {
+    this.verCertificados.set(false);
     this.motivoAnulacion.set('');
     this.errorAnulacion.set(null);
     this.certificadoAAnular.set(certificado);

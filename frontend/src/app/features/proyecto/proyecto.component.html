@@ -1167,127 +1167,24 @@
               @if (estado.certificados.length === 0) {
                 <p class="muted">Todavía no hay ningún certificado emitido en esta clase espejo.</p>
               } @else {
-                <div class="alumnos-scroll">
-                  <table class="alumnos-tabla">
-                    <thead>
-                      <tr>
-                        <th>Folio</th>
-                        <th>Alumno</th>
-                        <th>Estado</th>
-                        <th>Emitido</th>
-                        <th>Envío</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (certificado of estado.certificados; track certificado.id) {
-                        <tr [class.alumnos-fila--fuera]="certificado.estado !== 'EMITIDO'">
-                          <td>
-                            <strong>{{ certificado.folio }}</strong>
-                          </td>
-                          <td>
-                            {{ certificado.alumnoNombre }}
-                            @if (certificado.matricula) {
-                              <span class="muted"> · {{ certificado.matricula }}</span>
-                            }
-                          </td>
-                          <td>
-                            <span
-                              class="chip-estado"
-                              [class.chip-estado--ok]="certificado.estado === 'EMITIDO'"
-                              [class.chip-estado--error]="certificado.estado !== 'EMITIDO'"
-                            >
-                              {{ estadoCertificadoLabel(certificado.estado) }}
-                            </span>
-                            @if (certificado.anuladoMotivo) {
-                              <span class="alumnos-aviso">{{ certificado.anuladoMotivo }}</span>
-                            }
-                          </td>
-                          <td>{{ formatearFecha(certificado.emitidoEn) }}</td>
-                          <td>
-                            @if (certificado.enviadoEn) {
-                              {{ certificado.enviadoA }}
-                            } @else {
-                              <span class="muted">sin enviar</span>
-                            }
-                          </td>
-                          <td class="certificado-celda-acciones">
-                            <button
-                              type="button"
-                              class="link-button"
-                              data-accion="copiar-enlace"
-                              (click)="copiarEnlace(certificado)"
-                            >
-                              {{
-                                enlaceCopiado() === certificado.folio
-                                  ? 'Enlace copiado ✓'
-                                  : 'Copiar enlace'
-                              }}
-                            </button>
-                            <button
-                              type="button"
-                              class="link-button"
-                              [disabled]="descargandoCertificado() === certificado.id"
-                              (click)="descargarCertificado(certificado)"
-                            >
-                              {{
-                                descargandoCertificado() === certificado.id
-                                  ? 'Descargando…'
-                                  : 'Descargar PDF'
-                              }}
-                            </button>
-                            @if (certificado.estado === 'EMITIDO') {
-                              <button
-                                type="button"
-                                class="link-button"
-                                data-accion="enviar"
-                                [disabled]="enviandoCertificado() === certificado.id"
-                                (click)="enviarCertificado(certificado)"
-                              >
-                                {{
-                                  enviandoCertificado() === certificado.id
-                                    ? 'Enviando…'
-                                    : 'Enviar por correo'
-                                }}
-                              </button>
-                              @if (certificado.enviadoEn) {
-                                <button
-                                  type="button"
-                                  class="link-button"
-                                  [disabled]="enviandoCertificado() === certificado.id"
-                                  (click)="enviarCertificado(certificado, true)"
-                                >
-                                  Reenviar
-                                </button>
-                              }
-                              <button
-                                type="button"
-                                class="link-button"
-                                [disabled]="emitiendoCertificados()"
-                                (click)="reemitirCertificado(certificado)"
-                              >
-                                Reemitir
-                              </button>
-                              <button
-                                type="button"
-                                class="link-button link-button--peligro"
-                                data-accion="anular"
-                                (click)="abrirAnulacion(certificado)"
-                              >
-                                Anular
-                              </button>
-                            }
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                <div class="certificados-resumen">
+                  <div class="certificados-resumen-texto">
+                    <p class="certificados-resumen-cifra">
+                      <strong>{{ estado.resumen.emitidos }}</strong> certificado(s) vigente(s)
+                    </p>
+                    <p class="muted">
+                      Consulta folios, descargas, envíos y anulaciones en una ventana aparte.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-outline"
+                    data-accion="ver-certificados"
+                    (click)="abrirCertificados()"
+                  >
+                    Ver certificados
+                  </button>
                 </div>
-                <p class="text-sm muted">
-                  El enlace de cada certificado lleva su folio y el código del QR: sin ese código la
-                  página pública no muestra ningún dato del alumno. Un certificado anulado se sigue
-                  descargando (es un documento histórico), pero la verificación ya dice que no vale.
-                </p>
               }
             }
           </section>
@@ -1938,6 +1835,151 @@
               Cancelar
             </button>
           </div>
+        </app-modal>
+      }
+
+      @if (verCertificados()) {
+        <app-modal title="Certificados emitidos" size="lg" (cerrado)="cerrarCertificados()">
+          @if (certificadosEstado(); as estado) {
+            <p class="text-sm muted">
+              {{ estado.resumen.emitidos }} de {{ estado.resumen.alumnos }} alumno(s) con
+              certificado vigente. Los anulados se conservan como documento histórico.
+            </p>
+
+            @if (estado.certificados.length === 0) {
+              <p class="muted">Todavía no hay certificados emitidos.</p>
+            } @else {
+              <div class="certificados-modal-lista">
+                @for (certificado of estado.certificados; track certificado.id) {
+                  <article
+                    class="certificado-modal-item"
+                    [class.certificado-modal-item--anulado]="certificado.estado !== 'EMITIDO'"
+                  >
+                    <div class="certificado-modal-cabeza">
+                      <strong>{{ certificado.folio }}</strong>
+                      <span
+                        class="chip-estado"
+                        [class.chip-estado--ok]="certificado.estado === 'EMITIDO'"
+                        [class.chip-estado--error]="certificado.estado !== 'EMITIDO'"
+                      >
+                        {{ estadoCertificadoLabel(certificado.estado) }}
+                      </span>
+                    </div>
+
+                    <p class="certificado-modal-alumno">
+                      {{ certificado.alumnoNombre }}
+                      @if (certificado.matricula) {
+                        <span class="muted"> · {{ certificado.matricula }}</span>
+                      }
+                    </p>
+
+                    <dl class="certificado-modal-datos">
+                      <div>
+                        <dt>Emitido</dt>
+                        <dd>{{ formatearFecha(certificado.emitidoEn) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Envío</dt>
+                        <dd>
+                          @if (certificado.enviadoEn) {
+                            {{ certificado.enviadoA }}
+                          } @else {
+                            <span class="muted">sin enviar</span>
+                          }
+                        </dd>
+                      </div>
+                    </dl>
+
+                    @if (certificado.anuladoMotivo) {
+                      <p class="certificado-modal-motivo">
+                        Motivo de anulación: {{ certificado.anuladoMotivo }}
+                      </p>
+                    }
+
+                    <div class="certificado-celda-acciones certificado-modal-acciones">
+                      <button
+                        type="button"
+                        class="link-button"
+                        data-accion="copiar-enlace"
+                        (click)="copiarEnlace(certificado)"
+                      >
+                        {{
+                          enlaceCopiado() === certificado.folio
+                            ? 'Enlace copiado ✓'
+                            : 'Copiar enlace'
+                        }}
+                      </button>
+                      <button
+                        type="button"
+                        class="link-button"
+                        [disabled]="descargandoCertificado() === certificado.id"
+                        (click)="descargarCertificado(certificado)"
+                      >
+                        {{
+                          descargandoCertificado() === certificado.id
+                            ? 'Descargando…'
+                            : 'Descargar PDF'
+                        }}
+                      </button>
+                      @if (certificado.estado === 'EMITIDO') {
+                        <button
+                          type="button"
+                          class="link-button"
+                          data-accion="enviar"
+                          [disabled]="enviandoCertificado() === certificado.id"
+                          (click)="enviarCertificado(certificado)"
+                        >
+                          {{
+                            enviandoCertificado() === certificado.id
+                              ? 'Enviando…'
+                              : 'Enviar por correo'
+                          }}
+                        </button>
+                        @if (certificado.enviadoEn) {
+                          <button
+                            type="button"
+                            class="link-button"
+                            [disabled]="enviandoCertificado() === certificado.id"
+                            (click)="enviarCertificado(certificado, true)"
+                          >
+                            Reenviar
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="link-button"
+                          [disabled]="emitiendoCertificados()"
+                          (click)="reemitirCertificado(certificado)"
+                        >
+                          Reemitir
+                        </button>
+                        <button
+                          type="button"
+                          class="link-button link-button--peligro"
+                          data-accion="anular"
+                          (click)="abrirAnulacion(certificado)"
+                        >
+                          Anular
+                        </button>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+
+            <p class="text-sm muted">
+              El enlace de cada certificado lleva su folio y el código del QR: sin ese código la
+              página pública no muestra ningún dato del alumno. Un certificado anulado se sigue
+              descargando, pero la verificación ya dice que no vale.
+            </p>
+
+            <div class="form-grid-actions">
+              <button type="button" class="btn btn-secondary" (click)="cerrarCertificados()">
+                Cerrar
+              </button>
+            </div>
+          }
         </app-modal>
       }
 

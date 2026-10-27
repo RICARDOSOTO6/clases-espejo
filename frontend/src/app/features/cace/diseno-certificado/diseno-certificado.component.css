@@ -1,30 +1,61 @@
 /* --- Panel de diseño del certificado ---
-   Tres columnas fijas (herramientas 20%, lienzo 55%, propiedades 25%).
-   Todo el color de acento sale del tema activo (var(--accent)); nada de azules
-   clavados a mano. */
+   Tres zonas: herramientas, editor y propiedades. En pantallas anchas se ven
+   las tres a la vez; en laptop pequeña las propiedades bajan debajo de las
+   herramientas y el editor conserva el centro. */
 
 .diseno {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(260px, 340px);
+  grid-template-areas: 'herramientas editor propiedades';
   gap: 16px;
   align-items: start;
 }
 
-/* Las columnas de herramientas y propiedades se aplanan: sus tarjetas pasan a
-   ser celdas del mosaico. La del editor ocupa todo el ancho. */
+/* Las columnas laterales apilan sus tarjetas; el editor queda en el centro. */
 .columna--herramientas,
 .columna--propiedades {
-  display: contents;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.columna--herramientas {
+  grid-area: herramientas;
+}
+
+.columna--propiedades {
+  grid-area: propiedades;
 }
 
 .columna--editor {
   display: block;
-  grid-column: 1 / -1;
+  grid-area: editor;
+  min-width: 0;
   position: relative;
   background: var(--lienzo-fondo, #f3f4f6);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 24px;
+}
+
+@media (max-width: 1400px) {
+  .diseno {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    grid-template-areas:
+      'herramientas editor'
+      'propiedades editor';
+  }
+}
+
+@media (max-width: 860px) {
+  .diseno {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'editor'
+      'herramientas'
+      'propiedades';
+  }
 }
 
 /* Títulos de bloque en mayúsculas pequeñas. */
