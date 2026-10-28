@@ -23,6 +23,7 @@ describe('Aislamiento institucional (e2e)', () => {
   let semilla: Semilla;
   let proyectoAB: ProyectoPrueba;
   let proyectoBCId: number;
+  let sesionBCId: number;
   let docenteInstitucionBId: number;
   let tokenDocenteA = '';
   let tokenAgenteA = '';
@@ -123,6 +124,17 @@ describe('Aislamiento institucional (e2e)', () => {
       },
     });
     proyectoBCId = proyectoBC.id;
+    const sesionBC = await prisma.sesion.create({
+      data: {
+        proyectoId: proyectoBC.id,
+        titulo: 'Sesión privada B-C',
+        fechaHora: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        enlaceVirtual: 'https://meet.example.com/privada-bc',
+        estado: 'PROGRAMADA',
+      },
+    });
+    const sesionBCIdCreada = sesionBC.id;
+    sesionBCId = sesionBCIdCreada;
     await prisma.proyectoDocente.createMany({
       data: [
         {
@@ -212,6 +224,107 @@ describe('Aislamiento institucional (e2e)', () => {
       .expect((res) => {
         expect([403, 404]).toContain(res.status);
       });
+  });
+
+  it('un docente no puede leer ni modificar sesiones, reportes, evaluaciones ni mensajes ajenos', async () => {
+    const negado = (res: { status: number }) => {
+      expect([403, 404]).toContain(res.status);
+    };
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/sesiones`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoBCId}/sesiones`)
+      .set(autenticado(tokenDocenteA))
+      .send({
+        titulo: 'Sesión intrusa',
+        fechaHora: new Date(Date.now() + 86400000).toISOString(),
+        enlaceVirtual: 'https://meet.example.com/intrusa',
+      })
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .patch(`/proyectos/${proyectoBCId}/sesiones/${sesionBCId}`)
+      .set(autenticado(tokenDocenteA))
+      .send({ titulo: 'Sesión alterada' })
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .delete(`/proyectos/${proyectoBCId}/sesiones/${sesionBCId}`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/reportes-clase`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/sesiones/${sesionBCId}/reporte`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/evaluaciones`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoBCId}/evaluaciones`)
+      .set(autenticado(tokenDocenteA))
+      .send({
+        instrumento: 'Rúbrica',
+        resultado: 'Satisfactorio',
+        observaciones: 'Intento de otra institución',
+      })
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/mensajes`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoBCId}/mensajes`)
+      .set(autenticado(tokenDocenteA))
+      .send({ contenido: 'Mensaje intruso' })
+      .expect(negado);
+  });
+
+  it('un docente no puede leer la planificación ni los certificados de una clase ajena', async () => {
+    const negado = (res: { status: number }) => {
+      expect([403, 404]).toContain(res.status);
+    };
+
+    await request(app.getHttpServer())
+      .put(`/proyectos/${proyectoBCId}/planificacion`)
+      .set(autenticado(tokenDocenteA))
+      .send({
+        objetivosAcordados: 'Objetivo intruso',
+        temasAcordados: 'Tema intruso',
+        metodologia: 'Metodología intrusa',
+        plataforma: 'Zoom',
+      })
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoBCId}/planificacion/confirmar`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoBCId}/certificados`)
+      .set(autenticado(tokenDocenteA))
+      .expect(negado);
+
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoBCId}/certificados/emitir`)
+      .set(autenticado(tokenDocenteA))
+      .send({ alumnoId: 1 })
+      .expect(negado);
   });
 
   it('la secretaría CACE no suplanta a un docente participante', async () => {
