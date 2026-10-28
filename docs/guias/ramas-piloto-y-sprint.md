@@ -26,21 +26,21 @@ sustituye esa red: la complementa.
 | Elemento | Valor |
 | --- | --- |
 | Rama actual | `master` |
-| Último commit | `dc0fb71` |
+| Último commit de código | `dc0fb71` |
 | Etiqueta del piloto | `demo-local-2026-10-27` |
 | Commit de la etiqueta | `128e321` |
 | Paquete del piloto | `release/ClasesEspejo-entrega-2026-10-27.zip` |
 | SHA-256 | `DC534D292051F2669EF28DC99244E85950A8DA8044E6FE9058C73840AC04575D` |
 
-Después de la etiqueta, `master` solo tiene dos commits de documentación:
+Después de la etiqueta, `master` solo tiene commits de documentación (incluida
+esta guía). El código es el mismo que el del piloto. Eso es importante: la rama
+de sprint puede partir de `master` sin arrastrar cambios de código no probados.
 
-```text
-a58c6b8  Documenta la instalacion completa en Ubuntu Server
-dc0fb71  Consolida pendientes de la revision en el sprint
+Para saber el commit exacto de `master` antes de crear la rama:
+
+```powershell
+git rev-parse --short master
 ```
-
-El código es el mismo que el del piloto. Eso es importante: la rama de sprint
-puede partir de `master` sin arrastrar cambios de código no probados.
 
 ---
 
@@ -138,7 +138,9 @@ git branch --list "sprint/*"
 git log -1 --oneline sprint/post-evaluacion-2026-10-28
 ```
 
-Debe apuntar a `dc0fb71`.
+Debe apuntar al mismo commit que `master` en ese momento (`git rev-parse
+--short master`). No importa que el hash exacto cambie con la documentación; lo
+que importa es que no incluya código del sprint.
 
 ---
 
