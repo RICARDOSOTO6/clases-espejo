@@ -3,14 +3,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { TotpService } from './totp.service';
+import { validarSecretoJwt } from '../common/jwt-secret';
 
 // Sin secreto no se arranca: un valor por defecto permitiría forjar tokens.
-const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret || jwtSecret.length < 16) {
-  throw new Error(
-    'Falta JWT_SECRET (o es demasiado corto): define la variable de entorno antes de arrancar.',
-  );
-}
+const jwtSecret = validarSecretoJwt(process.env.JWT_SECRET);
 
 @Module({
   imports: [
@@ -21,7 +18,7 @@ if (!jwtSecret || jwtSecret.length < 16) {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard],
+  providers: [AuthService, TotpService, JwtAuthGuard],
+  exports: [AuthService, TotpService, JwtAuthGuard],
 })
 export class AuthModule {}

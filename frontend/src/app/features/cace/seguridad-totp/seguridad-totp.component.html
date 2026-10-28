@@ -1,0 +1,160 @@
+<section class="card seguridad-totp" aria-labelledby="seguridad-titulo">
+  <div class="card-head">
+    <div class="card-head-title">
+      <span class="card-head-icon" aria-hidden="true">🔐</span>
+      <div>
+        <h2 id="seguridad-titulo">Seguridad de la cuenta</h2>
+        <p class="seguridad-subtitulo">
+          Segundo factor TOTP para presidencia y secretaría de la CACE.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <p class="muted" role="status">Cargando configuración de seguridad…</p>
+  } @else if (error()) {
+    <div class="alert alert-error" role="alert">{{ error() }}</div>
+    <button type="button" class="btn btn-secondary" (click)="cargar()">Reintentar</button>
+  } @else if (estado(); as e) {
+    @if (aviso()) {
+      <div class="alert alert-success" role="status">{{ aviso() }}</div>
+    }
+
+    @if (e.habilitado) {
+      <div class="seguridad-estado seguridad-estado--activo">
+        <strong>Segundo factor activo</strong>
+        <span>
+          Se pedirá un código después de la contraseña.
+          @if (e.confirmadoEn) {
+            Activado el {{ e.confirmadoEn | date: 'dd/MM/yyyy' }}.
+          }
+        </span>
+        <span class="seguridad-codigos-restantes">
+          {{ e.codigosRestantes }} código(s) de recuperación disponible(s).
+        </span>
+      </div>
+
+      @if (!mostrarDesactivar()) {
+        <button type="button" class="btn btn-secondary" (click)="mostrarDesactivar.set(true)">
+          Desactivar segundo factor
+        </button>
+      } @else {
+        <form
+          [formGroup]="desactivarForm"
+          (ngSubmit)="desactivar()"
+          class="seguridad-form"
+          novalidate
+        >
+          <p class="muted">
+            Para desactivarlo, confirma tu contraseña y un código de la aplicación o de
+            recuperación.
+          </p>
+          <div class="form-field">
+            <label for="totp-password">Contraseña actual</label>
+            <input
+              id="totp-password"
+              type="password"
+              formControlName="password"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="form-field">
+            <label for="totp-codigo-baja">Código de 6 dígitos o recuperación</label>
+            <input id="totp-codigo-baja" formControlName="codigo" autocomplete="one-time-code" />
+          </div>
+          <div class="seguridad-acciones">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="desactivarForm.invalid || guardando()"
+            >
+              {{ guardando() ? 'Desactivando…' : 'Confirmar desactivación' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="mostrarDesactivar.set(false)">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      }
+    } @else if (inicio(); as i) {
+      <p class="muted">
+        Escanea el QR con Google Authenticator, Microsoft Authenticator, 1Password o una aplicación
+        TOTP compatible. Después escribe el código de 6 dígitos.
+      </p>
+      <div class="seguridad-qr">
+        <img
+          [src]="i.qrDataUrl"
+          alt="Código QR para configurar el segundo factor"
+          width="240"
+          height="240"
+        />
+        <div>
+          <p class="muted">Si no puedes escanear el QR, usa este secreto:</p>
+          <code class="seguridad-secreto">{{ i.secreto }}</code>
+          <p class="muted seguridad-aviso">
+            No compartas este secreto. Quien lo tenga puede generar códigos.
+          </p>
+        </div>
+      </div>
+
+      <form [formGroup]="codigoForm" (ngSubmit)="confirmar()" class="seguridad-form" novalidate>
+        <div class="form-field">
+          <label for="totp-codigo">Código de 6 dígitos</label>
+          <input
+            id="totp-codigo"
+            formControlName="codigo"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="000000"
+          />
+          @if (codigoForm.controls.codigo.touched && codigoForm.controls.codigo.invalid) {
+            <p class="field-error">Escribe exactamente 6 dígitos.</p>
+          }
+        </div>
+        <div class="seguridad-acciones">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="codigoForm.invalid || guardando()"
+          >
+            {{ guardando() ? 'Confirmando…' : 'Activar segundo factor' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    } @else {
+      <div class="seguridad-estado">
+        <strong>Segundo factor desactivado</strong>
+        <span>
+          Añade una capa extra: además de tu contraseña, se pedirá un código temporal. Es
+          recomendable activarlo en la cuenta de presidencia y en la secretaría.
+        </span>
+      </div>
+      <button type="button" class="btn btn-primary" [disabled]="guardando()" (click)="iniciar()">
+        {{ guardando() ? 'Preparando…' : 'Activar segundo factor' }}
+      </button>
+    }
+
+    @if (codigos().length > 0) {
+      <div class="seguridad-recuperacion">
+        <h3>Guarda estos códigos de recuperación</h3>
+        <p class="muted">
+          Se muestran una sola vez. Cada código sirve una vez si pierdes el teléfono. Guárdalos
+          fuera de este equipo.
+        </p>
+        <ul class="seguridad-lista-codigos">
+          @for (codigo of codigos(); track codigo) {
+            <li>
+              <code>{{ codigo }}</code>
+            </li>
+          }
+        </ul>
+        <button type="button" class="btn btn-secondary" (click)="copiarCodigos()">
+          Copiar códigos
+        </button>
+      </div>
+    }
+  }
+</section>

@@ -3,10 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import {
   ActivateAccountDto,
+  LoginChallenge,
   LoginResponse,
+  LoginRespuesta,
   Perfil,
   RegisterDto,
   RegisterResponse,
+  TotpConfirmacion,
+  TotpEstado,
+  TotpInicio,
   Usuario,
 } from '../models/auth.models';
 import { API_URL } from '../api-url';
@@ -16,6 +21,10 @@ const USER_KEY = 'usuario';
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
+function esReto(res: LoginRespuesta): res is LoginChallenge {
+  return 'requiereTotp' in res && res.requiereTotp === true;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -34,10 +43,48 @@ export class AuthService {
     return !!this.token;
   }
 
-  login(correo: string, password: string): Observable<LoginResponse> {
+  login(correo: string, password: string): Observable<LoginRespuesta> {
+    return this.http.post<LoginRespuesta>(`${API_URL}/auth/login`, { correo, password }).pipe(
+      tap((res) => {
+        // Con TOTP activo, el primer paso no crea sesión: se guarda el reto
+        // en el componente y se pide el código.
+        if (!esReto(res)) this.saveSession(res);
+      }),
+    );
+  }
+
+  /** Segundo paso del login: valida TOTP o un código de recuperación. */
+  verificarTotp(challengeToken: string, codigo: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${API_URL}/auth/login`, { correo, password })
+      .post<LoginResponse>(`${API_URL}/auth/totp/verificar`, {
+        challengeToken,
+        codigo,
+      })
       .pipe(tap((res) => this.saveSession(res)));
+  }
+
+  estadoTotp(): Observable<TotpEstado> {
+    return this.http.get<TotpEstado>(`${API_URL}/auth/totp/estado`);
+  }
+
+  iniciarTotp(): Observable<TotpInicio> {
+    return this.http.post<TotpInicio>(`${API_URL}/auth/totp/iniciar`, {});
+  }
+
+  confirmarTotp(codigo: string): Observable<TotpConfirmacion> {
+    return this.http.post<TotpConfirmacion>(`${API_URL}/auth/totp/confirmar`, {
+      codigo,
+    });
+  }
+
+  desactivarTotp(
+    password: string,
+    codigo: string,
+  ): Observable<{ habilitado: boolean; mensaje: string }> {
+    return this.http.post<{ habilitado: boolean; mensaje: string }>(
+      `${API_URL}/auth/totp/desactivar`,
+      { password, codigo },
+    );
   }
 
   register(dto: RegisterDto): Observable<RegisterResponse> {

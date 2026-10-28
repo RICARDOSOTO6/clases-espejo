@@ -17,6 +17,10 @@
       </p>
     }
 
+    @if (!soloSeccion()) {
+      <app-seguridad-totp />
+    }
+
     <!-- Cabecera administrativa: identidad del rol, estado y acceso rápido a los módulos. -->
     @if (!soloSeccion()) {
       <section class="card cace-cabecera cace-hero" id="cabecera">

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { LoginChallenge } from '../../../core/models/auth.models';
 import { IdentidadCaceService } from '../../../core/services/identidad-cace.service';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
 import { mensajeDeControl } from '../../../core/utils/formulario.util';
@@ -36,6 +37,15 @@ export class LoginComponent implements OnInit {
     correo: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
+
+  /** Reto temporal cuando la cuenta tiene TOTP activo. */
+  challenge = signal<LoginChallenge | null>(null);
+  codigoForm = this.fb.group({
+    codigo: ['', [Validators.required, Validators.minLength(6)]],
+  });
+  usandoRecuperacion = signal(false);
+  totpLoading = signal(false);
+  totpError = signal<string | null>(null);
 
   error = signal<string | null>(null);
   loading = signal(false);
@@ -107,8 +117,14 @@ export class LoginComponent implements OnInit {
     const { correo, password } = this.form.value;
 
     this.auth.login(correo!, password!).subscribe({
-      next: () => {
+      next: (res) => {
         this.loading.set(false);
+        if ('requiereTotp' in res) {
+          this.challenge.set(res);
+          this.error.set(null);
+          this.codigoForm.reset();
+          return;
+        }
         this.form.reset();
         this.irDespuesDeEntrar();
       },
@@ -118,5 +134,41 @@ export class LoginComponent implements OnInit {
         this.form.reset();
       },
     });
+  }
+
+  verificarCodigo(): void {
+    const reto = this.challenge();
+    if (!reto || this.totpLoading()) return;
+    if (this.codigoForm.invalid) {
+      this.codigoForm.markAllAsTouched();
+      return;
+    }
+
+    this.totpLoading.set(true);
+    this.totpError.set(null);
+    this.auth.verificarTotp(reto.challengeToken, this.codigoForm.value.codigo!).subscribe({
+      next: () => {
+        this.totpLoading.set(false);
+        this.challenge.set(null);
+        this.irDespuesDeEntrar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.totpLoading.set(false);
+        this.totpError.set(extraerMensajeError(err, 'No se pudo verificar el código'));
+      },
+    });
+  }
+
+  alternarRecuperacion(): void {
+    this.usandoRecuperacion.update((valor) => !valor);
+    this.codigoForm.controls.codigo.setValue('');
+    this.totpError.set(null);
+  }
+
+  volverAlLogin(): void {
+    this.challenge.set(null);
+    this.codigoForm.reset();
+    this.totpError.set(null);
+    this.usandoRecuperacion.set(false);
   }
 }

@@ -20,10 +20,17 @@ import { ActivateAccountDto } from './dto/activate-account.dto';
 import { RecuperarPasswordDto } from './dto/recuperar-password.dto';
 import { RestablecerPasswordDto } from './dto/restablecer-password.dto';
 import { CambiarCorreoDto } from './dto/cambiar-correo.dto';
+import { VerificarTotpDto } from './dto/verificar-totp.dto';
+import { ConfirmarTotpDto } from './dto/confirmar-totp.dto';
+import { DesactivarTotpDto } from './dto/desactivar-totp.dto';
+import { TotpService } from './totp.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly totpService: TotpService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto, @Req() peticion: Request) {
@@ -36,6 +43,47 @@ export class AuthController {
   @UseGuards(RateLimitGuard)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  /** Segundo paso del login cuando la cuenta tiene TOTP habilitado. */
+  @Post('totp/verificar')
+  @UseGuards(RateLimitGuard)
+  verificarTotp(@Body() dto: VerificarTotpDto) {
+    return this.authService.verificarTotp(dto);
+  }
+
+  /** Estado del segundo factor de la cuenta CACE. */
+  @Get('totp/estado')
+  @UseGuards(JwtAuthGuard)
+  estadoTotp(@CurrentUser('sub') usuarioId: number) {
+    return this.totpService.estado(usuarioId);
+  }
+
+  /** Inicia la configuración y entrega el QR una sola vez. */
+  @Post('totp/iniciar')
+  @UseGuards(JwtAuthGuard)
+  iniciarTotp(@CurrentUser('sub') usuarioId: number) {
+    return this.totpService.iniciar(usuarioId);
+  }
+
+  /** Confirma el primer código y entrega los códigos de recuperación. */
+  @Post('totp/confirmar')
+  @UseGuards(JwtAuthGuard)
+  confirmarTotp(
+    @CurrentUser('sub') usuarioId: number,
+    @Body() dto: ConfirmarTotpDto,
+  ) {
+    return this.totpService.confirmar(usuarioId, dto.codigo);
+  }
+
+  /** Desactiva el segundo factor con contraseña y código. */
+  @Post('totp/desactivar')
+  @UseGuards(JwtAuthGuard)
+  desactivarTotp(
+    @CurrentUser('sub') usuarioId: number,
+    @Body() dto: DesactivarTotpDto,
+  ) {
+    return this.totpService.desactivar(usuarioId, dto.password, dto.codigo);
   }
 
   @Get('activate')

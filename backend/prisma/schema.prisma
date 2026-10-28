@@ -9,98 +9,112 @@ datasource db {
 }
 
 model Institucion {
-  id                  Int                          @id @default(autoincrement())
-  nombre              String
-  pais                String
-  codigoPais          String                       @default("") @map("codigo_pais")
-  estado              String                       @default("")
-  ciudad              String                       @default("")
-  telefono            String                       @default("")
-  correoInstitucional String                       @map("correo_institucional")
-  activa              Boolean
-  registroCompleto    Boolean                      @default(false) @map("registro_completo")
+  id                     Int                           @id @default(autoincrement())
+  nombre                 String
+  pais                   String
+  codigoPais             String                        @default("") @map("codigo_pais")
+  estado                 String                        @default("")
+  ciudad                 String                        @default("")
+  telefono               String                        @default("")
+  correoInstitucional    String                        @map("correo_institucional")
+  activa                 Boolean
+  registroCompleto       Boolean                       @default(false) @map("registro_completo")
   /// Estado ante la CACE: PENDIENTE, APROBADA, RECHAZADA o VETADA. Las
   /// instituciones que ya existian quedan APROBADAS para no dejarlas fuera.
-  estadoCace          String                       @default("APROBADA") @map("estado_cace")
+  estadoCace             String                        @default("APROBADA") @map("estado_cace")
   /// Motivo del rechazo o del veto (obligatorio en los dos).
-  motivoCace          String                       @default("") @map("motivo_cace")
+  motivoCace             String                        @default("") @map("motivo_cace")
   /// Baja con historial: la institución queda inoperable pero no se borra.
-  archivadaEn         DateTime?                    @map("archivada_en")
-  archivadaPorUsuarioId Int?                       @map("archivada_por_usuario_id")
-  motivoArchivo       String                       @default("") @map("motivo_archivo")
+  archivadaEn            DateTime?                     @map("archivada_en")
+  archivadaPorUsuarioId  Int?                          @map("archivada_por_usuario_id")
+  motivoArchivo          String                        @default("") @map("motivo_archivo")
   /// Logo de la institución, para reconocerla en el catálogo.
-  logoUrl             String?                      @map("logo_url")
-  revisadaPorUsuarioId Int?                        @map("revisada_por_usuario_id")
-  revisadaEn          DateTime?                    @map("revisada_en")
-  revisadaPor         Usuario?                     @relation("InstitucionRevisada", fields: [revisadaPorUsuarioId], references: [id])
-  creadoEn            DateTime                     @default(now()) @map("creado_en")
-  actualizadoEn       DateTime                     @default(now()) @updatedAt @map("actualizado_en")
-  agentes             AgenteInternacionalizacion[]
-  docentesInstitucion DocenteInstitucion[]
-  materias            Materia[]
-  solicitudesDestino  SolicitudClaseEspejo[]
-  invitaciones        Invitacion[]
+  logoUrl                String?                       @map("logo_url")
+  revisadaPorUsuarioId   Int?                          @map("revisada_por_usuario_id")
+  revisadaEn             DateTime?                     @map("revisada_en")
+  revisadaPor            Usuario?                      @relation("InstitucionRevisada", fields: [revisadaPorUsuarioId], references: [id])
+  creadoEn               DateTime                      @default(now()) @map("creado_en")
+  actualizadoEn          DateTime                      @default(now()) @updatedAt @map("actualizado_en")
+  agentes                AgenteInternacionalizacion[]
+  docentesInstitucion    DocenteInstitucion[]
+  materias               Materia[]
+  solicitudesDestino     SolicitudClaseEspejo[]
+  invitaciones           Invitacion[]
   invitacionesSecretaria InvitacionSecretaria[]
-  secretaria          SecretariaInstitucion?
-  listasAlumnos       ListaAlumnos[]
-  premios             Premio[]
-  solicitudesBorrado  SolicitudBorradoInstitucion[]
+  secretaria             SecretariaInstitucion?
+  listasAlumnos          ListaAlumnos[]
+  premios                Premio[]
+  solicitudesBorrado     SolicitudBorradoInstitucion[]
 
   @@index([estadoCace])
   @@map("INSTITUCION")
 }
 
 model Usuario {
-  id              Int                         @id @default(autoincrement())
-  nombres         String
-  apellidoPaterno String                      @map("apellido_paterno")
-  apellidoMaterno String                      @map("apellido_materno")
-  dni             String                      @unique
-  tipoDocumento   String                      @default("DNI") @map("tipo_documento")
-  correo          String                      @unique
-  passwordHash    String?                     @map("password_hash")
+  id                            Int                           @id @default(autoincrement())
+  nombres                       String
+  apellidoPaterno               String                        @map("apellido_paterno")
+  apellidoMaterno               String                        @map("apellido_materno")
+  dni                           String                        @unique
+  tipoDocumento                 String                        @default("DNI") @map("tipo_documento")
+  correo                        String                        @unique
+  passwordHash                  String?                       @map("password_hash")
   /// Ruta pública de la foto de perfil (por ejemplo `/avatares/123.png`).
-  fotoUrl         String?                     @map("foto_url")
-  activo          Boolean                     @default(true)
+  fotoUrl                       String?                       @map("foto_url")
+  activo                        Boolean                       @default(true)
   /// Se pone en `true` al crear una cuenta con contraseña provisional (por
   /// ejemplo el presidente de la CACE): el primer acceso obliga a cambiarla.
-  debeCambiarPassword Boolean                @default(false) @map("debe_cambiar_password")
+  debeCambiarPassword           Boolean                       @default(false) @map("debe_cambiar_password")
   /// Intentos fallidos seguidos de inicio de sesión; al llegar al máximo la
   /// cuenta queda bloqueada un rato (política de contraseñas de la Fase 1).
-  intentosFallidos Int                        @default(0) @map("intentos_fallidos")
+  intentosFallidos              Int                           @default(0) @map("intentos_fallidos")
   /// Hasta cuándo está bloqueado el acceso por intentos fallidos (null = libre).
-  bloqueadoHasta  DateTime?                   @map("bloqueado_hasta")
+  bloqueadoHasta                DateTime?                     @map("bloqueado_hasta")
   /// Momento del último cambio de contraseña. Los tokens de sesión emitidos
   /// antes de esta marca dejan de valer (cerrar sesiones de la Fase 1).
-  sesionesValidasDesde DateTime               @default(now()) @map("sesiones_validas_desde")
+  sesionesValidasDesde          DateTime                      @default(now()) @map("sesiones_validas_desde")
   /// Correo confirmado (Fase 1). Las cuentas que ya existían quedan verificadas;
   /// los registros nuevos nacen en `false` hasta abrir el enlace del correo.
-  correoVerificado Boolean                    @default(true) @map("correo_verificado")
+  correoVerificado              Boolean                       @default(true) @map("correo_verificado")
   /// Versión del aviso de privacidad aceptada (vacío = nunca aceptó).
-  aceptoAvisoVersion String                   @default("") @map("acepto_aviso_version")
+  aceptoAvisoVersion            String                        @default("") @map("acepto_aviso_version")
   /// Momento de la aceptación, para poder demostrarla.
-  aceptoAvisoEn   DateTime?                   @map("acepto_aviso_en")
-  recuperaciones  RecuperacionPassword[]
-  verificacionesCorreo VerificacionCorreo[]
-  enviosCorreo   EnvioCorreo[]
-  creadoEn        DateTime                    @default(now()) @map("creado_en")
-  actualizadoEn   DateTime                    @default(now()) @updatedAt @map("actualizado_en")
-  agente          AgenteInternacionalizacion?
-  docente         Docente?
-  miembroCace     MiembroCace?
-  secretariaInstitucion SecretariaInstitucion?
-  invitacionesSecretariaCreadas InvitacionSecretaria[] @relation("InvitacionSecretariaCreada")
-  invitacionesAgenteCreadas InvitacionAgente[] @relation("InvitacionAgenteCreada")
-  listasAlumnos   ListaAlumnos[]
-  institucionesRevisadas Institucion[] @relation("InstitucionRevisada")
-  agentesConfirmados    AgenteInternacionalizacion[] @relation("AgenteConfirmado")
-  configuracionCace     ConfiguracionCace[] @relation("ConfiguracionCace")
-  plantillasCertificado PlantillaCertificado[] @relation("PlantillaCertificado")
-  certificadosEmitidos  Certificado[] @relation("CertificadoEmitido")
+  aceptoAvisoEn                 DateTime?                     @map("acepto_aviso_en")
+  /// Secreto TOTP (base32) mientras se configura o ya está confirmado.
+  /// Solo lo usan las cuentas de la CACE que activan el segundo factor.
+  totpSecret                    String?                       @map("totp_secret")
+  /// El segundo factor está confirmado y se exige al iniciar sesión.
+  totpHabilitado                Boolean                       @default(false) @map("totp_habilitado")
+  /// Último paso TOTP aceptado, para no repetir el mismo código.
+  totpUltimoPaso                Int                           @default(0) @map("totp_ultimo_paso")
+  /// Códigos de recuperación hasheados y su estado, en JSON.
+  totpCodigosRecuperacion       String                        @default("") @map("totp_codigos_recuperacion")
+  /// Reto temporal del login TOTP: hash y caducidad para que sea de un solo uso.
+  totpChallengeHash             String                        @default("") @map("totp_challenge_hash")
+  totpChallengeExpira           DateTime?                     @map("totp_challenge_expira")
+  /// Cuándo se confirmó el segundo factor.
+  totpConfirmadoEn              DateTime?                     @map("totp_confirmado_en")
+  recuperaciones                RecuperacionPassword[]
+  verificacionesCorreo          VerificacionCorreo[]
+  enviosCorreo                  EnvioCorreo[]
+  creadoEn                      DateTime                      @default(now()) @map("creado_en")
+  actualizadoEn                 DateTime                      @default(now()) @updatedAt @map("actualizado_en")
+  agente                        AgenteInternacionalizacion?
+  docente                       Docente?
+  miembroCace                   MiembroCace?
+  secretariaInstitucion         SecretariaInstitucion?
+  invitacionesSecretariaCreadas InvitacionSecretaria[]        @relation("InvitacionSecretariaCreada")
+  invitacionesAgenteCreadas     InvitacionAgente[]            @relation("InvitacionAgenteCreada")
+  listasAlumnos                 ListaAlumnos[]
+  institucionesRevisadas        Institucion[]                 @relation("InstitucionRevisada")
+  agentesConfirmados            AgenteInternacionalizacion[]  @relation("AgenteConfirmado")
+  configuracionCace             ConfiguracionCace[]           @relation("ConfiguracionCace")
+  plantillasCertificado         PlantillaCertificado[]        @relation("PlantillaCertificado")
+  certificadosEmitidos          Certificado[]                 @relation("CertificadoEmitido")
   solicitudesBorradoSolicitadas SolicitudBorradoInstitucion[] @relation("SolicitudBorradoSolicitante")
   solicitudesBorradoResueltas   SolicitudBorradoInstitucion[] @relation("SolicitudBorradoResolutor")
-  cambiosPresidenciaSaliente    CambioPresidencia[] @relation("CambioPresidenciaSaliente")
-  cambiosPresidenciaEntrante    CambioPresidencia[] @relation("CambioPresidenciaEntrante")
+  cambiosPresidenciaSaliente    CambioPresidencia[]           @relation("CambioPresidenciaSaliente")
+  cambiosPresidenciaEntrante    CambioPresidencia[]           @relation("CambioPresidenciaEntrante")
 
   @@map("USUARIO")
 }
@@ -124,15 +138,15 @@ model Invitacion {
 /// Invitación de una secretaría de institución. La crea el agente principal y
 /// puede entregarse por enlace copiable, sin correo.
 model InvitacionSecretaria {
-  id                  Int         @id @default(autoincrement())
-  institucionId       Int         @map("institucion_id")
-  creadaPorUsuarioId  Int         @map("creada_por_usuario_id")
-  token               String      @unique
-  expiracion          DateTime
-  usadaEn             DateTime?   @map("usada_en")
-  creadoEn            DateTime    @default(now()) @map("creado_en")
-  institucion         Institucion @relation(fields: [institucionId], references: [id])
-  creadaPor           Usuario     @relation("InvitacionSecretariaCreada", fields: [creadaPorUsuarioId], references: [id])
+  id                 Int         @id @default(autoincrement())
+  institucionId      Int         @map("institucion_id")
+  creadaPorUsuarioId Int         @map("creada_por_usuario_id")
+  token              String      @unique
+  expiracion         DateTime
+  usadaEn            DateTime?   @map("usada_en")
+  creadoEn           DateTime    @default(now()) @map("creado_en")
+  institucion        Institucion @relation(fields: [institucionId], references: [id])
+  creadaPor          Usuario     @relation("InvitacionSecretariaCreada", fields: [creadaPorUsuarioId], references: [id])
 
   @@index([institucionId])
   @@map("INVITACION_SECRETARIA")
@@ -142,13 +156,13 @@ model InvitacionSecretaria {
 /// entrega como enlace copiable; el agente completa después los datos de su
 /// institución.
 model InvitacionAgente {
-  id                 Int      @id @default(autoincrement())
-  creadaPorUsuarioId Int      @map("creada_por_usuario_id")
-  token              String   @unique
+  id                 Int       @id @default(autoincrement())
+  creadaPorUsuarioId Int       @map("creada_por_usuario_id")
+  token              String    @unique
   expiracion         DateTime
   usadaEn            DateTime? @map("usada_en")
-  creadoEn           DateTime @default(now()) @map("creado_en")
-  creadaPor          Usuario  @relation("InvitacionAgenteCreada", fields: [creadaPorUsuarioId], references: [id])
+  creadoEn           DateTime  @default(now()) @map("creado_en")
+  creadaPor          Usuario   @relation("InvitacionAgenteCreada", fields: [creadaPorUsuarioId], references: [id])
 
   @@index([creadaPorUsuarioId])
   @@map("INVITACION_AGENTE")
@@ -169,25 +183,25 @@ model SecretariaInstitucion {
 }
 
 model AgenteInternacionalizacion {
-  id            Int                 @id @default(autoincrement())
-  usuarioId     Int                 @unique @map("usuario_id")
-  institucionId Int                 @map("institucion_id")
-  cargo         String
+  id                     Int                 @id @default(autoincrement())
+  usuarioId              Int                 @unique @map("usuario_id")
+  institucionId          Int                 @map("institucion_id")
+  cargo                  String
   /// El primer agente de la institución es principal; los invitados después
   /// pueden ser asistentes con menos permisos administrativos.
-  esPrincipal   Boolean             @default(true) @map("es_principal")
+  esPrincipal            Boolean             @default(true) @map("es_principal")
   /// Cuando un agente se une a una institucion **ya aprobada**, su alta la
   /// confirma el agente de esa institucion (no el presidente): hasta entonces
   /// queda en null. El agente fundador nace confirmado y de la institucion se
   /// encarga el presidente.
-  confirmadoEn            DateTime? @map("confirmado_en")
-  confirmadoPorUsuarioId  Int?      @map("confirmado_por_usuario_id")
-  confirmadoPor           Usuario?  @relation("AgenteConfirmado", fields: [confirmadoPorUsuarioId], references: [id])
-  institucion   Institucion         @relation(fields: [institucionId], references: [id])
-  usuario       Usuario             @relation(fields: [usuarioId], references: [id])
-  creadoEn      DateTime            @default(now()) @map("creado_en")
-  actualizadoEn DateTime            @default(now()) @updatedAt @map("actualizado_en")
-  revisiones    RevisionSolicitud[]
+  confirmadoEn           DateTime?           @map("confirmado_en")
+  confirmadoPorUsuarioId Int?                @map("confirmado_por_usuario_id")
+  confirmadoPor          Usuario?            @relation("AgenteConfirmado", fields: [confirmadoPorUsuarioId], references: [id])
+  institucion            Institucion         @relation(fields: [institucionId], references: [id])
+  usuario                Usuario             @relation(fields: [usuarioId], references: [id])
+  creadoEn               DateTime            @default(now()) @map("creado_en")
+  actualizadoEn          DateTime            @default(now()) @updatedAt @map("actualizado_en")
+  revisiones             RevisionSolicitud[]
 
   @@index([institucionId])
   @@map("AGENTE_INTERNACIONALIZACION")
@@ -218,8 +232,8 @@ model DocenteInstitucion {
   docente        Docente             @relation(fields: [docenteId], references: [id])
   institucion    Institucion         @relation(fields: [institucionId], references: [id])
 
-  @@index([institucionId])
   @@unique([docenteId, institucionId], map: "docente_institucion_unico")
+  @@index([institucionId])
   @@map("DOCENTE_INSTITUCION")
 }
 
@@ -237,8 +251,8 @@ model Materia {
   institucion        Institucion            @relation(fields: [institucionId], references: [id])
   solicitudesDestino SolicitudClaseEspejo[]
 
-  @@index([institucionId])
   @@unique([institucionId, clave], map: "materia_institucion_clave_unica")
+  @@index([institucionId])
   @@map("MATERIA")
 }
 
@@ -255,9 +269,9 @@ model AsignacionDocente {
   solicitudesOrigen    SolicitudClaseEspejo[] @relation("SolicitudOrigen")
   solicitudesDestino   SolicitudClaseEspejo[] @relation("SolicitudDestino")
 
+  @@unique([docenteInstitucionId, materiaId, periodoEscolar], map: "asignacion_docente_periodo_unica")
   @@index([docenteInstitucionId])
   @@index([materiaId])
-  @@unique([docenteInstitucionId, materiaId, periodoEscolar], map: "asignacion_docente_periodo_unica")
   @@map("ASIGNACION_DOCENTE")
 }
 
@@ -510,21 +524,21 @@ model Evaluacion {
 /// Lista de alumnos de una clase espejo, una por institución participante.
 /// El docente sube la de su institución; con ella se emiten los certificados.
 model ListaAlumnos {
-  id                 Int                 @id @default(autoincrement())
-  proyectoId         Int                 @map("proyecto_id")
-  institucionId      Int                 @map("institucion_id")
-  subidaPorUsuarioId Int                 @map("subida_por_usuario_id")
+  id                    Int                 @id @default(autoincrement())
+  proyectoId            Int                 @map("proyecto_id")
+  institucionId         Int                 @map("institucion_id")
+  subidaPorUsuarioId    Int                 @map("subida_por_usuario_id")
   /// De dónde salió la lista: EXCEL, CSV o PEGADO.
-  origen             String
+  origen                String
   /// Declaración de que se tiene base legal o consentimiento de los alumnos.
-  consentimientoVersion String          @default("") @map("consentimiento_version")
-  consentimientoEn   DateTime?           @map("consentimiento_en")
-  creadoEn           DateTime            @default(now()) @map("creado_en")
-  actualizadoEn      DateTime            @default(now()) @updatedAt @map("actualizado_en")
-  alumnos            Alumno[]
-  proyecto           ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
-  institucion        Institucion         @relation(fields: [institucionId], references: [id])
-  subidaPor          Usuario             @relation(fields: [subidaPorUsuarioId], references: [id])
+  consentimientoVersion String              @default("") @map("consentimiento_version")
+  consentimientoEn      DateTime?           @map("consentimiento_en")
+  creadoEn              DateTime            @default(now()) @map("creado_en")
+  actualizadoEn         DateTime            @default(now()) @updatedAt @map("actualizado_en")
+  alumnos               Alumno[]
+  proyecto              ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  institucion           Institucion         @relation(fields: [institucionId], references: [id])
+  subidaPor             Usuario             @relation(fields: [subidaPorUsuarioId], references: [id])
 
   @@unique([proyectoId, institucionId])
   @@index([subidaPorUsuarioId])
@@ -534,18 +548,18 @@ model ListaAlumnos {
 /// Un alumno de la lista. Solo el nombre es obligatorio: la matrícula sirve
 /// para distinguir homónimos y el correo para enviarle su certificado.
 model Alumno {
-  id            Int         @id @default(autoincrement())
-  listaId       Int         @map("lista_id")
+  id            Int           @id @default(autoincrement())
+  listaId       Int           @map("lista_id")
   nombre        String
-  matricula     String      @default("")
-  correo        String      @default("")
+  matricula     String        @default("")
+  correo        String        @default("")
   /// Posición en la lista, para que el orden sea el que subió el docente.
   orden         Int
   /// Permite dejar a alguien fuera sin borrarlo de la lista.
-  incluido      Boolean     @default(true)
-  creadoEn      DateTime    @default(now()) @map("creado_en")
-  actualizadoEn DateTime    @default(now()) @updatedAt @map("actualizado_en")
-  lista         ListaAlumnos @relation(fields: [listaId], references: [id], onDelete: Cascade)
+  incluido      Boolean       @default(true)
+  creadoEn      DateTime      @default(now()) @map("creado_en")
+  actualizadoEn DateTime      @default(now()) @updatedAt @map("actualizado_en")
+  lista         ListaAlumnos  @relation(fields: [listaId], references: [id], onDelete: Cascade)
   certificados  Certificado[]
 
   @@index([listaId])
@@ -605,26 +619,26 @@ model PaisComunidad {
 
 /// Premios y reconocimientos de la CACE, que el presidente publica.
 model Premio {
-  tipo          String       @default("RECONOCIMIENTO")
-  id            Int          @id @default(autoincrement())
-  titulo        String
-  descripcion   String       @default("")
-  anio          Int          @map("anio")
-  otorgadoA     String       @map("otorgado_a")
-  fuenteNombre  String       @default("") @map("fuente_nombre")
-  fuenteUrl     String?      @map("fuente_url")
-  institucionId Int?         @map("institucion_id")
-  imagenUrl     String?      @map("imagen_url")
+  tipo              String       @default("RECONOCIMIENTO")
+  id                Int          @id @default(autoincrement())
+  titulo            String
+  descripcion       String       @default("")
+  anio              Int          @map("anio")
+  otorgadoA         String       @map("otorgado_a")
+  fuenteNombre      String       @default("") @map("fuente_nombre")
+  fuenteUrl         String?      @map("fuente_url")
+  institucionId     Int?         @map("institucion_id")
+  imagenUrl         String?      @map("imagen_url")
   /// El certificado del premio: es el documento que se exhibe y se descarga,
   /// también puede acreditarse mediante la fuente oficial registrada.
   certificadoUrl    String?      @map("certificado_url")
   /// Nombre del archivo del certificado, para ofrecerlo al descargarlo.
   certificadoNombre String       @default("") @map("certificado_nombre")
-  orden         Int          @default(0)
-  publicado     Boolean      @default(false)
-  creadoEn      DateTime     @default(now()) @map("creado_en")
-  actualizadoEn DateTime     @default(now()) @updatedAt @map("actualizado_en")
-  institucion   Institucion? @relation(fields: [institucionId], references: [id])
+  orden             Int          @default(0)
+  publicado         Boolean      @default(false)
+  creadoEn          DateTime     @default(now()) @map("creado_en")
+  actualizadoEn     DateTime     @default(now()) @updatedAt @map("actualizado_en")
+  institucion       Institucion? @relation(fields: [institucionId], references: [id])
 
   @@index([institucionId])
   @@index([publicado])
@@ -634,22 +648,22 @@ model Premio {
 /// Plantilla del certificado, **versionada**: al cambiarla se crea una version
 /// nueva, para que los certificados ya emitidos no cambien nunca.
 model PlantillaCertificado {
-  id                 Int      @id @default(autoincrement())
-  version            Int      @default(1)
-  activa             Boolean  @default(false)
-  fondoUrl           String?  @map("fondo_url")
-  anchoPx            Int      @default(2480) @map("ancho_px")
-  altoPx             Int      @default(1748) @map("alto_px")
+  id                 Int           @id @default(autoincrement())
+  version            Int           @default(1)
+  activa             Boolean       @default(false)
+  fondoUrl           String?       @map("fondo_url")
+  anchoPx            Int           @default(2480) @map("ancho_px")
+  altoPx             Int           @default(1748) @map("alto_px")
   /// Posicion y estilo de cada dato del certificado (JSON).
   campos             Json
   /// Textos legales del certificado (JSON).
-  textosLegales      Json     @map("textos_legales")
+  textosLegales      Json          @map("textos_legales")
   /// Nombre de quien firma, que es el presidente de la CACE.
-  firmaNombre        String   @default("") @map("firma_nombre")
-  creadaPorUsuarioId Int?     @map("creada_por_usuario_id")
-  creadoEn           DateTime @default(now()) @map("creado_en")
-  actualizadoEn      DateTime @default(now()) @updatedAt @map("actualizado_en")
-  creadaPor          Usuario? @relation("PlantillaCertificado", fields: [creadaPorUsuarioId], references: [id])
+  firmaNombre        String        @default("") @map("firma_nombre")
+  creadaPorUsuarioId Int?          @map("creada_por_usuario_id")
+  creadoEn           DateTime      @default(now()) @map("creado_en")
+  actualizadoEn      DateTime      @default(now()) @updatedAt @map("actualizado_en")
+  creadaPor          Usuario?      @relation("PlantillaCertificado", fields: [creadaPorUsuarioId], references: [id])
   certificados       Certificado[]
 
   @@map("PLANTILLA_CERTIFICADO")
@@ -689,19 +703,19 @@ model Certificado {
 /// rechazada. La aprueba el presidente, y el borrado lo ejecuta la aprobacion:
 /// asi queda registrado quien lo autorizo, que es lo que pidio el usuario.
 model SolicitudBorradoInstitucion {
-  id                     Int         @id @default(autoincrement())
-  institucionId          Int?        @map("institucion_id")
-  solicitadaPorUsuarioId Int         @map("solicitada_por_usuario_id")
-  motivo                 String      @default("")
+  id                     Int          @id @default(autoincrement())
+  institucionId          Int?         @map("institucion_id")
+  solicitadaPorUsuarioId Int          @map("solicitada_por_usuario_id")
+  motivo                 String       @default("")
   /// PENDIENTE, APROBADA o RECHAZADA.
-  estado                 String      @default("PENDIENTE")
-  resueltaPorUsuarioId   Int?        @map("resuelta_por_usuario_id")
-  resueltaEn             DateTime?   @map("resuelta_en")
-  creadoEn               DateTime    @default(now()) @map("creado_en")
-  actualizadoEn          DateTime    @default(now()) @updatedAt @map("actualizado_en")
+  estado                 String       @default("PENDIENTE")
+  resueltaPorUsuarioId   Int?         @map("resuelta_por_usuario_id")
+  resueltaEn             DateTime?    @map("resuelta_en")
+  creadoEn               DateTime     @default(now()) @map("creado_en")
+  actualizadoEn          DateTime     @default(now()) @updatedAt @map("actualizado_en")
   institucion            Institucion? @relation(fields: [institucionId], references: [id])
-  solicitadaPor          Usuario     @relation("SolicitudBorradoSolicitante", fields: [solicitadaPorUsuarioId], references: [id])
-  resueltaPor            Usuario?    @relation("SolicitudBorradoResolutor", fields: [resueltaPorUsuarioId], references: [id])
+  solicitadaPor          Usuario      @relation("SolicitudBorradoSolicitante", fields: [solicitadaPorUsuarioId], references: [id])
+  resueltaPor            Usuario?     @relation("SolicitudBorradoResolutor", fields: [resueltaPorUsuarioId], references: [id])
 
   @@index([institucionId])
   @@index([estado])
@@ -727,13 +741,13 @@ model CambioPresidencia {
 /// token, nunca el token en claro: una copia de la base no sirve para
 /// restablecer contraseñas. Cada enlace es de un solo uso y caduca.
 model RecuperacionPassword {
-  id         Int       @id @default(autoincrement())
-  usuarioId  Int       @map("usuario_id")
-  tokenHash  String    @unique @map("token_hash")
-  expira     DateTime
-  usadoEn    DateTime? @map("usado_en")
-  creadoEn   DateTime  @default(now()) @map("creado_en")
-  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  id        Int       @id @default(autoincrement())
+  usuarioId Int       @map("usuario_id")
+  tokenHash String    @unique @map("token_hash")
+  expira    DateTime
+  usadoEn   DateTime? @map("usado_en")
+  creadoEn  DateTime  @default(now()) @map("creado_en")
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId])
   @@map("RECUPERACION_PASSWORD")
@@ -757,6 +771,7 @@ model VerificacionCorreo {
   @@index([correo])
   @@map("VERIFICACION_CORREO")
 }
+
 /// Cola de correo de la Fase 2. Cada fila es un correo pendiente de salir: los
 /// endpoints de envio solo encolan y responden al instante con un `loteId`; el
 /// worker periodico se encarga de mandarlos, reintentar los fallos con espera

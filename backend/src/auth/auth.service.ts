@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -24,6 +25,8 @@ import {
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+import { VerificarTotpDto } from './dto/verificar-totp.dto';
+import { TotpService } from './totp.service';
 import {
   BLOQUEO_MINUTOS,
   INTENTOS_MAXIMOS,
@@ -59,6 +62,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mail: MailService,
+    private readonly totp: TotpService,
   ) {}
 
   /**
@@ -471,11 +475,111 @@ export class AuthService {
       );
     }
 
+    // Si la cuenta CACE activó TOTP, la contraseña correcta todavía no abre
+    // sesión: se entrega un reto corto y el código se pide en un segundo paso.
+    if (usuario.totpHabilitado) {
+      const nonce = randomBytes(32).toString('hex');
+      await this.prisma.usuario.update({
+        where: { id: usuario.id },
+        data: {
+          totpChallengeHash: hashReto(nonce),
+          totpChallengeExpira: new Date(Date.now() + 5 * 60_000),
+        },
+      });
+      const challengeToken = await this.jwtService.signAsync(
+        { sub: usuario.id, tipo: 'totp', nonce },
+        { expiresIn: '5m' },
+      );
+      return {
+        requiereTotp: true as const,
+        challengeToken,
+        mensaje: 'Escribe el código de tu aplicación autenticadora.',
+      };
+    }
+
     const access_token = await this.jwtService.signAsync({
       sub: usuario.id,
       correo: usuario.correo,
     });
 
+    const rol = rolDeVinculos(usuario);
+
+    return {
+      access_token,
+      usuario: this.toUsuarioSeguro(usuario, rol),
+    };
+  }
+
+  /** Completa el login cuando la cuenta tiene TOTP activo. */
+  async verificarTotp(dto: VerificarTotpDto) {
+    let payload: { sub?: number; tipo?: string; nonce?: string };
+    try {
+      payload = await this.jwtService.verifyAsync(dto.challengeToken);
+    } catch {
+      throw new UnauthorizedException(
+        'El reto de segundo factor expiró. Vuelve a iniciar sesión.',
+      );
+    }
+    if (
+      payload.tipo !== 'totp' ||
+      typeof payload.sub !== 'number' ||
+      typeof payload.nonce !== 'string'
+    ) {
+      throw new UnauthorizedException('Reto de segundo factor inválido.');
+    }
+
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: payload.sub },
+      include: {
+        agente: true,
+        docente: { include: { instituciones: true } },
+        secretariaInstitucion: { select: { activo: true } },
+        miembroCace: { select: { cargo: true, activo: true } },
+      },
+      omit: { passwordHash: false },
+    });
+    if (!usuario) {
+      throw new UnauthorizedException('Cuenta no encontrada.');
+    }
+    if (
+      !usuario.totpChallengeHash ||
+      !usuario.totpChallengeExpira ||
+      usuario.totpChallengeExpira < new Date() ||
+      usuario.totpChallengeHash !== hashReto(payload.nonce)
+    ) {
+      throw new UnauthorizedException(
+        'El reto de segundo factor ya fue usado o expiró. Vuelve a iniciar sesión.',
+      );
+    }
+    if (!usuario.activo) {
+      throw new UnauthorizedException(
+        'Tu cuenta está desactivada. Contacta a tu institución.',
+      );
+    }
+    if (!usuario.correoVerificado) {
+      throw new ForbiddenException(
+        'Antes de entrar, confirma tu correo: revisa el enlace que te enviamos.',
+      );
+    }
+    const vinculos = usuario.docente?.instituciones ?? [];
+    if (vinculos.length > 0 && !vinculos.some((v) => v.activo)) {
+      throw new UnauthorizedException(
+        'Tu cuenta de docente está desactivada por tu institución.',
+      );
+    }
+
+    await this.totp.verificarLogin(usuario.id, dto.codigo);
+
+    // El reto es de un solo uso: se quema aunque el JWT siga vigente.
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { totpChallengeHash: '', totpChallengeExpira: null },
+    });
+
+    const access_token = await this.jwtService.signAsync({
+      sub: usuario.id,
+      correo: usuario.correo,
+    });
     const rol = rolDeVinculos(usuario);
 
     return {
@@ -948,4 +1052,8 @@ export class AuthService {
       rol,
     };
   }
+}
+
+function hashReto(nonce: string): string {
+  return createHash('sha256').update(nonce).digest('hex');
 }

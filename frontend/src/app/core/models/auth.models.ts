@@ -29,6 +29,33 @@ export interface LoginResponse {
   usuario: Usuario;
 }
 
+export interface LoginChallenge {
+  requiereTotp: true;
+  challengeToken: string;
+  mensaje: string;
+}
+
+export type LoginRespuesta = LoginResponse | LoginChallenge;
+
+export interface TotpEstado {
+  habilitado: boolean;
+  confirmadoEn: string | null;
+  codigosRestantes: number;
+}
+
+export interface TotpInicio {
+  secreto: string;
+  uri: string;
+  qrDataUrl: string;
+  mensaje: string;
+}
+
+export interface TotpConfirmacion {
+  habilitado: boolean;
+  codigosRecuperacion: string[];
+  mensaje: string;
+}
+
 export interface RegisterDto {
   nombres: string;
   apellidoPaterno: string;
