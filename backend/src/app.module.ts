@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { SeguridadCabecerasMiddleware } from './common/seguridad-cabeceras.middleware';
+import { RequestIdMiddleware } from './common/request-id.middleware';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { AgentesModule } from './agentes/agentes.module';
@@ -43,6 +44,8 @@ import { EnviosModule } from './envios/envios.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(SeguridadCabecerasMiddleware).forRoutes('*');
+    consumer
+      .apply(RequestIdMiddleware, SeguridadCabecerasMiddleware)
+      .forRoutes('*');
   }
 }

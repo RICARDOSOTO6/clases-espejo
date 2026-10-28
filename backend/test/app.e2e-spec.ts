@@ -48,6 +48,14 @@ describe('Humo (e2e)', () => {
     );
   });
 
+  it('las respuestas llevan un identificador de petición', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .get('/health')
+      .set('x-request-id', 'prueba-123')
+      .expect(200);
+    expect(respuesta.headers['x-request-id']).toBe('prueba-123');
+  });
+
   it('GET /cace/publico responde sin sesión', async () => {
     await request(app.getHttpServer()).get('/cace/publico').expect(200);
   });

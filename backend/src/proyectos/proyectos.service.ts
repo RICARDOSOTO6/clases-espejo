@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { unlinkSync } from 'node:fs';
 import { CalendarioIcsService } from './calendario-ics.service';
 import { contenidoCalendarioClase } from '../mail/contenido-correo';
 import { CorreoEncolado, EnviosCorreoService } from '../envios/envios.service';
@@ -21,6 +22,7 @@ import { CreateActividadDto } from './dto/create-actividad.dto';
 import { UpdateActividadDto } from './dto/update-actividad.dto';
 import { CreateEvidenciaDto } from './dto/create-evidencia.dto';
 import { validarEnlaceEvidencia } from '../common/enlaces-evidencia';
+import { validarFirmaEvidencia } from '../common/evidencias';
 import { SaveReporteClaseDto } from './dto/save-reporte-clase.dto';
 import { ConfirmarReporteClaseDto } from './dto/confirmar-reporte-clase.dto';
 import { CreateEvaluacionDto } from './dto/create-evaluacion.dto';
@@ -692,6 +694,24 @@ export class ProyectosService {
       throw new BadRequestException(
         'Adjunta un archivo o pega un enlace de evidencia.',
       );
+    }
+
+    if (archivo) {
+      try {
+        validarFirmaEvidencia(archivo.path, archivo.originalname);
+      } catch (error) {
+        // Multer ya escribió el archivo; si no es lo que dice ser, se borra.
+        if (archivo.path) {
+          try {
+            unlinkSync(archivo.path);
+          } catch {
+            // El archivo pudo no haberse guardado; el error original manda.
+          }
+        }
+        throw new BadRequestException(
+          error instanceof Error ? error.message : 'El archivo no es válido.',
+        );
+      }
     }
 
     let enlaceValidado: string | null = null;
