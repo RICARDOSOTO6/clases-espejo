@@ -81,7 +81,7 @@ debe validarse en el servidor.
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP y validación de evidencias.
 - **41 pruebas unitarias**.
-- **14 pruebas de frontend** en Angular.
+- **29 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
