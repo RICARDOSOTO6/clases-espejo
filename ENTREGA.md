@@ -90,8 +90,8 @@ debe validarse en el servidor.
   evidencias, certificados y evaluaciones.
 - Segundo factor TOTP opcional para presidencia y secretaría de la CACE, con
   códigos de recuperación de un solo uso.
-- Identificador `X-Request-Id` en las respuestas y script de comprobación de
-  salud.
+- Identificador `X-Request-Id` en las respuestas, alertas por webhook y script
+  de comprobación de salud.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 

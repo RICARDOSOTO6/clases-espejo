@@ -45,7 +45,7 @@ cerradas** y no hay que reimplementarlas:
 | A3 — entropía del JWT | ✅ Hecho | Mínimo 32 bytes y prueba unitaria |
 | A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP y prueba e2e |
 | A5 — respaldo automático | 🟡 Parcial | Scripts y restauración probada; falta instalar el temporizador en el servidor |
-| A6 — monitorización | ✅ Hecho | `X-Request-Id`, logs de 5xx y `scripts/verificar-salud.js` |
+| A6 — monitorización | ✅ Hecho | `X-Request-Id`, logs de 5xx, `scripts/verificar-salud.js` y alertas por webhook con recuperación |
 | A7 — carga mínima | ⏸️ Opcional | Solo si sobra tiempo; no es requisito del piloto |
 | A12 — TOTP CACE | ✅ Hecho | Alta, login en dos pasos, recuperación y desactivación |
 | B1 — reestructuración a siete capítulos | ❌ Pendiente | Hacerla **después** del piloto, cuando resultados estén congelados |

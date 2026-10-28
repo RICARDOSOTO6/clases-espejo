@@ -853,6 +853,26 @@ El respaldo se ejecuta a las 02:15 y la salud cada cinco minutos. Comprueba que
 el usuario `clasesespejo` puede escribir en `/var/backups/clasesespejo` y que
 `APP_URL` apunta a la URL correcta.
 
+Para que la comprobación de salud **avise de verdad**, añade al `.env`:
+
+```env
+ALERTA_WEBHOOK_URL="https://hooks.slack.com/services/..."
+# Opcional, si tu webhook pide un Bearer:
+ALERTA_WEBHOOK_TOKEN=""
+ALERTA_COOLDOWN_MIN="30"
+```
+
+Sirve Slack, Discord, Telegram o un endpoint propio. El script envía una alerta
+cuando `/health` falla y otra cuando vuelve a responder; el cooldown evita
+repetir el aviso cada cinco minutos. Después de cambiar `.env`:
+
+```bash
+sudo systemctl restart clasesespejo-salud.timer
+```
+
+Si no configuras `ALERTA_WEBHOOK_URL`, el fallo solo queda en el log de systemd;
+no hay aviso externo.
+
 ---
 
 ## 13. Poner Nginx delante
