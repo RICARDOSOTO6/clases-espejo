@@ -1,7 +1,8 @@
 # Sprint: lo que falta tras la evaluación
 
 > **Verificado contra el repositorio el 28 de octubre de 2026** — 163 confirmaciones, 156 rutas,
-> 30 controladores, 17 módulos, 38 tablas, 35 migraciones y 186 casos de prueba.
+> 30 controladores, 17 módulos, 38 tablas, 35 migraciones y 213 casos de prueba
+> (158 e2e, 41 unitarias y 14 de frontend).
 > Cada partida lleva **criterio de aceptación**: si no se puede comprobar, no entra en el sprint.
 
 > **Actualización del 28-oct:** este documento recoge también los pendientes que quedaron
@@ -39,13 +40,14 @@ cerradas** y no hay que reimplementarlas:
 
 | Partida | Estado al 28-oct | Qué falta |
 | --- | --- | --- |
-| A1 — pruebas de frontend | ❌ Pendiente | 10–20 casos de comportamiento |
-| A2 — aislamiento institucional | ❌ Pendiente | Suite e2e de recursos con id manipulado |
-| A3 — entropía del JWT | ❌ Pendiente | Validar 32 bytes, no solo 16; documentar generación |
-| A4 — contenido real de evidencias | ❌ Pendiente | Validar firma de PDF/Office/ZIP, no solo imágenes/extensión |
-| A5 — respaldo automático | 🟡 Parcial | Ya hay respaldo y restauración manual (L6); falta tarea programada y prueba periódica |
-| A6 — monitorización | ❌ Pendiente | Chequeo externo de `/health` y trazabilidad de 5xx |
+| A1 — pruebas de frontend | ✅ Hecho | 14 casos en `auth.service.spec`, `login.component.spec` y `seguridad-totp.component.spec` |
+| A2 — aislamiento institucional | ✅ Hecho | Suite e2e `aislamiento.e2e-spec.ts` con institución externa |
+| A3 — entropía del JWT | ✅ Hecho | Mínimo 32 bytes y prueba unitaria |
+| A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP y prueba e2e |
+| A5 — respaldo automático | 🟡 Parcial | Scripts y restauración probada; falta instalar el temporizador en el servidor |
+| A6 — monitorización | ✅ Hecho | `X-Request-Id`, logs de 5xx y `scripts/verificar-salud.js` |
 | A7 — carga mínima | ⏸️ Opcional | Solo si sobra tiempo; no es requisito del piloto |
+| A12 — TOTP CACE | ✅ Hecho | Alta, login en dos pasos, recuperación y desactivación |
 | B1 — reestructuración a siete capítulos | ❌ Pendiente | Hacerla **después** del piloto, cuando resultados estén congelados |
 | B2 — matriz de trazabilidad | ❌ Pendiente | 37 requerimientos → módulo → prueba → evidencia |
 | B3 — matriz de auditorías | ❌ Pendiente | Cinco rondas + análisis integral + declaración de herramientas |

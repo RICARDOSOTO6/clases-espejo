@@ -1,6 +1,6 @@
 # Entrega funcional — Clases Conjuntas
 
-Versión de entrega: **2026-10-27**
+Versión de entrega: **2026-10-28**
 
 Este paquete contiene el código fuente, las migraciones y el frontend ya
 compilado. **No contiene** `node_modules`, `.env`, archivos subidos, base de
@@ -77,15 +77,21 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **146 pruebas e2e** contra una base de prueba aislada, incluidas las de
-  secretaría de institución, invitación de agente y panel de desempeño.
-- **39 pruebas unitarias**.
+- **158 pruebas e2e** contra una base de prueba aislada, incluidas las de
+  secretaría de institución, invitación de agente, panel de desempeño,
+  aislamiento institucional, TOTP y validación de evidencias.
+- **41 pruebas unitarias**.
+- **14 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
 - Panel de desempeño inicial por institución (CACE) y por docente (agente), con
   barras, tabla de estados y actividad ya existente: sesiones, reportes,
   evidencias, certificados y evaluaciones.
+- Segundo factor TOTP opcional para presidencia y secretaría de la CACE, con
+  códigos de recuperación de un solo uso.
+- Identificador `X-Request-Id` en las respuestas y script de comprobación de
+  salud.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 
@@ -110,7 +116,8 @@ Las pruebas e2e requieren una base cuyo nombre termine en `_test` o `_ci`.
 - Validar respaldo y restauración en el servidor.
 - Revisar el aviso de privacidad con la CACE.
 - Crear cuentas reales y plantilla DEMO en la base de producción.
-- Si se autoriza: TOTP para presidencia y secretaría.
+- Configurar TOTP en las cuentas reales de presidencia y secretaría y guardar
+  sus códigos de recuperación.
 
 La lista detallada está en `docs/producto/plan-de-fases-pendientes.md` y el
 plan local-first en `docs/producto/plan-de-trabajo-antes-del-servidor.md`.
