@@ -1,7 +1,7 @@
 # Instalación desde cero en Ubuntu Server
 
 **Proyecto:** Clases Conjuntas  
-**Paquete:** `ClasesEspejo-entrega-2026-10-27.zip`  
+**Paquete:** `ClasesEspejo-entrega-2026-10-28.zip`  
 **Guía actualizada:** 27 de octubre de 2026  
 **Sistema objetivo:** Ubuntu Server 24.04 LTS recién instalado  
 **Uso:** ensayo en máquina virtual, antes del piloto
@@ -419,7 +419,7 @@ persistentes: no debe quedar dentro de una carpeta temporal del ZIP.
 En Windows PowerShell, desde la carpeta del proyecto:
 
 ```powershell
-scp .\release\ClasesEspejo-entrega-2026-10-27.zip `
+scp .\release\ClasesEspejo-entrega-2026-10-28.zip `
   USUARIO_UBUNTU@IP_VM:/tmp/
 ```
 
@@ -432,21 +432,21 @@ El archivo `.sha256` que acompaña al ZIP trae el hash esperado. En la VM:
 
 ```bash
 cd /tmp
-sha256sum ClasesEspejo-entrega-2026-10-27.zip
-cat ClasesEspejo-entrega-2026-10-27.zip.sha256
+sha256sum ClasesEspejo-entrega-2026-10-28.zip
+cat ClasesEspejo-entrega-2026-10-28.zip.sha256
 ```
 
 Los dos valores deben coincidir. Si no coinciden, no descomprimas el archivo:
 vuelve a copiarlo.
 
 > El hash final de esta entrega está en
-> `release/ClasesEspejo-entrega-2026-10-27.zip.sha256`. No lo escribas de
+> `release/ClasesEspejo-entrega-2026-10-28.zip.sha256`. No lo escribas de
 > memoria ni lo tomes de un mensaje antiguo: usa el archivo que acompaña al ZIP.
 
 ### 7.3 Descomprimir
 
 ```bash
-sudo unzip /tmp/ClasesEspejo-entrega-2026-10-27.zip -d /opt/clasesespejo
+sudo unzip /tmp/ClasesEspejo-entrega-2026-10-28.zip -d /opt/clasesespejo
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
 ```
 
@@ -831,7 +831,16 @@ No sigas con Nginx hasta que `/health` funcione.
 
 ### 12.6 Respaldos y salud programados
 
-El paquete incluye plantillas de systemd:
+La forma más rápida, después de tener el servicio del backend funcionando:
+
+```bash
+sudo /opt/clasesespejo/backend/scripts/instalar-temporizadores.sh
+```
+
+Ese instalador copia las unidades, crea `/var/backups/clasesespejo`, habilita
+los temporizadores y muestra su estado. Es idempotente.
+
+También puedes hacerlo a mano; el paquete incluye plantillas de systemd:
 
 ```bash
 sudo cp /opt/clasesespejo/backend/scripts/clasesespejo-respaldo.service \
@@ -1751,7 +1760,7 @@ sudo adduser --system --group --home /opt/clasesespejo \
 sudo mkdir -p /var/lib/clasesespejo/uploads
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo /var/lib/clasesespejo
 
-sudo unzip /tmp/ClasesEspejo-entrega-2026-10-27.zip -d /opt/clasesespejo
+sudo unzip /tmp/ClasesEspejo-entrega-2026-10-28.zip -d /opt/clasesespejo
 sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
 sudo -u clasesespejo ln -sfn /var/lib/clasesespejo/uploads \
   /opt/clasesespejo/backend/uploads
