@@ -1,0 +1,11 @@
+[Unit]
+Description=Comprobacion externa de salud de Clases Conjuntas
+After=network.target
+
+[Service]
+Type=oneshot
+User=clasesespejo
+WorkingDirectory=/opt/clasesespejo/backend
+EnvironmentFile=-/opt/clasesespejo/backend/.env
+Environment=APP_URL=http://127.0.0.1:3000
+ExecStart=/usr/bin/node scripts/verificar-salud.js

@@ -829,6 +829,30 @@ sudo journalctl -u clasesespejo -n 150 --no-pager
 
 No sigas con Nginx hasta que `/health` funcione.
 
+### 12.6 Respaldos y salud programados
+
+El paquete incluye plantillas de systemd:
+
+```bash
+sudo cp /opt/clasesespejo/backend/scripts/clasesespejo-respaldo.service \
+  /etc/systemd/system/
+sudo cp /opt/clasesespejo/backend/scripts/clasesespejo-respaldo.timer \
+  /etc/systemd/system/
+sudo cp /opt/clasesespejo/backend/scripts/clasesespejo-salud.service \
+  /etc/systemd/system/
+sudo cp /opt/clasesespejo/backend/scripts/clasesespejo-salud.timer \
+  /etc/systemd/system/
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now clasesespejo-respaldo.timer
+sudo systemctl enable --now clasesespejo-salud.timer
+sudo systemctl list-timers --all | grep clasesespejo
+```
+
+El respaldo se ejecuta a las 02:15 y la salud cada cinco minutos. Comprueba que
+el usuario `clasesespejo` puede escribir en `/var/backups/clasesespejo` y que
+`APP_URL` apunta a la URL correcta.
+
 ---
 
 ## 13. Poner Nginx delante

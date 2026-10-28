@@ -1,0 +1,12 @@
+[Unit]
+Description=Respaldo diario de Clases Conjuntas
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=clasesespejo
+Group=clasesespejo
+WorkingDirectory=/opt/clasesespejo/backend
+EnvironmentFile=/opt/clasesespejo/backend/.env
+ExecStart=/opt/clasesespejo/backend/scripts/respaldo-cron.sh
