@@ -1,8 +1,8 @@
 # Sprint: lo que falta tras la evaluación
 
 > **Verificado contra el repositorio el 28 de octubre de 2026** — 163 confirmaciones, 156 rutas,
-> 30 controladores, 17 módulos, 39 tablas, 36 migraciones y 241 casos de prueba
-> (166 e2e, 41 unitarias y 34 de frontend).
+> 30 controladores, 17 módulos, 39 tablas, 36 migraciones y 242 casos de prueba
+> (167 e2e, 41 unitarias y 34 de frontend).
 > Cada partida lleva **criterio de aceptación**: si no se puede comprobar, no entra en el sprint.
 
 > **Actualización del 28-oct:** este documento recoge también los pendientes que quedaron

@@ -77,7 +77,7 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **166 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **167 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP, participantes y validación de evidencias.
 - **41 pruebas unitarias**.

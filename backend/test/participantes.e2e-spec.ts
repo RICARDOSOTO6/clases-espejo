@@ -33,6 +33,7 @@ describe('Multi-institución y observadores (e2e)', () => {
   let tokenAgenteA = '';
   let tokenAgenteC = '';
   let tokenDocenteC = '';
+  let tokenPresidencia = '';
 
   beforeAll(async () => {
     const e2e: AppE2E = await crearAppE2E();
@@ -183,6 +184,7 @@ describe('Multi-institución y observadores (e2e)', () => {
     tokenAgenteA = await iniciarSesion(app, semilla.correos.agenteA);
     tokenAgenteC = await iniciarSesion(app, correoAgenteC);
     tokenDocenteC = await iniciarSesion(app, correoDocenteC);
+    tokenPresidencia = await iniciarSesion(app, semilla.correos.presidencia);
   });
 
   afterAll(async () => {
@@ -371,6 +373,19 @@ describe('Multi-institución y observadores (e2e)', () => {
 
     expect(emision.body.emitidos).toHaveLength(1);
     expect(emision.body.emitidos[0].folio).toContain('CACE');
+  });
+
+  it('incluye a la tercera institución en las métricas de la CACE', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .get('/cace/desempeno')
+      .set(autenticado(tokenPresidencia))
+      .expect(200);
+
+    const filaC = respuesta.body.instituciones.find(
+      (institucion: { id: number }) => institucion.id === institucionCId,
+    );
+    expect(filaC).toBeTruthy();
+    expect(filaC.proyectos.total).toBeGreaterThanOrEqual(1);
   });
 
   it('después del cierre solo permite observadoras de lectura y sin certificados', async () => {
