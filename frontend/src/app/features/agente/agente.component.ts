@@ -1,18 +1,6 @@
-import {
-  Component,
-  OnDestroy,
-  OnInit,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
@@ -26,40 +14,29 @@ import { MateriasService } from '../../core/services/materias.service';
 import { InstitucionesService } from '../../core/services/instituciones.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { ProyectosService } from '../../core/services/proyectos.service';
+import { ParticipantesService } from '../../core/services/participantes.service';
 import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { Institucion, InviteDocenteDto, AltaPendiente } from '../../core/models/auth.models';
-import {
-  RevisarSolicitudDto,
-  SolicitudEntrante,
-} from '../../core/models/solicitud.models';
+import { RevisarSolicitudDto, SolicitudEntrante } from '../../core/models/solicitud.models';
+import { ParticipacionPendiente } from '../../core/models/proyecto.models';
 import {
   PAISES,
   PERIODOS_ESCOLARES,
   PROGRAMAS_EDUCATIVOS,
   estadoProyectoLabel as etiquetaEstadoProyecto,
 } from '../../core/constants/catalogos';
-import {
-  Asignacion,
-  DocenteInstitucion,
-  Materia,
-} from '../../core/models/materia.models';
+import { Asignacion, DocenteInstitucion, Materia } from '../../core/models/materia.models';
 import { Proyecto } from '../../core/models/proyecto.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { InvitarSecretariaComponent } from './invitar-secretaria.component';
 import { DesempenoComponent } from '../../shared/components/desempeno/desempeno.component';
-import {
-  PendienteUi,
-  UiStateService,
-} from '../../core/services/ui-state.service';
+import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
 import { RecordatoriosService } from '../../core/services/recordatorios.service';
 import { Agenda, Urgencia } from '../../core/models/recordatorio.models';
 import { CalendarioComponent } from '../../shared/components/calendario/calendario.component';
 import { AgendaComponent } from '../../shared/components/agenda/agenda.component';
-import {
-  claseUrgencia,
-  etiquetaUrgencia,
-} from '../../core/utils/urgencia.util';
+import { claseUrgencia, etiquetaUrgencia } from '../../core/utils/urgencia.util';
 import { fechaTexto } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { prepararLogo } from '../../core/utils/imagen.util';
@@ -89,6 +66,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   private readonly institucionesService = inject(InstitucionesService);
   private readonly solicitudesService = inject(SolicitudesService);
   private readonly proyectosService = inject(ProyectosService);
+  private readonly participantesService = inject(ParticipantesService);
   private readonly recordatoriosService = inject(RecordatoriosService);
   /**
    * Identidad de la CACE: de aquí salen las banderas de la comunidad y los
@@ -169,6 +147,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   docentes = signal<DocenteInstitucion[]>([]);
   /** Invitaciones que aún no se han activado (incluidas las caducadas). */
   invitacionesPendientes = signal<InvitacionPendiente[]>([]);
+  participacionesPendientes = signal<ParticipacionPendiente[]>([]);
   reenviandoId = signal<number | null>(null);
   materias = signal<Materia[]>([]);
   asignaciones = signal<Asignacion[]>([]);
@@ -183,9 +162,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   readonly bloqueado = computed(
     () => this.institucionCargada() && this.institucion()?.puedeOperar === false,
   );
-  readonly motivoBloqueo = computed(
-    () => this.institucion()?.motivoBloqueo ?? null,
-  );
+  readonly motivoBloqueo = computed(() => this.institucion()?.motivoBloqueo ?? null);
 
   // --- Logo de la institución ---
   readonly logoSubiendo = signal(false);
@@ -259,10 +236,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   asignarError = signal<string | null>(null);
 
   asignarForm = this.fb.group({
-    docenteInstitucionId: this.fb.control<number | null>(
-      null,
-      Validators.required,
-    ),
+    docenteInstitucionId: this.fb.control<number | null>(null, Validators.required),
     periodoEscolar: this.fb.control<string>('', Validators.required),
   });
 
@@ -356,10 +330,18 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.cargarAsignaciones();
     this.cargarSolicitudes();
     this.cargarProyectos();
+    this.cargarParticipacionesPendientes();
     this.cargarInstitucion();
     // Los premios de la sección «Comunidad». Si fallan, la sección se queda sin
     // esa lista pero las banderas y el resto de la pantalla siguen funcionando.
     this.identidad.cargarPremios().subscribe({ error: () => {} });
+  }
+
+  cargarParticipacionesPendientes(): void {
+    this.participantesService.pendientes().subscribe({
+      next: (pendientes) => this.participacionesPendientes.set(pendientes),
+      error: () => this.participacionesPendientes.set([]),
+    });
   }
 
   ngOnDestroy(): void {
@@ -395,9 +377,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   /** Docentes a los que todavía no se les asignó ninguna materia. */
   private docentesSinMateria(): number {
-    const conMateria = new Set(
-      this.asignaciones().map((a) => a.docenteInstitucion.id),
-    );
+    const conMateria = new Set(this.asignaciones().map((a) => a.docenteInstitucion.id));
     return this.docentes().filter((d) => !conMateria.has(d.id)).length;
   }
 
@@ -435,9 +415,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
     if (this.institucionCargada() && this.bloqueado()) {
       avisos.push({
         titulo: 'Tu institución aún no puede operar',
-        detalle:
-          this.motivoBloqueo() ??
-          'Completa los datos de tu institución para poder operar.',
+        detalle: this.motivoBloqueo() ?? 'Completa los datos de tu institución para poder operar.',
         ancla: 'institucion',
         tono: 'error',
       });
@@ -453,8 +431,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       const cuantas = this.altasPendientes().length;
       avisos.push({
         titulo: `${cuantas} alta(s) esperan tu confirmación`,
-        detalle:
-          'Alguien se registró eligiendo tu institución: confírmalo o recházalo.',
+        detalle: 'Alguien se registró eligiendo tu institución: confírmalo o recházalo.',
         ancla: 'confirmaciones',
         tono: 'aviso',
       });
@@ -536,17 +513,12 @@ export class AgenteComponent implements OnInit, OnDestroy {
         this.inviteError.set(null);
         this.inviteLink.set(res.enlace);
         this.inviteCopiado.set(false);
-        this.inviteSuccess.set(
-          [res.mensaje, res.avisoCorreo].filter(Boolean).join(' '),
-        );
+        this.inviteSuccess.set([res.mensaje, res.avisoCorreo].filter(Boolean).join(' '));
         this.cargarInvitaciones();
       },
       error: (err: HttpErrorResponse) => {
         this.reenviandoId.set(null);
-        this.avisar(
-          'error',
-          extraerMensajeError(err, 'No se pudo reenviar la invitación'),
-        );
+        this.avisar('error', extraerMensajeError(err, 'No se pudo reenviar la invitación'));
       },
     });
   }
@@ -703,9 +675,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.institucionLoading.set(false);
-          this.institucionError.set(
-            extraerMensajeError(err, 'Error al guardar la institución'),
-          );
+          this.institucionError.set(extraerMensajeError(err, 'Error al guardar la institución'));
         },
       });
   }
@@ -729,9 +699,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       preparado = await prepararLogo(archivo);
     } catch {
       this.logoSubiendo.set(false);
-      this.logoError.set(
-        'No se pudo leer la imagen: el logo debe ser PNG, JPG o WEBP.',
-      );
+      this.logoError.set('No se pudo leer la imagen: el logo debe ser PNG, JPG o WEBP.');
       return;
     }
 
@@ -743,9 +711,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.logoSubiendo.set(false);
-        this.logoError.set(
-          extraerMensajeError(err, 'No se pudo subir el logo'),
-        );
+        this.logoError.set(extraerMensajeError(err, 'No se pudo subir el logo'));
       },
     });
   }
@@ -763,9 +729,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.logoSubiendo.set(false);
-        this.logoError.set(
-          extraerMensajeError(err, 'No se pudo quitar el logo'),
-        );
+        this.logoError.set(extraerMensajeError(err, 'No se pudo quitar el logo'));
       },
     });
   }
@@ -793,9 +757,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.altasPendientes.set([]);
         this.cargandoAltas.set(false);
-        this.errorAltas.set(
-          extraerMensajeError(err, 'No se pudieron cargar las altas pendientes'),
-        );
+        this.errorAltas.set(extraerMensajeError(err, 'No se pudieron cargar las altas pendientes'));
         this.publicarEnLayout();
       },
     });
@@ -814,9 +776,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.altaEnProceso.set(null);
-        this.errorAltas.set(
-          extraerMensajeError(err, 'No se pudo confirmar el alta'),
-        );
+        this.errorAltas.set(extraerMensajeError(err, 'No se pudo confirmar el alta'));
       },
     });
   }
@@ -850,9 +810,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.altaEnProceso.set(null);
-        this.errorAltas.set(
-          extraerMensajeError(err, 'No se pudo rechazar el alta'),
-        );
+        this.errorAltas.set(extraerMensajeError(err, 'No se pudo rechazar el alta'));
       },
     });
   }
@@ -876,10 +834,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   /** La institución del agente frente a la solicitud. */
   esInstitucionOrigen(s: SolicitudEntrante): boolean {
-    return (
-      s.asignacionOrigen.docenteInstitucion.institucion.id ===
-      this.institucion()?.id
-    );
+    return s.asignacionOrigen.docenteInstitucion.institucion.id === this.institucion()?.id;
   }
 
   esInstitucionDestino(s: SolicitudEntrante): boolean {
@@ -905,22 +860,17 @@ export class AgenteComponent implements OnInit, OnDestroy {
   }
 
   etapaSolicitudARevisar(): 'ORIGEN' | 'DESTINO' | null {
-    return this.solicitudARevisar
-      ? this.etapaRevision(this.solicitudARevisar)
-      : null;
+    return this.solicitudARevisar ? this.etapaRevision(this.solicitudARevisar) : null;
   }
 
   pendientesEntrantes(): number {
-    return this.solicitudesEntrantes().filter((s) => this.puedeRevisar(s))
-      .length;
+    return this.solicitudesEntrantes().filter((s) => this.puedeRevisar(s)).length;
   }
 
   // --- Agrupación de solicitudes y proyectos por estado ---
   solicitudesPendientes(): SolicitudEntrante[] {
     return this.solicitudesEntrantes().filter(
-      (s) =>
-        ['PENDIENTE', 'APROBADA_POR_ORIGEN'].includes(s.estado) &&
-        this.coincideSolicitud(s),
+      (s) => ['PENDIENTE', 'APROBADA_POR_ORIGEN'].includes(s.estado) && this.coincideSolicitud(s),
     );
   }
 
@@ -932,30 +882,22 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   solicitudesRechazadas(): SolicitudEntrante[] {
     return this.solicitudesEntrantes().filter(
-      (s) =>
-        (s.estado === 'RECHAZADA' || s.estado === 'CADUCADA') &&
-        this.coincideSolicitud(s),
+      (s) => (s.estado === 'RECHAZADA' || s.estado === 'CADUCADA') && this.coincideSolicitud(s),
     );
   }
 
   proyectosActivos(): Proyecto[] {
     return this.proyectos().filter(
-      (p) =>
-        ['EN_PLANIFICACION', 'EN_CURSO'].includes(p.estado) &&
-        this.coincideProyecto(p),
+      (p) => ['EN_PLANIFICACION', 'EN_CURSO'].includes(p.estado) && this.coincideProyecto(p),
     );
   }
 
   proyectosFinalizados(): Proyecto[] {
-    return this.proyectos().filter(
-      (p) => p.estado === 'FINALIZADO' && this.coincideProyecto(p),
-    );
+    return this.proyectos().filter((p) => p.estado === 'FINALIZADO' && this.coincideProyecto(p));
   }
 
   proyectosCancelados(): Proyecto[] {
-    return this.proyectos().filter(
-      (p) => p.estado === 'CANCELADO' && this.coincideProyecto(p),
-    );
+    return this.proyectos().filter((p) => p.estado === 'CANCELADO' && this.coincideProyecto(p));
   }
 
   onPaisChange(): void {
@@ -1010,9 +952,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
     navigator.clipboard
       .writeText(enlace)
       .then(() => this.inviteCopiado.set(true))
-      .catch(() =>
-        this.inviteError.set('Selecciona el enlace y cópialo manualmente.'),
-      );
+      .catch(() => this.inviteError.set('Selecciona el enlace y cópialo manualmente.'));
   }
 
   submitInvite(): void {
@@ -1024,26 +964,20 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.inviteSuccess.set(null);
     this.inviteCopiado.set(false);
 
-    this.agentes
-      .invitarDocente(this.inviteForm.value as InviteDocenteDto)
-      .subscribe({
-        next: (res) => {
-          this.inviteLoading.set(false);
-          this.inviteLink.set(res.enlace);
-          this.inviteSuccess.set(
-            [res.mensaje, res.avisoCorreo].filter(Boolean).join(' '),
-          );
-          this.inviteForm.reset();
-          this.cargarDocentes();
-          this.cargarInvitaciones();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.inviteLoading.set(false);
-          this.inviteError.set(
-            extraerMensajeError(err, 'Error al invitar docente'),
-          );
-        },
-      });
+    this.agentes.invitarDocente(this.inviteForm.value as InviteDocenteDto).subscribe({
+      next: (res) => {
+        this.inviteLoading.set(false);
+        this.inviteLink.set(res.enlace);
+        this.inviteSuccess.set([res.mensaje, res.avisoCorreo].filter(Boolean).join(' '));
+        this.inviteForm.reset();
+        this.cargarDocentes();
+        this.cargarInvitaciones();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.inviteLoading.set(false);
+        this.inviteError.set(extraerMensajeError(err, 'Error al invitar docente'));
+      },
+    });
   }
 
   // --- Estado y eliminación de docentes ---
@@ -1051,10 +985,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
     this.materiasService.cambiarEstadoDocente(d.id, !d.activo).subscribe({
       next: () => this.cargarDocentes(),
       error: (err: HttpErrorResponse) =>
-        this.avisar(
-          'error',
-          extraerMensajeError(err, 'Error al cambiar el estado del docente'),
-        ),
+        this.avisar('error', extraerMensajeError(err, 'Error al cambiar el estado del docente')),
     });
   }
 
@@ -1066,10 +997,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
         this.materiasService.eliminarDocente(d.id).subscribe({
           next: () => this.cargarDocentes(),
           error: (err: HttpErrorResponse) =>
-            this.avisar(
-              'error',
-              extraerMensajeError(err, 'Error al eliminar el docente'),
-            ),
+            this.avisar('error', extraerMensajeError(err, 'Error al eliminar el docente')),
         }),
     );
   }
@@ -1090,9 +1018,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.historial.set(null);
         this.historialLoading.set(false);
-        this.historialError.set(
-          extraerMensajeError(err, 'No se pudo cargar el historial'),
-        );
+        this.historialError.set(extraerMensajeError(err, 'No se pudo cargar el historial'));
       },
     });
   }
@@ -1160,26 +1086,18 @@ export class AgenteComponent implements OnInit, OnDestroy {
       },
       error: (err: HttpErrorResponse) => {
         this.materiaLoading.set(false);
-        this.materiaError.set(
-          extraerMensajeError(err, 'Error al guardar la materia'),
-        );
+        this.materiaError.set(extraerMensajeError(err, 'Error al guardar la materia'));
       },
     });
   }
 
   eliminarMateria(m: Materia): void {
-    this.confirmarAccion(
-      'Eliminar materia',
-      `¿Eliminar la materia "${m.nombre}"?`,
-      () =>
-        this.materiasService.eliminarMateria(m.id).subscribe({
-          next: () => this.cargarMaterias(),
-          error: (err: HttpErrorResponse) =>
-            this.avisar(
-              'error',
-              extraerMensajeError(err, 'Error al eliminar la materia'),
-            ),
-        }),
+    this.confirmarAccion('Eliminar materia', `¿Eliminar la materia "${m.nombre}"?`, () =>
+      this.materiasService.eliminarMateria(m.id).subscribe({
+        next: () => this.cargarMaterias(),
+        error: (err: HttpErrorResponse) =>
+          this.avisar('error', extraerMensajeError(err, 'Error al eliminar la materia')),
+      }),
     );
   }
 
@@ -1219,9 +1137,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.asignarLoading.set(false);
-          this.asignarError.set(
-            extraerMensajeError(err, 'Error al asignar docente'),
-          );
+          this.asignarError.set(extraerMensajeError(err, 'Error al asignar docente'));
         },
       });
   }
@@ -1231,10 +1147,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       this.materiasService.quitarAsignacion(a.id).subscribe({
         next: () => this.cargarAsignaciones(),
         error: (err: HttpErrorResponse) =>
-          this.avisar(
-            'error',
-            extraerMensajeError(err, 'Error al quitar la asignación'),
-          ),
+          this.avisar('error', extraerMensajeError(err, 'Error al quitar la asignación')),
       }),
     );
   }
@@ -1258,25 +1171,20 @@ export class AgenteComponent implements OnInit, OnDestroy {
   submitRevision(): void {
     if (this.revisionLoading() || !this.solicitudARevisar) return;
 
-    const { decision, comentario, asignacionDestinoId } =
-      this.revisionForm.value;
+    const { decision, comentario, asignacionDestinoId } = this.revisionForm.value;
 
     // El docente de destino solo se elige en la 2.ª revisión al aprobar.
     const esDestino = this.etapaRevision(this.solicitudARevisar) === 'DESTINO';
     const aprueba = decision === 'APROBADA';
 
     if (esDestino && aprueba && asignacionDestinoId == null) {
-      this.revisionError.set(
-        'Selecciona el docente que impartirá la clase espejo',
-      );
+      this.revisionError.set('Selecciona el docente que impartirá la clase espejo');
       return;
     }
 
     // El backend lo exige: se avisa aquí para no gastar un viaje al servidor.
     if (decision === 'RECHAZADA' && !(comentario ?? '').trim()) {
-      this.revisionError.set(
-        'Indica el motivo del rechazo en el comentario',
-      );
+      this.revisionError.set('Indica el motivo del rechazo en el comentario');
       return;
     }
 
@@ -1287,9 +1195,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       .revisar(this.solicitudARevisar.id, {
         decision: decision ?? 'APROBADA',
         comentario: comentario ?? '',
-        ...(esDestino && aprueba
-          ? { asignacionDestinoId: asignacionDestinoId! }
-          : {}),
+        ...(esDestino && aprueba ? { asignacionDestinoId: asignacionDestinoId! } : {}),
       } as RevisarSolicitudDto)
       .subscribe({
         next: () => {
@@ -1300,9 +1206,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
         },
         error: (err: HttpErrorResponse) => {
           this.revisionLoading.set(false);
-          this.revisionError.set(
-            extraerMensajeError(err, 'Error al revisar la solicitud'),
-          );
+          this.revisionError.set(extraerMensajeError(err, 'Error al revisar la solicitud'));
         },
       });
   }
@@ -1319,9 +1223,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
 
   nombreDocenteEntrante(s: SolicitudEntrante): string {
     const u = s.asignacionOrigen?.docenteInstitucion?.docente?.usuario;
-    return u
-      ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}`
-      : 'Docente';
+    return u ? `${u.nombres} ${u.apellidoPaterno} ${u.apellidoMaterno}` : 'Docente';
   }
 
   estadoLabelSolicitud(s: SolicitudEntrante): string {

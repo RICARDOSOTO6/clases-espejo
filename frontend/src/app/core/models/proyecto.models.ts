@@ -106,6 +106,14 @@ export interface DecidirParticipanteDto {
   motivo?: string;
 }
 
+export interface ParticipacionPendiente {
+  participanteId: number;
+  proyectoId: number;
+  titulo: string;
+  fechaPropuesta: string;
+  institucionOrigen: string;
+}
+
 export interface UpdateProyectoDto {
   estado?: string;
   fechaInicio?: string;

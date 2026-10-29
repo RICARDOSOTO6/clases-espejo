@@ -26,6 +26,15 @@ describe('ParticipantesService', () => {
     peticion.flush([]);
   });
 
+  it('consulta las invitaciones pendientes del agente', () => {
+    servicio.pendientes().subscribe((lista) => {
+      expect(lista).toEqual([]);
+    });
+    const peticion = http.expectOne('/participaciones/pendientes');
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush([]);
+  });
+
   it('invita a una institución', () => {
     servicio.invitar(12, 8).subscribe();
     const peticion = http.expectOne('/proyectos/12/participantes');
