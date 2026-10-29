@@ -52,6 +52,11 @@ interface ProyectoAccesible {
       docenteInstitucion: { docenteId: number };
     };
   }[];
+  participantes: {
+    institucionId: number;
+    rol: string;
+    estado: string;
+  }[];
 }
 
 @Injectable()
@@ -344,6 +349,30 @@ export class ProyectosService {
     if (total <= 1) {
       throw new BadRequestException(
         'El proyecto debe conservar al menos un docente',
+      );
+    }
+
+    // Una clase multi-institución no puede quedarse con una sola institución:
+    // si este es el único docente de su institución y solo hay dos
+    // participaciones plenas, retirarlo rompería la regla del mínimo de dos.
+    const institucionId =
+      participacion.asignacionDocente.docenteInstitucion.institucionId;
+    const docentesDeInstitucion = await this.prisma.proyectoDocente.count({
+      where: {
+        proyectoId: id,
+        asignacionDocente: { docenteInstitucion: { institucionId } },
+      },
+    });
+    const participantesPlenos = await this.prisma.proyectoParticipante.count({
+      where: {
+        proyectoId: id,
+        rol: { in: ['ORIGEN', 'DESTINO', 'COLABORADORA'] },
+        estado: { in: ['APROBADA', 'CONGELADA'] },
+      },
+    });
+    if (docentesDeInstitucion <= 1 && participantesPlenos <= 2) {
+      throw new BadRequestException(
+        'La clase debe conservar al menos dos instituciones participantes',
       );
     }
 
@@ -943,10 +972,22 @@ export class ProyectosService {
       );
     }
 
-    return this.prisma.proyectoClaseEspejo.update({
-      where: { id },
-      data: { estado: ESTADO_PROYECTO_FINALIZADO },
-      include: this.includeProyecto(),
+    return this.prisma.$transaction(async (tx) => {
+      await tx.proyectoParticipante.updateMany({
+        where: {
+          proyectoId: id,
+          estado: { in: ['APROBADA', 'CONGELADA'] },
+        },
+        data: {
+          estado: 'CONGELADA',
+          congeladoEn: new Date(),
+        },
+      });
+      return tx.proyectoClaseEspejo.update({
+        where: { id },
+        data: { estado: ESTADO_PROYECTO_FINALIZADO },
+        include: this.includeProyecto(),
+      });
     });
   }
 
@@ -1053,6 +1094,12 @@ export class ProyectosService {
       where: { usuarioId },
     });
     if (agente) {
+      const participa = proyecto.participantes.some(
+        (participante) =>
+          participante.institucionId === agente.institucionId &&
+          ['APROBADA', 'CONGELADA'].includes(participante.estado),
+      );
+      if (participa) return;
       const involucradas = [
         proyecto.solicitud.institucionDestinoId,
         proyecto.solicitud.asignacionOrigen.docenteInstitucion.institucionId,
@@ -1069,6 +1116,20 @@ export class ProyectosService {
           pd.asignacionDocente.docenteInstitucion.docenteId === docente.id,
       );
       if (participa) return;
+
+      const instituciones = await this.prisma.docenteInstitucion.findMany({
+        where: { docenteId: docente.id, activo: true },
+        select: { institucionId: true },
+      });
+      const observa = proyecto.participantes.some(
+        (participante) =>
+          ['APROBADA', 'CONGELADA'].includes(participante.estado) &&
+          instituciones.some(
+            (institucion) =>
+              institucion.institucionId === participante.institucionId,
+          ),
+      );
+      if (observa) return;
     }
 
     throw new ForbiddenException('No tienes acceso a este proyecto');
@@ -1079,16 +1140,19 @@ export class ProyectosService {
     proyecto: {
       estado: string;
       solicitud: ProyectoAccesible['solicitud'];
+      participantes: ProyectoAccesible['participantes'];
     },
   ) {
     this.verificarProyectoAbierto(proyecto.estado);
 
     const agente = await this.getAgente(usuarioId);
-    const involucradas = [
-      proyecto.solicitud.institucionDestinoId,
-      proyecto.solicitud.asignacionOrigen.docenteInstitucion.institucionId,
-    ];
-    if (!involucradas.includes(agente.institucionId)) {
+    const participa = proyecto.participantes.some(
+      (participante) =>
+        participante.institucionId === agente.institucionId &&
+        ['ORIGEN', 'DESTINO', 'COLABORADORA'].includes(participante.rol) &&
+        ['APROBADA', 'CONGELADA'].includes(participante.estado),
+    );
+    if (!participa) {
       throw new ForbiddenException(
         'Solo el agente de una institución participante puede realizar esta acción',
       );
@@ -1252,6 +1316,9 @@ export class ProyectosService {
         },
       },
       planificacion: { include: this.includePlanificacion() },
+      participantes: {
+        include: { institucion: true, docenteInstitucion: true },
+      },
     };
   }
 
@@ -1291,6 +1358,14 @@ export class ProyectosService {
                 },
               },
             },
+          },
+        },
+      },
+      participantes: {
+        include: {
+          institucion: true,
+          docenteInstitucion: {
+            include: { docente: { include: { usuario: true } } },
           },
         },
       },

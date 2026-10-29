@@ -6,18 +6,25 @@ import { CalendarioIcsService } from './calendario-ics.service';
 import { DocenteParticipanteGuard } from './guards/docente-participante.guard';
 import { ListasAlumnosController } from './listas-alumnos.controller';
 import { ListasAlumnosService } from './listas-alumnos.service';
+import { ParticipantesController } from './participantes.controller';
+import { ParticipantesService } from './participantes.service';
 import { AuthModule } from '../auth/auth.module';
 import { EnviosModule } from '../envios/envios.module';
 
 @Module({
   imports: [AuthModule, EnviosModule],
-  controllers: [ProyectosController, ListasAlumnosController],
+  controllers: [
+    ProyectosController,
+    ListasAlumnosController,
+    ParticipantesController,
+  ],
   providers: [
     ProyectosService,
     ResumenPdfService,
     CalendarioIcsService,
     DocenteParticipanteGuard,
     ListasAlumnosService,
+    ParticipantesService,
   ],
 })
 export class ProyectosModule {}

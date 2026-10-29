@@ -82,14 +82,35 @@ export class InstitucionesService {
 
   /** La institución del agente, con lo que le falta para poder operar. */
   async obtenerMia(usuarioId: number) {
-    const agente = await this.getAgente(usuarioId);
-    const institucion = await this.prisma.institucion.findUnique({
-      where: { id: agente.institucionId },
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
     });
-    if (!institucion) {
-      throw new NotFoundException('Institución no encontrada');
+    if (agente) {
+      const institucion = await this.prisma.institucion.findUnique({
+        where: { id: agente.institucionId },
+      });
+      if (!institucion) {
+        throw new NotFoundException('Institución no encontrada');
+      }
+      return this.conHabilitacion(institucion, agente);
     }
-    return this.conHabilitacion(institucion, agente);
+
+    // Un docente también necesita saber su institución para gestionar
+    // participantes y observadoras en una clase espejo.
+    const docente = await this.prisma.docente.findUnique({
+      where: { usuarioId },
+      include: { instituciones: { where: { activo: true }, take: 1 } },
+    });
+    if (docente?.instituciones[0]) {
+      const institucion = await this.prisma.institucion.findUnique({
+        where: { id: docente.instituciones[0].institucionId },
+      });
+      if (institucion) return institucion;
+    }
+
+    throw new UnauthorizedException(
+      'El usuario no tiene una institución activa asociada',
+    );
   }
 
   /**

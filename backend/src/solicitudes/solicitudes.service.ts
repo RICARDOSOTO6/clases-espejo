@@ -721,6 +721,33 @@ export class SolicitudesService {
         },
       ],
     });
+
+    // La tabla de participantes es la fuente de verdad para permitir más de
+    // dos instituciones y para distinguir después a una observadora. Las
+    // clases nuevas nacen con sus dos participantes plenas ya aprobadas.
+    const asignaciones = await cliente.asignacionDocente.findMany({
+      where: {
+        id: { in: [solicitud.asignacionOrigenId, asignacionDestinoId] },
+      },
+      select: {
+        id: true,
+        docenteInstitucionId: true,
+        docenteInstitucion: { select: { institucionId: true } },
+      },
+    });
+    await cliente.proyectoParticipante.createMany({
+      data: asignaciones.map((asignacion) => ({
+        proyectoId: proyecto.id,
+        institucionId: asignacion.docenteInstitucion.institucionId,
+        docenteInstitucionId: asignacion.docenteInstitucionId,
+        rol:
+          asignacion.id === solicitud.asignacionOrigenId
+            ? ROL_ORIGEN
+            : ROL_DESTINO,
+        estado: 'APROBADA',
+      })),
+      skipDuplicates: true,
+    });
   }
 
   /**

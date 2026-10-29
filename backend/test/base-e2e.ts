@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Utilidades compartidas por las pruebas e2e.
  *
  * Reglas de esta base de pruebas:
@@ -460,6 +460,25 @@ export async function crearProyectoDePrueba(
         rol: 'DESTINO',
       },
     ],
+  });
+
+  const asignaciones = await prisma.asignacionDocente.findMany({
+    where: { id: { in: [semilla.asignacionAId, semilla.asignacionBId] } },
+    select: {
+      id: true,
+      docenteInstitucionId: true,
+      docenteInstitucion: { select: { institucionId: true } },
+    },
+  });
+  await prisma.proyectoParticipante.createMany({
+    data: asignaciones.map((asignacion) => ({
+      proyectoId: proyecto.id,
+      institucionId: asignacion.docenteInstitucion.institucionId,
+      docenteInstitucionId: asignacion.docenteInstitucionId,
+      rol: asignacion.id === semilla.asignacionAId ? 'ORIGEN' : 'DESTINO',
+      estado: 'APROBADA',
+    })),
+    skipDuplicates: true,
   });
 
   let sesionId: number | null = null;

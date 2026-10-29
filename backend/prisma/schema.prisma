@@ -45,6 +45,7 @@ model Institucion {
   listasAlumnos          ListaAlumnos[]
   premios                Premio[]
   solicitudesBorrado     SolicitudBorradoInstitucion[]
+  participantesProyecto  ProyectoParticipante[]
 
   @@index([estadoCace])
   @@map("INSTITUCION")
@@ -231,6 +232,7 @@ model DocenteInstitucion {
   asignaciones   AsignacionDocente[]
   docente        Docente             @relation(fields: [docenteId], references: [id])
   institucion    Institucion         @relation(fields: [institucionId], references: [id])
+  participaciones ProyectoParticipante[]
 
   @@unique([docenteId, institucionId], map: "docente_institucion_unico")
   @@index([institucionId])
@@ -339,6 +341,7 @@ model ProyectoClaseEspejo {
   mensajes      Mensaje[]
   listasAlumnos ListaAlumnos[]
   certificados  Certificado[]
+  participantes ProyectoParticipante[]
 
   @@index([estado])
   @@map("PROYECTO_CLASE_ESPEJO")
@@ -360,6 +363,32 @@ model ProyectoDocente {
   @@index([proyectoId])
   @@index([asignacionDocenteId])
   @@map("PROYECTO_DOCENTE")
+}
+
+/// Participación de una institución en una clase espejo.
+///
+/// `ORIGEN` y `COLABORADORA` son participantes plenos: pueden tener docentes,
+/// lista de alumnos y certificados. `OBSERVADORA` solo puede leer, se añade
+/// después del cierre y nunca recibe certificado ni reconocimiento.
+model ProyectoParticipante {
+  id                   Int                 @id @default(autoincrement())
+  proyectoId           Int                 @map("proyecto_id")
+  institucionId        Int                 @map("institucion_id")
+  docenteInstitucionId Int?                @map("docente_institucion_id")
+  rol                  String
+  estado               String              @default("PENDIENTE")
+  congeladoEn          DateTime?           @map("congelado_en")
+  creadoEn             DateTime            @default(now()) @map("creado_en")
+  actualizadoEn        DateTime            @default(now()) @updatedAt @map("actualizado_en")
+  proyecto             ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  institucion          Institucion         @relation(fields: [institucionId], references: [id])
+  docenteInstitucion   DocenteInstitucion? @relation(fields: [docenteInstitucionId], references: [id])
+
+  @@unique([proyectoId, institucionId], map: "proyecto_participante_institucion_unica")
+  @@index([institucionId])
+  @@index([docenteInstitucionId])
+  @@index([proyectoId, rol, estado])
+  @@map("PROYECTO_PARTICIPANTE")
 }
 
 model Mensaje {
