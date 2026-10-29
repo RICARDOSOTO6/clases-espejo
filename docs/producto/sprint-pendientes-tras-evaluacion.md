@@ -23,7 +23,7 @@ cerradas** y no hay que reimplementarlas:
 | Observación de la evaluación | Estado | Dónde |
 | --- | --- | --- |
 | Cabeceras de seguridad (HSTS, X-Frame-Options, CSP) | ✅ Hecho | `aplicarCabecerasSeguridad` en `backend/src/common/`, montado en `main.ts` para estáticos y como middleware de Nest. CSP completo, `frame-ancestors 'none'`, HSTS solo en producción |
-| Validar contenido real de los archivos | ✅ Hecho para imágenes | `common/imagenes.ts` lee la **firma binaria** y renombra con prefijo + marca de tiempo + aleatorio |
+| Validar contenido real de los archivos | ✅ Hecho para imágenes y evidencias | `common/imagenes.ts` (fotos, logos y certificados) y `common/evidencias.ts` (evidencias) leen la **firma binaria**; los nombres se guardan con prefijo + marca de tiempo + aleatorio |
 | Privacidad y consentimiento | ✅ Hecho | Aviso versionado `2026-10-25`, `/privacidad`, `/aceptar-aviso`, obligatorio también para cuentas anteriores |
 | Retención de datos | ✅ Hecho | Archivado de instituciones con historial |
 | Panel institucional | ✅ Hecho | Panel de desempeño por institución y docente |
@@ -43,7 +43,7 @@ cerradas** y no hay que reimplementarlas:
 | A1 — pruebas de frontend | ✅ Hecho | 34 casos: auth, TOTP, recuperación, confirmación, registro, solicitud, revisión, planificación, evidencia, cierre, certificado y participantes |
 | A2 — aislamiento institucional | ✅ Hecho | Suite e2e con institución externa: materias, docentes, proyecto, sesiones, reportes, evaluaciones, mensajes, evidencias, listas, planificación y certificados |
 | A3 — entropía del JWT | ✅ Hecho | Mínimo 32 bytes y prueba unitaria |
-| A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP y prueba e2e |
+| A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP; los `.docx`, `.xlsx` y `.pptx` exigen además su parte principal. 12 pruebas unitarias (`common/evidencias.spec.ts`) y 6 e2e (`test/evidencias.e2e-spec.ts`) |
 | A5 — respaldo automático | 🟡 Parcial | Scripts y restauración probada; falta instalar el temporizador en el servidor |
 | A6 — monitorización | ✅ Hecho | `X-Request-Id`, logs de 5xx, `scripts/verificar-salud.js` y alertas por webhook con recuperación |
 | A7 — carga mínima | ⏸️ Opcional | Solo si sobra tiempo; no es requisito del piloto |
@@ -66,7 +66,7 @@ cerradas** y no hay que reimplementarlas:
 | **A1** | **Pruebas de comportamiento del frontend** (10-20 casos) | Hoy hay 1 prueba de humo de 186 casos: es el 0,5 % y la crítica más fácil de hacer en la defensa | `ng test` corre en CI y cubre: acceso y recuperación, registro y verificación de correo, alta de solicitud, revisión, planificación conjunta, carga de evidencia, cierre y emisión/verificación de certificado | **8 h** |
 | **A2** | **Suite de aislamiento institucional (e2e)** | Hay pruebas sueltas (invitaciones, certificados), pero no una que garantice que una institución no toca lo de otra cambiando el id | Un caso por recurso con dueño institucional (docentes, materias, listas, evidencias, proyectos, certificados): con el usuario de otra institución y el id manipulado, la API responde 403 o 404 y no filtra datos | **6 h** |
 | **A3** | **Secreto JWT con entropía real** | Hoy solo se valida longitud mínima (16); el evaluador pide alta entropía | El arranque rechaza un secreto de menos de 32 bytes; `.env.example` y la guía de despliegue explican cómo generarlo con `openssl rand -hex 32` o `openssl rand -base64 48` | **1 h** |
-| **A4** | **Contenido real en las evidencias** | Las imágenes ya se validan por firma binaria, pero las evidencias siguen filtrando por extensión: renombrar `.txt` a `.pdf` pasa | El filtro de evidencias comprueba la firma del archivo (PDF, Office, ZIP, imagen) y rechaza lo que no coincida; un caso e2e lo prueba | **3 h** |
+| **A4** | **Contenido real en las evidencias** | ✅ **Hecho** en `common/evidencias.ts` (commit `42daecd`, 28-oct). Este documento se equivocaba: la firma binaria ya se comprobaba al registrar la evidencia; solo el `fileFilter` del controlador miraba la extensión | El validador comprueba la firma (PDF, Office, ZIP, imagen) y, en los Office, la parte principal del paquete; 12 pruebas unitarias y 6 e2e, incluido un `acta.pdf` con texto | **Hecho** |
 | **A5** | **Respaldo automático + prueba de restauración** | El evaluador pide que respaldo y restauración no queden como trabajo futuro | Script de `pg_dump` + tarea programada + `restaurar` probado una vez, con fecha y resultado anotados en `respaldo-y-restauracion.md` | **4 h** (restan ~2 h) |
 | **A6** | **Monitorización y trazas** | Sin monitorización externa no hay operación | Un chequeo externo que consulte `/health` y avise si cae; los errores 5xx se registran con un identificador de petición que aparezca también en la respuesta | **4 h** |
 | **A7** | **Carga mínima** (opcional) | La sección ya se renombró a «optimización del peso transferido», que es la salida honesta | Si se hace: k6 con 50 usuarios virtuales y latencias p50/p95/p99 anotadas. Si no se hace, no se toca nada | **4 h** |
@@ -78,7 +78,7 @@ Antes del piloto, el orden es:
 1. **A5** — la base no se toca sin respaldo probado.
 2. **A3** — una hora y evita una observación de seguridad.
 3. **A2** — aísla datos entre instituciones.
-4. **A4** — impide que un archivo disfrazado entre como evidencia.
+4. ~~**A4**~~ — ✅ hecho: impide que un archivo disfrazado entre como evidencia.
 5. **A6** — permite enterarse de que el servidor cayó.
 6. **A1** — importante para la defensa, pero no bloquea el piloto.
 
@@ -174,7 +174,7 @@ antes del piloto sería ampliar el proyecto en la peor semana.
    - Es barato, no depende del código y ordena el piloto.
 4. **A2 — aislamiento institucional** (6 h).
    - Es la prueba que más tranquiliza antes de meter datos reales.
-5. **A4 — firma de evidencias** (3 h).
+5. **A4 — firma de evidencias**: ✅ **hecho** (commit `42daecd`, ampliado el 29-oct con la parte principal de Office y pruebas unitarias). No queda trabajo aquí.
 6. **A6 — health check externo y trazas** (4 h).
 
 Si el piloto es **en uno o dos días**, haz solo estos seis y no abras A1, B1 ni D2.
@@ -215,7 +215,7 @@ Con esto el informe queda defendible sin tocar la estructura.
 - [ ] A5: respaldo programado y restauración probada.
 - [ ] A3: secreto JWT de al menos 32 bytes.
 - [ ] A2: aislamiento institucional probado.
-- [ ] A4: evidencias validadas por contenido.
+- [x] A4: evidencias validadas por contenido (firma binaria + parte principal de Office; 12 unitarias y 6 e2e).
 - [ ] A6: `/health` vigilado y errores 5xx trazables.
 - [ ] B4: protocolo de aceptación listo.
 - [ ] C1: fecha, participantes y responsable de CACE confirmados.
