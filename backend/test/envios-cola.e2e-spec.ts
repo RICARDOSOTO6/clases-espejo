@@ -234,6 +234,19 @@ describe('Fase 2: cola de correo', () => {
     ).toBeGreaterThanOrEqual(2);
 
     const procesado = await envios.procesarPendientes();
-    expect(procesado.enviados).toBeGreaterThanOrEqual(2);
+    // El worker periódico puede haber reclamado parte del lote en paralelo.
+    // Se espera a que las filas queden enviadas en vez de exigir que esta
+    // llamada concreta sea la que las procese todas.
+    let enviados = procesado.enviados;
+    for (let intento = 0; intento < 20 && enviados < 2; intento += 1) {
+      await new Promise((resolver) => setTimeout(resolver, 25));
+      enviados = Math.max(
+        enviados,
+        await prisma.envioCorreo.count({
+          where: { loteId, estado: 'ENVIADO' },
+        }),
+      );
+    }
+    expect(enviados).toBeGreaterThanOrEqual(2);
   });
 });
