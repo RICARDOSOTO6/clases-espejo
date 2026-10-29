@@ -58,3 +58,14 @@ export class ParticipantesController {
     );
   }
 }
+
+@Controller('participaciones')
+@UseGuards(JwtAuthGuard)
+export class ParticipacionesPendientesController {
+  constructor(private readonly participantes: ParticipantesService) {}
+
+  @Get('pendientes')
+  pendientes(@CurrentUser('sub') usuarioId: number) {
+    return this.participantes.pendientes(usuarioId);
+  }
+}

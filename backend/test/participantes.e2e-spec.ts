@@ -161,6 +161,24 @@ describe('Multi-institución y observadores (e2e)', () => {
     expect(invitacion.body.estado).toBe('PENDIENTE');
     expect(invitacion.body.rol).toBe('COLABORADORA');
 
+    const pendientes = await request(app.getHttpServer())
+      .get('/participaciones/pendientes')
+      .set(autenticado(tokenAgenteC))
+      .expect(200);
+    expect(pendientes.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          participanteId: invitacion.body.id,
+          proyectoId,
+        }),
+      ]),
+    );
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoId}`)
+      .set(autenticado(tokenAgenteC))
+      .expect(200);
+
     const decision = await request(app.getHttpServer())
       .post(
         `/proyectos/${proyectoId}/participantes/${invitacion.body.id}/decidir`,

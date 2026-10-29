@@ -1097,7 +1097,9 @@ export class ProyectosService {
       const participa = proyecto.participantes.some(
         (participante) =>
           participante.institucionId === agente.institucionId &&
-          ['APROBADA', 'CONGELADA'].includes(participante.estado),
+          ['APROBADA', 'CONGELADA', 'PENDIENTE'].includes(
+            participante.estado,
+          ),
       );
       if (participa) return;
       const involucradas = [

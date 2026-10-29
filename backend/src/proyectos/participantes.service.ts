@@ -76,6 +76,52 @@ export class ParticipantesService {
     }));
   }
 
+  /** Invitaciones pendientes que debe revisar el agente autenticado. */
+  async pendientes(usuarioId: number) {
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
+    });
+    if (!agente) return [];
+
+    const pendientes = await this.prisma.proyectoParticipante.findMany({
+      where: {
+        institucionId: agente.institucionId,
+        estado: 'PENDIENTE',
+        proyecto: {
+          estado: {
+            notIn: [ESTADO_PROYECTO_FINALIZADO, ESTADO_PROYECTO_CANCELADO],
+          },
+        },
+      },
+      include: {
+        proyecto: {
+          include: {
+            solicitud: {
+              include: {
+                asignacionOrigen: {
+                  include: {
+                    docenteInstitucion: { include: { institucion: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { creadoEn: 'asc' },
+    });
+
+    return pendientes.map((participante) => ({
+      participanteId: participante.id,
+      proyectoId: participante.proyectoId,
+      titulo: participante.proyecto.solicitud.titulo,
+      fechaPropuesta: participante.proyecto.solicitud.fechaPropuesta,
+      institucionOrigen:
+        participante.proyecto.solicitud.asignacionOrigen.docenteInstitucion
+          .institucion.nombre,
+    }));
+  }
+
   async agregar(usuarioId: number, proyectoId: number, institucionId: number) {
     const proyecto = await this.cargar(proyectoId);
     if (
@@ -288,7 +334,8 @@ export class ParticipantesService {
       const participa = proyecto.participantes.some(
         (participante) =>
           participante.institucionId === agente.institucionId &&
-          ESTADOS_VIGENTES.includes(participante.estado),
+          (ESTADOS_VIGENTES.includes(participante.estado) ||
+            participante.estado === 'PENDIENTE'),
       );
       if (participa) {
         return { tipo: 'AGENTE', institucionId: agente.institucionId };
