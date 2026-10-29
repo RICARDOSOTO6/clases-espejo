@@ -1,8 +1,8 @@
 # Sprint: lo que falta tras la evaluación
 
 > **Verificado contra el repositorio el 28 de octubre de 2026** — 163 confirmaciones, 156 rutas,
-> 30 controladores, 17 módulos, 39 tablas, 36 migraciones y 239 casos de prueba
-> (165 e2e, 41 unitarias y 33 de frontend).
+> 30 controladores, 17 módulos, 39 tablas, 36 migraciones y 240 casos de prueba
+> (165 e2e, 41 unitarias y 34 de frontend).
 > Cada partida lleva **criterio de aceptación**: si no se puede comprobar, no entra en el sprint.
 
 > **Actualización del 28-oct:** este documento recoge también los pendientes que quedaron
@@ -40,7 +40,7 @@ cerradas** y no hay que reimplementarlas:
 
 | Partida | Estado al 28-oct | Qué falta |
 | --- | --- | --- |
-| A1 — pruebas de frontend | ✅ Hecho | 33 casos: auth, TOTP, recuperación, confirmación, registro, solicitud, revisión, planificación, evidencia, cierre, certificado y participantes |
+| A1 — pruebas de frontend | ✅ Hecho | 34 casos: auth, TOTP, recuperación, confirmación, registro, solicitud, revisión, planificación, evidencia, cierre, certificado y participantes |
 | A2 — aislamiento institucional | ✅ Hecho | Suite e2e con institución externa: materias, docentes, proyecto, sesiones, reportes, evaluaciones, mensajes, evidencias, listas, planificación y certificados |
 | A3 — entropía del JWT | ✅ Hecho | Mínimo 32 bytes y prueba unitaria |
 | A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP y prueba e2e |
