@@ -77,17 +77,21 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **160 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **165 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
-  aislamiento institucional, TOTP y validación de evidencias.
+  aislamiento institucional, TOTP, participantes y validación de evidencias.
 - **41 pruebas unitarias**.
-- **29 pruebas de frontend** en Angular.
+- **33 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
 - Panel de desempeño inicial por institución (CACE) y por docente (agente), con
   barras, tabla de estados y actividad ya existente: sesiones, reportes,
   evidencias, certificados y evaluaciones.
+- Clases con más de dos instituciones: invitación y aprobación por institución,
+  mínimo de dos participantes y congelamiento al cierre.
+- Observadoras de solo lectura después del cierre, sin certificado ni
+  reconocimiento.
 - Segundo factor TOTP opcional para presidencia y secretaría de la CACE, con
   códigos de recuperación de un solo uso.
 - Identificador `X-Request-Id` en las respuestas, alertas por webhook y script

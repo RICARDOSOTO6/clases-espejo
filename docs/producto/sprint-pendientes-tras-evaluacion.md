@@ -1,8 +1,8 @@
 # Sprint: lo que falta tras la evaluación
 
 > **Verificado contra el repositorio el 28 de octubre de 2026** — 163 confirmaciones, 156 rutas,
-> 30 controladores, 17 módulos, 38 tablas, 35 migraciones y 230 casos de prueba
-> (160 e2e, 41 unitarias y 29 de frontend).
+> 30 controladores, 17 módulos, 39 tablas, 36 migraciones y 239 casos de prueba
+> (165 e2e, 41 unitarias y 33 de frontend).
 > Cada partida lleva **criterio de aceptación**: si no se puede comprobar, no entra en el sprint.
 
 > **Actualización del 28-oct:** este documento recoge también los pendientes que quedaron
@@ -40,7 +40,7 @@ cerradas** y no hay que reimplementarlas:
 
 | Partida | Estado al 28-oct | Qué falta |
 | --- | --- | --- |
-| A1 — pruebas de frontend | ✅ Hecho | 29 casos: auth, TOTP, recuperación, confirmación, registro, solicitud, revisión, planificación, evidencia, cierre y certificado |
+| A1 — pruebas de frontend | ✅ Hecho | 33 casos: auth, TOTP, recuperación, confirmación, registro, solicitud, revisión, planificación, evidencia, cierre, certificado y participantes |
 | A2 — aislamiento institucional | ✅ Hecho | Suite e2e con institución externa: materias, docentes, proyecto, sesiones, reportes, evaluaciones, mensajes, evidencias, listas, planificación y certificados |
 | A3 — entropía del JWT | ✅ Hecho | Mínimo 32 bytes y prueba unitaria |
 | A4 — contenido real de evidencias | ✅ Hecho | Firma PDF/imagen/Office/ZIP y prueba e2e |
@@ -48,6 +48,7 @@ cerradas** y no hay que reimplementarlas:
 | A6 — monitorización | ✅ Hecho | `X-Request-Id`, logs de 5xx, `scripts/verificar-salud.js` y alertas por webhook con recuperación |
 | A7 — carga mínima | ⏸️ Opcional | Solo si sobra tiempo; no es requisito del piloto |
 | A12 — TOTP CACE | ✅ Hecho | Alta, login en dos pasos, recuperación y desactivación |
+| A13 — multi-institución y observadoras | ✅ Hecho | Participantes por institución, invitación/aprobación, mínimo de dos, congelamiento al cierre y observadoras de solo lectura sin certificado |
 | B1 — reestructuración a siete capítulos | ❌ Pendiente | Hacerla **después** del piloto, cuando resultados estén congelados |
 | B2 — matriz de trazabilidad | ❌ Pendiente | 37 requerimientos → módulo → prueba → evidencia |
 | B3 — matriz de auditorías | ❌ Pendiente | Cinco rondas + análisis integral + declaración de herramientas |
@@ -144,7 +145,9 @@ ya quedaron parcialmente resueltas en el v10; se indica para no volver a pagar l
 - **A9** interfaz multilingüe.
 - **A10** matching de pares académicos.
 - **A11** resultados de aprendizaje y rúbrica.
-- **Multi-institución con observadores** (más de dos instituciones; observadores sin certificado).
+
+La **multi-institución con observadoras** ya está implementada como A13; las
+observadoras se incorporan después del cierre y no reciben certificado.
 
 Se declaran como alcance previsto, con requisitos escritos, no como trabajo hecho. Implementarlos
 antes del piloto sería ampliar el proyecto en la peor semana.
@@ -202,7 +205,7 @@ Con esto el informe queda defendible sin tocar la estructura.
 1. Cerrar **C1** y registrar indicadores.
 2. Rehacer **B1** y **D3** con resultados reales.
 3. Actualizar **B5** una sola vez.
-4. Recién entonces decidir **A8–A11** y multi-institución.
+4. Recién entonces decidir **A8–A11**.
 5. **A7** solo si hay servidor propio y una razón medida.
 
 ---

@@ -428,16 +428,45 @@ clase. Si el proyecto está **Finalizado** o **Cancelado**, la pantalla queda en
 
 Pulsa **Guardar** para aplicar los cambios.
 
-### 8.2 Docentes participantes
+### 8.2 Docentes e instituciones participantes
 
 Muestra a los docentes de ambas instituciones, con su rol y su institución.
 
 * El **agente** puede **agregar un docente de su institución**
   (campo *Agregar docente de mi institución*) y **quitar** a los que su
   institución aportó.
-* Un proyecto **debe conservar al menos un docente**.
+* Un proyecto **debe conservar al menos dos instituciones participantes**.
+  Por eso no se puede retirar al único docente de una institución cuando solo
+  quedan dos.
 * No se puede quitar a un docente que ya tiene **participaciones, firmas o
   mensajes** en ese proyecto (protege el historial).
+
+#### Más de dos instituciones
+
+En la tarjeta **Instituciones participantes**, un docente o agente de una
+institución que ya participa puede **invitar a otra institución aprobada**.
+
+1. Elige la institución y pulsa **Invitar**.
+2. La invitación queda **Pendiente de aprobación**.
+3. El **agente de la institución invitada** elige uno de sus docentes y pulsa
+   **Aprobar**. También puede **Rechazar**.
+4. Al aprobar, la institución y su docente se incorporan a la clase.
+
+El rechazo de una tercera institución no cancela la clase: las dos instituciones
+originales siguen participando. Al **cerrar** la clase, todas las
+participaciones quedan **Congeladas**.
+
+#### Observadoras después del cierre
+
+Cuando la clase ya está **Finalizada**, una institución participante puede
+agregar a otra como **Observadora**:
+
+* puede **leer** la clase, sus sesiones, reportes y evidencias;
+* **no puede** modificar nada;
+* **no recibe certificado ni reconocimiento**.
+
+La observadora se incorpora después del cierre; no se puede convertir en
+participante con reconocimiento retroactivo.
 
 ### 8.3 Planificación conjunta
 
