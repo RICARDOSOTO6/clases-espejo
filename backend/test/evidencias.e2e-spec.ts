@@ -76,11 +76,32 @@ describe('Evidencias por enlace (e2e)', () => {
     expect(String(respuesta.body.message)).toContain('no las dos');
   });
 
-  it('rechaza un PDF cuyo contenido no es PDF', async () => {
+  it('rechaza un acta.pdf que en realidad es texto', async () => {
     const respuesta = await request(app.getHttpServer())
       .post(`/proyectos/${proyecto.proyectoId}/evidencias`)
       .set(autenticado(token))
-      .attach('archivo', Buffer.from('esto no es un PDF'), 'falso.pdf')
+      .attach(
+        'archivo',
+        Buffer.from('ACTA DE LA SESIÓN\nAsistentes: 24 estudiantes.'),
+        'acta.pdf',
+      )
+      .expect(400);
+
+    expect(String(respuesta.body.message)).toContain('contenido');
+  });
+
+  it('rechaza un ZIP renombrado a .docx', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .post(`/proyectos/${proyecto.proyectoId}/evidencias`)
+      .set(autenticado(token))
+      .attach(
+        'archivo',
+        Buffer.concat([
+          Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+          Buffer.from('notas.txt de un ZIP cualquiera'),
+        ]),
+        'acta.docx',
+      )
       .expect(400);
 
     expect(String(respuesta.body.message)).toContain('contenido');

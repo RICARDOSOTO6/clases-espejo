@@ -5,9 +5,17 @@ import { extname } from 'node:path';
  * Comprobación de firma binaria para las evidencias subidas.
  *
  * La extensión no basta: un `.exe` renombrado a `.pdf` pasaría el filtro de
- * multer. Aquí se leen los primeros bytes y se exige que el contenido
- * corresponda al tipo declarado. Los formatos de texto no tienen firma, pero
- * sí se rechaza contenido binario.
+ * multer. Aquí se leen los bytes y se exige que el contenido corresponda al
+ * tipo declarado. Los formatos de texto no tienen firma, pero sí se rechaza
+ * contenido binario.
+ *
+ * Los cuatro formatos de Office modernos (`.docx`, `.xlsx`, `.pptx`) y el
+ * `.zip` comparten la misma firma `PK\x03\x04`, así que la firma sola deja
+ * pasar un ZIP cualquiera renombrado a `.docx`. Para esos tres se exige además
+ * la **parte principal** del paquete, que es la que define el formato: un ZIP
+ * sin `word/document.xml` no es un documento de Word. Los nombres de las
+ * entradas de un ZIP se guardan sin comprimir, por lo que basta buscarlos en
+ * el contenido.
  */
 
 const FIRMAS: Record<string, number[][]> = {
@@ -29,6 +37,16 @@ const FIRMAS: Record<string, number[][]> = {
   '.ppt': [[0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]],
 };
 
+/**
+ * Parte principal que debe contener el paquete de cada formato de Office. Un
+ * `.zip` con la misma firma no la tiene, y por eso no pasa por `.docx`.
+ */
+const MARCAS_OFICINA: Record<string, string> = {
+  '.docx': 'word/document.xml',
+  '.xlsx': 'xl/workbook.xml',
+  '.pptx': 'ppt/presentation.xml',
+};
+
 const EXTENSIONES_TEXTO = new Set(['.txt', '.csv']);
 
 export function validarFirmaEvidencia(
@@ -36,8 +54,10 @@ export function validarFirmaEvidencia(
   nombreOriginal: string,
 ): void {
   const extension = extname(nombreOriginal).toLowerCase();
+  const etiqueta = extension.toUpperCase().replace('.', '');
+  const contenido = readFileSync(ruta);
+
   if (EXTENSIONES_TEXTO.has(extension)) {
-    const contenido = readFileSync(ruta);
     if (contenido.includes(0)) {
       throw new Error(
         'El archivo de texto contiene datos binarios. Adjunta un archivo de texto válido.',
@@ -53,7 +73,7 @@ export function validarFirmaEvidencia(
     );
   }
 
-  const cabecera = readFileSync(ruta, { encoding: null }).subarray(0, 16);
+  const cabecera = contenido.subarray(0, 16);
   const coincide = firmas.some(
     (firma) =>
       cabecera.length >= firma.length &&
@@ -68,8 +88,13 @@ export function validarFirmaEvidencia(
   }
 
   if (!coincide) {
+    throw new Error(`El contenido no corresponde a un archivo ${etiqueta}.`);
+  }
+
+  const marca = MARCAS_OFICINA[extension];
+  if (marca && !contenido.includes(marca)) {
     throw new Error(
-      `El contenido no corresponde a un archivo ${extension.toUpperCase().replace('.', '')}.`,
+      `El contenido no corresponde a un archivo ${etiqueta}: falta ${marca}.`,
     );
   }
 }
