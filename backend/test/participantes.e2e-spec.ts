@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import {
   autenticado,
   crearAppE2E,
+  crearPlantillaDePrueba,
   crearProyectoDePrueba,
   iniciarSesion,
   limpiarBase,
@@ -22,8 +23,10 @@ describe('Multi-institución y observadores (e2e)', () => {
   let semilla: Semilla;
   let proyectoId = 0;
   let proyectoFinalId = 0;
+  let proyectoCertificadoCId = 0;
   let institucionCId = 0;
   let asignacionCId = 0;
+  let usuarioDocenteCId = 0;
   let correoAgenteC = '';
   let correoDocenteC = '';
   let tokenDocenteA = '';
@@ -129,6 +132,52 @@ describe('Multi-institución y observadores (e2e)', () => {
       },
     });
     asignacionCId = asignacionC.id;
+    usuarioDocenteCId = usuarioDocenteC.id;
+
+    // Proyecto cerrado con la institución C como participante plena y lista
+    // propia, para comprobar que los certificados no asumen solo dos partes.
+    const proyectoCertificado = await crearProyectoDePrueba(prisma, semilla, {
+      estado: 'FINALIZADO',
+    });
+    proyectoCertificadoCId = proyectoCertificado.proyectoId;
+    await prisma.proyectoDocente.create({
+      data: {
+        proyectoId: proyectoCertificadoCId,
+        asignacionDocenteId: asignacionCId,
+        rol: 'COLABORADORA',
+      },
+    });
+    await prisma.proyectoParticipante.create({
+      data: {
+        proyectoId: proyectoCertificadoCId,
+        institucionId: institucionCId,
+        docenteInstitucionId: docenteInstitucionC.id,
+        rol: 'COLABORADORA',
+        estado: 'APROBADA',
+      },
+    });
+    await prisma.listaAlumnos.create({
+      data: {
+        proyectoId: proyectoCertificadoCId,
+        institucionId: institucionCId,
+        subidaPorUsuarioId: usuarioDocenteCId,
+        origen: 'PEGADO',
+        consentimientoVersion: '2026-10-25',
+        consentimientoEn: new Date(),
+        alumnos: {
+          create: [
+            {
+              nombre: 'Alumna de la institución C',
+              matricula: 'C-001',
+              correo: 'alumna.c@prueba.mx',
+              orden: 1,
+              incluido: true,
+            },
+          ],
+        },
+      },
+    });
+    await crearPlantillaDePrueba(prisma, semilla.usuarioPresidencia);
 
     tokenDocenteA = await iniciarSesion(app, semilla.correos.docenteA);
     tokenAgenteA = await iniciarSesion(app, semilla.correos.agenteA);
@@ -304,6 +353,24 @@ describe('Multi-institución y observadores (e2e)', () => {
       .get(`/proyectos/${proyectoId}`)
       .set(autenticado(tokenDocenteA))
       .expect(200);
+  });
+
+  it('permite que una tercera institución emita certificados de su propia lista', async () => {
+    const estado = await request(app.getHttpServer())
+      .get(`/proyectos/${proyectoCertificadoCId}/certificados`)
+      .set(autenticado(tokenDocenteC))
+      .expect(200);
+    expect(estado.body.claseCerrada).toBe(true);
+    expect(estado.body.motivoNoEmitir).toBeNull();
+
+    const emision = await request(app.getHttpServer())
+      .post(`/proyectos/${proyectoCertificadoCId}/certificados/emitir`)
+      .set(autenticado(tokenDocenteC))
+      .send({})
+      .expect(201);
+
+    expect(emision.body.emitidos).toHaveLength(1);
+    expect(emision.body.emitidos[0].folio).toContain('CACE');
   });
 
   it('después del cierre solo permite observadoras de lectura y sin certificados', async () => {
