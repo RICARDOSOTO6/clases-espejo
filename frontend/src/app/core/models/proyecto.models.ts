@@ -86,7 +86,24 @@ export interface Proyecto {
   plataforma: string;
   solicitud: SolicitudDeProyecto;
   docentes: ProyectoDocenteItem[];
+  participantes: ProyectoParticipante[];
   planificacion: PlanificacionConjunta | null;
+}
+
+export interface ProyectoParticipante {
+  id: number;
+  institucionId: number;
+  institucion: string;
+  rol: 'ORIGEN' | 'DESTINO' | 'COLABORADORA' | 'OBSERVADORA';
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'CONGELADA';
+  congeladoEn: string | null;
+  docente: { id: number; nombre: string; apellidos: string } | null;
+}
+
+export interface DecidirParticipanteDto {
+  decision: 'APROBADA' | 'RECHAZADA';
+  asignacionDocenteId?: number;
+  motivo?: string;
 }
 
 export interface UpdateProyectoDto {

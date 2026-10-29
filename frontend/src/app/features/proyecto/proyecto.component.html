@@ -369,7 +369,7 @@
                     </div>
                   </div>
                   <div class="lista-acciones">
-                    <span class="estado">{{ d.rol === 'ORIGEN' ? 'Origen' : 'Destino' }}</span>
+                    <span class="estado">{{ etiquetaRolDocente(d.rol) }}</span>
                     @if (esAgente) {
                       <button
                         class="btn btn-secondary"
@@ -413,6 +413,138 @@
               </button>
             </div>
           }
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div class="card-head-title">
+              <span class="card-head-icon" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"
+                  />
+                </svg>
+              </span>
+              <h2 id="instituciones">Instituciones participantes</h2>
+            </div>
+            <span class="muted">{{ participantes().length }} institución(es)</span>
+          </div>
+
+          @if (participantes().length === 0) {
+            <p class="muted">Aún no hay instituciones registradas en esta clase.</p>
+          } @else {
+            <ul class="lista">
+              @for (participante of participantes(); track participante.id) {
+                <li class="lista-item">
+                  <div>
+                    <strong>{{ participante.institucion }}</strong>
+                    <div class="muted">
+                      {{ etiquetaRolParticipante(participante.rol) }} ·
+                      {{ estadoParticipanteLabel(participante.estado) }}
+                      @if (participante.docente) {
+                        · {{ participante.docente.nombre }}
+                        {{ participante.docente.apellidos }}
+                      }
+                    </div>
+                  </div>
+                  @if (
+                    participante.estado === 'PENDIENTE' &&
+                    esAgente &&
+                    participante.institucionId === miInstitucionId()
+                  ) {
+                    <div class="lista-acciones">
+                      <select
+                        [formControl]="asignacionAprobacion"
+                        aria-label="Docente que participará"
+                      >
+                        <option [ngValue]="null" disabled>Docente de mi institución</option>
+                        @for (asignacion of asignaciones(); track asignacion.id) {
+                          <option [ngValue]="asignacion.id">
+                            {{ asignacion.docenteInstitucion.docente.usuario.nombres }}
+                            {{ asignacion.docenteInstitucion.docente.usuario.apellidoPaterno }} ·
+                            {{ asignacion.materia.nombre }}
+                          </option>
+                        }
+                      </select>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        [disabled]="decidiendoParticipante() !== null"
+                        (click)="decidirParticipante(participante, 'APROBADA')"
+                      >
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [disabled]="decidiendoParticipante() !== null"
+                        (click)="decidirParticipante(participante, 'RECHAZADA')"
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+
+          @if (puedeGestionarParticipantes() && institucionesDisponibles().length > 0) {
+            <div class="form-inline">
+              <div class="form-field">
+                <label for="institucion-invitada">Invitar otra institución</label>
+                <select id="institucion-invitada" [formControl]="institucionSeleccionada">
+                  <option [ngValue]="null" disabled>Selecciona una institución aprobada</option>
+                  @for (institucion of institucionesDisponibles(); track institucion.id) {
+                    <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                class="btn btn-primary"
+                [disabled]="institucionSeleccionada.value === null || invitandoInstitucion()"
+                (click)="invitarInstitucion()"
+              >
+                {{ invitandoInstitucion() ? 'Invitando...' : 'Invitar' }}
+              </button>
+            </div>
+          }
+
+          @if (puedeAgregarObservadora() && institucionesDisponibles().length > 0) {
+            <div class="form-inline">
+              <div class="form-field">
+                <label for="institucion-observadora">Agregar observadora de solo lectura</label>
+                <select id="institucion-observadora" [formControl]="institucionObservadora">
+                  <option [ngValue]="null" disabled>Selecciona una institución aprobada</option>
+                  @for (institucion of institucionesDisponibles(); track institucion.id) {
+                    <option [ngValue]="institucion.id">{{ institucion.nombre }}</option>
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="institucionObservadora.value === null || agregandoObservador()"
+                (click)="agregarObservadora()"
+              >
+                {{ agregandoObservador() ? 'Agregando...' : 'Agregar observadora' }}
+              </button>
+            </div>
+          }
+          <p class="muted">
+            Una observadora se incorpora después del cierre, puede leer la clase y no recibe
+            certificado ni reconocimiento.
+          </p>
         </section>
 
         <section class="card">

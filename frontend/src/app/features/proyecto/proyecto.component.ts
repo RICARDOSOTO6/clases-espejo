@@ -17,6 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { EnviosService } from '../../core/services/envios.service';
 import { ProgresoLote } from '../../core/models/envios.models';
 import { ProyectosService } from '../../core/services/proyectos.service';
+import { ParticipantesService } from '../../core/services/participantes.service';
 import { ListasAlumnosService } from '../../core/services/listas-alumnos.service';
 import { CertificadosService } from '../../core/services/certificados.service';
 import {
@@ -46,9 +47,11 @@ import {
   ParticipacionPlanificacion,
   ParticipacionReporte,
   Proyecto,
+  ProyectoParticipante,
   ReporteClase,
   Sesion,
 } from '../../core/models/proyecto.models';
+import { InstitucionDirectorio } from '../../core/models/auth.models';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { LayoutComponent } from '../../shared/components/layout/layout.component';
 import { PendienteUi, UiStateService } from '../../core/services/ui-state.service';
@@ -63,6 +66,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly proyectos = inject(ProyectosService);
+  private readonly participantesService = inject(ParticipantesService);
   private readonly materiasService = inject(MateriasService);
   private readonly instituciones = inject(InstitucionesService);
   private readonly listasService = inject(ListasAlumnosService);
@@ -206,6 +210,36 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   asignacionSeleccionada = this.fb.control<number | null>(null);
   agregandoDocente = signal(false);
 
+  // --- Instituciones participantes (multi-institución y observadoras) ---
+  readonly participantesProyecto = signal<ProyectoParticipante[]>([]);
+  readonly participantes = computed(() => this.participantesProyecto());
+  readonly directorioInstituciones = signal<InstitucionDirectorio[]>([]);
+  institucionSeleccionada = this.fb.control<number | null>(null);
+  institucionObservadora = this.fb.control<number | null>(null);
+  asignacionAprobacion = this.fb.control<number | null>(null);
+  invitandoInstitucion = signal(false);
+  decidiendoParticipante = signal<number | null>(null);
+  agregandoObservador = signal(false);
+  readonly miInstitucionParticipante = computed(() =>
+    this.participantes().find(
+      (participante) =>
+        participante.institucionId === this.miInstitucionId() &&
+        participante.estado !== 'RECHAZADA',
+    ),
+  );
+  readonly puedeGestionarParticipantes = computed(() => {
+    const mia = this.miInstitucionParticipante();
+    return (
+      !!mia && ['ORIGEN', 'DESTINO', 'COLABORADORA'].includes(mia.rol) && this.proyectoAbierto()
+    );
+  });
+  readonly puedeAgregarObservadora = computed(
+    () =>
+      !!this.miInstitucionParticipante() &&
+      ['ORIGEN', 'DESTINO', 'COLABORADORA'].includes(this.miInstitucionParticipante()!.rol) &&
+      this.proyecto()?.estado === 'FINALIZADO',
+  );
+
   // --- Planificación conjunta ---
   planificacionForm = this.fb.group({
     objetivosAcordados: ['', Validators.required],
@@ -329,18 +363,23 @@ export class ProyectoComponent implements OnInit, OnDestroy {
         next: (r) => this.asignaciones.set(r),
         error: () => this.asignaciones.set([]),
       });
-      // Sin esta institución no se puede saber el rol del docente que se agrega.
-      this.instituciones.obtenerMia().subscribe({
-        next: (i) => this.miInstitucionId.set(i.id),
-        error: (err: HttpErrorResponse) =>
-          this.error.set(
-            extraerMensajeError(
-              err,
-              'No se pudo determinar tu institución: recarga la página antes de agregar docentes',
-            ),
-          ),
-      });
     }
+    // La institución propia sirve para saber quién puede invitar o aprobar
+    // participantes, tanto si el usuario es agente como si es docente.
+    this.instituciones.obtenerMia().subscribe({
+      next: (i) => this.miInstitucionId.set(i.id),
+      error: (err: HttpErrorResponse) =>
+        this.error.set(
+          extraerMensajeError(
+            err,
+            'No se pudo determinar tu institución: recarga la página antes de gestionar participantes',
+          ),
+        ),
+    });
+    this.instituciones.directorio().subscribe({
+      next: (lista) => this.directorioInstituciones.set(lista),
+      error: () => this.directorioInstituciones.set([]),
+    });
   }
 
   ngOnDestroy(): void {
@@ -483,6 +522,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     this.proyectos.obtener(this.proyectoId).subscribe({
       next: (p) => {
         this.proyecto.set(p);
+        this.cargarParticipantes();
         this.proyectoForm.patchValue({
           estado: p.estado,
           fechaInicio: this.aFechaInput(p.fechaInicio),
@@ -511,6 +551,13 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       this.cargarLista();
       this.cargarCertificados();
     }
+  }
+
+  cargarParticipantes(): void {
+    this.participantesService.listar(this.proyectoId).subscribe({
+      next: (participantes) => this.participantesProyecto.set(participantes),
+      error: () => this.participantesProyecto.set([]),
+    });
   }
 
   // --- Mensajes de la pantalla ---
@@ -1136,10 +1183,127 @@ export class ProyectoComponent implements OnInit, OnDestroy {
 
   // --- Docentes ---
 
+  readonly institucionesDisponibles = computed(() => {
+    const yaParticipan = new Set(
+      this.participantes().map((participante) => participante.institucionId),
+    );
+    return this.directorioInstituciones().filter(
+      (institucion) => !yaParticipan.has(institucion.id) && institucion.estadoCace === 'APROBADA',
+    );
+  });
+
+  etiquetaRolParticipante(rol: ProyectoParticipante['rol']): string {
+    const etiquetas: Record<ProyectoParticipante['rol'], string> = {
+      ORIGEN: 'Origen',
+      DESTINO: 'Destino',
+      COLABORADORA: 'Colaboradora',
+      OBSERVADORA: 'Observadora',
+    };
+    return etiquetas[rol] ?? rol;
+  }
+
+  etiquetaRolDocente(rol: string): string {
+    const etiquetas: Record<string, string> = {
+      ORIGEN: 'Origen',
+      DESTINO: 'Destino',
+      COLABORADORA: 'Colaboradora',
+    };
+    return etiquetas[rol] ?? rol;
+  }
+
+  estadoParticipanteLabel(estado: ProyectoParticipante['estado']): string {
+    const etiquetas: Record<ProyectoParticipante['estado'], string> = {
+      PENDIENTE: 'Pendiente de aprobación',
+      APROBADA: 'Aprobada',
+      RECHAZADA: 'Rechazada',
+      CONGELADA: 'Congelada',
+    };
+    return etiquetas[estado] ?? estado;
+  }
+
+  invitarInstitucion(): void {
+    const institucionId = this.institucionSeleccionada.value;
+    if (this.invitandoInstitucion() || institucionId == null) return;
+    this.invitandoInstitucion.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+
+    this.participantesService.invitar(this.proyectoId, institucionId).subscribe({
+      next: () => {
+        this.invitandoInstitucion.set(false);
+        this.institucionSeleccionada.setValue(null);
+        this.ok.set('Invitación enviada; falta que la institución elija docente.');
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.invitandoInstitucion.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo invitar a la institución'));
+      },
+    });
+  }
+
+  decidirParticipante(
+    participante: ProyectoParticipante,
+    decision: 'APROBADA' | 'RECHAZADA',
+  ): void {
+    if (this.decidiendoParticipante() != null) return;
+    const asignacionDocenteId =
+      decision === 'APROBADA' ? this.asignacionAprobacion.value : undefined;
+    if (decision === 'APROBADA' && asignacionDocenteId == null) {
+      this.error.set('Selecciona el docente de tu institución antes de aprobar.');
+      return;
+    }
+    this.decidiendoParticipante.set(participante.id);
+    this.error.set(null);
+    this.ok.set(null);
+
+    this.participantesService
+      .decidir(this.proyectoId, participante.id, {
+        decision,
+        ...(asignacionDocenteId != null ? { asignacionDocenteId } : {}),
+      })
+      .subscribe({
+        next: () => {
+          this.decidiendoParticipante.set(null);
+          this.asignacionAprobacion.setValue(null);
+          this.ok.set(
+            decision === 'APROBADA'
+              ? 'Institución aprobada y docente incorporado.'
+              : 'Invitación rechazada; la clase conserva sus participantes.',
+          );
+          this.cargar();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.decidiendoParticipante.set(null);
+          this.error.set(extraerMensajeError(err, 'No se pudo revisar la invitación'));
+        },
+      });
+  }
+
+  agregarObservadora(): void {
+    const institucionId = this.institucionObservadora.value;
+    if (this.agregandoObservador() || institucionId == null) return;
+    this.agregandoObservador.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+
+    this.participantesService.agregarObservador(this.proyectoId, institucionId).subscribe({
+      next: () => {
+        this.agregandoObservador.set(false);
+        this.institucionObservadora.setValue(null);
+        this.ok.set('Institución agregada como observadora de solo lectura.');
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.agregandoObservador.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo agregar la observadora'));
+      },
+    });
+  }
+
   agregarDocente(): void {
     const asignacionId = this.asignacionSeleccionada.value;
-    if (this.agregandoDocente() || asignacionId == null) return;
-    // Sin institución conocida, el rol se guardaría mal (DESTINO por defecto).
+    if (this.agregandoDocente() || asignacionId == null) return; // Sin institución conocida, el rol se guardaría mal (DESTINO por defecto).
     if (this.miInstitucionId() == null) {
       this.error.set(
         'No se pudo determinar tu institución: recarga la página antes de agregar docentes.',
