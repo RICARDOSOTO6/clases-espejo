@@ -38,6 +38,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | [`producto/plan-de-trabajo-antes-del-servidor.md`](producto/plan-de-trabajo-antes-del-servidor.md) | El **plan reordenado para trabajar sin servidor**: release candidate, ensayo local, certificado DEMO, privacidad y mantenibilidad. Servidor y autorizaciones quedan como anexos, con preguntas para la junta. |
 | [`producto/certificados-diseno.md`](producto/certificados-diseno.md) | Las decisiones de diseño de los certificados (plantilla universal, emisión, verificación y entrega). |
 | [`producto/rendimiento.md`](producto/rendimiento.md) | Qué se optimizó y cuánto: cifras de carga fría/caliente, gzip, caché, índices de base de datos y lo que queda pendiente. |
+| [`producto/cobertura-backend.md`](producto/cobertura-backend.md) | Qué parte del backend ejecutan las pruebas: **68,0 % de líneas** (medido el 29-oct), lo que queda sin cubrir y cómo se consulta la cobertura en el CI. |
 | [`informes/informe-de-actividades.md`](informes/informe-de-actividades.md) | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
 | [`informes/informe-para-el-cliente.md`](informes/informe-para-el-cliente.md) | El informe de entrega para el cliente. |
 | [`auditorias/`](auditorias/) | Las auditorías de calidad, sus respuestas y la auditoría de código muerto v5. |

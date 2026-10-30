@@ -23,7 +23,7 @@ cerradas** y no hay que reimplementarlas:
 | Observación de la evaluación | Estado | Dónde |
 | --- | --- | --- |
 | Cabeceras de seguridad (HSTS, X-Frame-Options, CSP) | ✅ Hecho | `aplicarCabecerasSeguridad` en `backend/src/common/`, montado en `main.ts` para estáticos y como middleware de Nest. CSP completo, `frame-ancestors 'none'`, HSTS solo en producción |
-| Validar contenido real de los archivos | ✅ Hecho para imágenes y evidencias | `common/imagenes.ts` (fotos, logos y certificados) y `common/evidencias.ts` (evidencias) leen la **firma binaria**; los nombres se guardan con prefijo + marca de tiempo + aleatorio |
+| Validar contenido real de los archivos | ✅ Hecho en evidencias y en el certificado de premio; logos y fotos quedan por extensión | `common/evidencias.ts` y `common/imagenes.ts` (`validarDocumentoSubido`) leen la **firma binaria**; los logos, las fotos de perfil, las imágenes de premio y los fondos del certificado solo filtran la extensión (no se admiten SVG) |
 | Privacidad y consentimiento | ✅ Hecho | Aviso versionado `2026-10-25`, `/privacidad`, `/aceptar-aviso`, obligatorio también para cuentas anteriores |
 | Retención de datos | ✅ Hecho | Archivado de instituciones con historial |
 | Panel institucional | ✅ Hecho | Panel de desempeño por institución y docente |

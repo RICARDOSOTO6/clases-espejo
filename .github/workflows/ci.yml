@@ -2,7 +2,9 @@
 #
 # Qué comprueba en cada push y en cada pull request:
 #   - Backend: lint (sin --fix), tipos en modo strict, esquema de Prisma,
-#     pruebas unitarias, pruebas e2e contra un PostgreSQL real y build.
+#     pruebas unitarias y e2e (contra un PostgreSQL real) con su cobertura, y build.
+#     El resumen de cobertura queda en el registro del job y el informe en un
+#     artefacto descargable.
 #   - Frontend: tipos, plantillas (ngc) y build contra backend/public.
 #
 # No necesita secretos: usa valores de ejemplo para JWT, correo y presidente.
@@ -21,7 +23,7 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (lint, tipos, unitarias, e2e, build)
+    name: Backend (lint, tipos, pruebas con cobertura, build)
     runs-on: ubuntu-latest
 
     services:
@@ -85,11 +87,20 @@ jobs:
       - name: Aplicar las migraciones
         run: npx prisma migrate deploy
 
-      - name: Pruebas unitarias
-        run: npm test -- --runInBand
+      - name: Pruebas y cobertura (unitarias + e2e)
+        run: npm run test:cov
 
-      - name: Pruebas e2e
-        run: npm run test:e2e -- --runInBand
+      - name: Resumen de cobertura en el registro
+        if: always()
+        run: node scripts/resumen-cobertura.js --guardar >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar el informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/coverage
+          retention-days: 14
 
       - name: Compilar el backend
         run: npm run build
