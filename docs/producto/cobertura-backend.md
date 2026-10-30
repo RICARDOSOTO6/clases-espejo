@@ -30,8 +30,8 @@ porque se prueban de extremo a extremo.
 | Funciones | **67,23 %** (632 de 940) |
 | Ramas | **47,14 %** (1 510 de 3 203) |
 
-Son 39 suites y **228 pruebas** (53 unitarias + 175 e2e) en 168,8 s. Con las 34
-del frontend, el proyecto va por **262 casos**.
+Son 39 suites y **228 pruebas** (53 unitarias + 175 e2e) en 168,8 s. Con las 39
+del frontend, el proyecto va por **267 casos**.
 
 ## Por carpeta
 
@@ -108,8 +108,8 @@ Por bloques:
   importante; dice qué código se ejecutó al menos una vez. Las ramas al 47 %
   indican que casi la mitad de los caminos alternativos (validaciones, errores,
   permisos) no se han recorrido.
-- **El frontend no está aquí.** Sus 34 pruebas y su cobertura se miden aparte;
-  ver `cobertura-frontend.md` (50,18 % de líneas el 29-oct).
+- **El frontend no está aquí.** Sus 39 pruebas y su cobertura se miden aparte;
+  ver `cobertura-frontend.md` (41,14 % de líneas el 29-oct).
 - **No hay umbral que haga fallar el CI.** Se mide y se publica; poner un mínimo
   obligatorio es una decisión aparte, y un umbral mal puesto se esquiva
   añadiendo pruebas triviales.
