@@ -110,23 +110,54 @@ export class ProyectosController {
     return this.proyectosService.obtener(usuarioId, id);
   }
 
-  /** Descarga un PDF con el resumen de la clase (registro físico). */
+  /** Acta ejecutiva: solo docentes y solo con la clase terminada. */
+  @Get(':id/acta-pdf')
+  async descargarActaPdf(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.enviarInforme(usuarioId, id, res, 'ACTA');
+  }
+
+  /** Expediente completo: solo agentes y solo con la clase terminada. */
+  @Get(':id/expediente-pdf')
+  async descargarExpedientePdf(
+    @CurrentUser('sub') usuarioId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.enviarInforme(usuarioId, id, res, 'EXPEDIENTE');
+  }
+
+  /**
+   * Compatibilidad: el rol decide el documento. Los docentes reciben el acta y
+   * los agentes el expediente. Las rutas específicas son las recomendadas.
+   */
   @Get(':id/resumen-pdf')
   async descargarResumenPdf(
     @CurrentUser('sub') usuarioId: number,
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
-    const proyecto = await this.proyectosService.obtenerParaResumen(
-      usuarioId,
-      id,
-    );
-    const buffer = await this.resumenPdf.generar(proyecto);
+    await this.enviarInforme(usuarioId, id, res);
+  }
+
+  private async enviarInforme(
+    usuarioId: number,
+    id: number,
+    res: Response,
+    tipo?: 'ACTA' | 'EXPEDIENTE',
+  ): Promise<void> {
+    const { proyecto, tipo: tipoFinal } =
+      await this.proyectosService.obtenerParaResumen(usuarioId, id, tipo);
+    const buffer = await this.resumenPdf.generar(proyecto, tipoFinal);
+    const nombre =
+      tipoFinal === 'ACTA'
+        ? `acta-ejecutiva-${id}.pdf`
+        : `expediente-clase-${id}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="clase-espejo-${id}.pdf"`,
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
     res.send(buffer);
   }
 

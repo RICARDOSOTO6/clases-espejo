@@ -97,6 +97,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
     typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'tu zona';
   readonly esAgente = this.usuario?.rol === 'AGENTE';
   readonly esDocente = this.usuario?.rol === 'DOCENTE';
+  /** El informe solo se emite cuando la clase ya terminó o se canceló. */
+  readonly claseTerminada = computed(() => {
+    const estado = this.proyecto()?.estado;
+    return estado === 'FINALIZADO' || estado === 'CANCELADO';
+  });
   /**
    * Vuelta al panel. Es la misma URL para todos los roles: `/panel` decide qué
    * pantalla se pinta según el rol, así que la dirección no delata quién eres.
@@ -1899,20 +1904,32 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Descarga el resumen de la clase en PDF para el registro físico. */
+  /** Descarga el acta (docente) o el expediente (agente) de la clase terminada. */
   descargarResumenPdf(): void {
     if (this.descargandoResumenPdf()) return;
+    if (!this.claseTerminada()) {
+      this.error.set('El informe estará disponible cuando la clase esté finalizada o cancelada.');
+      return;
+    }
     this.descargandoResumenPdf.set(true);
     this.error.set(null);
-    this.proyectos.descargarResumenPdf(this.proyectoId).subscribe({
+    const peticion = this.esAgente
+      ? this.proyectos.descargarExpedientePdf(this.proyectoId)
+      : this.proyectos.descargarActaPdf(this.proyectoId);
+    peticion.subscribe({
       next: (blob) => {
         this.descargandoResumenPdf.set(false);
-        descargarBlob(blob, `clase-espejo-${this.proyectoId}.pdf`);
-        this.ok.set('Resumen PDF descargado');
+        descargarBlob(
+          blob,
+          this.esAgente
+            ? `expediente-clase-${this.proyectoId}.pdf`
+            : `acta-ejecutiva-${this.proyectoId}.pdf`,
+        );
+        this.ok.set(this.esAgente ? 'Expediente completo descargado' : 'Acta ejecutiva descargada');
       },
       error: (err: HttpErrorResponse) => {
         this.descargandoResumenPdf.set(false);
-        this.error.set(extraerMensajeError(err, 'Error al descargar el resumen PDF'));
+        this.error.set(extraerMensajeError(err, 'No se pudo descargar el informe PDF'));
       },
     });
   }

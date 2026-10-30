@@ -116,15 +116,61 @@ export class ProyectosService {
     return proyecto;
   }
 
-  /** Carga un proyecto completo (para el PDF) verificando el acceso. */
-  async obtenerParaResumen(usuarioId: number, id: number) {
+  /** Carga un proyecto completo (para el PDF) verificando el acceso y el rol. */
+  async obtenerParaResumen(
+    usuarioId: number,
+    id: number,
+    tipoSolicitado?: 'ACTA' | 'EXPEDIENTE',
+  ) {
     const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
       where: { id },
       include: this.includeProyectoCompleto(),
     });
     if (!proyecto) throw new NotFoundException('Proyecto no encontrado');
     await this.verificarAcceso(usuarioId, proyecto);
-    return proyecto;
+
+    if (
+      proyecto.estado !== ESTADO_PROYECTO_FINALIZADO &&
+      proyecto.estado !== ESTADO_PROYECTO_CANCELADO
+    ) {
+      throw new BadRequestException(
+        'El informe solo se puede generar cuando la clase está finalizada o cancelada.',
+      );
+    }
+
+    const docente = await this.prisma.docente.findUnique({
+      where: { usuarioId },
+    });
+    const esDocente =
+      !!docente &&
+      proyecto.docentes.some(
+        (pd) =>
+          pd.asignacionDocente.docenteInstitucion.docenteId === docente.id,
+      );
+    const agente = await this.prisma.agenteInternacionalizacion.findUnique({
+      where: { usuarioId },
+    });
+    const esAgente =
+      !!agente &&
+      proyecto.participantes.some(
+        (participante) => participante.institucionId === agente.institucionId,
+      );
+
+    const tipoPermitido = esDocente ? 'ACTA' : esAgente ? 'EXPEDIENTE' : null;
+    if (!tipoPermitido) {
+      throw new ForbiddenException(
+        'No tienes un rol autorizado para descargar este informe.',
+      );
+    }
+    if (tipoSolicitado && tipoSolicitado !== tipoPermitido) {
+      throw new ForbiddenException(
+        tipoSolicitado === 'ACTA'
+          ? 'El acta ejecutiva es exclusiva de los docentes participantes.'
+          : 'El expediente completo es exclusivo de los agentes participantes.',
+      );
+    }
+
+    return { proyecto, tipo: tipoSolicitado ?? tipoPermitido };
   }
 
   /**

@@ -2,10 +2,9 @@ import { Injectable } from '@nestjs/common';
 import PDFDocument from 'pdfkit';
 
 /**
- * Genera el PDF "Resumen de clase espejo" para descargar e imprimir como
- * registro físico. Sirve para cualquier estado del proyecto: si la clase aún
- * está en planificación o en curso, se imprime lo que ya existe y se marca el
- * resto como pendiente.
+ * Genera los informes imprimibles de una clase espejo terminada: el acta
+ * ejecutiva (docentes) o el expediente completo (agentes). La disponibilidad y
+ * el rol se validan antes de llegar aquí.
  */
 
 const AZUL = '#1F3A5F';
@@ -78,7 +77,11 @@ function estado(v: string): string {
 
 @Injectable()
 export class ResumenPdfService {
-  async generar(proyecto: any): Promise<Buffer> {
+  async generar(
+    proyecto: any,
+    tipo: 'ACTA' | 'EXPEDIENTE' = 'EXPEDIENTE',
+  ): Promise<Buffer> {
+    const esExpediente = tipo === 'EXPEDIENTE';
     const doc = new PDFDocument({ margin: 48, size: 'LETTER' });
     const trozos: Buffer[] = [];
     doc.on('data', (c: Buffer) => trozos.push(c));
@@ -97,7 +100,12 @@ export class ResumenPdfService {
       .font('Helvetica-Bold')
       .fontSize(18)
       .fillColor(AZUL)
-      .text('Resumen de Clase Espejo', { align: 'center' });
+      .text(
+        esExpediente
+          ? 'Expediente Completo de Clase Espejo'
+          : 'Acta Ejecutiva de Clase Espejo',
+        { align: 'center' },
+      );
     doc
       .font('Helvetica')
       .fontSize(11)
@@ -272,60 +280,83 @@ export class ResumenPdfService {
     }
     doc.moveDown(0.6);
 
-    // --- Actividades ---
-    const actividades = proyecto.actividades ?? [];
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(11)
-      .fillColor(AZUL)
-      .text(`Actividades (${actividades.length})`);
-    for (const a of actividades) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#000000')
-        .text(`· ${seguro(a.titulo)}  (límite: ${fecha(a.fechaLimite)})`);
-      if (a.instrucciones) {
-        doc
-          .font('Helvetica')
-          .fontSize(9)
-          .fillColor(GRIS)
-          .text(`    ${seguro(a.instrucciones)}`);
-      }
-    }
-    if (actividades.length === 0) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor(GRIS)
-        .text('Sin actividades registradas.');
-    }
-    doc.moveDown(0.6);
-
-    // --- Evidencias ---
-    const evidencias = proyecto.evidencias ?? [];
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(11)
-      .fillColor(AZUL)
-      .text(`Evidencias (${evidencias.length})`);
-    for (const e of evidencias) {
+    // El acta ejecutiva resume; el expediente adjunta el detalle completo.
+    if (!esExpediente) {
+      const totalActividades = (proyecto.actividades ?? []).length;
+      const totalEvidencias = (proyecto.evidencias ?? []).length;
       doc
         .font('Helvetica')
         .fontSize(10)
         .fillColor('#000000')
         .text(
-          `· ${seguro(e.tipo) || 'Evidencia'}  ·  ${seguro(e.enlaceUrl ?? e.archivoUrl)}`,
+          `Actividades registradas: ${totalActividades} · Evidencias registradas: ${totalEvidencias}`,
         );
-    }
-    if (evidencias.length === 0) {
       doc
         .font('Helvetica')
-        .fontSize(10)
+        .fontSize(9)
         .fillColor(GRIS)
-        .text('Sin evidencias registradas.');
+        .text(
+          'El detalle de actividades y evidencias se incluye en el expediente completo.',
+        );
+      doc.moveDown(0.6);
     }
-    doc.moveDown(0.6);
+
+    if (esExpediente) {
+      // --- Actividades ---
+      const actividades = proyecto.actividades ?? [];
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(11)
+        .fillColor(AZUL)
+        .text(`Actividades (${actividades.length})`);
+      for (const a of actividades) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#000000')
+          .text(`· ${seguro(a.titulo)}  (límite: ${fecha(a.fechaLimite)})`);
+        if (a.instrucciones) {
+          doc
+            .font('Helvetica')
+            .fontSize(9)
+            .fillColor(GRIS)
+            .text(`    ${seguro(a.instrucciones)}`);
+        }
+      }
+      if (actividades.length === 0) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor(GRIS)
+          .text('Sin actividades registradas.');
+      }
+      doc.moveDown(0.6);
+
+      // --- Evidencias ---
+      const evidencias = proyecto.evidencias ?? [];
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(11)
+        .fillColor(AZUL)
+        .text(`Evidencias (${evidencias.length})`);
+      for (const e of evidencias) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor('#000000')
+          .text(
+            `· ${seguro(e.tipo) || 'Evidencia'}  ·  ${seguro(e.enlaceUrl ?? e.archivoUrl)}`,
+          );
+      }
+      if (evidencias.length === 0) {
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .fillColor(GRIS)
+          .text('Sin evidencias registradas.');
+      }
+      doc.moveDown(0.6);
+    }
 
     // --- Evaluación final ---
     const evaluaciones = proyecto.evaluaciones ?? [];

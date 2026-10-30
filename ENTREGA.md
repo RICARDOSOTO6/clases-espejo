@@ -77,11 +77,11 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **180 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **183 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP, participantes y validación de evidencias.
 - **53 pruebas unitarias**.
-- **43 pruebas de frontend** en Angular.
+- **45 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
@@ -94,7 +94,10 @@ debe validarse en el servidor.
   reconocimiento.
 - Salida individual de una institución con motivo, solicitud de cancelación con
   aprobación de todas las instituciones activas y cancelación automática si
-  quedan menos de dos. El PDF de la clase refleja salidas y cancelación.
+  quedan menos de dos.
+- Informes solo con la clase finalizada o cancelada: **acta ejecutiva** para
+  docentes y **expediente completo** para agentes. Ambos reflejan salidas,
+  cancelación y sus motivos.
 - Segundo factor TOTP opcional para presidencia y secretaría de la CACE, con
   códigos de recuperación de un solo uso.
 - Identificador `X-Request-Id` en las respuestas, alertas por webhook y script

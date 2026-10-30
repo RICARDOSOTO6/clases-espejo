@@ -20,6 +20,7 @@ describe('Cancelación y salida de una clase (e2e)', () => {
   let semilla: Semilla;
   let tokenA = '';
   let tokenB = '';
+  let tokenAgenteA = '';
 
   beforeAll(async () => {
     const e2e: AppE2E = await crearAppE2E();
@@ -29,6 +30,7 @@ describe('Cancelación y salida de una clase (e2e)', () => {
     semilla = await sembrarBase(prisma);
     tokenA = await iniciarSesion(app, semilla.correos.docenteA);
     tokenB = await iniciarSesion(app, semilla.correos.docenteB);
+    tokenAgenteA = await iniciarSesion(app, semilla.correos.agenteA);
   });
 
   afterAll(async () => {
@@ -80,7 +82,7 @@ describe('Cancelación y salida de una clase (e2e)', () => {
       .expect(200);
 
     const pdf = await request(app.getHttpServer())
-      .get(`/proyectos/${proyecto.proyectoId}/resumen-pdf`)
+      .get(`/proyectos/${proyecto.proyectoId}/acta-pdf`)
       .set(autenticado(tokenA))
       .expect(200);
     expect(pdf.headers['content-type']).toContain('application/pdf');
@@ -122,6 +124,68 @@ describe('Cancelación y salida de una clase (e2e)', () => {
 
     expect(voto.body.estado).toBe('EN_PLANIFICACION');
     expect(voto.body.solicitud.estado).toBe('RECHAZADA');
+  });
+
+  it('no genera informes mientras la clase sigue abierta', async () => {
+    const proyecto = await crearProyectoDePrueba(prisma, semilla);
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/acta-pdf`)
+      .set(autenticado(tokenA))
+      .expect(400);
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/expediente-pdf`)
+      .set(autenticado(tokenAgenteA))
+      .expect(400);
+  });
+
+  it('separa el acta del docente y el expediente del agente', async () => {
+    const proyecto = await crearProyectoDePrueba(prisma, semilla);
+    await request(app.getHttpServer())
+      .post(`/proyectos/${proyecto.proyectoId}/salir`)
+      .set(autenticado(tokenA))
+      .send({ motivo: 'Cierre para probar los informes' })
+      .expect(201);
+
+    const acta = await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/acta-pdf`)
+      .set(autenticado(tokenA))
+      .expect(200);
+    expect(acta.headers['content-disposition']).toContain(
+      `acta-ejecutiva-${proyecto.proyectoId}.pdf`,
+    );
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/acta-pdf`)
+      .set(autenticado(tokenAgenteA))
+      .expect(403);
+
+    const expediente = await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/expediente-pdf`)
+      .set(autenticado(tokenAgenteA))
+      .expect(200);
+    expect(expediente.headers['content-type']).toContain('application/pdf');
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/expediente-pdf`)
+      .set(autenticado(tokenA))
+      .expect(403);
+  });
+
+  it('también habilita los informes con la clase finalizada', async () => {
+    const proyecto = await crearProyectoDePrueba(prisma, semilla);
+    await prisma.proyectoClaseEspejo.update({
+      where: { id: proyecto.proyectoId },
+      data: { estado: 'FINALIZADO' },
+    });
+
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/acta-pdf`)
+      .set(autenticado(tokenA))
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/proyectos/${proyecto.proyectoId}/expediente-pdf`)
+      .set(autenticado(tokenAgenteA))
+      .expect(200);
   });
 
   it('registra la salida y la cancelación en los eventos del proyecto', async () => {

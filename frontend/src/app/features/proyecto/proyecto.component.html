@@ -115,10 +115,28 @@
             type="button"
             class="btn btn-secondary"
             (click)="descargarResumenPdf()"
-            [disabled]="descargandoResumenPdf()"
+            [disabled]="descargandoResumenPdf() || !claseTerminada()"
+            [title]="
+              claseTerminada()
+                ? esAgente
+                  ? 'Descarga el expediente completo de la clase terminada'
+                  : 'Descarga el acta ejecutiva de la clase terminada'
+                : 'Disponible cuando la clase esté finalizada o cancelada'
+            "
           >
-            {{ descargandoResumenPdf() ? 'Generando PDF…' : 'Descargar resumen (PDF)' }}
+            {{
+              descargandoResumenPdf()
+                ? 'Generando PDF…'
+                : esAgente
+                  ? 'Descargar expediente completo (PDF)'
+                  : 'Descargar acta ejecutiva (PDF)'
+            }}
           </button>
+          @if (!claseTerminada()) {
+            <p class="muted text-sm">
+              El informe se habilita cuando la clase está finalizada o cancelada.
+            </p>
+          }
 
           <!-- Solo para los docentes participantes (el agente consulta). La
                plataforma no programa recordatorios: entrega un `.ics` que lleva

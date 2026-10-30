@@ -39,7 +39,21 @@ export class ProyectosService {
     return this.http.get<Proyecto>(`${API_URL}/proyectos/${id}`);
   }
 
-  /** Descarga el resumen de la clase en PDF (registro físico). */
+  /** Acta ejecutiva para docentes; solo disponible con la clase terminada. */
+  descargarActaPdf(id: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/proyectos/${id}/acta-pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Expediente completo para agentes; solo con la clase terminada. */
+  descargarExpedientePdf(id: number): Observable<Blob> {
+    return this.http.get(`${API_URL}/proyectos/${id}/expediente-pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  /** Compatibilidad: el rol del usuario decide el documento. */
   descargarResumenPdf(id: number): Observable<Blob> {
     return this.http.get(`${API_URL}/proyectos/${id}/resumen-pdf`, {
       responseType: 'blob',
