@@ -1,6 +1,6 @@
 # Entrega funcional — Clases Conjuntas
 
-Versión de entrega: **2026-10-28**
+Versión de entrega: **2026-10-30**
 
 Este paquete contiene el código fuente, las migraciones y el frontend ya
 compilado. **No contiene** `node_modules`, `.env`, archivos subidos, base de
@@ -92,6 +92,9 @@ debe validarse en el servidor.
   mínimo de dos participantes y congelamiento al cierre.
 - Observadoras de solo lectura después del cierre, sin certificado ni
   reconocimiento.
+- Salida individual de una institución con motivo, solicitud de cancelación con
+  aprobación de todas las instituciones activas y cancelación automática si
+  quedan menos de dos. El PDF de la clase refleja salidas y cancelación.
 - Segundo factor TOTP opcional para presidencia y secretaría de la CACE, con
   códigos de recuperación de un solo uso.
 - Identificador `X-Request-Id` en las respuestas, alertas por webhook y script
