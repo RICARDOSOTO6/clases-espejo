@@ -175,6 +175,10 @@ curl.exe -s -I http://localhost:3000/logo-cace.webp
 
 # 5) carga fría/caliente: Chrome con --remote-debugging-port=9222 y CDP,
 #    Network.setCacheDisabled(true/false), sumando encodedDataLength por petición.
+
+# 6) tiempos de respuesta de las cinco rutas más usadas (media y p95)
+cd backend; npm run medir-latencia
+#   imprime la tabla y deja una ficha con fecha y equipo en docs/producto/mediciones/
 ```
 
 ## 6. Qué significa en el día a día
@@ -218,7 +222,38 @@ curl.exe -s -I http://localhost:3000/logo-cace.webp
 - La fuente Inter viaja desde Google Fonts (48 KB, 26 % de la carga fría
   restante) y no se puede medir su latencia desde aquí.
 
-## 9. Pendientes y criterios de aceptación
+## 9. Tiempos de respuesta de la API
+
+Lo de arriba es **peso transferido**; esto es **cuánto tarda el servidor**. El
+29-oct-2026 se midieron las cinco rutas que recorre una persona desde que entra
+hasta que abre una clase, con `npm run medir-latencia`
+(`backend/scripts/medir-latencia.js`), contra el servidor local `:3000` y la base
+de demostración (4 instituciones, 11 usuarios, 4 proyectos, 202 filas).
+
+| Ruta | n | Media (ms) | p50 (ms) | p95 (ms) | Máx. (ms) | Errores |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `GET /usuarios/me` | 100 | 7,7 | 7,6 | 10,0 | 11,1 | 0 |
+| `GET /proyectos/mios` | 100 | 20,5 | 19,4 | 26,4 | 31,4 | 0 |
+| `GET /proyectos/:id` | 100 | 15,8 | 15,6 | 19,4 | 34,3 | 0 |
+| `GET /proyectos/:id/sesiones` | 100 | 16,3 | 16,0 | 18,8 | 21,4 | 0 |
+| `POST /auth/login` | 9 | 76,6 | 75,9 | 84,6 | 84,6 | 0 |
+
+Cómo se lee:
+
+- La **petición más lenta es el login** (76,6 ms de media), y no por la base: se
+  paga `bcrypt` al comparar la contraseña. El resto de pantallas quedan entre 8
+  y 26 ms de p95.
+- Se mide **en serie y con un solo usuario**: es latencia, no comportamiento bajo
+  carga. No dice qué pasa con 50 personas a la vez.
+- El login está limitado a 10 intentos por minuto y por IP+correo, así que se
+  midieron 9: el p95 de esas 9 muestras es, en la práctica, la peor.
+- Equipo de la medición: Intel i5-1145G7, 16,9 GB, Windows 11, Node 24.21.0,
+  HTTP local. La ficha completa (con fecha, equipo y commit) está en
+  [`mediciones/latencia-2026-10-29-2312.md`](mediciones/latencia-2026-10-29-2312.md).
+- Para repetirlo: `cd backend; npm run medir-latencia` (requiere el servidor
+  arriba y la cuenta de demostración). El guion no escribe en la base.
+
+## 10. Pendientes y criterios de aceptación
 
 | Pendiente | Por qué no se hizo | Criterio de aceptación |
 | --- | --- | --- |
@@ -228,7 +263,7 @@ curl.exe -s -I http://localhost:3000/logo-cace.webp
 | Alojar la fuente Inter | Requiere descargar y servir archivos; el registro no está accesible | La carga fría no depende de `fonts.gstatic.com` |
 | Trocear el bundle compartido | Hay que ver qué arrastra el chunk de 84 KB gzip | El chunk inicial baja de forma medible sin perder funcionalidad |
 
-## 10. Cambios en el repositorio
+## 11. Cambios en el repositorio
 
 | Commit | Qué |
 | --- | --- |
