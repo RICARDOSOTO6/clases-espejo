@@ -1,5 +1,9 @@
 # 🍳 Receta para montar Clases Conjuntas
 
+> ⚠️ **ARCHIVADO (octubre de 2026): no sigas esta guía.** Describe una versión
+> anterior del proyecto. La vigente es
+> [`docs/guias/guia-de-despliegue.md`](../guias/guia-de-despliegue.md).
+
 > **Versión casera y sin protocolo de la guía de despliegue.**
 > La formal está en `docs/guia-de-despliegue.md`. Esta es la misma cosa, pero
 > explicada como si estuviéramos cocinando y con los datos de *tu* máquina.

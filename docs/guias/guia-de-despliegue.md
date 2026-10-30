@@ -1,405 +1,349 @@
-# 🚀 Guía de despliegue — Clases Conjuntas
+# 🚀 Guía de despliegue — de un Ubuntu recién instalado al piloto en línea
 
-Guía simplificada para montar **todo el proyecto** (base de datos + API + frontend)
-en un servidor **Linux** o **Windows**.
+La única guía de puesta en marcha del proyecto. Pasos numerados, en orden, con
+los comandos listos para copiar.
 
-> Escrita y verificada contra el proyecto real: los comandos, rutas y nombres de
-> archivo que aparecen aquí son los que usa el código.
+> **Cómo está escrita:** cada comando y cada ruta se comprobaron contra los
+> archivos actuales del proyecto (`Dockerfile`, `backend/.env.example`,
+> `backend/src/main.ts`, `frontend/angular.json`, `backend/scripts/`). **No se
+> ejecutaron en un Ubuntu real** al escribirla: la prueba de fuego es tu máquina
+> virtual. Si algo falla, el mensaje de error dirá en qué paso estás.
 >
-> 🍳 **¿Prefieres la versión sin formalidades?** Está en
-> `docs/receta-para-montarlo.md`: los mismos pasos contados como una receta de
-> cocina, con los datos de la máquina de desarrollo.
->
-> 🥋 **¿Es tu primera vez y prefieres practicar sin riesgo?** En
-> `docs/practica-en-maquina-virtual.md` está el ensayo general: montar el sistema
-> en una máquina virtual, romperlo a propósito (12 ejercicios) y arreglarlo, con
-> snapshots para deshacer todo.
+> **Ensayar antes de arriesgar:** hazlo primero en una máquina virtual y con una
+> instantánea tomada. Al final está el [Apéndice A](#apéndice-a-ensayarlo-en-virtualbox)
+> con los datos de la VM.
 
 ---
 
 ## Índice
 
-1. [Cómo funciona el despliegue (léelo primero)](#1-cómo-funciona-el-despliegue-léelo-primero)
-2. [Lo que necesitas tener a mano](#2-lo-que-necesitas-tener-a-mano)
-3. [Ruta rápida (probar en 10 minutos)](#3-ruta-rápida-probar-en-10-minutos)
-4. [Paso 1: Instalar el software base](#4-paso-1-instalar-el-software-base)
-5. [Paso 2: Crear la base de datos](#5-paso-2-crear-la-base-de-datos)
-6. [Paso 3: Descargar el código](#6-paso-3-descargar-el-código)
-7. [Paso 4: Configurar el archivo `.env`](#7-paso-4-configurar-el-archivo-env)
-8. [Paso 5: Instalar dependencias, crear tablas y compilar](#8-paso-5-instalar-dependencias-crear-tablas-y-compilar)
-9. [Paso 6: Primer arranque y verificación](#9-paso-6-primer-arranque-y-verificación)
-10. [Paso 7: Dejarlo corriendo como servicio](#10-paso-7-dejarlo-corriendo-como-servicio)
-11. [Paso 8: Publicarlo en el puerto 80/443 con HTTPS](#11-paso-8-publicarlo-en-el-puerto-80443-con-https)
-12. [Paso 9: Cortafuegos](#12-paso-9-cortafuegos)
-13. [Primer uso del sistema](#13-primer-uso-del-sistema)
-14. [Actualizar a una versión nueva](#14-actualizar-a-una-versión-nueva)
-15. [Respaldos](#15-respaldos)
-16. [Verificación final (checklist)](#16-verificación-final-checklist)
-17. [Problemas comunes](#17-problemas-comunes)
-18. [Chuleta de comandos](#18-chuleta-de-comandos)
+0. [Qué vas a montar](#0-qué-vas-a-montar)
+1. [Preparar Ubuntu](#1-preparar-ubuntu)
+2. [Node.js 24](#2-nodejs-24)
+3. [PostgreSQL 17](#3-postgresql-17)
+4. [La base de datos y su usuario](#4-la-base-de-datos-y-su-usuario)
+5. [El usuario del servicio](#5-el-usuario-del-servicio)
+6. [Traer el código](#6-traer-el-código)
+7. [El archivo `.env`](#7-el-archivo-env)
+8. [Dependencias, migraciones y compilación](#8-dependencias-migraciones-y-compilación)
+9. [Primer arranque y verificación](#9-primer-arranque-y-verificación)
+10. [Dejarlo como servicio](#10-dejarlo-como-servicio)
+11. [Nginx delante (puerto 80)](#11-nginx-delante-puerto-80)
+12. [HTTPS con dominio](#12-https-con-dominio)
+13. [Cortafuegos](#13-cortafuegos)
+14. [Primer acceso y alta de la presidencia](#14-primer-acceso-y-alta-de-la-presidencia)
+15. [Respaldos automáticos](#15-respaldos-automáticos)
+16. [Actualizar el piloto](#16-actualizar-el-piloto)
+17. [Problemas frecuentes](#17-problemas-frecuentes)
+18. [Lista final de aceptación](#18-lista-final-de-aceptación)
+- [Apéndice A: ensayarlo en VirtualBox](#apéndice-a-ensayarlo-en-virtualbox)
+- [Apéndice B: Docker](#apéndice-b-docker)
+- [Apéndice C: variables de `.env`](#apéndice-c-variables-de-env)
+
+**Tiempo:** 45 minutos la primera vez. **Requisitos:** Ubuntu Server 24.04 LTS,
+2 GB de RAM y 20 GB de disco como mínimo (4 GB de RAM si vas a compilar el
+frontend en la propia máquina).
 
 ---
 
-## 1. Cómo funciona el despliegue (léelo primero)
+## 0. Qué vas a montar
 
-Entender esto te ahorra la mitad de los problemas:
+Una sola URL sirve **API y frontend compilado**: el frontend de Angular se
+compila *dentro* de `backend/public` y NestJS lo entrega.
 
 ```text
-                    ┌──────────────────────────────────────────┐
-   Usuario  ──────► │  Proxy inverso (Nginx / IIS / Caddy)     │
-   (navegador)      │  Puerto 80 / 443  +  certificado HTTPS   │
-                    └────────────────────┬─────────────────────┘
-                                         │  reenvía TODO a
-                                         ▼
-                    ┌──────────────────────────────────────────┐
-                    │  Un solo proceso Node (NestJS) :3000     │
-                    │                                          │
-                    │   /            → frontend compilado      │
-                    │   /auth, /proyectos, …  → API            │
-                    │   /uploads     → evidencias subidas      │
-                    └────────────────────┬─────────────────────┘
-                                         │
-                                         ▼
-                              PostgreSQL :5432 (local)
+Navegador
+   │
+   ├── Nginx (80/443)  ── opcional pero recomendado
+   │       │
+   │       └── Node 24 + NestJS (127.0.0.1:3000)
+   │               │
+   │               ├── PostgreSQL 17 (127.0.0.1:5432)
+   │               └── uploads/ (evidencias, logos, PDFs emitidos)
 ```
 
-**Tres ideas clave:**
+| Pieza | Dónde |
+|---|---|
+| Código | `/opt/clasesespejo` |
+| Servicio | usuario de sistema `clasesespejo`, unidad `clasesespejo.service` |
+| Variables | `/opt/clasesespejo/backend/.env` (permisos 600) |
+| Archivos subidos | `/opt/clasesespejo/backend/uploads` |
+| Respaldos | `/var/backups/clasesespejo` |
 
-1. **No hay dos servidores.** NestJS sirve el frontend ya compilado (desde
-   `backend/public`), la API y los archivos subidos. Todo sale del puerto `3000`.
-2. **El frontend llama a la API en el mismo origen.** En producción (cualquier
-   puerto que no sea el `4200` de desarrollo) las peticiones son relativas
-   (`/auth/login`). Por eso **el frontend y la API deben verse en el mismo
-   dominio**.
-3. **Node se ejecuta con el directorio de trabajo en `backend/`.** Las rutas de
-   `public/`, `uploads/` y `.env` se resuelven desde ahí (`.env` se lee con
-   `dotenv` desde el directorio actual). Si arrancas el proceso desde otra
-   carpeta, la aplicación no encuentra nada.
-
-**Lo que NO hace falta:** SSR (no se usa), nginx/iis obligatorio (es opcional, para
-HTTPS y dominio), ni Redis/colas. Solo Node + PostgreSQL.
+> El backend lee `.env` **desde la carpeta donde se lanza** (`main.ts` hace
+> `import 'dotenv/config'`). Por eso el servicio se lanza desde `backend/`.
 
 ---
 
-## 2. Lo que necesitas tener a mano
-
-| Dato | Ejemplo | Para qué |
-| --- | --- | --- |
-| Dominio o IP pública | `clasesespejo.miescuela.edu` | URL de acceso y enlaces de invitación |
-| Contraseña para la base de datos | `UnaClaveLarga2026` | Conexión de la aplicación |
-| Cuenta de correo SMTP | `no-reply@miescuela.edu` + contraseña de aplicación | **Obligatorio**: enviar invitaciones a docentes |
-| Clave secreta JWT | 42 caracteres aleatorios | Firmar las sesiones |
-| Acceso al repositorio | URL de Git o un ZIP | Obtener el código |
-
-> ⚠️ **Sin SMTP no se pueden dar de alta docentes.** El sistema los incorpora
-> enviándoles una invitación por correo. Si el envío falla, la invitación se
-> cancela y la API responde con *"No se pudo enviar el correo de invitación"*.
-
----
-
-## 3. Ruta rápida (probar en 10 minutos)
-
-Si solo quieres verlo funcionando en una máquina (sin dominio ni HTTPS):
+## 1. Preparar Ubuntu
 
 ```bash
-# 1. Backend
-cd backend
-npm ci
-# crear .env (ver paso 4)
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-
-# 2. Frontend compilado dentro del backend
-cd ../frontend
-npm ci
-npx ng build
-
-# 3. Arrancar
-cd ../backend
-npm run start:prod        # → http://localhost:3000
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl unzip ca-certificates build-essential python3 openssl
+sudo timedatectl set-timezone America/Mexico_City     # ajusta la tuya
 ```
 
-Abre `http://localhost:3000` y regístrate como agente. Para dejarlo corriendo
-siempre (aunque cierres la sesión), sigue desde el **Paso 7**.
+`build-essential` y `python3` son la red de seguridad de las dependencias nativas
+(`bcrypt`); con un binario precompilado ni se usan.
+
+**📸 Toma una instantánea ahora** si estás en una máquina virtual. Este es el
+punto al que vas a querer volver.
 
 ---
 
-## 4. Paso 1: Instalar el software base
+## 2. Node.js 24
 
-### 🐧 Linux (Ubuntu 22.04 / 24.04 o Debian 12)
+El paquete se construyó con Node 24 (es la versión de la imagen del `Dockerfile`).
+Node 18 o 20 no están soportados por Angular 21.
 
 ```bash
-# Node.js 22 LTS
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs git
-
-# PostgreSQL
-sudo apt-get install -y postgresql postgresql-contrib
-
-# Comprobar
-node -v      # v22.x
+curl -fsSL https://deb.nodesource.com/setup_24.x -o /tmp/nodesource_setup.sh
+sudo bash /tmp/nodesource_setup.sh
+sudo apt install -y nodejs
+node -v      # v24.x
 npm -v
 ```
 
-### 🪟 Windows Server 2019/2022 (o Windows 10/11)
+---
 
-1. **Node.js 22 LTS** — descargar el instalador `.msi` de <https://nodejs.org>
-   y marcar la opción de agregar al `PATH`.
-2. **PostgreSQL 16** — descargar de <https://www.postgresql.org/download/windows/>.
-   Durante la instalación:
-   * Anota la contraseña del usuario `postgres`.
-   * Puerto `5432`.
-   * Deja marcado *Stack Builder* desactivado (no hace falta).
-3. **Git for Windows** — <https://git-scm.com/download/win>.
+## 3. PostgreSQL 17
 
-Comprueba en una terminal nueva (`cmd` o PowerShell):
+Ubuntu 24.04 instala PostgreSQL 16 por defecto. El proyecto usa 17, así que se
+añade el repositorio oficial de PostgreSQL.
 
-```powershell
-node -v
-npm -v
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" --version
+```bash
+sudo install -d /usr/share/postgresql-common/pgdg
+sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+  -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+. /etc/os-release
+echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+  | sudo tee /etc/apt/sources.list.d/pgdg.list
+sudo apt update
+sudo apt install -y postgresql-17
 ```
 
-> **Nota sobre la versión de Node:** el proyecto se desarrolló y probó con
-> **Node 22.16**. Angular 21 necesita Node moderno (20.19+ / 22.12+); no uses
-> Node 18.
+Comprueba que arranca y que **solo escucha en local**:
+
+```bash
+sudo systemctl status postgresql
+sudo ss -lntp | grep 5432      # debe decir 127.0.0.1:5432
+```
 
 ---
 
-## 5. Paso 2: Crear la base de datos
+## 4. La base de datos y su usuario
 
-### 🐧 Linux
+Usa una contraseña larga y **sin** `@ : / ?` (rompen la URL de conexión).
 
 ```bash
 sudo -u postgres psql
 ```
 
-Dentro de `psql`:
+Dentro de `psql` (cambia la contraseña):
 
 ```sql
-CREATE USER clasesespejo WITH PASSWORD 'UnaClaveLarga2026';
-CREATE DATABASE clasesconjuntas OWNER clasesespejo;
+CREATE ROLE clasesespejo LOGIN PASSWORD 'UNA_CONTRASENA_LARGA_2026';
+CREATE DATABASE clasesconjuntas OWNER clasesespejo ENCODING 'UTF8' TEMPLATE template0;
 \q
 ```
 
-### 🪟 Windows
-
-Abre **SQL Shell (psql)** desde el menú Inicio (o usa pgAdmin) y ejecuta lo mismo:
-
-```sql
-CREATE USER clasesespejo WITH PASSWORD 'UnaClaveLarga2026';
-CREATE DATABASE clasesconjuntas OWNER clasesespejo;
-```
-
-También sirve desde `cmd`, sin entrar al shell interactivo:
-
-```powershell
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "CREATE USER clasesespejo WITH PASSWORD 'UnaClaveLarga2026';"
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "CREATE DATABASE clasesconjuntas OWNER clasesespejo;"
-```
-
-> El usuario de la aplicación **no necesita** permisos de superusuario ni
-> `CREATEDB`: como es el dueño de la base, `prisma migrate deploy` crea las tablas
-> sin problema (ese comando no usa base de datos "sombra").
-
-**Prueba la conexión** antes de seguir:
+Prueba la conexión tal como la usará la aplicación:
 
 ```bash
-psql "postgresql://clasesespejo:UnaClaveLarga2026@localhost:5432/clasesconjuntas" -c "SELECT 1;"
+PGPASSWORD='UNA_CONTRASENA_LARGA_2026' psql -h 127.0.0.1 -U clasesespejo -d clasesconjuntas -c '\conninfo'
 ```
+
+Debe responder con la conexión establecida, no con un error de contraseña.
 
 ---
 
-## 6. Paso 3: Descargar el código
+## 5. El usuario del servicio
 
-### 🐧 Linux (recomendado: carpeta `/opt`)
-
-```bash
-sudo mkdir -p /opt/clasesespejo
-sudo chown -R $USER:$USER /opt/clasesespejo
-git clone <URL_DEL_REPOSITORIO> /opt/clasesespejo
-cd /opt/clasesespejo
-```
-
-### 🪟 Windows
-
-```powershell
-mkdir C:\clasesespejo
-cd C:\clasesespejo
-git clone <URL_DEL_REPOSITORIO> .
-```
-
-Al terminar deben existir `backend\`, `frontend\` y `docs\`.
-
----
-
-## 7. Paso 4: Configurar el archivo `.env`
-
-El archivo va **siempre en `backend/.env`** (nunca se sube al repositorio).
-
-```env
-# --- Base de datos ---
-DATABASE_URL="postgresql://clasesespejo:UnaClaveLarga2026@localhost:5432/clasesconjuntas?schema=public"
-
-# --- Autenticación ---
-JWT_SECRET="cambia-esto-por-42-caracteres-aleatorios-largos"
-JWT_EXPIRES_IN="1d"
-INVITATION_EXPIRES_IN="7d"
-
-# --- URL PÚBLICA del frontend (¡muy importante!) ---
-FRONTEND_URL="https://clasesespejo.miescuela.edu"
-
-# --- Correo (obligatorio para invitar docentes) ---
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="no-reply@miescuela.edu"
-SMTP_PASS="clave-de-aplicacion"
-MAIL_FROM="no-reply@miescuela.edu"
-
-# --- Opcional ---
-PORT="3000"
-```
-
-### Reglas que el sistema hace cumplir
-
-| Variable | Regla |
-| --- | --- |
-| `JWT_SECRET` | **La aplicación no arranca** si falta o tiene menos de 16 caracteres. Genera una con: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
-| `FRONTEND_URL` | Primera opción para la URL del **correo de invitación**. Si la dejas en `localhost`, la aplicación usa la dirección real de la petición (el dominio o el túnel desde el que se esté usando), así que un túnel funciona sin tocar nada. Con dominio propio, ponlo aquí. |
-| `URLS_PERMITIDAS` | Opcional. Hosts aceptados al deducir la URL de la petición (admite `*.dominio`). Sin esta variable se acepta cualquier host válido. |
-| `SMTP_SECURE` | `"true"` solo para el puerto `465`. Con `587` va `"false"`. |
-| `JWT_EXPIRES_IN` / `INVITATION_EXPIRES_IN` | Formato de duración: `30m`, `1d`, `7d`. |
-
-Si usas Gmail, necesitas una **contraseña de aplicación** (no la de tu cuenta):
-se genera en la configuración de seguridad de la cuenta Google.
-### Correo masivo y buen nombre (Fase 2)
-
-- **La cola no cambia los límites del proveedor.** Gmail admite unos 500
-  correos al día; con un dominio propio o un proveedor transaccional el límite
-  es mayor. La cola reintenta y registra el rebote, pero si el proveedor rechaza
-  por cuota el envío queda `FALLIDO` con ese motivo.
-- **SPF, DKIM y DMARC**: si el remitente es de un dominio propio, publica los
-  tres registros DNS. Sin ellos muchos destinatarios marcan el correo como spam
-  o lo rechazan.
-- **Remitente**: `MAIL_FROM` es el remitente general. Si el proveedor lo permite,
-  define `MAIL_FROM_CERTIFICADOS` para que los certificados salgan desde otra
-  dirección; si falta, se usa `MAIL_FROM`.
-- **Worker**: vacía la cola cada 60 segundos; `ENVIOS_INTERVALO_MS` permite
-  cambiarlo (solo para pruebas). No ejecutes dos instancias del backend contra
-  la misma base sin coordinarlo: no hay bloqueo distribuido.
-
-### Permisos del archivo (Linux)
-
-```bash
-chmod 600 /opt/clasesespejo/backend/.env
-```
-
----
-
-## 8. Paso 5: Instalar dependencias, crear tablas y compilar
-
-El orden importa: primero se generan el cliente de Prisma y las tablas, después
-se compila (el código compilado incluye una copia del cliente).
-
-### 8.1 Backend
-
-```bash
-cd /opt/clasesespejo/backend      # Linux
-# cd C:\clasesespejo\backend      # Windows
-
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-```
-
-* `npm ci` instala exactamente las versiones del `package-lock.json`.
-* `prisma generate` crea el cliente en `backend/generated/prisma`.
-  ⚠️ **Windows:** si el servicio ya está corriendo, este comando falla con un
-  error `EPERM` sobre una DLL. Detén el servicio antes.
-* `prisma migrate deploy` crea las 22 tablas en la base de datos (aplica las 10
-  migraciones de `backend/prisma/migrations`). Es idempotente: repetirlo no
-  rompe nada.
-* `npm run build` compila a `backend/dist`.
-
-### 8.2 Frontend
-
-```bash
-cd ../frontend                    # Linux
-# cd ..\frontend                  # Windows
-
-npm ci
-npx ng build
-```
-
-Al terminar, `backend/public` debe contener `index.html` más los archivos
-`main-XXXX.js` y `styles-XXXX.css`.
-
-> **Opción B (servidores con poca memoria):** el build de Angular necesita ~2 GB
-> de RAM. Si tu servidor no los tiene, compila en tu equipo y sube solo el
-> resultado:
->
-> ```bash
-> # en tu equipo
-> cd frontend && npx ng build
-> # copiar al servidor (Linux)
-> scp -r backend/public usuario@servidor:/opt/clasesespejo/backend/
-> ```
->
-> En ese caso ya no necesitas instalar las dependencias del frontend en el
-> servidor.
-
-⚠️ NestJS decide si sirve el frontend **al arrancar**: busca
-`backend/public/index.html`. Si compilas el frontend después de arrancar el
-servicio, hay que **reiniciarlo** para que lo tome.
-
----
-
-## 9. Paso 6: Primer arranque y verificación
-
-```bash
-cd /opt/clasesespejo/backend
-npm run start:prod
-```
-
-Debe aparecer:
-
-```text
-Backend corriendo en http://localhost:3000
-```
-
-Comprueba desde otra terminal:
-
-```bash
-curl http://localhost:3000/health
-# {"status":"ok","service":"clases-espejo-backend","timestamp":"2026-…"}
-```
-
-> Comprueba con `/health` y no con `/`: cuando el frontend está compilado, `GET /`
-> devuelve el `index.html` de la aplicación.
-
-Y abre `http://IP_DEL_SERVIDOR:3000` en el navegador: debe cargar la pantalla de
-**Iniciar sesión** de Clases Conjuntas.
-
-Si todo funciona, detén el proceso con `Ctrl + C` y pasa al Paso 7.
-
----
-
-## 10. Paso 7: Dejarlo corriendo como servicio
-
-### 🐧 Linux — systemd (recomendado)
-
-Crea un usuario dedicado para que la aplicación no corra como root:
+La aplicación no debe correr como `root` ni con tu usuario personal.
 
 ```bash
 sudo useradd --system --shell /usr/sbin/nologin --home /opt/clasesespejo clasesespejo
-sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
-sudo -u clasesespejo mkdir -p /opt/clasesespejo/backend/uploads
+sudo mkdir -p /opt/clasesespejo
+sudo chown clasesespejo:clasesespejo /opt/clasesespejo
 ```
 
-Crea el servicio:
+`/opt/clasesespejo` es también su carpeta personal: ahí dejará su caché de `npm`.
+Los comandos de instalación y compilación van con **`sudo -H`** para que usen esa
+carpeta y no la de `root`.
+
+---
+
+## 6. Traer el código
+
+**Opción A — desde GitHub** (el repositorio es público):
+
+```bash
+sudo -H -u clasesespejo git clone https://github.com/RICARDOSOTO6/clases-espejo.git /opt/clasesespejo
+```
+
+**Opción B — el código tal como está en tu máquina de desarrollo**, incluido lo
+que aún no has subido. Desde PowerShell, en la carpeta del proyecto:
+
+```powershell
+git archive --format=zip -o "$env:TEMP\clasesespejo.zip" HEAD
+scp "$env:TEMP\clasesespejo.zip" ricardo@IP_DEL_SERVIDOR:/home/ricardo/
+```
+
+Y en el servidor:
+
+```bash
+sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
+sudo -H -u clasesespejo unzip -q /home/ricardo/clasesespejo.zip -d /opt/clasesespejo
+ls /opt/clasesespejo          # backend  frontend  docs  Dockerfile
+```
+
+---
+
+## 7. El archivo `.env`
+
+Genera primero el secreto de sesión. **Mínimo 32 bytes**: si es más corto, la
+aplicación se niega a arrancar.
+
+```bash
+openssl rand -hex 32
+```
+
+Crea el archivo con ese valor:
+
+```bash
+sudo -H -u clasesespejo nano /opt/clasesespejo/backend/.env
+```
+
+```env
+# --- Base de datos (obligatoria) ---
+DATABASE_URL="postgresql://clasesespejo:UNA_CONTRASENA_LARGA_2026@localhost:5432/clasesconjuntas?schema=public"
+
+# --- Sesiones y certificados (obligatoria) ---
+JWT_SECRET="PEGA_AQUI_LA_SALIDA_DE_openssl_rand_hex_32"
+JWT_EXPIRES_IN="1d"
+INVITATION_EXPIRES_IN="7d"
+
+# --- URL pública: el dominio real, no localhost ---
+FRONTEND_URL="https://clases.tudominio.org"
+URL_PUBLICA="https://clases.tudominio.org"
+
+# --- Certificados ---
+CERTIFICADO_MODO_DEMO="true"
+
+# --- Correo saliente (obligatorio para invitar y para la presidencia) ---
+SMTP_HOST="smtp.tudominio.org"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="usuario@tudominio.org"
+SMTP_PASS="la-contrasena-del-correo"
+MAIL_FROM="no-reply@tudominio.org"
+
+# --- Presidencia inicial ---
+PRESIDENTE_CORREO="presidencia@tudominio.org"
+
+# --- Opcionales ---
+PORT="3000"
+HSTS="true"
+#REVISION_DIAS_ANTELACION="7"
+#URLS_PERMITIDAS=""
+#ALERTA_WEBHOOK_URL=""
+#ALERTA_COOLDOWN_MIN="30"
+```
+
+Protege el archivo:
+
+```bash
+sudo chmod 600 /opt/clasesespejo/backend/.env
+sudo chown clasesespejo:clasesespejo /opt/clasesespejo/backend/.env
+```
+
+Tres reglas que no se negocian:
+
+1. **`JWT_SECRET` no se cambia después de emitir certificados**: con él se deriva
+   el código de verificación impreso. Cambiarlo invalida los ya emitidos.
+2. **`URL_PUBLICA` se fija antes del primer certificado**: es la base del QR.
+   Cambiarla después deja inservibles los QR impresos.
+3. **`CERTIFICADO_MODO_DEMO` sigue en `true`** hasta que la CACE autorice la
+   plantilla y el uso oficial.
+
+---
+
+## 8. Dependencias, migraciones y compilación
+
+El orden importa: primero el cliente de Prisma y las tablas, después la
+compilación (el código compilado importa el cliente generado).
+
+**8.1 Backend**
+
+```bash
+sudo -H -u clasesespejo bash -lc '
+  cd /opt/clasesespejo/backend &&
+  npm ci &&
+  npx prisma generate &&
+  npx prisma migrate deploy &&
+  npm run build
+'
+```
+
+- `npm ci` instala exactamente las versiones de `package-lock.json`.
+- `prisma generate` crea el cliente en `backend/generated/prisma`.
+- `migrate deploy` aplica las migraciones **existentes**. No crea ni modifica
+  migraciones: para eso está `migrate dev`, que en el servidor **no se usa**.
+- `npm run build` (`nest build`) deja el ejecutable en `dist/src/main.js`.
+
+**8.2 Frontend**
+
+```bash
+sudo -H -u clasesespejo bash -lc '
+  cd /opt/clasesespejo/frontend &&
+  npm ci &&
+  npm run build
+'
+```
+
+`angular.json` tiene `outputPath` apuntando a **`../backend/public`**: el resultado
+no se queda en el frontend, cae directamente donde lo sirve NestJS. Tarda entre 2
+y 6 minutos.
+
+> Con 2 GB de RAM el build de Angular puede morir por falta de memoria. Si pasa,
+> compílalo en tu equipo y copia el resultado:
+> `scp -r .\backend\public\* ricardo@IP_DEL_SERVIDOR:/opt/clasesespejo/backend/public/`
+> (en Windows, en PowerShell).
+
+Comprueba que quedó compilado:
+
+```bash
+ls /opt/clasesespejo/backend/public | head      # index.html, main-*.js, ...
+```
+
+---
+
+## 9. Primer arranque y verificación
+
+Arranca a mano una vez, para ver los errores en pantalla:
+
+```bash
+sudo -H -u clasesespejo bash -lc '
+  cd /opt/clasesespejo/backend && node dist/src/main
+'
+```
+
+Debe aparecer el arranque de Nest y que escucha en el 3000. En **otra terminal**:
+
+```bash
+curl -s http://127.0.0.1:3000/health
+# {"status":"ok","service":"clases-espejo-backend","timestamp":"..."}
+```
+
+Comprueba con **`/health`**, no con `/`: cuando el frontend está compilado, `GET /`
+devuelve el `index.html`.
+
+Si todo está bien, `Ctrl+C` y pasa al servicio. Si no, mira
+[Problemas frecuentes](#17-problemas-frecuentes).
+
+---
+
+## 10. Dejarlo como servicio
 
 ```bash
 sudo nano /etc/systemd/system/clasesespejo.service
@@ -409,498 +353,328 @@ sudo nano /etc/systemd/system/clasesespejo.service
 [Unit]
 Description=Clases Conjuntas (API + frontend)
 After=network.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple
 User=clasesespejo
 Group=clasesespejo
 WorkingDirectory=/opt/clasesespejo/backend
-ExecStart=/usr/bin/node dist/src/main
+ExecStart=/usr/bin/node dist/src/main.js
 Restart=always
 RestartSec=5
+TimeoutStopSec=20
 Environment=NODE_ENV=production
-# Límite de memoria (ajusta según tu servidor)
 MemoryMax=1G
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/clasesespejo/backend/uploads
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-> La clave está en `WorkingDirectory`: **tiene que ser `backend/`**. No hace falta
-> declarar las variables: la aplicación lee `backend/.env` desde ahí.
-
-Actívalo:
-
 ```bash
+sudo mkdir -p /opt/clasesespejo/backend/uploads
+sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo/backend/uploads
 sudo systemctl daemon-reload
 sudo systemctl enable --now clasesespejo
-sudo systemctl status clasesespejo      # debe decir active (running)
-sudo journalctl -u clasesespejo -f      # ver los registros en vivo
+systemctl status clasesespejo        # active (running)
+journalctl -u clasesespejo -f        # registros en vivo
 ```
 
-### 🪟 Windows — NSSM (recomendado)
-
-**NSSM** convierte cualquier programa en un servicio de Windows.
-
-1. Descarga NSSM de <https://nssm.cc/download> y descomprímelo (por ejemplo en
-   `C:\nssm`).
-2. Abre **PowerShell como Administrador** y ejecuta:
-
-```powershell
-C:\nssm\win64\nssm.exe install ClasesConjuntas "C:\Program Files\nodejs\node.exe" "dist\src\main.js"
-C:\nssm\win64\nssm.exe set ClasesConjuntas AppDirectory "C:\clasesespejo\backend"
-C:\nssm\win64\nssm.exe set ClasesConjuntas DisplayName "Clases Conjuntas"
-C:\nssm\win64\nssm.exe set ClasesConjuntas Description "API y frontend de Clases Conjuntas"
-C:\nssm\win64\nssm.exe set ClasesConjuntas Start SERVICE_AUTO_START
-C:\nssm\win64\nssm.exe set ClasesConjuntas AppStdout "C:\clasesespejo\logs\app.log"
-C:\nssm\win64\nssm.exe set ClasesConjuntas AppStderr "C:\clasesespejo\logs\error.log"
-New-Item -ItemType Directory -Force C:\clasesespejo\logs | Out-Null
-C:\nssm\win64\nssm.exe start ClasesConjuntas
-```
-
-Comprobar y controlar el servicio:
-
-```powershell
-Get-Service ClasesConjuntas
-C:\nssm\win64\nssm.exe restart ClasesConjuntas
-C:\nssm\win64\nssm.exe stop ClasesConjuntas
-```
-
-**Alternativa con PM2** (más cómodo si ya lo usas):
-
-```powershell
-npm install -g pm2 pm2-windows-startup
-pm2-startup install
-cd C:\clasesespejo\backend
-pm2 start dist/src/main.js --name clasesconjuntas --cwd C:\clasesespejo\backend
-pm2 save
-```
-
-> El detalle crítico en Windows es el mismo que en Linux: el
-> **directorio de trabajo** debe ser `...\backend`.
+`WorkingDirectory=/opt/clasesespejo/backend` es lo que hace que se lea el `.env`
+correcto y que `uploads/` exista donde la aplicación lo busca.
 
 ---
 
-## 11. Paso 8: Publicarlo en el puerto 80/443 con HTTPS
+## 11. Nginx delante (puerto 80)
 
-Esta parte es **opcional** si solo vas a acceder por `http://IP:3000`. Se hace
-para tener un dominio, HTTPS y no exponer el puerto 3000.
-
-### Elige una opción
-
-| Escenario | Opción recomendada |
-| --- | --- |
-| Linux con dominio | **Nginx + Certbot** (abajo) |
-| Linux o Windows, HTTPS fácil | **Caddy** (2 líneas, certificado automático) |
-| Windows con IIS ya instalado | **IIS + ARR** |
-| Solo red interna | No hace falta proxy: abre el puerto 3000 en el cortafuegos |
-
-### 🐧 Opción Nginx (Linux)
+Opcional para una prueba en red local; imprescindible para HTTPS y para no
+exponer el 3000.
 
 ```bash
-sudo apt-get install -y nginx
+sudo apt install -y nginx
 sudo nano /etc/nginx/sites-available/clasesespejo
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name clasesespejo.miescuela.edu;
+    listen [::]:80;
+    server_name clases.tudominio.org;      # o la IP si aún no hay dominio
 
-    # Las evidencias pueden pesar hasta 10 MB: el valor por defecto de Nginx
-    # es 1 MB y haría fallar las subidas con error 413.
-    client_max_body_size 12M;
+    client_max_body_size 25m;              # las evidencias pesan hasta 10 MB
+    proxy_read_timeout 60s;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 120s;
     }
 }
 ```
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/clasesespejo /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-
-# HTTPS con certificado gratuito
-sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d clasesespejo.miescuela.edu
+sudo ln -sfn /etc/nginx/sites-available/clasesespejo /etc/nginx/sites-enabled/clasesespejo
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-Después de obtener el certificado, actualiza `FRONTEND_URL` en `.env` a
-`https://clasesespejo.miescuela.edu` y reinicia el servicio.
+Ajusta el `.env` a la nueva URL y reinicia:
 
-### 🌍 Opción Caddy (Linux o Windows)
-
-Caddy obtiene y renueva el certificado solo. **Caddyfile**:
-
-```text
-clasesespejo.miescuela.edu {
-    reverse_proxy 127.0.0.1:3000
-}
+```env
+FRONTEND_URL="http://clases.tudominio.org"
+URL_PUBLICA="http://clases.tudominio.org"
 ```
 
 ```bash
-caddy run --config Caddyfile     # o caddy start
+sudo systemctl restart clasesespejo
+curl -s http://127.0.0.1/health
 ```
 
-Caddy no limita el tamaño de subida por defecto, así que las evidencias de 10 MB
-pasan sin configuración extra.
-
-### 🪟 Opción IIS (Windows)
-
-1. Instala **IIS** (Administrador del servidor → Agregar roles → Servidor web).
-2. Instala **URL Rewrite** y **Application Request Routing (ARR)** desde
-   <https://www.iis.net/downloads/microsoft>.
-3. En IIS Manager → nodo del servidor → **Application Request Routing Cache** →
-   *Server Proxy Settings* → marca **Enable proxy**.
-4. Crea un sitio con el dominio deseado apuntando a una carpeta vacía (por
-   ejemplo `C:\clasesespejo\iis`) y coloca este `web.config`:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <system.webServer>
-    <rewrite>
-      <rules>
-        <rule name="ClasesConjuntas" stopProcessing="true">
-          <match url="(.*)" />
-          <action type="Rewrite" url="http://localhost:3000/{R:1}" />
-        </rule>
-      </rules>
-    </rewrite>
-    <security>
-      <requestFiltering>
-        <!-- 12 MB: deja margen sobre el límite de 10 MB de las evidencias -->
-        <requestLimits maxAllowedContentLength="12582912" />
-      </requestFiltering>
-    </security>
-  </system.webServer>
-</configuration>
-```
-
-5. Enlaza el certificado en *Enlaces* del sitio (HTTPS 443).
+> Si las subidas de archivos dan **error 413**, es `client_max_body_size`. Si los
+> enlaces de las invitaciones salen con el host equivocado, revisa
+> `FRONTEND_URL` y `URLS_PERMITIDAS`.
 
 ---
 
-## 12. Paso 9: Cortafuegos
+## 12. HTTPS con dominio
 
-**Regla de oro:** el puerto `3000` **no** debe quedar abierto a Internet; solo lo
-consume el proxy desde la propia máquina.
+Requisitos: dominio con un registro **A** apuntando a la IP del servidor, puertos
+80 y 443 abiertos y Nginx funcionando.
 
-### 🐧 Linux
+```bash
+dig +short clases.tudominio.org          # debe devolver la IP correcta
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d clases.tudominio.org
+```
+
+Certbot reescribe la configuración y renueva solo. Comprueba:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+echo | openssl s_client -connect clases.tudominio.org:443 2>/dev/null | grep subject
+```
+
+Ahora sí, la URL definitiva en el `.env` **antes de emitir ningún certificado**:
+
+```env
+FRONTEND_URL="https://clases.tudominio.org"
+URL_PUBLICA="https://clases.tudominio.org"
+```
+
+```bash
+sudo systemctl restart clasesespejo
+```
+
+---
+
+## 13. Cortafuegos
 
 ```bash
 sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+sudo ufw allow 'Nginx Full'
 sudo ufw enable
-sudo ufw status
+sudo ufw status verbose
 ```
 
-Si accedes directo por el 3000 (sin proxy), añade `sudo ufw allow 3000/tcp`
-**solo** en redes de confianza.
-
-### 🪟 Windows
-
-```powershell
-New-NetFirewallRule -DisplayName "Clases Conjuntas HTTP"  -Direction Inbound -Protocol TCP -LocalPort 80  -Action Allow
-New-NetFirewallRule -DisplayName "Clases Conjuntas HTTPS" -Direction Inbound -Protocol TCP -LocalPort 443 -Action Allow
-```
-
----
-
-## 13. Primer uso del sistema
-
-Con el sistema arriba, **no hay que sembrar datos**: la primera institución se
-registra desde la propia aplicación.
-
-1. Abre `https://clasesespejo.miescuela.edu`.
-2. Pulsa **Regístrate** y crea la cuenta del **agente de internacionalización**
-   con los datos de su institución.
-3. Inicia sesión. Si aparece el aviso *"Completa el registro de tu institución"*,
-   revisa los datos y pulsa **Guardar**.
-4. Invita al primer **docente**: se le enviará un correo con el enlace de
-   activación (aquí se prueba de paso que el SMTP quedó bien configurado).
-5. Como agente, crea **materias** y **asignaciones** para ese docente.
-
-Para el resto del flujo, consulta el **manual de usuario**:
-`docs/manual-de-usuario.md`.
-
-### ⚠️ No ejecutes los scripts de demostración en producción
-
-`backend/scripts/seed-demo.js` **borra toda la base de datos** (usuarios,
-instituciones, proyectos…) y la reemplaza por datos falsos. Está pensado
-únicamente para demos y desarrollo. Lo mismo aplica a
-`seed-demo-clases.js` / `borrar-demo-clases.js`.
-
-Si quieres una demostración sobre el servidor, usa una **base de datos aparte**
-(por ejemplo `clasesconjuntas_demo`) y apunta `DATABASE_URL` a ella.
-
----
-
-## 14. Actualizar a una versión nueva
-
-### 🐧 Linux
+**No abras el 3000.** El backend escucha en local y Nginx es la única puerta. Si
+pruebas sin Nginx, limita el puerto a tu red:
 
 ```bash
-cd /opt/clasesespejo
-sudo systemctl stop clasesespejo          # detener: Prisma necesita los archivos libres
-
-git pull
-cd backend
-npm ci                                  # solo si cambió package.json
-npx prisma migrate deploy               # solo si hay migraciones nuevas
-npm run build
-
-cd ../frontend
-npm ci
-npx ng build
-
-cd ..
-sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo
-sudo systemctl start clasesespejo
-sudo systemctl status clasesespejo
+sudo ufw allow from 192.168.1.0/24 to any port 3000 proto tcp
 ```
 
-### 🪟 Windows
-
-```powershell
-C:\nssm\win64\nssm.exe stop ClasesConjuntas
-
-cd C:\clasesespejo
-git pull
-cd backend
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-
-cd ..\frontend
-npm ci
-npx ng build
-
-C:\nssm\win64\nssm.exe start ClasesConjuntas
-```
-
-> Recuerda: en Windows **hay que detener el servicio** antes de `prisma generate`
-> y antes de recompilar, porque el cliente generado y `dist/` están en uso.
+En un VPS real, cambia además la contraseña de `root` por **clave SSH** y
+desactiva el acceso por contraseña en `/etc/ssh/sshd_config`.
 
 ---
 
-## 15. Respaldos
+## 14. Primer acceso y alta de la presidencia
 
-Hay **dos cosas** que respaldar: la base de datos y los archivos de evidencia.
+En el primer arranque, si **no existe ninguna presidencia**, la aplicación crea la
+cuenta de `PRESIDENTE_CORREO` con una contraseña provisional (cambio obligatorio al
+entrar) y la envía por correo.
 
-### Base de datos
+- Si el SMTP no está configurado, la cuenta se crea igual, pero **la contraseña no
+  se imprime en el registro**: habría que restablecerla. Configura el correo antes
+  del primer arranque.
+- Una base nueva **no** trae datos de demostración.
+- Si más adelante hay que cambiar de presidencia, se hace **transmitiendo** el
+  cargo desde la aplicación; no se borra la cuenta.
+
+Primer recorrido recomendado:
+
+1. Abre `https://clases.tudominio.org` → pantalla de inicio de sesión.
+2. Entra con la presidencia, cambia la contraseña.
+3. Registra una institución y apruébala (dos instituciones, si vas a probar una
+   clase espejo de verdad).
+4. Invita a una secretaría y a un docente: comprueba que **el correo llega**.
+5. Sube una evidencia (comprueba el límite de tamaño y que el PDF se descarga).
+6. Emite un certificado de prueba y abre el QR: debe resolver en `/verificar/...`.
+
+---
+
+## 15. Respaldos automáticos
+
+El proyecto trae servicios y temporizadores listos, además de los guiones.
 
 ```bash
-# Linux
-pg_dump "postgresql://clasesespejo:CLAVE@localhost:5432/clasesconjuntas" \
-  -F c -f /var/backups/clasesconjuntas-$(date +%F).dump
+sudo /opt/clasesespejo/backend/scripts/instalar-temporizadores.sh
+systemctl list-timers --all | grep clasesespejo
 ```
 
-```powershell
-# Windows
-& "C:\Program Files\PostgreSQL\16\bin\pg_dump.exe" -U clasesespejo -F c `
-  -f "C:\backups\clasesconjuntas-$(Get-Date -Format yyyy-MM-dd).dump" clasesconjuntas
-```
+Instala dos temporizadores:
 
-Restaurar:
+| Temporizador | Cuándo | Qué hace |
+|---|---|---|
+| `clasesespejo-respaldo.timer` | todos los días a las **02:15** | `scripts/respaldo-cron.sh` → `npm run respaldo` (base + `uploads`) en `/var/backups/clasesespejo` |
+| `clasesespejo-salud.timer` | al arrancar y **cada 5 minutos** | `scripts/verificar-salud.js` contra `/health` |
+
+El instalador exige que `clasesespejo.service` y el usuario ya existan (pasos 5 y
+10). Si no configuras `ALERTA_WEBHOOK_URL` en el `.env`, un fallo solo queda en el
+registro: nadie se entera. Vale la pena poner un webhook de Slack, Discord o
+Telegram.
+
+Respaldo manual, cuando lo necesites:
 
 ```bash
-pg_restore -d clasesconjuntas --clean --if-exists respaldo.dump
+sudo -H -u clasesespejo bash -lc 'cd /opt/clasesespejo/backend && npm run respaldo -- --salida /var/backups/clasesespejo/manual'
 ```
 
-### Evidencias subidas
+Y **ensaya la restauración** una vez, en la VM, con `npm run restauracion`. Un
+respaldo que nunca se ha restaurado no es un respaldo. Copia después los archivos
+fuera del servidor. El detalle está en
+[`respaldo-y-restauracion.md`](respaldo-y-restauracion.md).
 
-Copia la carpeta `backend/uploads/` (contiene los archivos que subieron los
-docentes). Sin ella, la base de datos apuntaría a archivos inexistentes.
+---
+
+## 16. Actualizar el piloto
 
 ```bash
-# Ejemplo: copia diaria a otra carpeta/disco
-tar czf /var/backups/uploads-$(date +%F).tar.gz -C /opt/clasesespejo/backend uploads
+sudo -H -u clasesespejo git -C /opt/clasesespejo pull
+sudo -H -u clasesespejo bash -lc 'cd /opt/clasesespejo/backend && npm ci && npx prisma generate && npx prisma migrate deploy && npm run build'
+sudo -H -u clasesespejo bash -lc 'cd /opt/clasesespejo/frontend && npm ci && npm run build'
+sudo systemctl restart clasesespejo
+curl -s http://127.0.0.1:3000/health
 ```
 
-Programa ambos con `cron` (Linux) o el **Programador de tareas** (Windows).
+Orden correcto: **respaldo → código → migraciones → compilar → reiniciar**. Nunca
+en medio de una clase ni con `migrate dev`. Si el pull trae un cambio de esquema
+que ya se aplicó, el error de *checksum* se resuelve con `migrate resolve`, no
+reiniciando la base.
 
 ---
 
-## 16. Verificación final (checklist)
+## 17. Problemas frecuentes
 
-| # | Prueba | Resultado esperado |
-| --- | --- | --- |
-| 1 | `curl http://localhost:3000/health` | Respuesta JSON del servicio |
-| 2 | Abrir el dominio en el navegador | Pantalla **Iniciar sesión** con el logo CACE |
-| 3 | Registrarse como agente | Crea la institución y entra al panel |
-| 4 | Invitar a un docente | Mensaje *"Invitación enviada"* y el correo llega |
-| 5 | Abrir el enlace del correo | Pantalla **Completa tu registro** (comprueba `FRONTEND_URL`) |
-| 6 | Activar la cuenta y entrar | Panel del docente |
-| 7 | Crear materia + asignación + solicitud | La solicitud aparece *Pendiente* |
-| 8 | Revisar como agente de origen y destino | Se crea el proyecto |
-| 9 | Subir una evidencia de ~5 MB | Se sube sin error 413 (si usas Nginx) |
-| 10 | Reiniciar el servidor | El sistema vuelve solo (servicio habilitado) |
-
----
-
-## 17. Problemas comunes
-
-| Síntoma | Causa y solución |
-| --- | --- |
-| **La aplicación no arranca y el log menciona `JWT_SECRET`** | Falta la variable o tiene menos de 16 caracteres. Genera una nueva y reinicia. |
-| **`prisma generate` falla con `EPERM` (Windows)** | El servicio está corriendo y bloquea la DLL del cliente. Detén el servicio, genera y vuelve a arrancar. |
-| **`npm run build` no compila / errores raros de Prisma** | Se compiló antes de `prisma generate`. Hazlo en orden: `generate` → `build`. |
-| **La web carga pero muestra una versión vieja del frontend** | NestJS sirve `backend/public` **al arrancar**. Recompila el frontend y **reinicia** el servicio. |
-| **Las llamadas a la API devuelven el `index.html`** | Algún `location` del proxy está enviando todo al frontend. Revisa que el proxy reenvíe el prefijo a Node sin reescribir la ruta. |
-| **Error 413 al subir una evidencia** | Límite del proxy. Nginx: `client_max_body_size 12M`. IIS: `maxAllowedContentLength`. |
-| **La subida falla con "Tipo de archivo no permitido"** | Es intencional: solo PDF, imágenes, Office, texto y ZIP. `.html`, `.svg` y `.js` están bloqueados por seguridad. |
-| **`No se pudo enviar el correo de invitación`** | SMTP mal configurado. Con Gmail usa **contraseña de aplicación** y `SMTP_SECURE="false"` en el puerto 587. Revisa que el servidor tenga salida al puerto 587. |
-| **El enlace del correo apunta a `localhost`** | La aplicación usa `FRONTEND_URL` y, si es `localhost`, la dirección de la petición. Comprueba que el proxy envía `X-Forwarded-Proto` y `X-Forwarded-Host` (el ejemplo de Nginx ya los manda) o pon `FRONTEND_URL` con el dominio real. |
-| **Error 502 del proxy** | El proceso Node no está corriendo o escucha en otro puerto. `systemctl status clasesespejo` / `Get-Service ClasesConjuntas` y revisa los logs. |
-| **No puedo eliminar una materia / docente** | No es un fallo: el sistema protege el historial. El mensaje indica la dependencia que lo impide. |
-| **`npm ci` falla al compilar `bcrypt`** | Es un módulo nativo. En Linux instala las herramientas: `sudo apt-get install -y build-essential python3`. |
-| **`npm ci` falla al compilar el frontend por falta de memoria** | Compila en tu equipo (Opción B del Paso 5) y sube solo `backend/public`. |
-| **Los archivos subidos dan error de permisos** | `backend/uploads` debe pertenecer al usuario del servicio: `sudo chown -R clasesespejo:clasesespejo /opt/clasesespejo/backend/uploads`. |
-| **Cambié `JWT_SECRET` y todos quedaron fuera** | Es el comportamiento esperado: los tokens anteriores dejan de ser válidos. Vuelve a iniciar sesión. |
+| Síntoma | Causa habitual | Qué mirar |
+|---|---|---|
+| El servicio no arranca y habla de `JWT_SECRET` | secreto ausente o de menos de 32 bytes | `openssl rand -hex 32` en el `.env` |
+| `Can't reach database server` | PostgreSQL apagado o `DATABASE_URL` con la contraseña/usuario equivocados | `systemctl status postgresql`, probar `psql` a mano (paso 4) |
+| `/health` responde pero `/` da 404 | el frontend no se compiló | `ls backend/public`; repetir el paso 8.2 |
+| La web carga pero las llamadas a la API fallan (CORS) | `FRONTEND_URL` no coincide con el dominio real | `.env` + reiniciar el servicio |
+| Error 413 al subir evidencias | límite de Nginx | `client_max_body_size 25m` |
+| El correo no llega | SMTP mal configurado o el proveedor bloquea | probar con una invitación y mirar `journalctl -u clasesespejo` |
+| La contraseña provisional de presidencia no llegó | SMTP falló en el primer arranque | restablécela con la recuperación de contraseña |
+| Tras actualizar, el `.env` «no se aplica» | `WorkingDirectory` distinta de `backend/` | revisar la unidad |
+| Todo era culpa del navegador | `index.html` viejo en caché | `Ctrl+Shift+R` |
 
 ---
 
-## 18. Chuleta de comandos
+## 18. Lista final de aceptación
 
-### Linux
+- [ ] `systemctl status clasesespejo` → *active (running)*
+- [ ] `curl http://127.0.0.1:3000/health` → `{"status":"ok",...}`
+- [ ] `https://dominio` abre la pantalla de inicio de sesión
+- [ ] `https://dominio/health` responde por HTTPS (proxy + certificado)
+- [ ] `sudo ufw status` → solo OpenSSH y Nginx; **3000 cerrado**
+- [ ] Entra la presidencia (contraseña propia, no provisional)
+- [ ] Llega un correo de invitación a una cuenta real
+- [ ] Se sube una evidencia y se descarga el PDF
+- [ ] El QR de un certificado de prueba abre `/verificar/...`
+- [ ] `systemctl list-timers --all | grep clasesespejo` → respaldo y salud activos
+- [ ] Hay un respaldo en `/var/backups/clasesespejo` **y se probó restaurarlo**
+- [ ] `CERTIFICADO_MODO_DEMO="true"` (hasta que la CACE autorice)
+- [ ] Los respaldos están copiados fuera del servidor
+
+---
+
+## Apéndice A: ensayarlo en VirtualBox
+
+Con esto puedes repetir toda la guía sin arriesgar nada.
+
+1. **VM nueva:** Ubuntu Server 24.04 LTS, 2 CPU, **4096 MB**, disco VDI de 30 GB
+   (dinámico). En el asistente de VirtualBox marca **Skip Unattended
+   Installation**.
+2. **Red:** adaptador **NAT** y, en *Avanzado → Reenvío de puertos*, dos reglas:
+
+   | Nombre | Protocolo | Anfitrión | Invitado |
+   |---|---|---|---|
+   | `ssh` | TCP | 2222 | 22 |
+   | `web` | TCP | 8080 | 3000 |
+
+   Así `http://localhost:8080` en Windows es el 3000 de la VM, sin depender del
+   Wi-Fi ni del cortafuegos de la red.
+3. **Instala** Ubuntu Server y marca **Install OpenSSH server** (si no, no hay
+   SSH). Comprueba desde PowerShell: `ssh -p 2222 ricardo@localhost`.
+4. **Instantánea** con la VM apagada (VirtualBox → Instantáneas → Tomar).
+5. **Sigue esta guía** desde el paso 1. Dos diferencias:
+   - no necesitas dominio ni HTTPS: quédate en el paso 11 (HTTP) o prueba
+     directamente `http://localhost:8080` sin Nginx;
+   - `FRONTEND_URL` debe ser `http://localhost:8080` (el puerto de *tu* Windows),
+     si quieres que los enlaces del correo abran bien desde tu navegador.
+6. **Rómpela a propósito** y arréglala: para el servicio, cambia `JWT_SECRET` por
+   uno corto, apaga PostgreSQL, borra `backend/public`. Cada fallo es un error que
+   no vas a ver delante de un cliente.
+
+## Apéndice B: Docker
+
+Existe `docker-compose.yml` (PostgreSQL 17 + aplicación en el 3000, aplicando
+migraciones al arrancar). Es la vía más corta para una demo.
 
 ```bash
-# Servicio
-sudo systemctl start|stop|restart|status clasesespejo
-sudo journalctl -u clasesespejo -n 100 --no-pager
-
-# Aplicación
-cd /opt/clasesespejo/backend
-npx prisma migrate deploy && npm run build
-cd ../frontend && npx ng build
-
-# Base de datos
-sudo -u postgres psql clasesconjuntas
-```
-
-### Windows
-
-```powershell
-# Servicio
-C:\nssm\win64\nssm.exe start|stop|restart ClasesConjuntas
-Get-Content C:\clasesespejo\logs\app.log -Tail 100
-
-# Aplicación
-cd C:\clasesespejo\backend
-npx prisma migrate deploy
-npm run build
-cd ..\frontend
-npx ng build
-
-# Base de datos
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U clasesespejo clasesconjuntas
-```
-
----
-
-# 📌 Resumen en una imagen
-
-```text
-1. Instalar Node 22 + PostgreSQL + Git
-2. Crear la base: clasesconjuntas (dueño: clasesespejo)
-3. git clone  →  /opt/clasesespejo   (o C:\clasesespejo)
-4. backend/.env  →  DATABASE_URL, JWT_SECRET, FRONTEND_URL, SMTP_*
-5. npm ci  →  npx prisma generate  →  npx prisma migrate deploy  →  npm run build
-6. frontend: npm ci  →  ng build
-7. Servicio: systemd (Linux) / NSSM (Windows), con WorkingDirectory = backend
-8. Proxy + HTTPS: Nginx + Certbot / Caddy / IIS+ARR   (subidas: 12 MB)
-9. Cortafuegos: 80 y 443 abiertos, 3000 cerrado
-10. Abrir el dominio  →  registrarse como agente  →  invitar docentes
-```
-
----
-
-*Guía de despliegue de Clases Conjuntas · Plataforma CACE*
-*Documentos relacionados: `docs/readme` (técnico) y `docs/manual-de-usuario.md` (uso).*
-
----
-
-## 19. Docker para la demo o un servidor temporal
-
-Hay un `Dockerfile` y un `docker-compose.yml` en la raíz. Es la vía más rápida
-para una demo: incluye PostgreSQL, aplica las migraciones y sirve frontend y API
-en el puerto 3000.
-
-> **Estado:** los archivos están preparados, pero **no se pudieron construir en
-> esta máquina porque Docker no está instalado**. La primera construcción real
-> debe hacerse en el servidor y revisar los logs antes de la clase.
-
-### Preparar los secretos
-
-```powershell
-Copy-Item .env.docker.example .env.docker
-notepad .env.docker
-```
-
-Como mínimo cambia:
-
-- `POSTGRES_PASSWORD` (sin `@ : / ?` para que no rompa la URL de conexión).
-- `JWT_SECRET` (mínimo 16 caracteres; cambiarlo invalida códigos ya emitidos).
-- `FRONTEND_URL` y `URL_PUBLICA` con la URL real. **Antes de emitir certificados.**
-- `SMTP_*`, `MAIL_FROM` y `PRESIDENTE_CORREO`.
-
-`.env.docker` está en `.gitignore`; no se sube.
-
-### Levantar
-
-```powershell
+sudo apt install -y docker.io docker-compose-v2
+cp .env.docker.example .env.docker
+nano .env.docker                # mismas variables que el paso 7
 docker compose --env-file .env.docker up -d --build
 docker compose --env-file .env.docker logs -f app
 ```
 
-La base empieza **vacía**: no se ejecuta `seed-demo.js`. El arranque aplica
-`prisma migrate deploy` y crea la presidencia con `PRESIDENTE_CORREO`.
+> **Sin verificar:** la imagen **nunca se ha construido** en la máquina de
+> desarrollo (no había Docker). La primera construcción real hay que verla con los
+> registros delante, y no el día de la clase. Los datos viven en los volúmenes
+> `db-data`, `uploads` y `respaldos`; `docker compose down -v` los borra.
 
-Comprobaciones:
+## Apéndice C: variables de `.env`
 
-```powershell
-curl.exe http://localhost:3000/health
-docker compose --env-file .env.docker ps
-```
+La lista canónica, con todos los comentarios, está en
+[`backend/.env.example`](../../backend/.env.example). Resumen:
 
-### Datos y respaldos
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `DATABASE_URL` | sí | conexión a PostgreSQL |
+| `JWT_SECRET` | sí (≥32 bytes) | firma de sesiones y código de verificación de certificados |
+| `JWT_EXPIRES_IN`, `INVITATION_EXPIRES_IN` | no | duración de sesión y de invitación |
+| `FRONTEND_URL` | sí | origen permitido y enlaces de los correos |
+| `URL_PUBLICA` | sí | base del QR del certificado |
+| `CERTIFICADO_MODO_DEMO` | sí | marca DEMO en los certificados |
+| `SMTP_*`, `MAIL_FROM` | sí en la práctica | invitaciones, avisos y certificados |
+| `PRESIDENTE_CORREO` | sí en una base nueva | crea la presidencia inicial |
+| `PORT` | no (3000) | puerto del backend |
+| `HSTS` | no | cabecera de seguridad (solo con `NODE_ENV=production`) |
+| `REVISION_DIAS_ANTELACION` | no (7) | plazo para responder una solicitud |
+| `URLS_PERMITIDAS` | no | hosts aceptados para deducir la URL pública |
+| `ENVIOS_INTERVALO_MS` | no (60000) | cada cuánto vacía la cola el worker de correo |
+| `ALERTA_WEBHOOK_URL`, `ALERTA_WEBHOOK_TOKEN`, `ALERTA_COOLDOWN_MIN` | no | avisos del temporizador de salud |
 
-- `db-data`: base PostgreSQL.
-- `uploads`: evidencias, logos y PDFs emitidos.
-- `respaldos`: salida de los scripts de respaldo.
+---
 
-No uses `docker compose down -v` salvo que quieras borrar la demo entera.
-
-Para respaldar desde el contenedor:
-
-```powershell
-docker compose --env-file .env.docker exec app node scripts/respaldo.js --salida /app/backend/respaldos/demo
-```
-
-Copia después la carpeta fuera del servidor.
-
-### HTTPS
-
-El contenedor publica HTTP en 3000. Para HTTPS, pon delante Nginx, Caddy o el
-proxy del proveedor, y configura `FRONTEND_URL` y `URL_PUBLICA` con el dominio
-final. El QR del certificado queda atado a esa URL.
-
-### Actualizar
-
-```powershell
-git pull
-docker compose --env-file .env.docker up -d --build
-```
-
-No cambies migraciones ni hagas `down -v` durante una clase.
+*Si algo de esta guía no coincide con lo que hace el código, es un error de la
+guía: corrígelo y avisa.*

@@ -846,6 +846,6 @@ sistema tal como funciona hoy.
 ---
 
 *Informe de actividades de Clases Conjuntas · 23 de septiembre de 2026*
-*Documentos relacionados: `docs/readme` (técnico), `docs/auditorias/` (calidad),
-`docs/manual-de-usuario.md` (uso), `docs/guia-de-despliegue.md` y
-`docs/receta-para-montarlo.md` (puesta en marcha).*
+*Documentos relacionados: `docs/README.md` (técnico), `docs/auditorias/` (calidad),
+`docs/guias/manual-de-usuario.md` (uso) y `docs/guias/guia-de-despliegue.md`
+(puesta en marcha).*

@@ -5,7 +5,8 @@
 | Carpeta | Qué hay dentro |
 |---|---|
 | [`producto/`](producto/) | Cómo está diseñado: [`plan-de-accion.md`](producto/plan-de-accion.md) (el plan de la CACE y los certificados por fases), [`certificados-diseno.md`](producto/certificados-diseno.md) y [`diagramas/`](producto/diagramas/) (casos de uso, entidad-relación, clases del dominio, flujo, actividades, secuencias, estados, mapa de pantallas, arquitectura, módulos del backend, permisos, pruebas, cronograma y trazabilidad) |
-| [`guias/`](guias/) | Cómo se usa y se pone en marcha: [`manual-de-usuario.md`](guias/manual-de-usuario.md), [`guia-diseno-certificado.md`](guias/guia-diseno-certificado.md), [`guia-de-despliegue.md`](guias/guia-de-despliegue.md), [`instalacion-ubuntu-server-desde-cero.md`](guias/instalacion-ubuntu-server-desde-cero.md), [`ramas-piloto-y-sprint.md`](guias/ramas-piloto-y-sprint.md), [`receta-para-montarlo.md`](guias/receta-para-montarlo.md), [`practica-en-maquina-virtual.md`](guias/practica-en-maquina-virtual.md) y [`respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) |
+| [`guias/`](guias/) | Cómo se usa y se pone en marcha: [`guia-de-despliegue.md`](guias/guia-de-despliegue.md) (**la única guía de puesta en marcha**: de un Ubuntu recién instalado al piloto en línea), [`manual-de-usuario.md`](guias/manual-de-usuario.md), [`guia-diseno-certificado.md`](guias/guia-diseno-certificado.md), [`respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md), [`ramas-piloto-y-sprint.md`](guias/ramas-piloto-y-sprint.md) y [`trabajo-en-el-codigo.md`](guias/trabajo-en-el-codigo.md) |
+| [`descarte/`](descarte/) | Versiones anteriores **sin mantenimiento** de la guía de despliegue (no seguirlas; solo referencia histórica). La vigente es [`guias/guia-de-despliegue.md`](guias/guia-de-despliegue.md) |
 | [`tesis/`](tesis/) | Los documentos académicos: memoria, marco teórico, antecedentes e informe técnico |
 | [`informes/`](informes/) | Informes de entrega y de actividades |
 | [`presentacion/`](presentacion/) | Material para exponer: discurso, guion de estudio y las presentaciones |
@@ -28,11 +29,8 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | --- | --- |
 | `docs/README.md` (este archivo) | Documentación técnica: instalación, API, modelo de datos, roles y capacidades, estado y plan. |
 | [`guias/manual-de-usuario.md`](guias/manual-de-usuario.md) | **Manual de usuario** paso a paso para agente y docente. |
-| [`guias/guia-de-despliegue.md`](guias/guia-de-despliegue.md) | **Guía de despliegue** en un servidor Linux o Windows (base de datos, servicio, HTTPS, respaldos). |
-| [`guias/instalacion-ubuntu-server-desde-cero.md`](guias/instalacion-ubuntu-server-desde-cero.md) | **Instalación ultra-detallada desde una Ubuntu Server recién instalada**: Node, PostgreSQL, base, `.env`, systemd, Nginx, HTTPS, respaldos y problemas frecuentes. |
+| [`guias/guia-de-despliegue.md`](guias/guia-de-despliegue.md) | **La guía de despliegue** (la única): de un Ubuntu Server 24.04 recién instalado al piloto en línea — Node 24, PostgreSQL 17, base de datos, `.env`, migraciones, compilación, systemd, Nginx, HTTPS, cortafuegos, respaldos y verificación. |
 | [`guias/ramas-piloto-y-sprint.md`](guias/ramas-piloto-y-sprint.md) | **Ramas y worktrees para separar el piloto del sprint**: etiqueta, rama congelada, base separada, fusión y rollback. |
-| [`guias/receta-para-montarlo.md`](guias/receta-para-montarlo.md) | La misma instalación contada **como una receta de cocina**, paso a paso y sin formalidades. |
-| [`guias/practica-en-maquina-virtual.md`](guias/practica-en-maquina-virtual.md) | **Ensayo general en una máquina virtual**: montarlo, romperlo y arreglarlo antes de tocar un servidor real. |
 | [`guias/guia-diseno-certificado.md`](guias/guia-diseno-certificado.md) | **Guía para diseñar el certificado fuera de la aplicación** (medidas, zonas y archivos de ejemplo). |
 | [`guias/respaldo-y-restauracion.md`](guias/respaldo-y-restauracion.md) | El respaldo de la base (`clasesconjuntas_respaldo_20261013`) y cómo restaurarlo. |
 | [`producto/plan-de-accion.md`](producto/plan-de-accion.md) | El plan por fases de la CACE, las instituciones y los certificados. |
@@ -63,9 +61,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 * [Compilar y desplegar el frontend](#-compilar-y-desplegar-el-frontend)
 * [Comandos principales](#-comandos-principales)
 * [Datos de demostración](#-datos-de-demostración)
-* [Guía de despliegue (documento aparte)](guias/guia-de-despliegue.md)
-* [Receta para montarlo (documento aparte)](guias/receta-para-montarlo.md)
-* [Práctica en máquina virtual (documento aparte)](guias/practica-en-maquina-virtual.md)
+* [Guía de despliegue paso a paso (documento aparte)](guias/guia-de-despliegue.md)
 * [Informe de actividades con evidencia (documento aparte)](informes/informe-de-actividades.md)
 
 **Diseño del sistema**

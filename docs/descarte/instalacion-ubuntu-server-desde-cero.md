@@ -1,5 +1,10 @@
 # Instalación desde cero en Ubuntu Server
 
+> ⚠️ **ARCHIVADO (octubre de 2026): no sigas esta guía.** Es la versión extensa
+> que dio origen a la guía actual; se conserva como referencia. La vigente, más
+> corta y actualizada, es
+> [`docs/guias/guia-de-despliegue.md`](../guias/guia-de-despliegue.md).
+
 **Proyecto:** Clases Conjuntas  
 **Paquete:** `ClasesEspejo-entrega-2026-10-28.zip`  
 **Guía actualizada:** 27 de octubre de 2026  

@@ -1,5 +1,11 @@
 # 🥋 Ensayo general en una máquina virtual
 
+> ⚠️ **ARCHIVADO (octubre de 2026): no sigas esta guía.** Describe una versión
+> anterior del proyecto (rutas, versiones de Node y recuentos de tablas
+> desactualizados). La vigente es
+> [`docs/guias/guia-de-despliegue.md`](../guias/guia-de-despliegue.md); los datos de
+> la máquina virtual están en su Apéndice A.
+
 > **Para qué es esto:** para montar Clases Conjuntas en una VM, romperla a
 > propósito, arreglarla, y llegar al día del estreno sin miedo.
 >
