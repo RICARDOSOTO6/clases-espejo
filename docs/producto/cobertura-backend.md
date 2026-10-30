@@ -108,8 +108,8 @@ Por bloques:
   importante; dice qué código se ejecutó al menos una vez. Las ramas al 47 %
   indican que casi la mitad de los caminos alternativos (validaciones, errores,
   permisos) no se han recorrido.
-- **El frontend no está aquí.** Sus 34 pruebas se miden aparte (tarea 4 del
-  sprint).
+- **El frontend no está aquí.** Sus 34 pruebas y su cobertura se miden aparte;
+  ver `cobertura-frontend.md` (50,18 % de líneas el 29-oct).
 - **No hay umbral que haga fallar el CI.** Se mide y se publica; poner un mínimo
   obligatorio es una decisión aparte, y un umbral mal puesto se esquiva
   añadiendo pruebas triviales.

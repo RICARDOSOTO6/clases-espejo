@@ -39,6 +39,7 @@ Una clase espejo permite que docentes de distintas instituciones coordinen una e
 | [`producto/certificados-diseno.md`](producto/certificados-diseno.md) | Las decisiones de diseño de los certificados (plantilla universal, emisión, verificación y entrega). |
 | [`producto/rendimiento.md`](producto/rendimiento.md) | Qué se optimizó y cuánto: cifras de carga fría/caliente, gzip, caché, índices de base de datos y lo que queda pendiente. |
 | [`producto/cobertura-backend.md`](producto/cobertura-backend.md) | Qué parte del backend ejecutan las pruebas: **68,0 % de líneas** (medido el 29-oct), lo que queda sin cubrir y cómo se consulta la cobertura en el CI. |
+| [`producto/cobertura-frontend.md`](producto/cobertura-frontend.md) | Qué pantallas ejecutan las 34 pruebas de la interfaz: **50,2 % de líneas** (medido el 29-oct), lo que queda sin cubrir y cómo se consulta en el CI. |
 | [`producto/mediciones/`](producto/mediciones/) | Tiempos de respuesta de las cinco rutas más usadas, una ficha por ejecución con fecha, equipo y cifras (media, p50, p95). |
 | [`informes/informe-de-actividades.md`](informes/informe-de-actividades.md) | **Informe de actividades con evidencia**: cronología por fechas, commits, métricas, estado verificado y pendientes. |
 | [`informes/informe-para-el-cliente.md`](informes/informe-para-el-cliente.md) | El informe de entrega para el cliente. |

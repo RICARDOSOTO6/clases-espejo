@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:ci": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
-    "serve:ssr:frontend": "node dist/frontend/server/server.mjs"
+    "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
+    "test:cov": "ng test --watch=false --coverage"
   },
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -34,6 +35,7 @@
     "@angular/compiler-cli": "^21.2.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "@vitest/coverage-v8": "^4.1.12",
     "angular-eslint": "^21.4.0",
     "eslint": "^9.39.5",
     "jsdom": "^28.0.0",

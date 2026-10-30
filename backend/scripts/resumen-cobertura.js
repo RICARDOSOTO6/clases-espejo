@@ -1,20 +1,36 @@
 /**
  * Resumen legible de la cobertura, para pegarlo en el registro del CI.
  *
- * Lee `coverage/coverage-summary.json` (lo genera `npm run test:cov`) y escribe
- * un resumen en Markdown: el total, el detalle por carpeta y los archivos con
- * menos cobertura. Si el archivo no existe, lo dice y termina sin error, porque
- * el paso del CI que lo llama también se ejecuta cuando las pruebas fallan.
+ * Lee un `coverage-summary.json` (lo genera `npm run test:cov`) y escribe un
+ * resumen en Markdown: el total, el detalle por carpeta y los archivos con menos
+ * cobertura. Si el archivo no existe, lo dice y termina sin error, porque el
+ * paso del CI que lo llama también se ejecuta cuando las pruebas fallan.
  *
- * Uso, desde backend:
- *   node scripts/resumen-cobertura.js            # por pantalla
- *   node scripts/resumen-cobertura.js --guardar  # y deja coverage/RESUMEN.md
+ * Uso, desde backend o desde frontend:
+ *   node scripts/resumen-cobertura.js                      # por pantalla
+ *   node scripts/resumen-cobertura.js --guardar            # y deja coverage/RESUMEN.md
+ *   node scripts/resumen-cobertura.js --archivo <ruta.json> --titulo "Cobertura del frontend" --niveles 2
  */
 const { readFileSync, writeFileSync, existsSync } = require('node:fs');
-const { join } = require('node:path');
+const { dirname, join, resolve } = require('node:path');
 
-const ARCHIVO = join(process.cwd(), 'coverage', 'coverage-summary.json');
-const GUARDAR = process.argv.includes('--guardar');
+const opciones = { guardar: false, archivo: null, titulo: null, niveles: 1 };
+const argumentos = process.argv.slice(2);
+for (let i = 0; i < argumentos.length; i += 1) {
+  const a = argumentos[i];
+  if (a === '--guardar') opciones.guardar = true;
+  else if (a === '--archivo') opciones.archivo = argumentos[++i];
+  else if (a === '--titulo') opciones.titulo = argumentos[++i];
+  else if (a === '--niveles') opciones.niveles = Number(argumentos[++i]);
+}
+
+const ARCHIVO = resolve(
+  opciones.archivo ?? join(process.cwd(), 'coverage', 'coverage-summary.json'),
+);
+const TITULO = opciones.titulo ?? 'Cobertura del backend';
+const NIVELES = Number.isFinite(opciones.niveles) && opciones.niveles > 0
+  ? Math.floor(opciones.niveles)
+  : 1;
 
 function porcentaje(valor) {
   return `${valor.total === 0 ? '—' : valor.pct}`;
@@ -33,7 +49,8 @@ function agruparPorCarpeta(entradas) {
     if (ruta === 'total') continue;
     const trozos = ruta.replace(/\\/g, '/').split('/');
     const indice = trozos.indexOf('src');
-    const carpeta = indice >= 0 && trozos[indice + 1] ? trozos[indice + 1] : '.';
+    const partes = indice >= 0 ? trozos.slice(indice + 1, indice + 1 + NIVELES) : [];
+    const carpeta = partes.length > 0 ? partes.join('/') : '.';
     const fila = carpetas.get(carpeta) ?? {
       linea: 0,
       lineaCubierta: 0,
@@ -90,7 +107,7 @@ function main() {
   const resumen = leerResumen();
   if (!resumen) {
     console.log(
-      'Sin resumen de cobertura: ejecuta antes `npm run test:cov` (genera coverage/coverage-summary.json).',
+      `Sin resumen de cobertura en ${ARCHIVO}: ejecuta antes \`npm run test:cov\`.`,
     );
     return;
   }
@@ -101,7 +118,7 @@ function main() {
   const peores = peoresArchivos(entradas, 12);
 
   const lineas = [];
-  lineas.push('## Cobertura del backend');
+  lineas.push(`## ${TITULO}`);
   lineas.push('');
   lineas.push(
     `**Total:** ${porcentaje(total.lines)} % de líneas, ${porcentaje(total.statements)} % de sentencias, ${porcentaje(total.functions)} % de funciones y ${porcentaje(total.branches)} % de ramas.`,
@@ -127,8 +144,8 @@ function main() {
   const texto = lineas.join('\n');
   console.log(texto);
 
-  if (GUARDAR) {
-    writeFileSync(join(process.cwd(), 'coverage', 'RESUMEN.md'), `${texto}\n`);
+  if (opciones.guardar) {
+    writeFileSync(join(dirname(ARCHIVO), 'RESUMEN.md'), `${texto}\n`);
   }
 }
 

@@ -5,7 +5,9 @@
 #     pruebas unitarias y e2e (contra un PostgreSQL real) con su cobertura, y build.
 #     El resumen de cobertura queda en el registro del job y el informe en un
 #     artefacto descargable.
-#   - Frontend: tipos, plantillas (ngc) y build contra backend/public.
+#   - Frontend: tipos, plantillas (ngc), pruebas con cobertura y build contra
+#     backend/public. El resumen de cobertura también queda en el registro del
+#     job y en un artefacto.
 #
 # No necesita secretos: usa valores de ejemplo para JWT, correo y presidente.
 name: CI
@@ -106,7 +108,7 @@ jobs:
         run: npm run build
 
   frontend:
-    name: Frontend (tipos, plantillas, build)
+    name: Frontend (tipos, plantillas, pruebas con cobertura, build)
     runs-on: ubuntu-latest
 
     defaults:
@@ -135,6 +137,21 @@ jobs:
 
       - name: Plantillas de Angular
         run: npx ngc -p tsconfig.app.json --noEmit
+
+      - name: Pruebas y cobertura
+        run: npm run test:cov
+
+      - name: Resumen de cobertura en el registro
+        if: always()
+        run: node ../backend/scripts/resumen-cobertura.js --archivo coverage/frontend/coverage-summary.json --titulo "Cobertura del frontend" --niveles 2 --guardar >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar el informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-frontend
+          path: frontend/coverage
+          retention-days: 14
 
       # El build escribe en backend/public (es lo que sirve NestJS), así que
       # también comprueba que la ruta de salida configurada sigue siendo válida.
