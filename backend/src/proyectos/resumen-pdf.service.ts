@@ -137,6 +137,18 @@ export class ResumenPdfService {
       .text(
         `${seguro(instOrigen?.nombre)} (${seguro(instOrigen?.pais)})  ->  ${seguro(instDestino?.nombre)} (${seguro(instDestino?.pais)})`,
       );
+    const participantes = proyecto.participantes ?? [];
+    for (const participante of participantes) {
+      doc
+        .font('Helvetica')
+        .fontSize(9)
+        .fillColor('#000000')
+        .text(
+          `- ${seguro(participante.institucion?.nombre)} (${seguro(
+            participante.institucion?.pais,
+          )})  [${seguro(participante.rol)}]  · ${estado(participante.estado)}`,
+        );
+    }
     doc.moveDown(0.6);
 
     // --- Docentes ---
@@ -333,6 +345,41 @@ export class ResumenPdfService {
         .fontSize(10)
         .fillColor(GRIS)
         .text('Sin evaluación final registrada.');
+    }
+
+    // --- Salidas y cancelación ---
+    const eventos = proyecto.eventos ?? [];
+    const eventosVisibles = eventos.filter((evento: any) =>
+      [
+        'SALIDA',
+        'CANCELACION',
+        'CANCELACION_SOLICITADA',
+        'CANCELACION_APROBADA',
+        'CANCELACION_RECHAZADA',
+      ].includes(evento.tipo),
+    );
+    if (proyecto.estado === 'CANCELADO' || eventosVisibles.length > 0) {
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(11)
+        .fillColor(AZUL)
+        .text('Salidas y cancelación');
+      if (proyecto.estado === 'CANCELADO') {
+        this.campo(
+          doc,
+          'Motivo de cancelación',
+          seguro(proyecto.motivoCancelacion),
+        );
+        this.campo(doc, 'Cancelada en', fechaHora(proyecto.canceladoEn));
+      }
+      for (const evento of eventosVisibles) {
+        this.campo(
+          doc,
+          `· ${seguro(evento.tipo)}`,
+          `${fechaHora(evento.creadoEn)} · ${seguro(evento.motivo)}`,
+        );
+      }
+      doc.moveDown(0.6);
     }
 
     // --- Pie ---

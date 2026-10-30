@@ -5,17 +5,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
 import {
   ESTADO_PROYECTO_CANCELADO,
   ESTADO_PROYECTO_FINALIZADO,
 } from '../common/estados';
 
 const ROLES_PLENOS = ['ORIGEN', 'DESTINO', 'COLABORADORA'];
-const ESTADOS_VIGENTES = ['APROBADA', 'CONGELADA'];
+const ESTADOS_LECTURA = ['APROBADA', 'CONGELADA', 'RETIRADA'];
+const ESTADOS_ACTIVOS = ['APROBADA', 'CONGELADA'];
 
 interface ProyectoParticipacion {
   id: number;
   estado: string;
+  motivoCancelacion?: string;
+  canceladoEn?: Date | null;
   solicitud: {
     institucionDestinoId: number;
     asignacionOrigen: { docenteInstitucion: { institucionId: number } };
@@ -302,6 +306,321 @@ export class ParticipantesService {
     });
   }
 
+  /** Estado de una solicitud de cancelación y sus votos. */
+  async estadoCancelacion(usuarioId: number, proyectoId: number) {
+    const proyecto = await this.cargar(proyectoId);
+    await this.exigirLectura(usuarioId, proyecto);
+
+    const [solicitud, participantes, eventos] = await Promise.all([
+      this.prisma.cancelacionSolicitud.findFirst({
+        where: { proyectoId },
+        orderBy: { creadaEn: 'desc' },
+        include: {
+          votos: {
+            include: { participante: { include: { institucion: true } } },
+          },
+        },
+      }),
+      this.prisma.proyectoParticipante.findMany({
+        where: { proyectoId },
+        include: { institucion: true },
+        orderBy: { creadoEn: 'asc' },
+      }),
+      this.prisma.proyectoEvento.findMany({
+        where: { proyectoId },
+        orderBy: { creadoEn: 'desc' },
+        take: 30,
+      }),
+    ]);
+
+    return {
+      estado: proyecto.estado,
+      motivoCancelacion: proyecto.motivoCancelacion ?? '',
+      canceladoEn: proyecto.canceladoEn ?? null,
+      participantes: participantes.map((participante) => ({
+        id: participante.id,
+        institucionId: participante.institucionId,
+        institucion: participante.institucion.nombre,
+        rol: participante.rol,
+        estado: participante.estado,
+      })),
+      solicitud: solicitud
+        ? {
+            id: solicitud.id,
+            motivo: solicitud.motivo,
+            estado: solicitud.estado,
+            creadaEn: solicitud.creadaEn,
+            resueltaEn: solicitud.resueltaEn,
+            votos: solicitud.votos.map((voto) => ({
+              participanteId: voto.participanteId,
+              institucion: voto.participante.institucion.nombre,
+              decision: voto.decision,
+              motivo: voto.motivo,
+            })),
+          }
+        : null,
+      eventos: eventos.map((evento) => ({
+        tipo: evento.tipo,
+        motivo: evento.motivo,
+        creadoEn: evento.creadoEn,
+      })),
+    };
+  }
+
+  /** Una institución sale de la clase; si quedan menos de dos, se cancela. */
+  async salir(usuarioId: number, proyectoId: number, motivo: string) {
+    const proyecto = await this.cargar(proyectoId);
+    this.exigirProyectoAbierto(proyecto.estado);
+    const actor = await this.exigirParticipantePleno(usuarioId, proyecto);
+    const participante = proyecto.participantes.find(
+      (p) =>
+        p.institucionId === actor.institucionId &&
+        ROLES_PLENOS.includes(p.rol) &&
+        ESTADOS_ACTIVOS.includes(p.estado),
+    );
+    if (!participante) {
+      throw new ForbiddenException('No eres participante activo de esta clase');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.proyectoParticipante.update({
+        where: { id: participante.id },
+        data: {
+          estado: 'RETIRADA',
+          retiradoEn: new Date(),
+          motivoSalida: motivo.trim(),
+        },
+      });
+      await tx.proyectoEvento.create({
+        data: {
+          proyectoId,
+          participanteId: participante.id,
+          tipo: 'SALIDA',
+          motivo: motivo.trim(),
+          actorUsuarioId: usuarioId,
+        },
+      });
+
+      const activos = await tx.proyectoParticipante.count({
+        where: {
+          proyectoId,
+          rol: { in: ROLES_PLENOS },
+          estado: { in: ESTADOS_ACTIVOS },
+        },
+      });
+      if (activos < 2) {
+        await this.cancelarEnTx(
+          tx,
+          proyectoId,
+          'Quedan menos de dos instituciones activas.',
+          usuarioId,
+        );
+      }
+    });
+
+    return this.estadoCancelacion(usuarioId, proyectoId);
+  }
+
+  /** Solicita cancelar la clase; cada institución activa debe votar. */
+  async solicitarCancelacion(
+    usuarioId: number,
+    proyectoId: number,
+    motivo: string,
+  ) {
+    const proyecto = await this.cargar(proyectoId);
+    this.exigirProyectoAbierto(proyecto.estado);
+    const actor = await this.exigirParticipantePleno(usuarioId, proyecto);
+    const participante = proyecto.participantes.find(
+      (p) =>
+        p.institucionId === actor.institucionId &&
+        ROLES_PLENOS.includes(p.rol) &&
+        ESTADOS_ACTIVOS.includes(p.estado),
+    );
+    if (!participante) {
+      throw new ForbiddenException('No eres participante activo de esta clase');
+    }
+    const pendiente = await this.prisma.cancelacionSolicitud.findFirst({
+      where: { proyectoId, estado: 'PENDIENTE' },
+    });
+    if (pendiente) {
+      throw new BadRequestException(
+        'Ya existe una solicitud de cancelación pendiente',
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      const solicitud = await tx.cancelacionSolicitud.create({
+        data: {
+          proyectoId,
+          solicitadaPorUsuarioId: usuarioId,
+          motivo: motivo.trim(),
+        },
+      });
+      // La institución que propone la cancelación vota a favor de entrada.
+      await tx.cancelacionVoto.create({
+        data: {
+          solicitudId: solicitud.id,
+          participanteId: participante.id,
+          usuarioId,
+          decision: 'APROBADA',
+          motivo: motivo.trim(),
+        },
+      });
+      await tx.proyectoEvento.create({
+        data: {
+          proyectoId,
+          participanteId: participante.id,
+          tipo: 'CANCELACION_SOLICITADA',
+          motivo: motivo.trim(),
+          actorUsuarioId: usuarioId,
+        },
+      });
+    });
+
+    return this.estadoCancelacion(usuarioId, proyectoId);
+  }
+
+  /** Vota una solicitud pendiente; todas las instituciones activas deben aprobar. */
+  async votarCancelacion(
+    usuarioId: number,
+    proyectoId: number,
+    decision: 'APROBADA' | 'RECHAZADA',
+    motivo: string,
+  ) {
+    const proyecto = await this.cargar(proyectoId);
+    this.exigirProyectoAbierto(proyecto.estado);
+    const actor = await this.exigirParticipantePleno(usuarioId, proyecto);
+    const participante = proyecto.participantes.find(
+      (p) =>
+        p.institucionId === actor.institucionId &&
+        ROLES_PLENOS.includes(p.rol) &&
+        ESTADOS_ACTIVOS.includes(p.estado),
+    );
+    if (!participante) {
+      throw new ForbiddenException('No eres participante activo de esta clase');
+    }
+    const solicitud = await this.prisma.cancelacionSolicitud.findFirst({
+      where: { proyectoId, estado: 'PENDIENTE' },
+    });
+    if (!solicitud) {
+      throw new NotFoundException('No hay una cancelación pendiente');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.cancelacionVoto.upsert({
+        where: {
+          solicitudId_participanteId: {
+            solicitudId: solicitud.id,
+            participanteId: participante.id,
+          },
+        },
+        create: {
+          solicitudId: solicitud.id,
+          participanteId: participante.id,
+          usuarioId,
+          decision,
+          motivo: motivo.trim(),
+        },
+        update: {
+          usuarioId,
+          decision,
+          motivo: motivo.trim(),
+        },
+      });
+      await tx.proyectoEvento.create({
+        data: {
+          proyectoId,
+          participanteId: participante.id,
+          tipo:
+            decision === 'APROBADA'
+              ? 'VOTO_CANCELACION_APROBADO'
+              : 'VOTO_CANCELACION_RECHAZADO',
+          motivo: motivo.trim(),
+          actorUsuarioId: usuarioId,
+        },
+      });
+
+      if (decision === 'RECHAZADA') {
+        await tx.cancelacionSolicitud.update({
+          where: { id: solicitud.id },
+          data: { estado: 'RECHAZADA', resueltaEn: new Date() },
+        });
+        return;
+      }
+
+      const [activos, aprobaciones] = await Promise.all([
+        tx.proyectoParticipante.findMany({
+          where: {
+            proyectoId,
+            rol: { in: ROLES_PLENOS },
+            estado: { in: ESTADOS_ACTIVOS },
+          },
+          select: { id: true },
+        }),
+        tx.cancelacionVoto.findMany({
+          where: { solicitudId: solicitud.id, decision: 'APROBADA' },
+          select: { participanteId: true },
+        }),
+      ]);
+      const todos = activos.every((activo) =>
+        aprobaciones.some(
+          (aprobacion) => aprobacion.participanteId === activo.id,
+        ),
+      );
+      if (todos) {
+        await tx.cancelacionSolicitud.update({
+          where: { id: solicitud.id },
+          data: { estado: 'APROBADA', resueltaEn: new Date() },
+        });
+        await this.cancelarEnTx(tx, proyectoId, solicitud.motivo, usuarioId);
+      }
+    });
+
+    return this.estadoCancelacion(usuarioId, proyectoId);
+  }
+
+  private exigirProyectoAbierto(estado: string): void {
+    if (
+      estado === ESTADO_PROYECTO_FINALIZADO ||
+      estado === ESTADO_PROYECTO_CANCELADO
+    ) {
+      throw new BadRequestException(
+        'La clase ya está cerrada: no se puede cancelar ni salir.',
+      );
+    }
+  }
+
+  private async cancelarEnTx(
+    tx: Prisma.TransactionClient,
+    proyectoId: number,
+    motivo: string,
+    actorUsuarioId: number,
+  ): Promise<void> {
+    await tx.proyectoClaseEspejo.update({
+      where: { id: proyectoId },
+      data: {
+        estado: ESTADO_PROYECTO_CANCELADO,
+        motivoCancelacion: motivo,
+        canceladoEn: new Date(),
+      },
+    });
+    await tx.sesion.updateMany({
+      where: {
+        proyectoId,
+        estado: { in: ['PROGRAMADA', 'EN_CURSO'] },
+      },
+      data: { estado: 'CANCELADA' },
+    });
+    await tx.proyectoEvento.create({
+      data: {
+        proyectoId,
+        tipo: 'CANCELACION',
+        motivo,
+        actorUsuarioId,
+      },
+    });
+  }
+
   private async cargar(proyectoId: number): Promise<ProyectoParticipacion> {
     const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
       where: { id: proyectoId },
@@ -334,7 +653,7 @@ export class ParticipantesService {
       const participa = proyecto.participantes.some(
         (participante) =>
           participante.institucionId === agente.institucionId &&
-          (ESTADOS_VIGENTES.includes(participante.estado) ||
+          (ESTADOS_LECTURA.includes(participante.estado) ||
             participante.estado === 'PENDIENTE'),
       );
       if (participa) {
@@ -374,7 +693,7 @@ export class ParticipantesService {
       });
       const observa = proyecto.participantes.some(
         (participante) =>
-          ESTADOS_VIGENTES.includes(participante.estado) &&
+          ESTADOS_LECTURA.includes(participante.estado) &&
           instituciones.some(
             (institucion) =>
               institucion.institucionId === participante.institucionId,
@@ -385,7 +704,7 @@ export class ParticipantesService {
           proyecto.participantes.some(
             (participante) =>
               participante.institucionId === institucion.institucionId &&
-              ESTADOS_VIGENTES.includes(participante.estado),
+              ESTADOS_LECTURA.includes(participante.estado),
           ),
         )!.institucionId;
         return { tipo: 'DOCENTE', institucionId };
@@ -404,7 +723,7 @@ export class ParticipantesService {
       (participante) =>
         participante.institucionId === actor.institucionId &&
         ROLES_PLENOS.includes(participante.rol) &&
-        ESTADOS_VIGENTES.includes(participante.estado),
+        ESTADOS_ACTIVOS.includes(participante.estado),
     );
     if (!participa) {
       throw new ForbiddenException(

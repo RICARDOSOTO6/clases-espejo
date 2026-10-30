@@ -116,6 +116,9 @@ model Usuario {
   solicitudesBorradoResueltas   SolicitudBorradoInstitucion[] @relation("SolicitudBorradoResolutor")
   cambiosPresidenciaSaliente    CambioPresidencia[]           @relation("CambioPresidenciaSaliente")
   cambiosPresidenciaEntrante    CambioPresidencia[]           @relation("CambioPresidenciaEntrante")
+  eventosProyecto               ProyectoEvento[]              @relation("EventosProyecto")
+  cancelacionesSolicitadas      CancelacionSolicitud[]        @relation("CancelacionesSolicitadas")
+  votosCancelacion              CancelacionVoto[]             @relation("VotosCancelacion")
 
   @@map("USUARIO")
 }
@@ -325,23 +328,27 @@ model RevisionSolicitud {
 model ProyectoClaseEspejo {
   id            Int                    @id @default(autoincrement())
   solicitudId   Int                    @unique @map("solicitud_id")
-  estado        String
-  fechaInicio   DateTime               @map("fecha_inicio") @db.Date
-  fechaFin      DateTime               @map("fecha_fin") @db.Date
-  plataforma    String
-  actividades   Actividad[]
-  evaluaciones  Evaluacion[]
-  evidencias    Evidencia[]
-  creadoEn      DateTime               @default(now()) @map("creado_en")
-  actualizadoEn DateTime               @default(now()) @updatedAt @map("actualizado_en")
-  planificacion PlanificacionConjunta?
-  solicitud     SolicitudClaseEspejo   @relation(fields: [solicitudId], references: [id])
-  docentes      ProyectoDocente[]
-  sesiones      Sesion[]
-  mensajes      Mensaje[]
-  listasAlumnos ListaAlumnos[]
-  certificados  Certificado[]
-  participantes ProyectoParticipante[]
+  estado                    String
+  fechaInicio               DateTime               @map("fecha_inicio") @db.Date
+  fechaFin                  DateTime               @map("fecha_fin") @db.Date
+  plataforma                String
+  motivoCancelacion         String                 @default("") @map("motivo_cancelacion")
+  canceladoEn               DateTime?              @map("cancelado_en")
+  actividades               Actividad[]
+  evaluaciones              Evaluacion[]
+  evidencias                Evidencia[]
+  creadoEn                  DateTime               @default(now()) @map("creado_en")
+  actualizadoEn             DateTime               @default(now()) @updatedAt @map("actualizado_en")
+  planificacion             PlanificacionConjunta?
+  solicitud                 SolicitudClaseEspejo   @relation(fields: [solicitudId], references: [id])
+  docentes                  ProyectoDocente[]
+  sesiones                  Sesion[]
+  mensajes                  Mensaje[]
+  listasAlumnos             ListaAlumnos[]
+  certificados              Certificado[]
+  participantes             ProyectoParticipante[]
+  eventos                   ProyectoEvento[]
+  cancelaciones             CancelacionSolicitud[]
 
   @@index([estado])
   @@map("PROYECTO_CLASE_ESPEJO")
@@ -378,17 +385,77 @@ model ProyectoParticipante {
   rol                  String
   estado               String              @default("PENDIENTE")
   congeladoEn          DateTime?           @map("congelado_en")
+  retiradoEn           DateTime?           @map("retirado_en")
+  motivoSalida         String              @default("") @map("motivo_salida")
   creadoEn             DateTime            @default(now()) @map("creado_en")
   actualizadoEn        DateTime            @default(now()) @updatedAt @map("actualizado_en")
   proyecto             ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
   institucion          Institucion         @relation(fields: [institucionId], references: [id])
   docenteInstitucion   DocenteInstitucion? @relation(fields: [docenteInstitucionId], references: [id])
+  eventos              ProyectoEvento[]
+  votosCancelacion     CancelacionVoto[]
 
   @@unique([proyectoId, institucionId], map: "proyecto_participante_institucion_unica")
   @@index([institucionId])
   @@index([docenteInstitucionId])
   @@index([proyectoId, rol, estado])
   @@map("PROYECTO_PARTICIPANTE")
+}
+
+/// Hechos relevantes para la trazabilidad de una clase: salidas, solicitudes
+/// de cancelación y cancelaciones. El PDF los usa para explicar qué pasó.
+model ProyectoEvento {
+  id              Int                 @id @default(autoincrement())
+  proyectoId      Int                 @map("proyecto_id")
+  participanteId  Int?                @map("participante_id")
+  tipo            String
+  motivo          String              @default("")
+  actorUsuarioId  Int?                @map("actor_usuario_id")
+  creadoEn        DateTime            @default(now()) @map("creado_en")
+  proyecto        ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  participante    ProyectoParticipante? @relation(fields: [participanteId], references: [id])
+  actor           Usuario?            @relation("EventosProyecto", fields: [actorUsuarioId], references: [id])
+
+  @@index([proyectoId, creadoEn])
+  @@index([participanteId])
+  @@index([actorUsuarioId])
+  @@map("PROYECTO_EVENTO")
+}
+
+model CancelacionSolicitud {
+  id                    Int              @id @default(autoincrement())
+  proyectoId            Int              @map("proyecto_id")
+  solicitadaPorUsuarioId Int             @map("solicitada_por_usuario_id")
+  motivo                String
+  estado                String           @default("PENDIENTE")
+  creadaEn              DateTime         @default(now()) @map("creada_en")
+  actualizadaEn         DateTime         @default(now()) @updatedAt @map("actualizado_en")
+  resueltaEn            DateTime?        @map("resuelta_en")
+  proyecto              ProyectoClaseEspejo @relation(fields: [proyectoId], references: [id])
+  solicitadaPor         Usuario          @relation("CancelacionesSolicitadas", fields: [solicitadaPorUsuarioId], references: [id])
+  votos                 CancelacionVoto[]
+
+  @@index([proyectoId, estado])
+  @@index([solicitadaPorUsuarioId])
+  @@map("CANCELACION_SOLICITUD")
+}
+
+model CancelacionVoto {
+  id             Int                  @id @default(autoincrement())
+  solicitudId    Int                  @map("solicitud_id")
+  participanteId Int                  @map("participante_id")
+  usuarioId      Int                  @map("usuario_id")
+  decision       String
+  motivo         String               @default("")
+  creadoEn       DateTime             @default(now()) @map("creado_en")
+  solicitud      CancelacionSolicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  participante   ProyectoParticipante @relation(fields: [participanteId], references: [id])
+  usuario        Usuario              @relation("VotosCancelacion", fields: [usuarioId], references: [id])
+
+  @@unique([solicitudId, participanteId], map: "cancelacion_voto_unico")
+  @@index([participanteId])
+  @@index([usuarioId])
+  @@map("CANCELACION_VOTO")
 }
 
 model Mensaje {

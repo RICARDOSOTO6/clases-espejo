@@ -10,6 +10,7 @@ import {
   ParticipantesController,
   ParticipacionesPendientesController,
 } from './participantes.controller';
+import { CancelacionesController } from './cancelaciones.controller';
 import { ParticipantesService } from './participantes.service';
 import { AuthModule } from '../auth/auth.module';
 import { EnviosModule } from '../envios/envios.module';
@@ -21,6 +22,7 @@ import { EnviosModule } from '../envios/envios.module';
     ListasAlumnosController,
     ParticipantesController,
     ParticipacionesPendientesController,
+    CancelacionesController,
   ],
   providers: [
     ProyectosService,

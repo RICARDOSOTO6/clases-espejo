@@ -1097,7 +1097,9 @@ export class ProyectosService {
       const participa = proyecto.participantes.some(
         (participante) =>
           participante.institucionId === agente.institucionId &&
-          ['APROBADA', 'CONGELADA', 'PENDIENTE'].includes(participante.estado),
+          ['APROBADA', 'CONGELADA', 'PENDIENTE', 'RETIRADA'].includes(
+            participante.estado,
+          ),
       );
       if (participa) return;
       const involucradas = [
@@ -1123,7 +1125,7 @@ export class ProyectosService {
       });
       const observa = proyecto.participantes.some(
         (participante) =>
-          ['APROBADA', 'CONGELADA'].includes(participante.estado) &&
+          ['APROBADA', 'CONGELADA', 'RETIRADA'].includes(participante.estado) &&
           instituciones.some(
             (institucion) =>
               institucion.institucionId === participante.institucionId,
@@ -1182,9 +1184,37 @@ export class ProyectosService {
           proyectoId: id,
           asignacionDocente: { docenteInstitucion: { docenteId: docente.id } },
         },
-        include: { proyecto: { select: { estado: true } } },
+        include: {
+          proyecto: { select: { estado: true } },
+          asignacionDocente: {
+            include: {
+              docenteInstitucion: { select: { institucionId: true } },
+            },
+          },
+        },
       });
       if (participa) {
+        const institucionId =
+          participa.asignacionDocente.docenteInstitucion.institucionId;
+        const [total, activo] = await Promise.all([
+          this.prisma.proyectoParticipante.count({
+            where: { proyectoId: id, institucionId },
+          }),
+          this.prisma.proyectoParticipante.findFirst({
+            where: {
+              proyectoId: id,
+              institucionId,
+              rol: { in: ['ORIGEN', 'DESTINO', 'COLABORADORA'] },
+              estado: { in: ['APROBADA', 'CONGELADA'] },
+            },
+            select: { id: true },
+          }),
+        ]);
+        if (total > 0 && !activo) {
+          throw new ForbiddenException(
+            'Tu institución ya no participa activamente en esta clase.',
+          );
+        }
         if (opciones.exigirAbierto !== false) {
           this.verificarProyectoAbierto(participa.proyecto.estado);
         }
@@ -1369,6 +1399,7 @@ export class ProyectosService {
           },
         },
       },
+      eventos: { orderBy: { creadoEn: 'asc' as const } },
       planificacion: { include: this.includePlanificacion() },
       sesiones: {
         orderBy: { fechaHora: 'asc' as const },
