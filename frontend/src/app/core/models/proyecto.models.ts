@@ -95,7 +95,7 @@ export interface ProyectoParticipante {
   institucionId: number;
   institucion: string;
   rol: 'ORIGEN' | 'DESTINO' | 'COLABORADORA' | 'OBSERVADORA';
-  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'CONGELADA';
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'CONGELADA' | 'RETIRADA';
   congeladoEn: string | null;
   docente: { id: number; nombre: string; apellidos: string } | null;
 }
@@ -112,6 +112,43 @@ export interface ParticipacionPendiente {
   titulo: string;
   fechaPropuesta: string;
   institucionOrigen: string;
+}
+
+export interface VotoCancelacionProyecto {
+  participanteId: number;
+  institucion: string;
+  decision: 'APROBADA' | 'RECHAZADA';
+  motivo: string;
+}
+
+export interface SolicitudCancelacionProyecto {
+  id: number;
+  motivo: string;
+  estado: string;
+  creadaEn: string;
+  resueltaEn: string | null;
+  votos: VotoCancelacionProyecto[];
+}
+
+export interface EventoProyecto {
+  tipo: string;
+  motivo: string;
+  creadoEn: string;
+}
+
+export interface EstadoCancelacion {
+  estado: string;
+  motivoCancelacion: string;
+  canceladoEn: string | null;
+  participantes: Array<{
+    id: number;
+    institucionId: number;
+    institucion: string;
+    rol: ProyectoParticipante['rol'];
+    estado: ProyectoParticipante['estado'];
+  }>;
+  solicitud: SolicitudCancelacionProyecto | null;
+  eventos: EventoProyecto[];
 }
 
 export interface UpdateProyectoDto {

@@ -547,6 +547,142 @@
           </p>
         </section>
 
+        @if (estadoCancelacion(); as cancelacion) {
+          <section class="card" id="cancelacion">
+            <div class="card-head">
+              <div class="card-head-title">
+                <span class="card-head-icon" aria-hidden="true">⚠</span>
+                <h2>Cierre y salida de la clase</h2>
+              </div>
+              @if (p.estado === 'CANCELADO') {
+                <span class="estado cancelada">Cancelada</span>
+              }
+            </div>
+
+            @if (p.estado === 'CANCELADO') {
+              <div class="alert alert-error" role="alert">
+                <strong>La clase está cancelada.</strong>
+                @if (cancelacion.motivoCancelacion) {
+                  <span> Motivo: {{ cancelacion.motivoCancelacion }}</span>
+                }
+              </div>
+            } @else {
+              @if (miParticipacionActiva()) {
+                <p class="muted">
+                  Salir de la clase es individual y conserva el historial. Cancelar toda la clase
+                  requiere la aprobación de todas las instituciones activas. Si quedan menos de dos
+                  instituciones activas, la clase se cancela automáticamente.
+                </p>
+
+                <div class="form-field">
+                  <label for="motivo-salida">Motivo para salir de la clase</label>
+                  <textarea
+                    id="motivo-salida"
+                    rows="2"
+                    [formControl]="motivoSalida"
+                    placeholder="Explica por qué tu institución deja la clase"
+                  ></textarea>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [disabled]="
+                    procesandoCancelacion() || (motivoSalida.value ?? '').trim().length < 5
+                  "
+                  (click)="salirDeLaClase()"
+                >
+                  {{ procesandoCancelacion() ? 'Procesando…' : 'Salir de la clase' }}
+                </button>
+
+                <hr />
+
+                <div class="form-field">
+                  <label for="motivo-cancelacion">Motivo para cancelar toda la clase</label>
+                  <textarea
+                    id="motivo-cancelacion"
+                    rows="2"
+                    [formControl]="motivoCancelacion"
+                    placeholder="Explica por qué se propone cancelar la clase completa"
+                  ></textarea>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  [disabled]="
+                    procesandoCancelacion() ||
+                    (motivoCancelacion.value ?? '').trim().length < 5 ||
+                    cancelacion.solicitud?.estado === 'PENDIENTE'
+                  "
+                  (click)="solicitarCancelacionClase()"
+                >
+                  Solicitar cancelación de la clase
+                </button>
+              }
+
+              @if (cancelacion.solicitud; as solicitud) {
+                <hr />
+                <p>
+                  <strong>Solicitud de cancelación:</strong>
+                  {{ solicitud.estado }} · {{ solicitud.motivo }}
+                </p>
+                <p class="muted">Votos por institución:</p>
+                <ul class="lista">
+                  @for (voto of solicitud.votos; track voto.participanteId) {
+                    <li class="lista-item">
+                      <span>{{ voto.institucion }}: {{ voto.decision }}</span>
+                      @if (voto.motivo) {
+                        <span class="muted"> · {{ voto.motivo }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+
+                @if (
+                  solicitud.estado === 'PENDIENTE' &&
+                  miParticipacionActiva() &&
+                  !votoDeMiInstitucion()
+                ) {
+                  <div class="form-field">
+                    <label for="motivo-voto">Comentario del voto (opcional)</label>
+                    <input id="motivo-voto" [formControl]="motivoVoto" />
+                  </div>
+                  <div class="form-grid-actions">
+                    <button
+                      type="button"
+                      class="btn btn-primary"
+                      [disabled]="procesandoCancelacion()"
+                      (click)="votarCancelacion('APROBADA')"
+                    >
+                      Aprobar cancelación
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [disabled]="procesandoCancelacion()"
+                      (click)="votarCancelacion('RECHAZADA')"
+                    >
+                      Rechazar cancelación
+                    </button>
+                  </div>
+                }
+              }
+            }
+
+            @if (cancelacion.eventos.length > 0) {
+              <details>
+                <summary>Historial de salidas y cancelaciones</summary>
+                <ul class="lista">
+                  @for (evento of cancelacion.eventos; track evento.creadoEn) {
+                    <li class="lista-item">
+                      <span>{{ evento.tipo }}: {{ evento.motivo }}</span>
+                    </li>
+                  }
+                </ul>
+              </details>
+            }
+          </section>
+        }
+
         <section class="card">
           <div class="card-head">
             <div class="card-head-title">

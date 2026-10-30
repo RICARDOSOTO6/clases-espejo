@@ -18,6 +18,7 @@ import { EnviosService } from '../../core/services/envios.service';
 import { ProgresoLote } from '../../core/models/envios.models';
 import { ProyectosService } from '../../core/services/proyectos.service';
 import { ParticipantesService } from '../../core/services/participantes.service';
+import { CancelacionesService } from '../../core/services/cancelaciones.service';
 import { ListasAlumnosService } from '../../core/services/listas-alumnos.service';
 import { CertificadosService } from '../../core/services/certificados.service';
 import {
@@ -48,6 +49,7 @@ import {
   ParticipacionReporte,
   Proyecto,
   ProyectoParticipante,
+  EstadoCancelacion,
   ReporteClase,
   Sesion,
 } from '../../core/models/proyecto.models';
@@ -67,6 +69,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly proyectos = inject(ProyectosService);
   private readonly participantesService = inject(ParticipantesService);
+  private readonly cancelacionesService = inject(CancelacionesService);
   private readonly materiasService = inject(MateriasService);
   private readonly instituciones = inject(InstitucionesService);
   private readonly listasService = inject(ListasAlumnosService);
@@ -213,6 +216,11 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   // --- Instituciones participantes (multi-institución y observadoras) ---
   readonly participantesProyecto = signal<ProyectoParticipante[]>([]);
   readonly participantes = computed(() => this.participantesProyecto());
+  readonly estadoCancelacion = signal<EstadoCancelacion | null>(null);
+  readonly motivoSalida = this.fb.control('');
+  readonly motivoCancelacion = this.fb.control('');
+  readonly motivoVoto = this.fb.control('');
+  readonly procesandoCancelacion = signal(false);
   readonly directorioInstituciones = signal<InstitucionDirectorio[]>([]);
   institucionSeleccionada = this.fb.control<number | null>(null);
   institucionObservadora = this.fb.control<number | null>(null);
@@ -523,6 +531,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       next: (p) => {
         this.proyecto.set(p);
         this.cargarParticipantes();
+        this.cargarCancelacion();
         this.proyectoForm.patchValue({
           estado: p.estado,
           fechaInicio: this.aFechaInput(p.fechaInicio),
@@ -558,6 +567,103 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       next: (participantes) => this.participantesProyecto.set(participantes),
       error: () => this.participantesProyecto.set([]),
     });
+  }
+
+  cargarCancelacion(): void {
+    this.cancelacionesService.estado(this.proyectoId).subscribe({
+      next: (estado) => this.estadoCancelacion.set(estado),
+      error: () => this.estadoCancelacion.set(null),
+    });
+  }
+
+  readonly miParticipacionActiva = computed(() => {
+    const mia = this.miInstitucionParticipante();
+    return (
+      !!mia && ['ORIGEN', 'DESTINO', 'COLABORADORA'].includes(mia.rol) && mia.estado === 'APROBADA'
+    );
+  });
+
+  readonly votoDeMiInstitucion = computed(() => {
+    const mia = this.miInstitucionParticipante();
+    const solicitud = this.estadoCancelacion()?.solicitud;
+    if (!mia || !solicitud) return null;
+    return solicitud.votos.find((voto) => voto.participanteId === mia.id) ?? null;
+  });
+
+  salirDeLaClase(): void {
+    const motivo = (this.motivoSalida.value ?? '').trim();
+    if (motivo.length < 5 || this.procesandoCancelacion()) return;
+    this.procesandoCancelacion.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+    this.cancelacionesService.salir(this.proyectoId, motivo).subscribe({
+      next: (estado) => {
+        this.procesandoCancelacion.set(false);
+        this.motivoSalida.setValue('');
+        this.estadoCancelacion.set(estado);
+        this.ok.set(
+          estado.estado === 'CANCELADO'
+            ? 'Tu institución salió. Quedan menos de dos instituciones: la clase se canceló.'
+            : 'Tu institución salió de la clase. El historial se conserva.',
+        );
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.procesandoCancelacion.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo salir de la clase'));
+      },
+    });
+  }
+
+  solicitarCancelacionClase(): void {
+    const motivo = (this.motivoCancelacion.value ?? '').trim();
+    if (motivo.length < 5 || this.procesandoCancelacion()) return;
+    this.procesandoCancelacion.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+    this.cancelacionesService.solicitar(this.proyectoId, motivo).subscribe({
+      next: (estado) => {
+        this.procesandoCancelacion.set(false);
+        this.motivoCancelacion.setValue('');
+        this.estadoCancelacion.set(estado);
+        this.ok.set(
+          'Solicitud registrada. Se necesita la aprobación de todas las instituciones activas.',
+        );
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.procesandoCancelacion.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo solicitar la cancelación'));
+      },
+    });
+  }
+
+  votarCancelacion(decision: 'APROBADA' | 'RECHAZADA'): void {
+    if (this.procesandoCancelacion()) return;
+    this.procesandoCancelacion.set(true);
+    this.error.set(null);
+    this.ok.set(null);
+    this.cancelacionesService
+      .votar(this.proyectoId, decision, (this.motivoVoto.value ?? '').trim())
+      .subscribe({
+        next: (estado) => {
+          this.procesandoCancelacion.set(false);
+          this.motivoVoto.setValue('');
+          this.estadoCancelacion.set(estado);
+          this.ok.set(
+            estado.estado === 'CANCELADO'
+              ? 'Todas las instituciones aprobaron: la clase quedó cancelada.'
+              : decision === 'RECHAZADA'
+                ? 'Voto registrado. La clase continúa.'
+                : 'Voto registrado. Falta la aprobación de otras instituciones.',
+          );
+          this.cargar();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.procesandoCancelacion.set(false);
+          this.error.set(extraerMensajeError(err, 'No se pudo registrar el voto'));
+        },
+      });
   }
 
   // --- Mensajes de la pantalla ---
@@ -1217,6 +1323,7 @@ export class ProyectoComponent implements OnInit, OnDestroy {
       APROBADA: 'Aprobada',
       RECHAZADA: 'Rechazada',
       CONGELADA: 'Congelada',
+      RETIRADA: 'Retirada',
     };
     return etiquetas[estado] ?? estado;
   }

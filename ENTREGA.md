@@ -77,11 +77,11 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **167 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **180 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP, participantes y validación de evidencias.
-- **41 pruebas unitarias**.
-- **34 pruebas de frontend** en Angular.
+- **53 pruebas unitarias**.
+- **43 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
   `/aceptar-aviso` hasta que lo acepten.
