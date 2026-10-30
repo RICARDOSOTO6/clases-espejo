@@ -1,4 +1,4 @@
-﻿# Respaldo y restauración de la base de datos
+# Respaldo y restauración de la base de datos
 
 **Base de datos de trabajo:** `ClasesconjuntasBD`
 **Base de datos de respaldo vigente:** `clasesconjuntas_respaldo_20261013`
@@ -75,9 +75,13 @@ Un respaldo que no se ha probado no es un respaldo. La comprobación es comparar
 * **Huella del contenido** (`md5` de todas las filas), para asegurar que no solo
   coincide la cantidad, sino **el contenido exacto**.
 
-El esquema tiene **35 tablas** (`backend/prisma/schema.prisma`, 35 modelos con su
-`@@map`), así que la base tiene esas **35 tablas de datos más `_prisma_migrations`**
-(la tabla interna de Prisma).
+El esquema tiene **39 tablas de datos** (`backend/prisma/schema.prisma`, un modelo
+con su `@@map` cada una) más `_prisma_migrations` (la tabla interna de Prisma):
+**40 en total**. El recuento se puede comprobar con:
+
+```sql
+SELECT count(*) FROM pg_tables WHERE schemaname = 'public';
+```
 
 > **A propósito no se dejan escritos aquí los conteos de filas del estado actual:**
 > cambian en cuanto alguien usa la aplicación (una solicitud nueva, una clase
@@ -280,10 +284,11 @@ de las dos opciones (A o B) de arriba.
 
 ## 5. Cómo comprobar que la restauración fue bien
 
-1. **Cuenta las filas** de las 35 tablas del respaldo restaurado con el script de
-   la sección 3 (
-ode scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
-   tienen que coincidir **tabla por tabla**.
+1. **Cuenta las filas** de las 39 tablas de datos y compara también la huella de
+   cada una con la prueba automática:
+   `npm run probar-restauracion -- --nuevo` respalda, restaura en una base
+   temporal y compara con la de origen. Anota el resultado en la sección 8 de
+   esta guía.
 2. **Aplica las migraciones** por si acaso, que no debería hacer nada:
 
    ```bash
@@ -291,7 +296,7 @@ ode scripts/comparar-respaldo.js`): ahora `trabajo` y `respaldo`
    npx prisma migrate deploy
    ```
 
-   El respaldo ya trae las **21 migraciones** aplicadas, así que `migrate deploy`
+   El respaldo ya trae las **38 migraciones** aplicadas, así que `migrate deploy`
    no debe tener nada pendiente.
 3. **Arranca el backend** y entra con una cuenta conocida. Con los datos de
    demostración, la contraseña común es `Demo1234`.
@@ -382,3 +387,42 @@ $env:PG_RESTORE = 'C:\ruta\a\pg_restore.exe'
 - La base de demostración no se modificó.
 - La copia de `uploads/` también se probó: 11 archivos y 0,24 MB, sin tocar los
   originales.
+
+---
+
+## 8. Registro de las pruebas de restauración
+
+Una restauración no se da por buena porque se cuente: se da por buena cuando se
+anota. `npm run probar-restauracion` escribe aquí una fila por cada ejecución,
+con la fecha, el volcado usado, las tablas y filas comparadas y el resultado. La
+primera fila es la prueba manual del 24-oct (base restaurada desde la copia con
+`TEMPLATE`); las siguientes las añade el guion automático.
+
+<!-- registro-restauraciones -->
+| Fecha (local) | Volcado | Tablas | Filas | Resultado |
+| --- | --- | ---: | ---: | --- |
+| 24-oct-2026 | manual (copia `TEMPLATE` del 13-oct) | 36 | — | ✅ correcta (registro de entonces) |
+| 29-oct-2026 23:04 | `respaldos\2026-10-30T05-04-43-297Z_ClasesconjuntasBD\base.dump` | 40 | 202 | ✅ totales iguales |
+<!-- /registro-restauraciones -->
+
+Para repetirla:
+
+```powershell
+cd backend
+npm run probar-restauracion -- --nuevo
+```
+
+- `--nuevo` respalda la base en ese momento y prueba ese mismo respaldo: es la
+  única forma de que los totales puedan coincidir aunque la base haya cambiado
+  desde el último respaldo.
+- Sin `--nuevo`, usa el respaldo más reciente de `backend/respaldos/`; si no hay
+  ninguno, hace uno nuevo y lo dice.
+- Restaura en una base temporal `clasesconjuntas_restauracion_<fecha>` y la borra
+  al terminar. Con `--mantener` no la borra y explica cómo inspeccionarla.
+- Compara dos cosas por tabla: el número de filas y una huella `md5` del
+  contenido. Con `--solo-filas` omite la huella (útil si la base es muy grande).
+- Si la base de origen cambió después del respaldo, la prueba imprime las
+  diferencias y termina con error; no es que la restauración esté mal: es que el
+  respaldo es viejo.
+- `--sin-anotar` evita escribir en esta guía; `--sin-origen` solo comprueba que
+  el volcado carga.
