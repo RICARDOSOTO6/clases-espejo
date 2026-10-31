@@ -274,3 +274,51 @@ Cómo se lee:
 
 Los datos de demostración y el respaldo `clasesconjuntas_respaldo_20261013` no se
 tocaron: la migración de índices solo añade índices, no cambia filas.
+
+---
+
+## 12. Medición dentro del piloto (módulo de métricas)
+
+`npm run medir-latencia` mide desde fuera, con peticiones sintéticas. Para el piloto hay además una
+medición **dentro del servidor**: el módulo `backend/src/metricas` cronometra cada petición real y
+publica el resumen. No inventa tráfico: mide el de la sesión.
+
+| Endpoint | Qué devuelve |
+| --- | --- |
+| `GET /metricas/rendimiento` | JSON con las rutas, las latencias globales, la memoria, la carga del sistema y el retardo del bucle de eventos |
+| `GET /metricas/rendimiento.csv` | La tabla por ruta, lista para el informe o una hoja de cálculo |
+| `GET /metricas/rendimiento/historico.csv` | Todo lo acumulado en `METRICAS_ARCHIVO` desde que arrancó el piloto |
+| `POST /metricas/reiniciar` | Deja los contadores a cero sin reiniciar el proceso |
+
+Los cuatro exigen la capacidad `verRendimientoPiloto`.
+
+### 12.1 Cómo se lee el CSV
+
+| Columna | Qué es |
+| --- | --- |
+| `peticiones` | Cuántas veces se llamó a esa ruta |
+| `muestras` | Cuántas latencias sostienen los percentiles (tope de 2 000 por ruta) |
+| `limitadas429` | Respuestas por el límite de intentos. **No son errores**: el sistema hizo lo que debía ante un exceso de peticiones, y contarlas como fallo infla la tasa de error del piloto |
+| `percentilesFiables` | `SI` solo con **30 muestras o más**. Con menos no se citan percentiles: con una sola petición, p50, p95 y p99 son el mismo número repetido |
+| `p99Ms` | `n/d` cuando hay menos de 100 muestras, porque con menos el p99 es el máximo disfrazado |
+
+Método: percentil por **rango más cercano** (`ceil(p/100 · n)`), no por interpolación. La media se
+calcula sobre todas las peticiones; los percentiles, sobre las últimas 2 000 que se conservan en
+memoria.
+
+### 12.2 Protocolo para la sesión del piloto
+
+1. Arrancar el servidor y **calentar**: entrar, abrir un proyecto, salir. Ahí la primera consulta paga
+   el arranque de Node y la primera conexión de Prisma.
+2. `POST /metricas/reiniciar`, para tirar ese calentamiento.
+3. Hacer la sesión con los usuarios reales.
+4. Al terminar, descargar `GET /metricas/rendimiento.csv` y guardarlo en `docs/producto/mediciones/`
+   con la fecha en el nombre.
+5. No citar percentiles por ruta hasta tener **30 muestras**. Donde haya menos, se citan las peticiones
+   y la media, o se marca `n/d`, y se dice así en el informe.
+
+### 12.3 Lo que esta medición no dice
+
+No mide la red ni el navegador: mide el tiempo del **servidor**. Es lo correcto para saber si el backend
+está lento, y no sirve para saber cuánto tarda un docente en ver su panel desde su casa. Para eso están
+la medición desde fuera (sección 9) y, durante el piloto, la hoja de tareas con tiempos por tarea.

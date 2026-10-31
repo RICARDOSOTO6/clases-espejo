@@ -96,4 +96,68 @@ describe('MetricasService', () => {
       rmSync(carpeta, { recursive: true, force: true });
     }
   });
+
+  it('no cuenta los 429 como errores: el límite de intentos no es un fallo', () => {
+    const service = new MetricasService();
+    service.registrar({
+      metodo: 'POST',
+      ruta: '/auth/login',
+      estado: 429,
+      duracionMs: 5,
+    });
+    const resumen = service.snapshot();
+    expect(resumen.peticiones.limitadas429).toBe(1);
+    expect(resumen.peticiones.errores4xx).toBe(0);
+    expect(resumen.peticiones.errores5xx).toBe(0);
+    expect(resumen.rutas[0].limitadas429).toBe(1);
+    expect(resumen.rutas[0].errores4xx).toBe(0);
+  });
+
+  it('avisa cuando hay tan pocas muestras que el percentil no significa nada', () => {
+    const service = new MetricasService();
+    service.registrar({
+      metodo: 'GET',
+      ruta: '/cace/miembros',
+      estado: 200,
+      duracionMs: 120,
+    });
+    const ruta = service.snapshot().rutas[0];
+    expect(ruta.muestras).toBe(1);
+    expect(ruta.percentilesFiables).toBe(false);
+    // Con una muestra, p50, p95 y p99 son el mismo número: por eso p99 es n/d.
+    expect(ruta.p99Ms).toBe('n/d');
+    expect(service.csv()).toContain('"NO"');
+  });
+
+  it('marca los percentiles como fiables a partir de treinta muestras', () => {
+    const service = new MetricasService();
+    for (let i = 0; i < 30; i += 1) {
+      service.registrar({
+        metodo: 'GET',
+        ruta: '/proyectos/mios',
+        estado: 200,
+        duracionMs: 10 + i,
+      });
+    }
+    const ruta = service.snapshot().rutas[0];
+    expect(ruta.muestras).toBe(30);
+    expect(ruta.percentilesFiables).toBe(true);
+    expect(ruta.p99Ms).toBe('n/d');
+    expect(service.csv()).toContain('"SI"');
+  });
+
+  it('el reinicio deja los contadores a cero', () => {
+    const service = new MetricasService();
+    service.registrar({
+      metodo: 'GET',
+      ruta: '/usuarios/me',
+      estado: 200,
+      duracionMs: 8,
+    });
+    service.reiniciar();
+    const resumen = service.snapshot();
+    expect(resumen.peticiones.total).toBe(0);
+    expect(resumen.rutas.length).toBe(0);
+    expect(resumen.latenciaMs.muestras).toBe(0);
+  });
 });

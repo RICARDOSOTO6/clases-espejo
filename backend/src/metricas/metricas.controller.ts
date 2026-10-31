@@ -1,4 +1,4 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { CapacidadesGuard, Requiere } from '../auth/capacidades.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -49,5 +49,19 @@ export class MetricasController {
       'attachment; filename="rendimiento-historico-piloto.csv"',
     );
     res.send(resultado.csv);
+  }
+
+  /**
+   * Deja los contadores a cero sin reiniciar el proceso.
+   *
+   * Uso en el piloto: se hacen unas cuantas peticiones de calentamiento y se
+   * llama aquí justo antes de empezar, para que las cifras publicadas no
+   * incluyan el arranque de Node ni la primera consulta de Prisma.
+   */
+  @Post('reiniciar')
+  @Requiere('verRendimientoPiloto')
+  reiniciar(): { reiniciado: boolean; desde: string } {
+    this.metricas.reiniciar();
+    return { reiniciado: true, desde: new Date().toISOString() };
   }
 }

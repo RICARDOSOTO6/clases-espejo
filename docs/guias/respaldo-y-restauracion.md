@@ -75,9 +75,9 @@ Un respaldo que no se ha probado no es un respaldo. La comprobación es comparar
 * **Huella del contenido** (`md5` de todas las filas), para asegurar que no solo
   coincide la cantidad, sino **el contenido exacto**.
 
-El esquema tiene **39 tablas de datos** (`backend/prisma/schema.prisma`, un modelo
+El esquema tiene **42 tablas de datos** (`backend/prisma/schema.prisma`, un modelo
 con su `@@map` cada una) más `_prisma_migrations` (la tabla interna de Prisma):
-**40 en total**. El recuento se puede comprobar con:
+**43 en total**. El recuento se puede comprobar con:
 
 ```sql
 SELECT count(*) FROM pg_tables WHERE schemaname = 'public';
@@ -108,7 +108,7 @@ const HOST = 'postgresql://postgres:root@localhost:5432';
 const BD_TRABAJO = 'ClasesconjuntasBD';
 const BD_RESPALDO = 'clasesconjuntas_respaldo_20261013';
 
-// Las 35 tablas del esquema, más la de Prisma.
+// Las 42 tablas del esquema, más la de Prisma.
 const TABLAS = [
   'INSTITUCION', 'USUARIO', 'INVITACION', 'AGENTE_INTERNACIONALIZACION', 'DOCENTE',
   'DOCENTE_INSTITUCION', 'MATERIA', 'ASIGNACION_DOCENTE', 'SOLICITUD_CLASE_ESPEJO',
@@ -284,7 +284,7 @@ de las dos opciones (A o B) de arriba.
 
 ## 5. Cómo comprobar que la restauración fue bien
 
-1. **Cuenta las filas** de las 39 tablas de datos y compara también la huella de
+1. **Cuenta las filas** de las 42 tablas de datos y compara también la huella de
    cada una con la prueba automática:
    `npm run probar-restauracion -- --nuevo` respalda, restaura en una base
    temporal y compara con la de origen. Anota el resultado en la sección 8 de

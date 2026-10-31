@@ -32,18 +32,29 @@ if (!fs.existsSync(entrada)) {
   process.exit();
 }
 
+let lineasRotas = 0;
 const registros = fs
   .readFileSync(entrada, 'utf8')
+  // Un archivo guardado desde Windows puede traer BOM: sin quitarlo, la primera
+  // línea no se puede interpretar y se perdía una petición sin avisar.
+  .replace(/^\uFEFF/, '')
   .split(/\r?\n/)
-  .filter(Boolean)
+  .filter((linea) => linea.trim() !== '')
   .map((linea) => {
     try {
       return JSON.parse(linea);
     } catch {
+      lineasRotas += 1;
       return null;
     }
   })
   .filter(Boolean);
+
+if (lineasRotas > 0) {
+  console.error(
+    `Aviso: ${lineasRotas} línea(s) del archivo no se pudieron interpretar y se ignoran.`,
+  );
+}
 
 if (registros.length === 0) {
   console.error('El archivo de métricas está vacío.');
@@ -54,22 +65,26 @@ if (registros.length === 0) {
 const porRuta = new Map();
 const globales = [];
 let errores4xx = 0;
+let limitadas429 = 0;
 let errores5xx = 0;
 for (const registro of registros) {
   const duracion = Number(registro.duracionMs) || 0;
   globales.push(duracion);
   if (registro.estado >= 500) errores5xx += 1;
+  else if (registro.estado === 429) limitadas429 += 1;
   else if (registro.estado >= 400) errores4xx += 1;
 
   const clave = `${registro.metodo} ${registro.ruta}`;
   const actual = porRuta.get(clave) || {
     peticiones: 0,
     errores4xx: 0,
+    limitadas429: 0,
     errores5xx: 0,
     duraciones: [],
   };
   actual.peticiones += 1;
   if (registro.estado >= 500) actual.errores5xx += 1;
+  else if (registro.estado === 429) actual.limitadas429 += 1;
   else if (registro.estado >= 400) actual.errores4xx += 1;
   actual.duraciones.push(duracion);
   porRuta.set(clave, actual);
@@ -113,13 +128,22 @@ const lineas = [
   '',
   '## Rutas',
   '',
-  '| Método | Ruta | Peticiones | 4xx | 5xx | p50 ms | p95 ms | máx. ms |',
-  '|---|---|---:|---:|---:|---:|---:|---:|',
+  '| Método | Ruta | Peticiones | 4xx | 429 | 5xx | p50 ms | p95 ms | máx. ms |',
+  '|---|---|---:|---:|---:|---:|---:|---:|---:|',
   ...filas.map(
     (fila) =>
-      `| ${fila.metodo} | ${fila.ruta} | ${fila.peticiones} | ${fila.errores4xx} | ${fila.errores5xx} | ${fila.p50} | ${fila.p95} | ${fila.max} |`,
+      `| ${fila.metodo} | ${fila.ruta} | ${fila.peticiones} | ${fila.errores4xx} | ${fila.limitadas429} | ${fila.errores5xx} | ${fila.p50} | ${fila.p95} | ${fila.max} |`,
   ),
   '',
+  '> El 429 es el límite de intentos, no un error del sistema: va en su propia columna.',
+  '',
+  ...(filas.some((f) => f.peticiones < 30)
+    ? [
+        '> **Aviso:** hay rutas con menos de 30 peticiones. Sus percentiles no son fiables y no',
+        '> deberían citarse; con una sola petición, p50, p95 y p99 son el mismo número.',
+        '',
+      ]
+    : []),
   '> Son peticiones reales del piloto. No incluyen renderizado del navegador,',
   '> red del usuario ni latencia de correo; para eso hacen falta métricas del',
   '> navegador o del proveedor. No se deben comparar con una prueba de carga.',

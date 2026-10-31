@@ -8,6 +8,14 @@ const MAX_MUESTRAS_GLOBALES = 20_000;
 const MAX_MUESTRAS_RUTA = 2_000;
 const MAX_RUTAS = 100;
 const MAX_ULTIMOS_ERRORES = 20;
+/**
+ * Con menos muestras que esto, un percentil no describe nada: con una sola
+ * petición, p50, p95 y p99 son el mismo número repetido tres veces. Se sigue
+ * calculando (para no romper la serie) pero se marca como no fiable.
+ */
+const MUESTRAS_MINIMAS_PERCENTILES = 30;
+/** Por debajo de cien muestras, el «p99» es el máximo disfrazado. */
+const MUESTRAS_MINIMAS_P99 = 100;
 
 export interface RegistroPeticion {
   metodo: string;
@@ -20,6 +28,8 @@ export interface RegistroPeticion {
 interface MuestraRuta {
   peticiones: number;
   errores4xx: number;
+  /** Respuestas 429 por el límite de intentos: no son un fallo del sistema. */
+  limitadas429: number;
   errores5xx: number;
   duracionTotalMs: number;
   duracionMaxMs: number;
@@ -55,7 +65,7 @@ function percentil(valores: number[], p: number): number {
 
 @Injectable()
 export class MetricasService {
-  private readonly iniciadoEn = new Date();
+  private iniciadoEn = new Date();
   private readonly histogramaBucle = monitorEventLoopDelay({ resolution: 20 });
   private readonly archivo = process.env.METRICAS_ARCHIVO?.trim() ?? '';
   private readonly muestrasGlobales: number[] = [];
@@ -64,6 +74,7 @@ export class MetricasService {
   private total = 0;
   private exitosas = 0;
   private errores4xx = 0;
+  private limitadas429 = 0;
   private errores5xx = 0;
   private colaArchivo: string[] = [];
   private escribiendoArchivo = false;
@@ -76,6 +87,7 @@ export class MetricasService {
     const duracion = Math.max(0, datos.duracionMs);
     this.total += 1;
     if (datos.estado >= 500) this.errores5xx += 1;
+    else if (datos.estado === 429) this.limitadas429 += 1;
     else if (datos.estado >= 400) this.errores4xx += 1;
     else this.exitosas += 1;
 
@@ -88,6 +100,7 @@ export class MetricasService {
     const muestra = this.rutas.get(clave) ?? {
       peticiones: 0,
       errores4xx: 0,
+      limitadas429: 0,
       errores5xx: 0,
       duracionTotalMs: 0,
       duracionMaxMs: 0,
@@ -95,6 +108,7 @@ export class MetricasService {
     };
     muestra.peticiones += 1;
     if (datos.estado >= 500) muestra.errores5xx += 1;
+    else if (datos.estado === 429) muestra.limitadas429 += 1;
     else if (datos.estado >= 400) muestra.errores4xx += 1;
     muestra.duracionTotalMs += duracion;
     muestra.duracionMaxMs = Math.max(muestra.duracionMaxMs, duracion);
@@ -133,17 +147,28 @@ export class MetricasService {
   snapshot() {
     const memoria = process.memoryUsage();
     const rutas = [...this.rutas.entries()]
-      .map(([clave, muestra]) => ({
-        clave,
-        peticiones: muestra.peticiones,
-        errores4xx: muestra.errores4xx,
-        errores5xx: muestra.errores5xx,
-        promedioMs: redondear(muestra.duracionTotalMs / muestra.peticiones),
-        p50Ms: percentil(muestra.duraciones, 50),
-        p95Ms: percentil(muestra.duraciones, 95),
-        p99Ms: percentil(muestra.duraciones, 99),
-        maxMs: redondear(muestra.duracionMaxMs),
-      }))
+      .map(([clave, muestra]) => {
+        const muestras = muestra.duraciones.length;
+        return {
+          clave,
+          peticiones: muestra.peticiones,
+          muestras,
+          errores4xx: muestra.errores4xx,
+          limitadas429: muestra.limitadas429,
+          errores5xx: muestra.errores5xx,
+          // Media de todas las peticiones; percentiles sobre las últimas
+          // MAX_MUESTRAS_RUTA que se conservan en memoria.
+          promedioMs: redondear(muestra.duracionTotalMs / muestra.peticiones),
+          p50Ms: percentil(muestra.duraciones, 50),
+          p95Ms: percentil(muestra.duraciones, 95),
+          p99Ms:
+            muestras >= MUESTRAS_MINIMAS_P99
+              ? percentil(muestra.duraciones, 99)
+              : 'n/d',
+          maxMs: redondear(muestra.duracionMaxMs),
+          percentilesFiables: muestras >= MUESTRAS_MINIMAS_PERCENTILES,
+        };
+      })
       .sort((a, b) => b.peticiones - a.peticiones)
       .slice(0, MAX_RUTAS);
 
@@ -166,6 +191,7 @@ export class MetricasService {
         total: this.total,
         exitosas: this.exitosas,
         errores4xx: this.errores4xx,
+        limitadas429: this.limitadas429,
         errores5xx: this.errores5xx,
         tasaErrorPct:
           this.total === 0
@@ -176,6 +202,8 @@ export class MetricasService {
       },
       latenciaMs: {
         muestras: this.muestrasGlobales.length,
+        percentilesFiables:
+          this.muestrasGlobales.length >= MUESTRAS_MINIMAS_PERCENTILES,
         promedio: redondear(
           this.muestrasGlobales.length === 0
             ? 0
@@ -262,13 +290,16 @@ export class MetricasService {
         'metodo',
         'ruta',
         'peticiones',
+        'muestras',
         'errores4xx',
+        'limitadas429',
         'errores5xx',
         'promedioMs',
         'p50Ms',
         'p95Ms',
         'p99Ms',
         'maxMs',
+        'percentilesFiables',
       ],
       ...rutas.map((ruta) => {
         const [metodo, ...resto] = ruta.clave.split(' ');
@@ -276,13 +307,16 @@ export class MetricasService {
           metodo,
           resto.join(' '),
           ruta.peticiones,
+          ruta.muestras,
           ruta.errores4xx,
+          ruta.limitadas429,
           ruta.errores5xx,
           ruta.promedioMs,
           ruta.p50Ms,
           ruta.p95Ms,
           ruta.p99Ms,
           ruta.maxMs,
+          ruta.percentilesFiables ? 'SI' : 'NO',
         ];
       }),
     ];
@@ -295,6 +329,7 @@ export class MetricasService {
       {
         peticiones: number;
         errores4xx: number;
+        limitadas429: number;
         errores5xx: number;
         duraciones: number[];
       }
@@ -304,11 +339,13 @@ export class MetricasService {
       const actual = porRuta.get(clave) ?? {
         peticiones: 0,
         errores4xx: 0,
+        limitadas429: 0,
         errores5xx: 0,
         duraciones: [],
       };
       actual.peticiones += 1;
       if (registro.estado >= 500) actual.errores5xx += 1;
+      else if (registro.estado === 429) actual.limitadas429 += 1;
       else if (registro.estado >= 400) actual.errores4xx += 1;
       actual.duraciones.push(Math.max(0, registro.duracionMs));
       porRuta.set(clave, actual);
@@ -321,35 +358,64 @@ export class MetricasService {
         'metodo',
         'ruta',
         'peticiones',
+        'muestras',
         'errores4xx',
+        'limitadas429',
         'errores5xx',
         'promedioMs',
         'p50Ms',
         'p95Ms',
         'p99Ms',
         'maxMs',
+        'percentilesFiables',
       ],
     ];
     for (const [clave, valor] of [...porRuta.entries()].sort(
       (a, b) => b[1].peticiones - a[1].peticiones,
     )) {
       const [metodo, ...resto] = clave.split(' ');
+      const muestras = valor.duraciones.length;
       filas.push([
         metodo,
         resto.join(' '),
         valor.peticiones,
+        muestras,
         valor.errores4xx,
+        valor.limitadas429,
         valor.errores5xx,
         redondear(
           valor.duraciones.reduce((a, b) => a + b, 0) / valor.duraciones.length,
         ),
         percentil(valor.duraciones, 50),
         percentil(valor.duraciones, 95),
-        percentil(valor.duraciones, 99),
+        muestras >= MUESTRAS_MINIMAS_P99
+          ? percentil(valor.duraciones, 99)
+          : 'n/d',
         redondear(Math.max(...valor.duraciones)),
+        muestras >= MUESTRAS_MINIMAS_PERCENTILES ? 'SI' : 'NO',
       ]);
     }
     return `\uFEFF${filas.map((fila) => fila.map(escapar).join(',')).join('\r\n')}\r\n`;
+  }
+
+  /**
+   * Deja los contadores a cero sin reiniciar el proceso.
+   *
+   * Para el piloto: se hacen unas cuantas peticiones de calentamiento
+   * (arranque de Node, primera consulta de Prisma) y después se llama aquí,
+   * para que las cifras publicadas no incluyan ese arranque.
+   */
+  reiniciar(): void {
+    this.iniciadoEn = new Date();
+    this.muestrasGlobales.length = 0;
+    this.rutas.clear();
+    this.ultimosErrores.length = 0;
+    this.histogramaBucle.reset();
+    this.total = 0;
+    this.exitosas = 0;
+    this.errores4xx = 0;
+    this.limitadas429 = 0;
+    this.errores5xx = 0;
   }
 
   private encolarArchivo(datos: object): void {

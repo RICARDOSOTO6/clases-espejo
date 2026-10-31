@@ -13,7 +13,7 @@ dos personas que la utilizan a diario: el **agente de internacionalización** y 
 
 1. [¿Qué es una clase espejo?](#1-qué-es-una-clase-espejo)
 2. [Cómo entrar al sistema](#2-cómo-entrar-al-sistema)
-3. [Los dos roles](#3-los-dos-roles)
+3. [Los roles del sistema](#3-los-roles-del-sistema)
 4. [Primeros pasos: registro y activación](#4-primeros-pasos-registro-y-activación)
 5. [El ciclo completo de una clase espejo](#5-el-ciclo-completo-de-una-clase-espejo)
 6. [Manual del agente de internacionalización](#6-manual-del-agente-de-internacionalización)
@@ -85,7 +85,7 @@ habilitado; forma parte del plan de trabajo pendiente.)*
 
 ---
 
-## 3. Los dos roles
+## 3. Los roles del sistema
 
 | | **Agente de Internacionalización** | **Docente** |
 | --- | --- | --- |
@@ -94,7 +94,19 @@ habilitado; forma parte del plan de trabajo pendiente.)*
 | **Qué NO hace** | No organiza la clase (no crea sesiones, actividades ni reportes) | No gestiona docentes, materias ni asignaciones |
 
 > **Importante:** un agente solo puede ver y gestionar la información de **su
-> propia institución**. En una clase espejo puede **consultar** todo el proyecto y
+> propia institución**.
+>
+> **Es un mínimo, no el total.** El sistema tiene cuatro tipos de usuario: los dos
+> anteriores operan desde su institución, y a ellos se suman la **presidencia** y
+> la **secretaría de la CACE**, que operan desde la comunidad.
+>
+> | | **Presidencia de la CACE** | **Secretaría de la CACE** |
+> | --- | --- | --- |
+> | **Qué hace** | Aprueba, rechaza o veta instituciones; define la identidad de la comunidad y los premios; diseña la plantilla del certificado; nombra secretarías y puede transmitir la presidencia | Apoya a la presidencia en la gestión de instituciones y de la identidad de la comunidad |
+> | **Protección** | Puede activar el segundo factor (TOTP) para entrar | Igual que la presidencia |
+>
+> Y cualquiera, sin cuenta, puede verificar un certificado desde la página pública.
+> El detalle de las operaciones de la CACE está en el informe técnico, no aquí. En una clase espejo puede **consultar** todo el proyecto y
 > **agregar o quitar docentes de su institución**, pero no puede tocar la
 > planificación, las sesiones, las evidencias ni la evaluación.
 

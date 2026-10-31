@@ -80,7 +80,7 @@ debe validarse en el servidor.
 - **187 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP, participantes y validación de evidencias.
-- **56 pruebas unitarias**.
+- **60 pruebas unitarias**.
 - **46 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
@@ -105,6 +105,8 @@ debe validarse en el servidor.
 - Panel de rendimiento real del piloto para la CACE: latencias p50/p95/p99,
   errores, rutas lentas, memoria y exportación CSV, con registro opcional en
   JSONL.
+- Paquete de cierre del piloto (`npm run exportar-piloto`): respaldo de base y
+  uploads, tablas para el informe, métricas y manifiesto con huellas.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 

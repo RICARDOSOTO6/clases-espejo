@@ -1,5 +1,14 @@
 # 📋 Informe de actividades — Proyecto Clases Conjuntas
 
+> **Nota de vigencia (30-oct-2026).** Este informe describe el repositorio **tal como estaba el
+> 23 de septiembre de 2026** y se conserva como registro histórico: sus cifras (22 tablas, 273
+> registros) y sus pendientes corresponden a esa fecha y **no al estado actual**. Desde entonces,
+> entre otras cosas, se completó la recuperación de contraseña, se ejecutó la prueba integral sobre
+> la versión compilada, y `docs/practica-en-maquina-virtual.md` se consolidó en
+> `docs/guias/guia-de-despliegue.md`, por lo que la referencia de este documento a esa ruta ya no
+> resuelve. Para el estado vigente, ver el informe técnico y `docs/README.md`.
+
+
 **Informe de avance con evidencia verificable**
 Fecha del informe: **23 de septiembre de 2026**
 
