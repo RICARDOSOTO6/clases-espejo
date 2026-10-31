@@ -67,4 +67,14 @@ describe('Métricas de rendimiento del piloto (e2e)', () => {
     expect(respuesta.headers['content-type']).toContain('text/csv');
     expect(respuesta.text).toContain('peticiones');
   });
+
+  it('entrega el histórico y avisa si solo tiene la instancia', async () => {
+    const respuesta = await request(app.getHttpServer())
+      .get('/metricas/rendimiento/historico.csv')
+      .set(autenticado(tokenPresidente))
+      .expect(200);
+    expect(respuesta.headers['content-type']).toContain('text/csv');
+    expect(respuesta.headers['x-metricas-alcance']).toBe('INSTANCIA');
+    expect(respuesta.text).toContain('peticiones');
+  });
 });

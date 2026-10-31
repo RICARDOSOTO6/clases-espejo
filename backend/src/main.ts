@@ -116,7 +116,12 @@ async function bootstrap() {
     // resumen…) viaja en `Content-Disposition`. Sin exponerla, el navegador no
     // deja leerla cuando el frontend está en otro origen (en desarrollo, el
     // 4200) y la descarga acaba con un nombre genérico.
-    exposedHeaders: ['Content-Disposition'],
+    exposedHeaders: [
+      'Content-Disposition',
+      'X-Metricas-Alcance',
+      'X-Metricas-Desde',
+      'X-Metricas-Hasta',
+    ],
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

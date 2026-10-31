@@ -8,9 +8,10 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { MetricasService } from '../../core/services/metricas.service';
 import { CaceService, DecisionCace, InstitucionCace } from '../../core/services/cace.service';
 import { IdentidadCaceService } from '../../core/services/identidad-cace.service';
 import { PlantillaCertificadoService } from '../../core/services/plantilla-certificado.service';
@@ -41,6 +42,7 @@ import {
   TemaCace,
 } from '../../core/constants/cace';
 import { extraerMensajeError } from '../../core/utils/http-error.util';
+import { descargarBlob } from '../../core/utils/descarga.util';
 import { fechaHoraLarga } from '../../core/utils/fecha.util';
 import { urlDeArchivo } from '../../core/utils/url-archivo.util';
 import { prepararLogo } from '../../core/utils/imagen.util';
@@ -132,6 +134,7 @@ function normalizarBusqueda(valor: string | null | undefined): string {
 export class CaceComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly cace = inject(CaceService);
+  private readonly metricas = inject(MetricasService);
   /** Identidad pública: la portada, el logo de la barra y el tema aplicado. */
   private readonly identidad = inject(IdentidadCaceService);
   /** Plantilla del certificado (fase 4): la diseña y la firma la presidencia. */
@@ -306,6 +309,41 @@ export class CaceComponent implements OnInit, OnDestroy {
   /** ¿Este usuario puede hacer esto? (Igual que el `@Requiere(...)` del servidor.) */
   puede(capacidad: string): boolean {
     return this.capacidades().includes(capacidad);
+  }
+
+  // --- Rendimiento del piloto (temporal) ---
+
+  readonly descargandoRendimiento = signal(false);
+  readonly avisoRendimiento = signal<string | null>(null);
+
+  descargarHistoricoRendimiento(): void {
+    if (this.descargandoRendimiento()) return;
+    this.descargandoRendimiento.set(true);
+    this.avisoRendimiento.set(null);
+    this.error.set(null);
+    this.metricas.descargarHistorico().subscribe({
+      next: (respuesta: HttpResponse<Blob>) => {
+        this.descargandoRendimiento.set(false);
+        if (!respuesta.body) return;
+        descargarBlob(respuesta.body, 'rendimiento-historico-piloto.csv');
+        const alcance = respuesta.headers.get('X-Metricas-Alcance');
+        if (alcance === 'HISTORICO') {
+          const desde = respuesta.headers.get('X-Metricas-Desde');
+          const hasta = respuesta.headers.get('X-Metricas-Hasta');
+          this.avisoRendimiento.set(
+            `Histórico descargado${desde && hasta ? ` · ${desde} a ${hasta}` : ''}.`,
+          );
+        } else {
+          this.avisoRendimiento.set(
+            'No hay archivo histórico configurado; se descargó el acumulado desde el último reinicio.',
+          );
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoRendimiento.set(false);
+        this.error.set(extraerMensajeError(err, 'No se pudo descargar el rendimiento del piloto'));
+      },
+    });
   }
 
   // --- Instituciones ---

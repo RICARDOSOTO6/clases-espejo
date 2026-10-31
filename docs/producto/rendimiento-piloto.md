@@ -46,19 +46,42 @@ y máximo.
 La propia ruta `/metricas`, `/health` y los archivos estáticos no se cuentan para
 no contaminar la medición.
 
+## Botón temporal en la CACE
+
+En el panel de presidencia o secretaría de la CACE aparece la tarjeta
+**Rendimiento del piloto (temporal)** con el botón:
+
+```text
+Descargar histórico de rendimiento (CSV)
+```
+
+Descarga `rendimiento-historico-piloto.csv`. Si el histórico persistente no está
+configurado, descarga el acumulado de la instancia actual y muestra un aviso para
+no confundirlo con un histórico completo.
+
+También se puede llamar directamente:
+
+```http
+GET /metricas/rendimiento/historico.csv
+Authorization: Bearer <token de la CACE>
+```
+
+La cabecera `X-Metricas-Alcance` indica `HISTORICO` o `INSTANCIA`. Cuando es
+histórico, `X-Metricas-Desde` y `X-Metricas-Hasta` indican el periodo.
+
 ## Conservar las mediciones entre reinicios
 
-El endpoint resume la **instancia actual**: si se reinicia el servidor, su
-memoria empieza de cero. Para un piloto de varios días, configura:
+El endpoint `/metricas/rendimiento` resume la **instancia actual**: si se reinicia
+el servidor, su memoria empieza de cero. Para un piloto de varios días, configura:
 
 ```dotenv
 METRICAS_ARCHIVO="/var/log/clasesespejo/rendimiento.jsonl"
 ```
 
-Cada petición se agrega al archivo en formato JSONL. El archivo no se sirve por
-HTTP; se queda en el servidor y se usa para el informe.
+Cada petición se agrega al archivo en formato JSONL. El archivo no se sirve en
+bruto; el botón y el endpoint de histórico lo agregan por ruta.
 
-Para convertirlo en un informe legible:
+Para convertirlo en un informe legible desde el servidor:
 
 ```powershell
 cd backend

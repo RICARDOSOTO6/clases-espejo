@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { appendFile, mkdir } from 'node:fs/promises';
+import { appendFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { loadavg, cpus } from 'node:os';
@@ -193,11 +193,71 @@ export class MetricasService {
     };
   }
 
+  /**
+   * Histórico completo del archivo JSONL configurado. Si el piloto no tiene
+   * archivo (o todavía está vacío), se entrega el acumulado de la instancia y
+   * se informa de ello con `alcance: INSTANCIA`.
+   */
+  async historicoCsv(): Promise<{
+    csv: string;
+    alcance: 'HISTORICO' | 'INSTANCIA';
+    desde: string | null;
+    hasta: string | null;
+  }> {
+    const instancia = {
+      csv: this.csv(),
+      alcance: 'INSTANCIA' as const,
+      desde: null,
+      hasta: null,
+    };
+    if (!this.archivo) return instancia;
+    try {
+      const texto = await readFile(this.archivo, 'utf8');
+      const registros = texto
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((linea) => {
+          try {
+            const dato = JSON.parse(linea) as RegistroPeticion & {
+              fecha?: string;
+            };
+            if (
+              typeof dato.metodo !== 'string' ||
+              typeof dato.ruta !== 'string' ||
+              !Number.isFinite(dato.estado) ||
+              !Number.isFinite(dato.duracionMs)
+            ) {
+              return null;
+            }
+            return dato;
+          } catch {
+            return null;
+          }
+        })
+        .filter((dato): dato is RegistroPeticion & { fecha?: string } =>
+          Boolean(dato),
+        );
+      if (registros.length === 0) return instancia;
+      const fechas = registros
+        .map((registro) => registro.fecha)
+        .filter((fecha): fecha is string => Boolean(fecha))
+        .sort();
+      return {
+        csv: this.csvDeRegistros(registros),
+        alcance: 'HISTORICO',
+        desde: fechas[0] ?? null,
+        hasta: fechas[fechas.length - 1] ?? null,
+      };
+    } catch {
+      return instancia;
+    }
+  }
+
   csv(): string {
     const rutas = this.snapshot().rutas;
     const escapar = (valor: string | number): string =>
       `"${String(valor).replace(/"/g, '""')}"`;
-    const filas = [
+    const filas: Array<Array<string | number>> = [
       [
         'metodo',
         'ruta',
@@ -226,6 +286,69 @@ export class MetricasService {
         ];
       }),
     ];
+    return `\uFEFF${filas.map((fila) => fila.map(escapar).join(',')).join('\r\n')}\r\n`;
+  }
+
+  private csvDeRegistros(registros: RegistroPeticion[]): string {
+    const porRuta = new Map<
+      string,
+      {
+        peticiones: number;
+        errores4xx: number;
+        errores5xx: number;
+        duraciones: number[];
+      }
+    >();
+    for (const registro of registros) {
+      const clave = `${registro.metodo} ${registro.ruta}`;
+      const actual = porRuta.get(clave) ?? {
+        peticiones: 0,
+        errores4xx: 0,
+        errores5xx: 0,
+        duraciones: [],
+      };
+      actual.peticiones += 1;
+      if (registro.estado >= 500) actual.errores5xx += 1;
+      else if (registro.estado >= 400) actual.errores4xx += 1;
+      actual.duraciones.push(Math.max(0, registro.duracionMs));
+      porRuta.set(clave, actual);
+    }
+
+    const escapar = (valor: string | number): string =>
+      `"${String(valor).replace(/"/g, '""')}"`;
+    const filas: Array<Array<string | number>> = [
+      [
+        'metodo',
+        'ruta',
+        'peticiones',
+        'errores4xx',
+        'errores5xx',
+        'promedioMs',
+        'p50Ms',
+        'p95Ms',
+        'p99Ms',
+        'maxMs',
+      ],
+    ];
+    for (const [clave, valor] of [...porRuta.entries()].sort(
+      (a, b) => b[1].peticiones - a[1].peticiones,
+    )) {
+      const [metodo, ...resto] = clave.split(' ');
+      filas.push([
+        metodo,
+        resto.join(' '),
+        valor.peticiones,
+        valor.errores4xx,
+        valor.errores5xx,
+        redondear(
+          valor.duraciones.reduce((a, b) => a + b, 0) / valor.duraciones.length,
+        ),
+        percentil(valor.duraciones, 50),
+        percentil(valor.duraciones, 95),
+        percentil(valor.duraciones, 99),
+        redondear(Math.max(...valor.duraciones)),
+      ]);
+    }
     return `\uFEFF${filas.map((fila) => fila.map(escapar).join(',')).join('\r\n')}\r\n`;
   }
 

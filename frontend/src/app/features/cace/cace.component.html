@@ -142,6 +142,40 @@
             }
           }
         </nav>
+
+        @if (puede('verRendimientoPiloto')) {
+          <section class="card" id="rendimiento-piloto" data-seccion="rendimiento">
+            <div class="card-head">
+              <div class="card-head-title">
+                <span class="card-head-icon" aria-hidden="true">↗</span>
+                <h2>Rendimiento del piloto <span class="muted text-sm">(temporal)</span></h2>
+              </div>
+            </div>
+            <p class="muted">
+              Descarga el histórico de latencias, errores y rutas reales. Si el histórico
+              persistente no está configurado, se descarga el acumulado desde el último reinicio y
+              se indica en el mensaje.
+            </p>
+            <div class="form-inline">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="descargandoRendimiento()"
+                (click)="descargarHistoricoRendimiento()"
+                data-accion="descargar-rendimiento"
+              >
+                {{
+                  descargandoRendimiento()
+                    ? 'Preparando CSV…'
+                    : 'Descargar histórico de rendimiento (CSV)'
+                }}
+              </button>
+            </div>
+            @if (avisoRendimiento()) {
+              <p class="muted text-sm" role="status">{{ avisoRendimiento() }}</p>
+            }
+          </section>
+        }
       }
     }
 

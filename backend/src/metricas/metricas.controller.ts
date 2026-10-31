@@ -30,4 +30,24 @@ export class MetricasController {
     );
     res.send(this.metricas.csv());
   }
+
+  /**
+   * Histórico real del piloto. Si existe METRICAS_ARCHIVO, agrega todo el
+   * archivo JSONL; si no, devuelve la instancia actual y lo indica en
+   * `X-Metricas-Alcance`.
+   */
+  @Get('rendimiento/historico.csv')
+  @Requiere('verRendimientoPiloto')
+  async rendimientoHistoricoCsv(@Res() res: Response): Promise<void> {
+    const resultado = await this.metricas.historicoCsv();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('X-Metricas-Alcance', resultado.alcance);
+    if (resultado.desde) res.setHeader('X-Metricas-Desde', resultado.desde);
+    if (resultado.hasta) res.setHeader('X-Metricas-Hasta', resultado.hasta);
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="rendimiento-historico-piloto.csv"',
+    );
+    res.send(resultado.csv);
+  }
 }
