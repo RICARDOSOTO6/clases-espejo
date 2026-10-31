@@ -77,10 +77,10 @@ debe validarse en el servidor.
 
 ## Pruebas incluidas en el desarrollo
 
-- **183 pruebas e2e** contra una base de prueba aislada, incluidas las de
+- **186 pruebas e2e** contra una base de prueba aislada, incluidas las de
   secretaría de institución, invitación de agente, panel de desempeño,
   aislamiento institucional, TOTP, participantes y validación de evidencias.
-- **53 pruebas unitarias**.
+- **55 pruebas unitarias**.
 - **45 pruebas de frontend** en Angular.
 - `tsc`, `eslint`, `ngc` y builds correctos.
 - Las cuentas anteriores a la versión vigente del aviso quedan detenidas en
@@ -102,6 +102,9 @@ debe validarse en el servidor.
   códigos de recuperación de un solo uso.
 - Identificador `X-Request-Id` en las respuestas, alertas por webhook y script
   de comprobación de salud.
+- Panel de rendimiento real del piloto para la CACE: latencias p50/p95/p99,
+  errores, rutas lentas, memoria y exportación CSV, con registro opcional en
+  JSONL.
 - Los certificados llevan marca **DEMO** y se pueden desactivar con
   `CERTIFICADO_MODO_DEMO=false`.
 

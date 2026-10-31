@@ -67,6 +67,8 @@ export const CAPACIDADES = [
   'gestionarDocentesInstitucion',
   /** Ver conteos de su institución sin datos nominales de alumnos. */
   'verResumenInstitucion',
+  /** Consultar las métricas reales del piloto (solo CACE). */
+  'verRendimientoPiloto',
 ] as const;
 export type Capacidad = (typeof CAPACIDADES)[number];
 
@@ -89,6 +91,7 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
     'disenarCertificados',
     'firmarCertificados',
     'anularCertificados',
+    'verRendimientoPiloto',
   ],
   // La secretaría ayuda con la imagen y los premios, pero no firma ni veta ni
   // borra: el borrado lo **pide** y lo autoriza el presidente.
@@ -96,6 +99,7 @@ const MATRIZ: Record<Rol, Capacidad[]> = {
     'personalizarCace',
     'publicarPremios',
     'solicitarBorradoInstitucion',
+    'verRendimientoPiloto',
   ],
 };
 

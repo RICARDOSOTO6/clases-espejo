@@ -35,11 +35,13 @@ const CAPACIDADES_ESPERADAS: Record<string, string[]> = {
     'disenarCertificados',
     'firmarCertificados',
     'anularCertificados',
+    'verRendimientoPiloto',
   ],
   SECRETARIA_CACE: [
     'personalizarCace',
     'publicarPremios',
     'solicitarBorradoInstitucion',
+    'verRendimientoPiloto',
   ],
 };
 

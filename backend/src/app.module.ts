@@ -19,6 +19,8 @@ import { RecordatoriosModule } from './recordatorios/recordatorios.module';
 import { CaceModule } from './cace/cace.module';
 import { CertificadosModule } from './certificados/certificados.module';
 import { EnviosModule } from './envios/envios.module';
+import { MetricasModule } from './metricas/metricas.module';
+import { MetricasMiddleware } from './metricas/metricas.middleware';
 
 @Module({
   imports: [
@@ -38,14 +40,19 @@ import { EnviosModule } from './envios/envios.module';
     SolicitudesModule,
     ProyectosModule,
     RecordatoriosModule,
+    MetricasModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, MetricasMiddleware],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
-      .apply(RequestIdMiddleware, SeguridadCabecerasMiddleware)
+      .apply(
+        RequestIdMiddleware,
+        SeguridadCabecerasMiddleware,
+        MetricasMiddleware,
+      )
       .forRoutes('*');
   }
 }

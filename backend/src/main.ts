@@ -23,6 +23,8 @@ const PREFIJOS_API_CONOCIDOS = [
   '/cace',
   '/secretarias',
   '/health',
+  // Panel de rendimiento del piloto (solo CACE).
+  '/metricas',
   // Cola de correo (Fase 2): el progreso de un lote también es API.
   '/envios',
   // La verificación pública de un certificado se llama igual que su página
