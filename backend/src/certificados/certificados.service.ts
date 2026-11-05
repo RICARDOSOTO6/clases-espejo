@@ -666,7 +666,7 @@ export class CertificadosService {
         },
         participantes: {
           where: {
-            rol: { in: ['ORIGEN', 'COLABORADORA'] },
+            rol: { in: ['ORIGEN', 'DESTINO', 'COLABORADORA'] },
             estado: { in: ['APROBADA', 'CONGELADA'] },
           },
           select: { institucion: { select: { nombre: true } } },
@@ -986,7 +986,7 @@ export class CertificadosService {
         estado: true,
         participantes: {
           where: {
-            rol: { in: ['ORIGEN', 'COLABORADORA'] },
+            rol: { in: ['ORIGEN', 'DESTINO', 'COLABORADORA'] },
             estado: { in: ['APROBADA', 'CONGELADA'] },
           },
           select: {

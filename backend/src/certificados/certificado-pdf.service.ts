@@ -365,13 +365,18 @@ export class CertificadoPdfService {
     folio: string,
     campo: CampoCertificado,
   ): void {
+    // Un diseño que ya trae su propio bloque de verificación puede pedir que
+    // este hueco no escriba nada: se marca con color blanco.
+    if ((campo.color || '').toLowerCase() === '#ffffff') return;
+
     const url = direccionVerificacion(folio);
     const ancho = caja.ancho;
     const inicio = caja.y + 4;
+    const color = campo.color || '#12233A';
     doc
       .font(this.fuente(doc, true, false))
       .fontSize(Math.max(8, Math.min(11, campo.tamano)))
-      .fillColor(campo.color || '#12233A');
+      .fillColor(color);
     doc.text('VERIFICA ESTE CERTIFICADO', caja.x, inicio, {
       width: ancho,
       align: 'left',
@@ -379,17 +384,21 @@ export class CertificadoPdfService {
     doc
       .font(this.fuente(doc, false, false))
       .fontSize(8)
+      .fillColor(color)
       .text(`Folio: ${folio}`, caja.x, inicio + 17, {
         width: ancho,
         align: 'left',
       });
-    doc.fontSize(7).text('Ingresa este folio en:', caja.x, inicio + 36, {
-      width: ancho,
-      align: 'left',
-    });
     doc
       .fontSize(7)
-      .fillColor('#333333')
+      .fillColor(color)
+      .text('Ingresa este folio en:', caja.x, inicio + 36, {
+        width: ancho,
+        align: 'left',
+      });
+    doc
+      .fontSize(7)
+      .fillColor(color)
       .text(url, caja.x, inicio + 48, { width: ancho, align: 'left' });
   }
 

@@ -496,7 +496,7 @@ describe('Clase espejo con cuatro instituciones (e2e)', () => {
       Array.isArray(enBase[0].institucionesSnapshot)
         ? enBase[0].institucionesSnapshot.length
         : 0,
-    ).toBeGreaterThanOrEqual(3);
+    ).toBe(4);
 
     const porInstitucion = new Map<number, number>();
     for (const certificado of enBase) {
