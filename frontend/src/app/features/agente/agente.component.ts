@@ -143,6 +143,29 @@ export class AgenteComponent implements OnInit, OnDestroy {
     numeroEmpleado: ['', Validators.required],
   });
 
+  // --- Perfil docente sobre la misma cuenta ---
+  readonly tieneDocente = computed(() => {
+    const usuario = this.auth.currentUser();
+    return (
+      usuario?.tieneDocente === true ||
+      usuario?.roles?.includes('DOCENTE') === true
+    );
+  });
+  showPerfilDocenteModal = false;
+  perfilDocenteLoading = signal(false);
+  perfilDocenteError = signal<string | null>(null);
+  perfilDocenteSuccess = signal<string | null>(null);
+  perfilDocenteForm = this.fb.group({
+    gradoAcademico: ['', Validators.required],
+    especialidad: ['', Validators.required],
+    numeroEmpleado: ['', Validators.required],
+    materiaId: [null as number | null, Validators.required],
+    periodoEscolar: [
+      PERIODOS_ESCOLARES[PERIODOS_ESCOLARES.length - 1],
+      Validators.required,
+    ],
+  });
+
   // --- Datos ---
   docentes = signal<DocenteInstitucion[]>([]);
   /** Invitaciones que aún no se han activado (incluidas las caducadas). */
@@ -929,6 +952,64 @@ export class AgenteComponent implements OnInit, OnDestroy {
     const c = this.confirmacion();
     this.confirmacion.set(null);
     c?.accion();
+  }
+
+  irAPanelDocente(): void {
+    void this.router.navigate(['/panel/docente']);
+  }
+
+  openPerfilDocente(): void {
+    this.showPerfilDocenteModal = true;
+    this.perfilDocenteError.set(null);
+    this.perfilDocenteSuccess.set(null);
+    this.perfilDocenteForm.reset({
+      gradoAcademico: '',
+      especialidad: '',
+      numeroEmpleado: '',
+      materiaId: null,
+      periodoEscolar: PERIODOS_ESCOLARES[PERIODOS_ESCOLARES.length - 1],
+    });
+  }
+
+  closePerfilDocente(): void {
+    this.showPerfilDocenteModal = false;
+  }
+
+  guardarPerfilDocente(): void {
+    if (this.perfilDocenteLoading() || this.perfilDocenteForm.invalid) return;
+    const valor = this.perfilDocenteForm.getRawValue();
+    if (!valor.materiaId) return;
+    this.perfilDocenteLoading.set(true);
+    this.perfilDocenteError.set(null);
+    this.agentes
+      .activarPerfilDocente({
+        gradoAcademico: valor.gradoAcademico ?? '',
+        especialidad: valor.especialidad ?? '',
+        numeroEmpleado: valor.numeroEmpleado ?? '',
+        materiaId: valor.materiaId,
+        periodoEscolar: valor.periodoEscolar ?? '',
+      })
+      .subscribe({
+        next: (res) => {
+          this.perfilDocenteLoading.set(false);
+          this.auth.actualizarUsuario({
+            roles: ['AGENTE', 'DOCENTE'],
+            tieneAgente: true,
+            tieneDocente: true,
+          });
+          this.usuario = this.auth.currentUser();
+          this.showPerfilDocenteModal = false;
+          this.avisar('ok', res.mensaje);
+          this.cargarDocentes();
+          this.cargarMaterias();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.perfilDocenteLoading.set(false);
+          this.perfilDocenteError.set(
+            extraerMensajeError(err, 'No se pudo activar el perfil docente'),
+          );
+        },
+      });
   }
 
   openInvite(): void {

@@ -13,6 +13,7 @@ import {
 import type { Request } from 'express';
 import { AgentesService } from './agentes.service';
 import { InviteDocenteDto } from './dto/invite-docente.dto';
+import { ActivarPerfilDocenteDto } from './dto/activar-perfil-docente.dto';
 import { UpdateEstadoDocenteDto } from './dto/update-estado.dto';
 import { RechazarAltaDto } from './dto/rechazar-alta.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -44,6 +45,20 @@ export class AgentesController {
   @UseGuards(JwtAuthGuard)
   listarDocentes(@CurrentUser('sub') agenteId: number) {
     return this.agentesService.listarDocentes(agenteId);
+  }
+
+  /**
+   * Activa el perfil docente de la misma cuenta de agente.
+   * No crea usuario ni contraseña: completa DOCENTE/DOCENTE_INSTITUCION y deja
+   * una asignación en la institución del agente.
+   */
+  @Post('mi-perfil-docente')
+  @UseGuards(JwtAuthGuard)
+  activarPerfilDocente(
+    @CurrentUser('sub') usuarioId: number,
+    @Body() dto: ActivarPerfilDocenteDto,
+  ) {
+    return this.agentesService.activarPerfilDocente(usuarioId, dto);
   }
 
   /** Invitaciones pendientes (incluidas las caducadas) para poder reenviarlas. */

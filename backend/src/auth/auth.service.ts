@@ -15,7 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { resolverUrlPublica } from '../common/url-publica';
-import { Rol, rolDeVinculos } from '../common/capacidades';
+import { Rol, rolesDeVinculos } from '../common/capacidades';
 import {
   ESTADO_CACE_APROBADA,
   ESTADO_CACE_PENDIENTE,
@@ -502,11 +502,12 @@ export class AuthService {
       correo: usuario.correo,
     });
 
-    const rol = rolDeVinculos(usuario);
+    const roles = rolesDeVinculos(usuario);
+    const rol = roles[0] ?? null;
 
     return {
       access_token,
-      usuario: this.toUsuarioSeguro(usuario, rol),
+      usuario: this.toUsuarioSeguro(usuario, rol, roles),
     };
   }
 
@@ -580,11 +581,12 @@ export class AuthService {
       sub: usuario.id,
       correo: usuario.correo,
     });
-    const rol = rolDeVinculos(usuario);
+    const roles = rolesDeVinculos(usuario);
+    const rol = roles[0] ?? null;
 
     return {
       access_token,
-      usuario: this.toUsuarioSeguro(usuario, rol),
+      usuario: this.toUsuarioSeguro(usuario, rol, roles),
     };
   }
 
@@ -1031,7 +1033,11 @@ export class AuthService {
     };
   }
 
-  private toUsuarioSeguro(usuario: UsuarioSeguro, rol: Rol | null) {
+  private toUsuarioSeguro(
+    usuario: UsuarioSeguro,
+    rol: Rol | null,
+    roles: Rol[] = rol ? [rol] : [],
+  ) {
     return {
       id: usuario.id,
       nombres: usuario.nombres,
@@ -1050,6 +1056,9 @@ export class AuthService {
       // verdadero, la única pantalla es la de cambio de contraseña.
       debeCambiarPassword: usuario.debeCambiarPassword,
       rol,
+      roles,
+      tieneAgente: roles.includes('AGENTE'),
+      tieneDocente: roles.includes('DOCENTE'),
     };
   }
 }

@@ -22,6 +22,10 @@ export interface Usuario {
   /** Verdadero en cuentas anteriores a la versión vigente del aviso. */
   debeAceptarAviso?: boolean;
   rol: Rol;
+  /** Roles activos de la cuenta. Un agente también puede ser docente. */
+  roles?: Rol[];
+  tieneAgente?: boolean;
+  tieneDocente?: boolean;
 }
 
 export interface LoginResponse {

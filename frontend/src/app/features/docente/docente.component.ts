@@ -91,6 +91,10 @@ export class DocenteComponent implements OnInit, OnDestroy {
     this.calendarioAbierto.set(false);
   }
 
+  irAPanelAgente(): void {
+    void this.router.navigate(['/panel/agente']);
+  }
+
   usuario = this.auth.currentUser();
 
   /**

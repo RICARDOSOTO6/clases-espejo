@@ -198,6 +198,11 @@ export class AuthService {
     return this.http.post<{ mensaje: string; correo: string }>(`${API_URL}/auth/activate`, dto);
   }
 
+  /** Actualiza en memoria y en localStorage los datos del usuario actual. */
+  actualizarUsuario(cambios: Partial<Usuario>): void {
+    this.guardarUsuario(cambios);
+  }
+
   logout(): void {
     if (isBrowser()) {
       localStorage.removeItem(TOKEN_KEY);

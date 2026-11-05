@@ -14,6 +14,7 @@ import { MailService } from '../mail/mail.service';
 import { resolverUrlPublica } from '../common/url-publica';
 import { exigirAgenteHabilitado } from '../common/institucion-habilitada';
 import { InviteDocenteDto } from './dto/invite-docente.dto';
+import { ActivarPerfilDocenteDto } from './dto/activar-perfil-docente.dto';
 
 const INVITACION_POR_DEFECTO_DIAS = 7;
 
@@ -262,6 +263,107 @@ export class AgentesService {
         docente: { include: { usuario: true } },
       },
       orderBy: { id: 'desc' },
+    });
+  }
+
+  /**
+   * Permite que un agente use la misma cuenta como docente.
+   *
+   * No se crea otro usuario ni se envía otra invitación: se completa el perfil
+   * `DOCENTE` del usuario y se le deja una asignación dentro de su institución.
+   * La cuenta pasa a tener dos roles y el frontend habilita el cambio de panel.
+   */
+  async activarPerfilDocente(agenteId: number, dto: ActivarPerfilDocenteDto) {
+    const agente = await this.getAgente(agenteId);
+    await exigirAgenteHabilitado(this.prisma, agenteId);
+
+    const materia = await this.prisma.materia.findFirst({
+      where: {
+        id: dto.materiaId,
+        institucionId: agente.institucionId,
+        activa: true,
+      },
+    });
+    if (!materia) {
+      throw new NotFoundException(
+        'La materia seleccionada no pertenece a tu institución o está inactiva.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const existente = await tx.docente.findUnique({
+        where: { usuarioId: agente.usuarioId },
+      });
+      const docente = existente
+        ? await tx.docente.update({
+            where: { usuarioId: agente.usuarioId },
+            data: {
+              gradoAcademico: dto.gradoAcademico.trim(),
+              especialidad: dto.especialidad.trim(),
+            },
+          })
+        : await tx.docente.create({
+            data: {
+              usuarioId: agente.usuarioId,
+              gradoAcademico: dto.gradoAcademico.trim(),
+              especialidad: dto.especialidad.trim(),
+            },
+          });
+
+      let vinculacion = await tx.docenteInstitucion.findFirst({
+        where: {
+          docenteId: docente.id,
+          institucionId: agente.institucionId,
+        },
+      });
+      vinculacion = vinculacion
+        ? await tx.docenteInstitucion.update({
+            where: { id: vinculacion.id },
+            data: {
+              numeroEmpleado: dto.numeroEmpleado.trim(),
+              activo: true,
+            },
+          })
+        : await tx.docenteInstitucion.create({
+            data: {
+              docenteId: docente.id,
+              institucionId: agente.institucionId,
+              numeroEmpleado: dto.numeroEmpleado.trim(),
+              activo: true,
+            },
+          });
+
+      const periodo = dto.periodoEscolar.trim();
+      const asignacionExistente = await tx.asignacionDocente.findFirst({
+        where: {
+          docenteInstitucionId: vinculacion.id,
+          materiaId: materia.id,
+          periodoEscolar: periodo,
+        },
+      });
+      if (!asignacionExistente) {
+        await tx.asignacionDocente.create({
+          data: {
+            docenteInstitucionId: vinculacion.id,
+            materiaId: materia.id,
+            periodoEscolar: periodo,
+          },
+        });
+      }
+
+      return {
+        mensaje:
+          'Perfil docente activado. Ya puedes cambiar entre el panel de agente y el de docente.',
+        docenteId: docente.id,
+        docenteInstitucionId: vinculacion.id,
+        materia: {
+          id: materia.id,
+          nombre: materia.nombre,
+          periodoEscolar: periodo,
+        },
+        roles: ['AGENTE', 'DOCENTE'],
+        tieneDocente: true,
+      };
     });
   }
 

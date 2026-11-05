@@ -62,6 +62,31 @@ export interface HistorialDocente {
 export class AgentesService {
   private readonly http = inject(HttpClient);
 
+  /** Activa el perfil docente sobre la misma cuenta de agente, sin invitación. */
+  activarPerfilDocente(dto: {
+    gradoAcademico: string;
+    especialidad: string;
+    numeroEmpleado: string;
+    materiaId: number;
+    periodoEscolar: string;
+  }): Observable<{
+    mensaje: string;
+    docenteId: number;
+    docenteInstitucionId: number;
+    materia: { id: number; nombre: string; periodoEscolar: string };
+    roles: string[];
+    tieneDocente: boolean;
+  }> {
+    return this.http.post<{
+      mensaje: string;
+      docenteId: number;
+      docenteInstitucionId: number;
+      materia: { id: number; nombre: string; periodoEscolar: string };
+      roles: string[];
+      tieneDocente: boolean;
+    }>(`${API_URL}/agentes/mi-perfil-docente`, dto);
+  }
+
   invitarDocente(dto: InviteDocenteDto): Observable<InviteResponse> {
     return this.http.post<InviteResponse>(
       `${API_URL}/agentes/invitar-docente`,

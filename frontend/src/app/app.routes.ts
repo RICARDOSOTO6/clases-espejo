@@ -7,10 +7,11 @@ import { roleGuard } from './core/guards/role.guard';
  * Rutas de la aplicación.
  *
  * **Las URLs del panel no dicen qué rol eres.** Agente, docente y CACE entran
- * todos por `/panel`, y el router elige la pantalla con `panelDeRol` (tres rutas
- * con el mismo path: gana la primera cuyo rol coincide). Las secciones que solo
- * tiene la CACE cuelgan de `/panel/...`; el resto de roles, si las abre, vuelve
- * a su panel sin ver el login.
+ * todos por `/panel`, y el router elige la pantalla con `panelDeRol`. Para una
+ * cuenta que es agente y docente a la vez existen además `/panel/agente` y
+ * `/panel/docente`: son las dos caras de la misma cuenta y no llevan a otra
+ * sesión. Las secciones que solo tiene la CACE cuelgan de `/panel/...`; el resto
+ * de roles, si las abre, vuelve a su panel sin ver el login.
  *
  * Las rutas viejas (`/agente`, `/docente`, `/cace`…) se quedan como redirección
  * para que un marcador guardado siga funcionando, pero la aplicación ya no
@@ -118,6 +119,20 @@ export const routes: Routes = [
   },
 
   // --- Panel único: la URL no revela el rol ---
+  {
+    path: 'panel/docente',
+    pathMatch: 'full',
+    canMatch: [panelDeRol('DOCENTE')],
+    loadComponent: () =>
+      import('./features/docente/docente.component').then((m) => m.DocenteComponent),
+  },
+  {
+    path: 'panel/agente',
+    pathMatch: 'full',
+    canMatch: [panelDeRol('AGENTE')],
+    loadComponent: () =>
+      import('./features/agente/agente.component').then((m) => m.AgenteComponent),
+  },
   {
     path: 'panel',
     pathMatch: 'full',

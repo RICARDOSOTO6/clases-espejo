@@ -6,7 +6,12 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Capacidad, Rol, puede, rolDeVinculos } from '../common/capacidades';
+import {
+  Capacidad,
+  Rol,
+  capacidadesDe,
+  rolesDeVinculos,
+} from '../common/capacidades';
 import { PrismaService } from '../prisma/prisma.service';
 
 const CAPACIDADES_CLAVE = 'capacidades';
@@ -35,18 +40,20 @@ export const Requiere = (...capacidades: Capacidad[]) =>
 export async function rolDeUsuario(
   prisma: PrismaService,
   usuarioId: number,
-): Promise<{ rol: Rol | null; activo: boolean } | null> {
+): Promise<{ rol: Rol | null; roles: Rol[]; activo: boolean } | null> {
   const usuario = await prisma.usuario.findUnique({
     where: { id: usuarioId },
     select: {
       activo: true,
       agente: { select: { id: true } },
       docente: { select: { id: true } },
+      secretariaInstitucion: { select: { activo: true } },
       miembroCace: { select: { cargo: true, activo: true } },
     },
   });
   if (!usuario) return null;
-  return { rol: rolDeVinculos(usuario), activo: usuario.activo };
+  const roles = rolesDeVinculos(usuario);
+  return { rol: roles[0] ?? null, roles, activo: usuario.activo };
 }
 
 /**
@@ -84,8 +91,11 @@ export class CapacidadesGuard implements CanActivate {
       throw new ForbiddenException('La cuenta está desactivada.');
     }
 
+    const capacidades = new Set(
+      cuenta.roles.flatMap((rol) => capacidadesDe(rol)),
+    );
     const faltantes = requeridas.filter(
-      (capacidad) => !puede(cuenta.rol, capacidad),
+      (capacidad) => !capacidades.has(capacidad),
     );
     if (faltantes.length > 0) {
       throw new ForbiddenException('Tu rol no tiene permiso para esta acción.');

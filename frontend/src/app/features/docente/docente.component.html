@@ -3,7 +3,7 @@
   rol="DOCENTE"
   [flagUrl]="banderaUrl"
   [flagAlt]="banderaAlt"
-  homeRoute="/panel"
+  homeRoute="/panel/docente"
   (logout)="logout()"
 >
   <main class="content">
@@ -46,9 +46,16 @@
             </p>
           }
         </div>
-        <button class="btn btn-primary welcome-action" (click)="openNueva()">
-          Nueva solicitud
-        </button>
+        <div class="form-inline">
+          @if (usuario?.tieneAgente || usuario?.roles?.includes('AGENTE')) {
+            <button class="btn btn-secondary" (click)="irAPanelAgente()">
+              Ir a mi panel de agente
+            </button>
+          }
+          <button class="btn btn-primary welcome-action" (click)="openNueva()">
+            Nueva solicitud
+          </button>
+        </div>
       </div>
     </section>
 

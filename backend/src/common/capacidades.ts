@@ -108,6 +108,32 @@ function esRolValido(rol: string | null | undefined): rol is Rol {
 }
 
 /**
+ * Todos los roles activos del usuario, en el mismo orden de prioridad que la
+ * pantalla principal (CACE, secretaría, agente, docente). Una cuenta puede ser
+ * agente y docente a la vez; el rol principal solo decide el panel inicial.
+ */
+export function rolesDeVinculos(vinculos: {
+  agente?: unknown;
+  docente?: unknown;
+  secretariaInstitucion?: { activo: boolean } | null;
+  miembroCace?: { cargo: string; activo: boolean } | null;
+}): Rol[] {
+  const roles: Rol[] = [];
+  const miembro = vinculos.miembroCace?.activo ? vinculos.miembroCace : null;
+  if (miembro) {
+    roles.push(
+      miembro.cargo === 'SECRETARIA' ? 'SECRETARIA_CACE' : 'PRESIDENTE_CACE',
+    );
+  }
+  if (vinculos.secretariaInstitucion?.activo) {
+    roles.push('SECRETARIA_INSTITUCION');
+  }
+  if (vinculos.agente) roles.push('AGENTE');
+  if (vinculos.docente) roles.push('DOCENTE');
+  return roles;
+}
+
+/**
  * Rol del usuario a partir de sus filas relacionales.
  *
  * El rol **no** es una columna de USUARIO: alguien es agente si tiene fila en
@@ -121,16 +147,7 @@ export function rolDeVinculos(vinculos: {
   secretariaInstitucion?: { activo: boolean } | null;
   miembroCace?: { cargo: string; activo: boolean } | null;
 }): Rol | null {
-  const miembro = vinculos.miembroCace?.activo ? vinculos.miembroCace : null;
-  if (miembro) {
-    return miembro.cargo === 'SECRETARIA'
-      ? 'SECRETARIA_CACE'
-      : 'PRESIDENTE_CACE';
-  }
-  if (vinculos.secretariaInstitucion?.activo) return 'SECRETARIA_INSTITUCION';
-  if (vinculos.agente) return 'AGENTE';
-  if (vinculos.docente) return 'DOCENTE';
-  return null;
+  return rolesDeVinculos(vinculos)[0] ?? null;
 }
 
 /** Las capacidades de un rol (vacío si el rol no se reconoce). */
