@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3508 2480" width="3508" height="2480" font-family="Georgia, 'Times New Roman', serif">
+  <title>Certificado CACE · propuesta aniversario</title>
+  <desc>Diseño de referencia para el certificado de participación de la CACE, con paleta índigo y dorado, franja de instituciones participantes, dos firmas y folio verificable sin QR.</desc>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="3508" y2="2480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fdfbf5"/>
+      <stop offset="0.5" stop-color="#fbf6ea"/>
+      <stop offset="1" stop-color="#f4ecdd"/>
+    </linearGradient>
+    <linearGradient id="indigo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#39265f"/>
+      <stop offset="0.55" stop-color="#573c86"/>
+      <stop offset="1" stop-color="#6b4ca3"/>
+    </linearGradient>
+    <linearGradient id="oro" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b98b32"/>
+      <stop offset="0.45" stop-color="#f0d18a"/>
+      <stop offset="1" stop-color="#d1a64a"/>
+    </linearGradient>
+    <linearGradient id="tarjeta" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#fbf8ff"/>
+    </linearGradient>
+    <filter id="sombraSuave" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#39265f" flood-opacity="0.08"/>
+    </filter>
+    <filter id="sombraTarjeta" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="9" flood-color="#39265f" flood-opacity="0.06"/>
+    </filter>
+    <clipPath id="recorteLogo">
+      <circle cx="282" cy="246" r="94"/>
+    </clipPath>
+    <clipPath id="recorteSello">
+      <circle cx="1754" cy="1130" r="470"/>
+    </clipPath>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="3508" height="2480" fill="url(#fondo)"/>
+
+  <!-- Marca de agua geométrica -->
+  <g clip-path="url(#recorteSello)" opacity="0.22">
+    <circle cx="1754" cy="1130" r="470" fill="none" stroke="#6b4ca3" stroke-width="2"/>
+    <circle cx="1754" cy="1130" r="390" fill="none" stroke="#d1a64a" stroke-width="1.5"/>
+    <circle cx="1754" cy="1130" r="315" fill="none" stroke="#6b4ca3" stroke-width="1"/>
+    <path d="M1080 1440c280-380 560-560 840-560s560 180 840 560" fill="none" stroke="#6b4ca3" stroke-width="2"/>
+    <path d="M1080 820c280 380 560 560 840 560s560-180 840-560" fill="none" stroke="#d1a64a" stroke-width="1.5"/>
+    <path d="M1754 660v940M1284 1130h940" stroke="#6b4ca3" stroke-width="1.2"/>
+  </g>
+
+  <!-- Marco -->
+  <rect x="64" y="64" width="3380" height="2352" rx="14" fill="none" stroke="#39265f" stroke-width="5"/>
+  <rect x="88" y="88" width="3332" height="2304" rx="10" fill="none" stroke="#d1a64a" stroke-width="2.5"/>
+  <rect x="112" y="112" width="3284" height="2256" rx="7" fill="none" stroke="#6b4ca3" stroke-width="1" opacity="0.55"/>
+
+  <!-- Esquinas ornamentales -->
+  <g stroke="#d1a64a" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M140 185V140h45M3323 140h45v45M140 2295v45h45M3323 2340h45v-45"/>
+    <path d="M162 208V162h46M3301 162h46v46M162 2272v46h46M3301 2318h46v-46" opacity="0.55"/>
+  </g>
+
+  <!-- Cabecera -->
+  <circle cx="282" cy="246" r="99" fill="#ffffff" stroke="#d1a64a" stroke-width="4" filter="url(#sombraTarjeta)"/>
+  <circle cx="282" cy="246" r="90" fill="none" stroke="#573c86" stroke-width="1.2" opacity="0.4"/>
+  <image href="data:image/webp;base64,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" x="208" y="172" width="148" height="148" preserveAspectRatio="xMidYMid meet" clip-path="url(#recorteLogo)"/>
+  <text x="282" y="262" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#39265f" opacity="0.25">CACE</text>
+
+  <text x="410" y="200" font-family="Arial, sans-serif" font-size="44" font-weight="800" fill="#39265f" letter-spacing="2">CACE</text>
+  <text x="412" y="240" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#573c86">Uniendo mentes, corazones y proyectos</text>
+  <text x="412" y="275" font-family="Arial, sans-serif" font-size="16" fill="#7c6a8d" letter-spacing="1.5">COMUNIDAD DE APOYO A CLASES ESPEJO</text>
+
+  <text x="3280" y="196" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#b98b32" letter-spacing="3.4">DOCUMENTO INSTITUCIONAL</text>
+  <text x="3280" y="236" text-anchor="end" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#39265f">2026</text>
+  <text x="3280" y="268" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#7c6a8d" letter-spacing="1.6">EDICIÓN ANIVERSARIO</text>
+
+  <line x1="180" y1="340" x2="3328" y2="340" stroke="url(#oro)" stroke-width="3"/>
+  <line x1="180" y1="352" x2="3328" y2="352" stroke="#d1a64a" stroke-width="1" opacity="0.45"/>
+
+  <!-- Título -->
+  <text x="1754" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#b98b32" letter-spacing="7">LA COMUNIDAD DE APOYO A CLASES ESPEJO OTORGA EL PRESENTE</text>
+  <text x="1754" y="550" text-anchor="middle" font-family="Georgia, serif" font-size="76" font-weight="700" fill="#39265f" letter-spacing="3">CERTIFICADO</text>
+  <text x="1754" y="610" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#b98b32" letter-spacing="8">DE PARTICIPACIÓN</text>
+
+  <g stroke="#d1a64a" stroke-width="1.2" opacity="0.8">
+    <line x1="1350" y1="646" x2="1560" y2="646"/>
+    <line x1="1948" y1="646" x2="2158" y2="646"/>
+    <circle cx="1754" cy="646" r="5" fill="#d1a64a" stroke="none"/>
+  </g>
+
+  <!-- Cuerpo -->
+  <text x="1754" y="716" text-anchor="middle" font-family="Georgia, serif" font-size="23" fill="#4f3d64">a</text>
+  <text x="1754" y="824" text-anchor="middle" font-family="Georgia, serif" font-size="62" font-weight="700" fill="#39265f" letter-spacing="1">María Fernanda de Jesús Gutiérrez</text>
+  <line x1="1030" y1="862" x2="2478" y2="862" stroke="#d1a64a" stroke-width="2"/>
+  <text x="1754" y="910" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-style="italic" fill="#573c86">por su participación en la clase espejo</text>
+  <text x="1754" y="978" text-anchor="middle" font-family="Georgia, serif" font-size="35" font-weight="700" fill="#39265f">Internacionalización en el aula: aprendizajes sin fronteras</text>
+  <text x="1754" y="1024" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#7c6a8d">12 al 23 de octubre de 2026 · Modalidad virtual</text>
+
+  <g transform="translate(162" y="1068)">
+    <line x1="0" y1="0" x2="480" y2="0" stroke="#d1a64a" stroke-width="1.2" opacity="0.7"/>
+    <line x1="2866" y1="0" x2="3346" y2="0" stroke="#d1a64a" stroke-width="1.2" opacity="0.7"/>
+  </g>
+
+  <!-- Instituciones participantes -->
+  <text x="1754" y="1138" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#b98b32" letter-spacing="4.5">INSTITUCIONES PARTICIPANTES</text>
+
+  <!-- Tarjeta 1 -->
+  <g transform="translate(292 1174)" filter="url(#sombraTarjeta)">
+    <rect width="660" height="218" rx="16" fill="url(#tarjeta)" stroke="#e9e0f2" stroke-width="1.5"/>
+    <g transform="translate(28 32)">
+      <rect width="94" height="62" rx="5" fill="#ffffff" stroke="#d8cfe4" stroke-width="1"/>
+      <rect width="31.3" height="62" fill="#006847"/>
+      <rect x="31.3" width="31.4" height="62" fill="#ffffff"/>
+      <rect x="62.7" width="31.3" height="62" fill="#ce1126"/>
+      <circle cx="47" cy="31" r="8" fill="none" stroke="#c7a24b" stroke-width="1.5"/>
+    </g>
+    <text x="146" y="58" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#b98b32" letter-spacing="1.6">MÉXICO</text>
+    <text x="146" y="94" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#39265f">Institución anfitriona</text>
+    <text x="146" y="124" font-family="Arial, sans-serif" font-size="14" fill="#7c6a8d">Logo o bandera de la institución</text>
+    <line x1="28" y1="158" x2="632" y2="158" stroke="#eee8fb" stroke-width="1.2"/>
+    <text x="28" y="190" font-family="Arial, sans-serif" font-size="12" fill="#9a8aaa">Participación académica</text>
+  </g>
+
+  <!-- Tarjeta 2 -->
+  <g transform="translate(1002 1174)" filter="url(#sombraTarjeta)">
+    <rect width="660" height="218" rx="16" fill="url(#tarjeta)" stroke="#e9e0f2" stroke-width="1.5"/>
+    <g transform="translate(28 32)">
+      <rect width="94" height="62" rx="5" fill="#ffffff" stroke="#d8cfe4" stroke-width="1"/>
+      <rect width="94" height="31" fill="#fcd116"/>
+      <rect y="31" width="94" height="15.5" fill="#003893"/>
+      <rect y="46.5" width="94" height="15.5" fill="#ce1126"/>
+    </g>
+    <text x="146" y="58" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#b98b32" letter-spacing="1.6">COLOMBIA</text>
+    <text x="146" y="94" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#39265f">Institución colaboradora</text>
+    <text x="146" y="124" font-family="Arial, sans-serif" font-size="14" fill="#7c6a8d">Logo o bandera de la institución</text>
+    <line x1="28" y1="158" x2="632" y2="158" stroke="#eee8fb" stroke-width="1.2"/>
+    <text x="28" y="190" font-family="Arial, sans-serif" font-size="12" fill="#9a8aaa">Participación académica</text>
+  </g>
+
+  <!-- Tarjeta 3 -->
+  <g transform="translate(1712 1174)" filter="url(#sombraTarjeta)">
+    <rect width="660" height="218" rx="16" fill="url(#tarjeta)" stroke="#e9e0f2" stroke-width="1.5"/>
+    <g transform="translate(28 32)">
+      <rect width="94" height="62" rx="5" fill="#ffffff" stroke="#d8cfe4" stroke-width="1"/>
+      <rect width="31.3" height="62" fill="#d91023"/>
+      <rect x="31.3" width="31.4" height="62" fill="#ffffff"/>
+      <rect x="62.7" width="31.3" height="62" fill="#d91023"/>
+    </g>
+    <text x="146" y="58" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#b98b32" letter-spacing="1.6">PERÚ</text>
+    <text x="146" y="94" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#39265f">Institución colaboradora</text>
+    <text x="146" y="124" font-family="Arial, sans-serif" font-size="14" fill="#7c6a8d">Logo o bandera de la institución</text>
+    <line x1="28" y1="158" x2="632" y2="158" stroke="#eee8fb" stroke-width="1.2"/>
+    <text x="28" y="190" font-family="Arial, sans-serif" font-size="12" fill="#9a8aaa">Participación académica</text>
+  </g>
+
+  <!-- Tarjeta 4 -->
+  <g transform="translate(2422 1174)" filter="url(#sombraTarjeta)">
+    <rect width="660" height="218" rx="16" fill="url(#tarjeta)" stroke="#e9e0f2" stroke-width="1.5"/>
+    <g transform="translate(28 32)">
+      <rect width="94" height="62" rx="5" fill="#ffffff" stroke="#d8cfe4" stroke-width="1"/>
+      <rect width="94" height="16" fill="#aa151b"/>
+      <rect y="16" width="94" height="30" fill="#f1bf00"/>
+      <rect y="46" width="94" height="16" fill="#aa151b"/>
+    </g>
+    <text x="146" y="58" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#b98b32" letter-spacing="1.6">ESPAÑA</text>
+    <text x="146" y="94" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#39265f">Institución colaboradora</text>
+    <text x="146" y="124" font-family="Arial, sans-serif" font-size="14" fill="#7c6a8d">Logo o bandera de la institución</text>
+    <line x1="28" y1="158" x2="632" y2="158" stroke="#eee8fb" stroke-width="1.2"/>
+    <text x="28" y="190" font-family="Arial, sans-serif" font-size="12" fill="#9a8aaa">Participación académica</text>
+  </g>
+
+  <text x="1754" y="1458" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#9a8aaa">La lista completa de instituciones aparece en la verificación del certificado.</text>
+
+  <text x="1754" y="1548" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-style="italic" fill="#573c86">Este reconocimiento celebra el encuentro académico entre instituciones</text>
+  <text x="1754" y="1582" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-style="italic" fill="#573c86">y el compromiso con una educación sin fronteras.</text>
+  <text x="1754" y="1630" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#9a8aaa" letter-spacing="1.2">DADO EN LA COMUNIDAD CACE · 4 DE NOVIEMBRE DE 2026</text>
+
+  <!-- Firmas -->
+  <g transform="translate(270 1850)">
+    <line x1="0" y1="150" x2="860" y2="150" stroke="#39265f" stroke-width="1.8"/>
+    <text x="430" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#39265f" letter-spacing="1.2">PRESIDENCIA DE LA CACE</text>
+    <text x="430" y="219" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7c6a8d">Nombre y firma</text>
+  </g>
+
+  <g transform="translate(1320 1850)">
+    <line x1="0" y1="150" x2="860" y2="150" stroke="#39265f" stroke-width="1.8"/>
+    <text x="430" y="190" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#39265f" letter-spacing="1.2">RESPONSABLE ACADÉMICO</text>
+    <text x="430" y="219" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7c6a8d">Nombre y firma</text>
+  </g>
+
+  <!-- Sello -->
+  <g transform="translate(2475 1800)">
+    <circle cx="0" cy="0" r="118" fill="none" stroke="#d1a64a" stroke-width="3"/>
+    <circle cx="0" cy="0" r="104" fill="#39265f"/>
+    <circle cx="0" cy="0" r="91" fill="none" stroke="#d1a64a" stroke-width="1.3"/>
+    <text x="0" y="-18" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" font-weight="800" fill="#ffffff" letter-spacing="2">CACE</text>
+    <text x="0" y="12" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#d1a64a" letter-spacing="1.4">COMUNIDAD</text>
+    <text x="0" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#d1a64a" letter-spacing="1.4">CLASES ESPEJO</text>
+    <text x="0" y="57" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#ffffff" opacity="0.8" letter-spacing="1.2">2026</text>
+  </g>
+
+  <!-- Bloque de folio -->
+  <g transform="translate(2720 1840)">
+    <rect width="590" height="278" rx="14" fill="#39265f"/>
+    <rect x="10" y="10" width="570" height="258" rx="9" fill="none" stroke="#d1a64a" stroke-width="1.6" opacity="0.8"/>
+    <text x="32" y="48" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#d1a64a" letter-spacing="3">FOLIO DEL CERTIFICADO</text>
+    <text x="32" y="100" font-family="'Courier New', monospace" font-size="25" font-weight="700" fill="#ffffff">CACE-2026-0001-7K4M9Q2X</text>
+    <line x1="32" y1="124" x2="558" y2="124" stroke="#d1a64a" stroke-width="1" opacity="0.55"/>
+    <text x="32" y="156" font-family="Arial, sans-serif" font-size="12" fill="#cfc2df">Verifica este certificado en:</text>
+    <text x="32" y="183" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#ffffff">cace.clasesespejo.org/verificar</text>
+    <text x="32" y="218" font-family="Arial, sans-serif" font-size="11" fill="#cfc2df">Escribe el folio completo. No necesitas QR.</text>
+    <text x="32" y="250" font-family="Arial, sans-serif" font-size="10" fill="#b8a7ca">Documento verificable · CACE 2026</text>
+  </g>
+
+  <!-- Pie -->
+  <line x1="180" y1="2270" x2="3328" y2="2270" stroke="#d1a64a" stroke-width="1.5" opacity="0.7"/>
+  <text x="1754" y="2312" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#9a8aaa" letter-spacing="1.2">COMUNIDAD DE APOYO A CLASES ESPEJO · DOCUMENTO DE PARTICIPACIÓN ACADÉMICA</text>
+</svg>
