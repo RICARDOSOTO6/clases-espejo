@@ -40,9 +40,23 @@ const VERIFICACION: VerificacionCertificado = {
   mensaje: 'El certificado es válido.',
   modoDemo: true,
   certificado: {
-    folio: 'CACE-2026-0001',
+    folio: 'CACE-2026-0001-7K4M9Q2X',
     alumno: 'Ana Pérez López',
     titulo: 'Clase espejo de prueba',
+    instituciones: [
+      {
+        nombre: 'Institución A',
+        pais: 'México',
+        codigoPais: 'MX',
+        logoUrl: null,
+      },
+      {
+        nombre: 'Institución B',
+        pais: 'Colombia',
+        codigoPais: 'CO',
+        logoUrl: null,
+      },
+    ],
     institucionOrigen: 'Institución A',
     institucionDestino: 'Institución B',
     fechaInicio: '2026-10-20',

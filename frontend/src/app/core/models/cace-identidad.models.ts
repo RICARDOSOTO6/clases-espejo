@@ -31,6 +31,8 @@ export interface ConfiguracionCace {
   tema: TemaCace;
   diasMinimosPropuesta: number;
   diasRevision: number;
+  /** Si está apagado, los certificados nuevos se verifican solo con el folio. */
+  certificadosQrHabilitado: boolean;
   actualizadoEn?: string;
 }
 
@@ -95,6 +97,7 @@ export interface ConfiguracionCaceDto {
   tema?: TemaCace;
   diasMinimosPropuesta?: number;
   diasRevision?: number;
+  certificadosQrHabilitado?: boolean;
 }
 
 /** Cuerpo de alta o edición de un país de la comunidad. */

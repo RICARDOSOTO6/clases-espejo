@@ -68,6 +68,18 @@ describe('Flujo 4: certificados y verificación pública', () => {
     await app.close();
   });
 
+  it('0. el QR de certificados nace apagado hasta autorización', async () => {
+    const tokenPresidencia = await iniciarSesion(
+      app,
+      semilla.correos.presidencia,
+    );
+    const configuracion = await request(app.getHttpServer())
+      .get('/cace/configuracion')
+      .set(autenticado(tokenPresidencia))
+      .expect(200);
+    expect(configuracion.body.certificadosQrHabilitado).toBe(false);
+  });
+
   it('0. no guarda la lista sin declarar la autorización de los alumnos', async () => {
     const respuesta = await request(app.getHttpServer())
       .put(`/proyectos/${proyectoId}/listas-alumnos`)
@@ -145,6 +157,14 @@ describe('Flujo 4: certificados y verificación pública', () => {
       folio: string;
     }>;
     expect(emitidos).toHaveLength(2);
+    expect(emitidos[0].folio).toMatch(/^CACE-\d{4}-\d{4}-[A-Z2-9]{8}$/);
+
+    // El folio impreso ya lleva su firma: no hace falta el código del QR.
+    const verificacionSinQr = await request(app.getHttpServer())
+      .get(`/verificar/${emitidos[0].folio}`)
+      .expect(200);
+    expect(verificacionSinQr.body.estado).toBe('VALIDO');
+    expect(verificacionSinQr.body.certificado.folio).toBe(emitidos[0].folio);
 
     // El orden de `emitidos` no tiene por qué coincidir con el de la lista:
     // se busca en la base el certificado de cada alumno para no confundirlos.

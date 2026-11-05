@@ -96,11 +96,18 @@ export const routes: Routes = [
       ),
   },
   {
-    // Verificación pública de un certificado: es lo que abre el QR impreso.
+    // Verificación pública de un certificado: con el folio impreso, sin QR.
     // Va **sin guardia y fuera del esqueleto con menú** a propósito: la abre
     // cualquiera que tenga el certificado en la mano (un alumno, un empleador),
-    // sin cuenta y sin sesión. La protección no es la sesión, sino el código
-    // que va dentro del QR.
+    // sin cuenta y sin sesión.
+    path: 'verificar',
+    loadComponent: () =>
+      import('./features/verificacion/verificacion.component').then(
+        (m) => m.VerificacionComponent,
+      ),
+  },
+  {
+    // Compatibilidad con enlaces que todavía traen el folio en la ruta.
     path: 'verificar/:folio',
     loadComponent: () =>
       import('./features/verificacion/verificacion.component').then((m) => m.VerificacionComponent),

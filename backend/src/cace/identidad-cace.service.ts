@@ -167,6 +167,9 @@ export class IdentidadCaceService {
         ...(dto.diasRevision !== undefined
           ? { diasRevision: dto.diasRevision }
           : {}),
+        ...(dto.certificadosQrHabilitado !== undefined
+          ? { certificadosQrHabilitado: dto.certificadosQrHabilitado }
+          : {}),
         // Queda constancia de quién cambió la imagen de la CACE.
         actualizadoPorUsuarioId: usuarioId,
       },
@@ -216,6 +219,7 @@ export class IdentidadCaceService {
     tema: string;
     diasMinimosPropuesta: number;
     diasRevision: number;
+    certificadosQrHabilitado: boolean;
     actualizadoEn: Date;
   }) {
     return {
@@ -225,6 +229,7 @@ export class IdentidadCaceService {
       tema: esTemaCaceValido(config.tema) ? config.tema : TEMA_CACE_POR_DEFECTO,
       diasMinimosPropuesta: config.diasMinimosPropuesta,
       diasRevision: config.diasRevision,
+      certificadosQrHabilitado: config.certificadosQrHabilitado,
       actualizadoEn: config.actualizadoEn,
     };
   }

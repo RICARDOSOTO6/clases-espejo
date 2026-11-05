@@ -114,8 +114,23 @@ const FUENTES_UNICODE: {
 const MARGEN_QR_MODULOS = 4;
 
 /** El dato del alumno y de la clase que se imprime en el certificado. */
+export interface InstitucionCertificado {
+  nombre: string;
+  pais: string;
+  codigoPais: string;
+  logoUrl: string | null;
+  rol?: string;
+}
+
 export interface DatosCertificado {
   folio: string;
+  /**
+   * Interruptor de la CACE. Si está apagado, en el hueco del QR se imprime la
+   * instrucción para verificar con el folio; el QR no se borra del código.
+   */
+  qrHabilitado: boolean;
+  /** Instituciones participantes, en el orden en que se deben mostrar. */
+  instituciones: InstitucionCertificado[];
   alumno: { nombre: string; matricula: string };
   plantilla: {
     version: number;
@@ -197,11 +212,142 @@ export class CertificadoPdfService {
         this.escribirFolio(doc, caja, datos.folio, campo, avisos);
         continue;
       }
+      if (clave === 'participantes') {
+        this.escribirParticipantes(doc, caja, datos.instituciones, campo);
+        continue;
+      }
+      if (clave === 'qr') {
+        if (datos.qrHabilitado) {
+          await this.dibujarQr(doc, caja, datos.folio, avisos);
+        } else {
+          this.escribirVerificacionConFolio(doc, caja, datos.folio, campo);
+        }
+        continue;
+      }
       await this.dibujarQr(doc, caja, datos.folio, avisos);
     }
 
     doc.end();
     return { buffer: await terminado, avisos };
+  }
+
+  /**
+   * Franja de instituciones. En el hueco se dibujan hasta cuatro logos; si una
+   * institución no tiene logo, se escribe su nombre y su país. Cuando hay más
+   * de cuatro, el resto se resume y la lista completa queda en la verificación.
+   */
+  private escribirParticipantes(
+    doc: any,
+    caja: { x: number; y: number; ancho: number; alto: number },
+    instituciones: {
+      nombre: string;
+      pais: string;
+      codigoPais: string;
+      logoUrl: string | null;
+    }[],
+    campo: CampoCertificado,
+  ): void {
+    if (instituciones.length === 0) return;
+
+    const visibles = instituciones.slice(0, 4);
+    const anchoCelda = caja.ancho / visibles.length;
+    const altoLogo = Math.max(14, caja.alto * 0.48);
+    const fuente = this.fuente(doc, campo.negrita, campo.cursiva);
+
+    visibles.forEach((institucion, indice) => {
+      const x = caja.x + indice * anchoCelda;
+      const ruta = this.rutaLogo(institucion.logoUrl);
+      if (ruta) {
+        try {
+          doc.image(ruta, x + anchoCelda * 0.18, caja.y, {
+            fit: [anchoCelda * 0.64, altoLogo],
+            align: 'center',
+            valign: 'center',
+          });
+        } catch {
+          // Un logo corrupto no debe impedir emitir el certificado.
+        }
+      } else {
+        doc
+          .font(fuente)
+          .fontSize(Math.max(7, Math.min(11, campo.tamano)))
+          .fillColor(campo.color)
+          .text(institucion.codigoPais || '•', x, caja.y + 2, {
+            width: anchoCelda,
+            align: 'center',
+          });
+      }
+      doc
+        .font(this.fuente(doc, false, false))
+        .fontSize(Math.max(6, Math.min(8, campo.tamano - 2)))
+        .fillColor(campo.color)
+        .text(institucion.nombre, x + 2, caja.y + altoLogo + 4, {
+          width: anchoCelda - 4,
+          align: 'center',
+        });
+    });
+
+    if (instituciones.length > 4) {
+      doc
+        .font(this.fuente(doc, false, false))
+        .fontSize(Math.max(6, Math.min(8, campo.tamano - 2)))
+        .fillColor(campo.color)
+        .text(
+          `+ ${instituciones.length - 4} instituciones más`,
+          caja.x,
+          caja.y + caja.alto - 12,
+          {
+            width: caja.ancho,
+            align: 'right',
+          },
+        );
+    }
+  }
+
+  /** Traduce `/logos/archivo.png` a la ruta local de la carpeta de logos. */
+  private rutaLogo(logoUrl: string | null): string | null {
+    if (!logoUrl) return null;
+    const archivo = basename(logoUrl);
+    const ruta = join(process.cwd(), 'uploads', 'instituciones', archivo);
+    return existsSync(ruta) ? ruta : null;
+  }
+
+  /**
+   * Cuando el QR está apagado, su hueco no queda vacío: se usa para explicar
+   * cómo verificar el documento con el folio impreso.
+   */
+  private escribirVerificacionConFolio(
+    doc: any,
+    caja: { x: number; y: number; ancho: number; alto: number },
+    folio: string,
+    campo: CampoCertificado,
+  ): void {
+    const url = direccionVerificacion(folio);
+    const ancho = caja.ancho;
+    const inicio = caja.y + 4;
+    doc
+      .font(this.fuente(doc, true, false))
+      .fontSize(Math.max(8, Math.min(11, campo.tamano)))
+      .fillColor(campo.color || '#12233A');
+    doc.text('VERIFICA ESTE CERTIFICADO', caja.x, inicio, {
+      width: ancho,
+      align: 'left',
+    });
+    doc
+      .font(this.fuente(doc, false, false))
+      .fontSize(8)
+      .text(`Folio: ${folio}`, caja.x, inicio + 17, {
+        width: ancho,
+        align: 'left',
+      });
+    doc.fontSize(7).text('Ingresa este folio en:', caja.x, inicio + 36, {
+      width: ancho,
+      align: 'left',
+    });
+    doc
+      .fontSize(7)
+      .fillColor('#333333')
+      .text(url, caja.x, inicio + 48, { width: ancho, align: 'left' });
   }
 
   /**

@@ -16,6 +16,31 @@
 
   <main class="verificacion-main">
     <section class="verificacion-card">
+      <form
+        class="verificacion-busqueda"
+        (submit)="$event.preventDefault(); consultarFolio(folioManual.value)"
+      >
+        <label for="folio-manual">Verificar con el folio del certificado</label>
+        <div class="verificacion-busqueda-fila">
+          <input
+            #folioManual
+            id="folio-manual"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="CACE-2026-0001-7K4M9Q2X"
+            [value]="folio()"
+          />
+          <button type="submit" class="btn btn-primary" [disabled]="cargando()">
+            {{ cargando() ? 'Comprobando…' : 'Verificar' }}
+          </button>
+        </div>
+        <p class="verificacion-ayuda">
+          Escribe el folio completo que aparece impreso en el certificado. No
+          necesitas escanear ningún código.
+        </p>
+      </form>
+
       @if (cargando()) {
         <p class="verificacion-espera">
           <span class="spinner" aria-hidden="true"></span>
@@ -93,7 +118,23 @@
             </div>
             <div class="verificacion-fila">
               <dt>Instituciones</dt>
-              <dd data-dato="instituciones">{{ instituciones }}</dd>
+              <dd data-dato="instituciones">
+                @for (institucion of c.instituciones; track institucion.nombre) {
+                  <span class="verificacion-institucion">
+                    @if (institucion.codigoPais) {
+                      <img
+                        [src]="banderaUrl(institucion.codigoPais)"
+                        [alt]="'Bandera de ' + institucion.pais"
+                        width="20"
+                        height="14"
+                      />
+                    }
+                    {{ institucion.nombre }}
+                  </span>
+                } @empty {
+                  {{ instituciones }}
+                }
+              </dd>
             </div>
             <div class="verificacion-fila">
               <dt>Fechas de la clase</dt>
@@ -127,8 +168,8 @@
 
     <p class="verificacion-pie">
       Esta página la sirve la <strong>CACE</strong> y comprueba el certificado con
-      el código que viene en su código QR: nadie que invente un folio puede ver
-      los datos de un alumno.
+      el folio impreso. Nadie que invente un folio puede ver los datos de un
+      alumno.
       <a routerLink="/login">Entrar a la plataforma</a>
     </p>
   </main>

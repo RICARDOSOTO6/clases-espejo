@@ -1528,6 +1528,23 @@
                 }
               </div>
 
+              <div class="form-field">
+                <label class="switch" for="qr-certificados">
+                  <input
+                    id="qr-certificados"
+                    type="checkbox"
+                    formControlName="certificadosQrHabilitado"
+                  />
+                  <span class="switch-pista" aria-hidden="true"></span>
+                  <span>Mostrar QR en los certificados nuevos</span>
+                </label>
+                <p class="text-sm muted">
+                  Déjalo apagado hasta recibir la autorización. Mientras esté apagado, el
+                  certificado se verifica con el folio impreso. Los PDF ya emitidos no se
+                  modifican.
+                </p>
+              </div>
+
               <fieldset class="temas-grid" id="personalizacion-temas">
                 <legend>Paleta visual</legend>
                 <div class="temas-grid-cajas">
@@ -2386,6 +2403,7 @@
               [borrador]="b"
               [fondo]="fondoPlantilla()"
               [catalogo]="catalogoCampos()"
+              [qrHabilitado]="formPersonalizacion.get('certificadosQrHabilitado')?.value === true"
               [guardando]="guardandoPlantilla()"
               [nombresDeClase]="nombresDeLaClase()"
               [versiones]="versionesPlantilla()"

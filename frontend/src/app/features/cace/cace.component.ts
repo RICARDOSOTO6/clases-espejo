@@ -606,6 +606,7 @@ export class CaceComponent implements OnInit, OnDestroy {
     tema: this.fb.nonNullable.control<TemaCace>('AZUL'),
     diasMinimosPropuesta: [8, [Validators.required, Validators.min(1), Validators.max(60)]],
     diasRevision: [7, [Validators.required, Validators.min(1), Validators.max(60)]],
+    certificadosQrHabilitado: [false],
   });
 
   /** Logo configurado (o el de respaldo), listo para la vista previa. */
@@ -1494,6 +1495,7 @@ export class CaceComponent implements OnInit, OnDestroy {
           tema: config.tema,
           diasMinimosPropuesta: config.diasMinimosPropuesta,
           diasRevision: config.diasRevision,
+          certificadosQrHabilitado: config.certificadosQrHabilitado,
         });
         this.temaElegido.set(config.tema);
         this.lemaVistaPrevia.set(config.lema);
@@ -1515,7 +1517,7 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { lema, descripcion, tema, diasMinimosPropuesta, diasRevision } =
+    const { lema, descripcion, tema, diasMinimosPropuesta, diasRevision, certificadosQrHabilitado } =
       this.formPersonalizacion.getRawValue();
     this.guardandoPersonalizacion.set(true);
     this.errorPersonalizacion.set(null);
@@ -1528,6 +1530,7 @@ export class CaceComponent implements OnInit, OnDestroy {
         tema,
         diasMinimosPropuesta: diasMinimosPropuesta ?? 8,
         diasRevision: diasRevision ?? 7,
+        certificadosQrHabilitado: certificadosQrHabilitado === true,
       })
       .subscribe({
         next: () => {

@@ -1181,9 +1181,9 @@ export class ProyectoComponent implements OnInit, OnDestroy {
   // --- Enlace de verificación ---
 
   /**
-   * Copia el enlace público del certificado (el mismo que lleva el QR, con su
-   * código). Si el navegador no deja usar el portapapeles —pasa cuando la página
-   * no va por HTTPS—, se deja el enlace a la vista para copiarlo a mano.
+   * Copia el enlace público del certificado, que ya contiene el folio completo.
+   * Si el navegador no deja usar el portapapeles —pasa cuando la página no va
+   * por HTTPS—, se deja el enlace a la vista para copiarlo a mano.
    */
   copiarEnlace(certificado: CertificadoEmitido): void {
     const enlace = certificado.enlaceVerificacion;

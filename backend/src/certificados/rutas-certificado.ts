@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { codigoVerificacion } from './codigo-verificacion';
+import { codigoVerificacion, separarFolio } from './codigo-verificacion';
 
 /**
  * Carpetas de los certificados, dentro de `uploads`, y la dirección pública de
@@ -38,17 +38,17 @@ export function urlPublica(): string {
 /**
  * La dirección que abre el QR de un certificado.
  *
- * Lleva el **código de verificación** además del folio
- * (`/verificar/CACE-2026-0001?c=ABCD2345`). El folio solo no vale: es
- * consecutivo y se adivina, así que sin el código la página no enseña ningún
- * dato del alumno. Como el código se deriva del folio con el secreto del
- * servidor, todos los certificados —también los ya emitidos— tienen el suyo sin
- * guardar nada nuevo.
- *
- * El QR del PDF y el de la vista previa del panel salen de aquí, así que los dos
- * llevan el código dentro.
+ * Si el folio ya trae la firma (`CACE-2026-0001-7K4M9Q2X`), el QR apunta a ese
+ * folio completo y no necesita `?c=`. Si se trata de un certificado viejo, se
+ * conserva la forma anterior con el código separado para no romper los QR ya
+ * impresos. El folio nuevo es autosuficiente: quien no tiene QR puede escribir
+ * el folio impreso en la página de verificación.
  */
 export function direccionVerificacion(folio: string): string {
-  const codigo = codigoVerificacion(folio);
-  return `${urlPublica()}/verificar/${encodeURIComponent(folio)}?c=${encodeURIComponent(codigo)}`;
+  const partes = separarFolio(folio);
+  if (partes?.codigo) {
+    return `${urlPublica()}/verificar/${encodeURIComponent(folio)}`;
+  }
+  const codigo = codigoVerificacion(partes?.base ?? folio);
+  return `${urlPublica()}/verificar/${encodeURIComponent(partes?.base ?? folio)}?c=${encodeURIComponent(codigo)}`;
 }

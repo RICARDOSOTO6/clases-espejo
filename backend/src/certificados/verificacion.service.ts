@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   codigoValido,
-  formatoFolioValido,
-  normalizarFolio,
+  folioConFirma,
+  separarFolio,
 } from './codigo-verificacion';
 import { certificadoModoDemo } from './modo-demo';
 
@@ -16,11 +16,21 @@ type EstadoVerificacion = 'VALIDO' | 'ANULADO' | 'NO_ENCONTRADO' | 'INVALIDO';
  * el PDF. Un certificado es un documento que se enseña, pero la lista de
  * alumnos de una institución no.
  */
+interface InstitucionVerificada {
+  nombre: string;
+  pais: string;
+  codigoPais: string;
+  logoUrl: string | null;
+}
+
 interface CertificadoVerificado {
   folio: string;
   /** Solo el nombre: la matrícula no se publica (sirve para uso interno). */
   alumno: string;
   titulo: string;
+  /** Lista completa; un certificado puede unir más de dos instituciones. */
+  instituciones: InstitucionVerificada[];
+  /** Campos antiguos, conservados para no romper pantallas ya publicadas. */
   institucionOrigen: string;
   institucionDestino: string;
   fechaInicio: Date;
@@ -68,22 +78,27 @@ export class VerificacionService {
     folioRecibido: string,
     codigoRecibido?: string,
   ): Promise<ResultadoVerificacion> {
-    const folio = normalizarFolio(folioRecibido);
+    const partes = separarFolio(folioRecibido);
+    if (!partes) {
+      return this.invalido();
+    }
 
-    // El formato se comprueba antes de consultar: un folio inventado no llega
-    // siquiera a la base, y sin el código correcto la respuesta es la misma que
-    // la de un folio real.
-    if (!formatoFolioValido(folio) || !codigoValido(folio, codigoRecibido)) {
+    // El folio impreso puede traer la firma al final. Si es un enlace viejo,
+    // la firma sigue llegando en `?c=`. En ambos casos se valida antes de
+    // consultar la base.
+    const codigo = partes.codigo ?? codigoRecibido;
+    if (!codigoValido(partes.base, codigo)) {
       return this.invalido();
     }
 
     const certificado = await this.prisma.certificado.findUnique({
-      where: { folio },
+      where: { folio: partes.base },
       select: {
         folio: true,
         estado: true,
         anuladoMotivo: true,
         emitidoEn: true,
+        institucionesSnapshot: true,
         alumno: { select: { nombre: true } },
         proyecto: {
           select: {
@@ -111,20 +126,56 @@ export class VerificacionService {
       return {
         estado: 'NO_ENCONTRADO',
         mensaje:
-          'No encontramos ningún certificado con ese folio. Comprueba que esté bien escrito o escanea el código QR del certificado.',
+          'No encontramos ningún certificado con ese folio. Comprueba que esté bien escrito e inténtalo de nuevo.',
         certificado: null,
         modoDemo: certificadoModoDemo(),
       };
     }
 
     const solicitud = certificado.proyecto.solicitud;
+    const origen = solicitud.asignacionOrigen.docenteInstitucion.institucion;
+    const destino = solicitud.institucionDestino;
+    const snapshot = (certificado.institucionesSnapshot ?? []) as unknown;
+    const lista = Array.isArray(snapshot) ? snapshot : [];
+    const instituciones: InstitucionVerificada[] = lista
+      .filter(
+        (item) => !!item && typeof item === 'object' && !Array.isArray(item),
+      )
+      .map((item) => {
+        const fila = item as Record<string, unknown>;
+        return {
+          nombre: typeof fila.nombre === 'string' ? fila.nombre : '',
+          pais: typeof fila.pais === 'string' ? fila.pais : '',
+          codigoPais:
+            typeof fila.codigoPais === 'string' ? fila.codigoPais : '',
+          logoUrl: typeof fila.logoUrl === 'string' ? fila.logoUrl : null,
+        };
+      })
+      .filter((item) => item.nombre);
+    if (instituciones.length === 0) {
+      instituciones.push(
+        {
+          nombre: origen.nombre,
+          pais: '',
+          codigoPais: '',
+          logoUrl: null,
+        },
+        {
+          nombre: destino.nombre,
+          pais: '',
+          codigoPais: '',
+          logoUrl: null,
+        },
+      );
+    }
+
     const datos: CertificadoVerificado = {
-      folio: certificado.folio,
+      folio: folioConFirma(partes.base),
       alumno: certificado.alumno.nombre,
       titulo: solicitud.titulo,
-      institucionOrigen:
-        solicitud.asignacionOrigen.docenteInstitucion.institucion.nombre,
-      institucionDestino: solicitud.institucionDestino.nombre,
+      instituciones,
+      institucionOrigen: origen.nombre,
+      institucionDestino: destino.nombre,
       fechaInicio: certificado.proyecto.fechaInicio,
       fechaFin: certificado.proyecto.fechaFin,
       emitidoEn: certificado.emitidoEn,
@@ -158,7 +209,7 @@ export class VerificacionService {
     return {
       estado: 'INVALIDO',
       mensaje:
-        'Este enlace de verificación no es válido. Para comprobar un certificado, escanea el código QR que viene impreso en él.',
+        'El folio no es válido. Revisa que lo hayas copiado completo, incluida la terminación después del último guion.',
       certificado: null,
       modoDemo: certificadoModoDemo(),
     };

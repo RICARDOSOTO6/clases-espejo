@@ -44,11 +44,43 @@ const CONTEXTO = 'certificado-verificacion';
  * antes de tocar la base para no consultar por cualquier cosa que llegue por la
  * URL, y para que un folio inventado ni siquiera provoque una consulta.
  */
-const FORMATO_FOLIO = /^CACE-\d{4}-\d{4,}$/;
+const FORMATO_FOLIO_BASE = /^CACE-\d{4}-\d{4,}$/;
+const FORMATO_FOLIO_COMPLETO = /^CACE-\d{4}-\d{4,}-[A-Z2-9]{8}$/;
 
 /** El folio tal como se compara y se imprime: sin espacios y en mayúsculas. */
 export function normalizarFolio(folio: string | null | undefined): string {
   return (folio ?? '').trim().toUpperCase();
+}
+
+/** El folio base, sin la firma que se añade al imprimirlo. */
+export function folioBase(folio: string | null | undefined): string | null {
+  const normalizado = normalizarFolio(folio);
+  if (FORMATO_FOLIO_BASE.test(normalizado)) return normalizado;
+  const coincidencia = /^(CACE-\d{4}-\d{4,})-[A-Z2-9]{8}$/.exec(normalizado);
+  return coincidencia?.[1] ?? null;
+}
+
+/**
+ * El folio que se imprime: el consecutivo seguido de la firma HMAC.
+ * Ejemplo: `CACE-2026-0001-7K4M9Q2X`.
+ */
+export function folioConFirma(folio: string): string {
+  const base = folioBase(folio);
+  if (!base) throw new Error(`Folio con formato inválido: ${folio}`);
+  return `${base}-${codigoVerificacion(base)}`;
+}
+
+/** Separa un folio impreso en su parte base y la firma, si la trae. */
+export function separarFolio(
+  folio: string | null | undefined,
+): { base: string; codigo: string | null } | null {
+  const normalizado = normalizarFolio(folio);
+  if (FORMATO_FOLIO_BASE.test(normalizado)) {
+    return { base: normalizado, codigo: null };
+  }
+  const coincidencia = /^(CACE-\d{4}-\d{4,})-([A-Z2-9]{8})$/.exec(normalizado);
+  if (!coincidencia) return null;
+  return { base: coincidencia[1], codigo: coincidencia[2] };
 }
 
 /** El código tal como lo teclea una persona: sin guiones ni espacios. */
@@ -61,7 +93,11 @@ function normalizarCodigo(codigo: string | null | undefined): string {
 
 /** ¿Tiene el folio la forma que emite la aplicación? */
 export function formatoFolioValido(folio: string | null | undefined): boolean {
-  return FORMATO_FOLIO.test(normalizarFolio(folio));
+  const normalizado = normalizarFolio(folio);
+  return (
+    FORMATO_FOLIO_BASE.test(normalizado) ||
+    FORMATO_FOLIO_COMPLETO.test(normalizado)
+  );
 }
 
 /**
@@ -70,8 +106,9 @@ export function formatoFolioValido(folio: string | null | undefined): boolean {
  * verificándose sin guardar nada más.
  */
 export function codigoVerificacion(folio: string): string {
+  const base = folioBase(folio) ?? normalizarFolio(folio);
   const resumen = createHmac('sha256', secreto())
-    .update(`${CONTEXTO}:${normalizarFolio(folio)}`)
+    .update(`${CONTEXTO}:${base}`)
     .digest();
 
   let codigo = '';
@@ -105,10 +142,14 @@ export function codigoValido(
  * código calculado con un secreto vacío lo adivinaría cualquiera.
  */
 function secreto(): string {
-  const valor = (process.env.JWT_SECRET ?? '').trim();
+  const valor = (
+    process.env.CERTIFICADO_SECRETO ??
+    process.env.JWT_SECRET ??
+    ''
+  ).trim();
   if (valor.length < 16) {
     throw new Error(
-      'Falta JWT_SECRET (o es demasiado corto): sin ese secreto no se puede calcular el código de verificación de los certificados.',
+      'Falta CERTIFICADO_SECRETO (o JWT_SECRET) y es demasiado corto: sin ese secreto no se puede calcular la firma del folio.',
     );
   }
   return valor;

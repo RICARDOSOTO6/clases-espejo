@@ -16,7 +16,7 @@
 type AlineacionCertificado = 'left' | 'center' | 'right';
 
 /** Los datos que estampa la aplicación. */
-export type ClaveCampoCertificado = 'nombre' | 'folio' | 'qr';
+export type ClaveCampoCertificado = 'nombre' | 'folio' | 'participantes' | 'qr';
 
 /** Posición y estilo de un hueco sobre el diseño. */
 export interface CampoCertificado {
@@ -233,6 +233,14 @@ export interface VerificacionCertificado {
     folio: string;
     alumno: string;
     titulo: string;
+    /** Todas las instituciones participantes, sin límite de dos. */
+    instituciones: {
+      nombre: string;
+      pais: string;
+      codigoPais: string;
+      logoUrl: string | null;
+    }[];
+    /** Campos antiguos que aún devuelve el servidor por compatibilidad. */
     institucionOrigen: string;
     institucionDestino: string;
     fechaInicio: string;

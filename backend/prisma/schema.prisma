@@ -691,6 +691,9 @@ model ConfiguracionCace {
   diasMinimosPropuesta    Int      @default(8) @map("dias_minimos_propuesta")
   /// Días de antelación con los que se debe responder (7 por defecto).
   diasRevision            Int      @default(7) @map("dias_revision")
+  /// Mientras la CACE no autorice el QR, los certificados nuevos se verifican
+  /// con el folio impreso. El QR no se borra: queda listo para reactivarlo.
+  certificadosQrHabilitado Boolean @default(false) @map("certificados_qr_habilitado")
   actualizadoPorUsuarioId Int?     @map("actualizado_por_usuario_id")
   actualizadoEn           DateTime @default(now()) @updatedAt @map("actualizado_en")
   actualizadoPor          Usuario? @relation("ConfiguracionCace", fields: [actualizadoPorUsuarioId], references: [id])
@@ -777,6 +780,10 @@ model Certificado {
   emitidoEn           DateTime             @default(now()) @map("emitido_en")
   archivoPdf          String               @map("archivo_pdf")
   hashSha256          String               @default("") @map("hash_sha256")
+  /// Copia de las instituciones que participaban cuando se emitió. El
+  /// certificado es un documento histórico: no debe cambiar si después se
+  /// renombra una institución o se retira de la clase.
+  institucionesSnapshot Json?              @map("instituciones_snapshot")
   /// EMITIDO o ANULADO (al reemitir se anula el anterior y se deja el motivo).
   estado              String               @default("EMITIDO")
   anuladoMotivo       String               @default("") @map("anulado_motivo")

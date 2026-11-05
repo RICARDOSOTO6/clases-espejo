@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -49,4 +50,12 @@ export class ActualizarConfiguracionCaceDto {
   @Min(1, { message: 'Los días de revisión deben ser al menos 1' })
   @Max(60, { message: 'Los días de revisión no pueden pasar de 60' })
   diasRevision?: number;
+
+  /**
+   * Interruptor temporal del QR. Por defecto está apagado: mientras no haya
+   * autorización, el certificado se verifica con el folio impreso.
+   */
+  @IsOptional()
+  @IsBoolean({ message: 'El interruptor del QR debe ser verdadero o falso' })
+  certificadosQrHabilitado?: boolean;
 }

@@ -26,6 +26,7 @@ import {
   DatosCertificado,
 } from './certificado-pdf.service';
 import { codigoVerificacion as codigoDeVerificacion } from './codigo-verificacion';
+import { folioConFirma } from './codigo-verificacion';
 import { PlantillasService } from './plantillas.service';
 import { CERTIFICADOS_DIR, direccionVerificacion } from './rutas-certificado';
 import { EmitirCertificadosDto } from './dto/emitir-certificados.dto';
@@ -560,7 +561,7 @@ export class CertificadosService {
     const encolar: CorreoEncolado[] = [];
 
     for (const certificado of certificados) {
-      const folio = certificado.folio;
+      const folio = folioConFirma(certificado.folio);
       const alumno = certificado.alumno.nombre;
       const correo = (certificado.alumno.correo ?? '').trim();
 
@@ -645,7 +646,7 @@ export class CertificadosService {
     };
   }
 
-  /** El título de la clase y las dos instituciones, para el correo del alumno. */
+  /** El título de la clase y todas las instituciones participantes. */
   private async datosDeLaClase(proyectoId: number) {
     const proyecto = await this.prisma.proyectoClaseEspejo.findUnique({
       where: { id: proyectoId },
@@ -663,6 +664,14 @@ export class CertificadosService {
             institucionDestino: { select: { nombre: true } },
           },
         },
+        participantes: {
+          where: {
+            rol: { in: ['ORIGEN', 'COLABORADORA'] },
+            estado: { in: ['APROBADA', 'CONGELADA'] },
+          },
+          select: { institucion: { select: { nombre: true } } },
+          orderBy: { id: 'asc' },
+        },
       },
     });
 
@@ -670,9 +679,16 @@ export class CertificadosService {
     const origen =
       solicitud?.asignacionOrigen.docenteInstitucion.institucion.nombre ?? '';
     const destino = solicitud?.institucionDestino.nombre ?? '';
+    const participantes =
+      proyecto?.participantes.map((p) => p.institucion.nombre) ?? [];
     return {
       titulo: solicitud?.titulo ?? 'Clase espejo',
-      instituciones: [origen, destino].filter(Boolean).join(' · '),
+      instituciones: (participantes.length > 0
+        ? participantes
+        : [origen, destino]
+      )
+        .filter(Boolean)
+        .join(' · '),
     };
   }
 
@@ -774,8 +790,21 @@ export class CertificadosService {
     const { alumno, proyecto, plantilla, usuarioId, avisos } = entrada;
     if (!proyecto) throw new NotFoundException('Esa clase espejo no existe.');
 
+    const configuracion = await this.prisma.configuracionCace.findFirst({
+      select: { certificadosQrHabilitado: true },
+    });
+    const instituciones = proyecto.participantes.map((participante) => ({
+      nombre: participante.institucion.nombre,
+      pais: participante.institucion.pais,
+      codigoPais: participante.institucion.codigoPais,
+      logoUrl: participante.institucion.logoUrl,
+      rol: participante.rol,
+    }));
+
     const datos: DatosCertificado = {
       folio: '',
+      qrHabilitado: configuracion?.certificadosQrHabilitado === true,
+      instituciones,
       alumno: { nombre: alumno.nombre, matricula: alumno.matricula },
       plantilla: {
         version: plantilla.version,
@@ -796,7 +825,7 @@ export class CertificadosService {
     const anio = new Date().getFullYear();
     for (let intento = 0; intento < 5; intento += 1) {
       const folio = await this.siguienteFolio(anio);
-      datos.folio = folio;
+      datos.folio = folioConFirma(folio);
 
       const { buffer, avisos: avisosPdf } = await this.pdf.generar(datos);
       for (const aviso of avisosPdf) {
@@ -818,6 +847,7 @@ export class CertificadosService {
             archivoPdf: archivo,
             hashSha256: createHash('sha256').update(buffer).digest('hex'),
             estado: ESTADO_EMITIDO,
+            institucionesSnapshot: instituciones,
           },
           include: {
             alumno: { select: { nombre: true, matricula: true, correo: true } },
@@ -951,7 +981,29 @@ export class CertificadosService {
   private async proyectoParaCertificado(proyectoId: number) {
     return this.prisma.proyectoClaseEspejo.findUnique({
       where: { id: proyectoId },
-      select: { id: true, estado: true },
+      select: {
+        id: true,
+        estado: true,
+        participantes: {
+          where: {
+            rol: { in: ['ORIGEN', 'COLABORADORA'] },
+            estado: { in: ['APROBADA', 'CONGELADA'] },
+          },
+          select: {
+            rol: true,
+            institucion: {
+              select: {
+                id: true,
+                nombre: true,
+                pais: true,
+                codigoPais: true,
+                logoUrl: true,
+              },
+            },
+          },
+          orderBy: { id: 'asc' },
+        },
+      },
     });
   }
 
@@ -1033,7 +1085,7 @@ export class CertificadosService {
   }): CertificadoVista {
     return {
       id: certificado.id,
-      folio: certificado.folio,
+      folio: folioConFirma(certificado.folio),
       alumnoId: certificado.alumnoId,
       alumnoNombre: certificado.alumno?.nombre ?? '',
       matricula: certificado.alumno?.matricula ?? '',
@@ -1046,7 +1098,9 @@ export class CertificadosService {
       hashSha256: certificado.hashSha256,
       archivoPdf: certificado.archivoPdf,
       // El enlace y su código salen del folio: no se guardan en la base.
-      enlaceVerificacion: direccionVerificacion(certificado.folio),
+      enlaceVerificacion: direccionVerificacion(
+        folioConFirma(certificado.folio),
+      ),
       codigoVerificacion: codigoDeVerificacion(certificado.folio),
     };
   }

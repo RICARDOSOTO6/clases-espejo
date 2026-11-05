@@ -470,7 +470,7 @@ describe('Clase espejo con cuatro instituciones (e2e)', () => {
       }>;
       expect(emitidos).toHaveLength(2);
       for (const emitido of emitidos) {
-        expect(emitido.folio).toMatch(/^CACE-\d{4}-\d{4}$/);
+        expect(emitido.folio).toMatch(/^CACE-\d{4}-\d{4}-[A-Z2-9]{8}$/);
         folios.push(emitido.folio);
       }
     }
@@ -482,10 +482,21 @@ describe('Clase espejo con cuatro instituciones (e2e)', () => {
       select: {
         folio: true,
         alumnoId: true,
+        institucionesSnapshot: true,
         alumno: { select: { lista: { select: { institucionId: true } } } },
       },
     });
     expect(enBase).toHaveLength(8);
+    expect(enBase[0].institucionesSnapshot).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ nombre: expect.any(String) }),
+      ]),
+    );
+    expect(
+      Array.isArray(enBase[0].institucionesSnapshot)
+        ? enBase[0].institucionesSnapshot.length
+        : 0,
+    ).toBeGreaterThanOrEqual(3);
 
     const porInstitucion = new Map<number, number>();
     for (const certificado of enBase) {

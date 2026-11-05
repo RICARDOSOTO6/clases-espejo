@@ -42,7 +42,7 @@ type Alineacion = (typeof ALINEACIONES)[number];
  * Los datos que lleva el certificado, en el orden en que se pintan. Cambiar
  * esta lista cambia a la vez el PDF, la validación y el panel.
  */
-export const CLAVES_CAMPO = ['nombre', 'folio', 'qr'] as const;
+export const CLAVES_CAMPO = ['nombre', 'folio', 'participantes', 'qr'] as const;
 type ClaveCampo = (typeof CLAVES_CAMPO)[number];
 
 /** A4 horizontal en puntos (1 pt = 1/72 pulgada): el tamaño de la hoja. */
@@ -147,6 +147,10 @@ export type CamposCertificado = Record<ClaveCampo, CampoCertificado>;
 export const CATALOGO_CAMPOS: { clave: ClaveCampo; etiqueta: string }[] = [
   { clave: 'nombre', etiqueta: 'Nombre del alumno' },
   { clave: 'folio', etiqueta: 'Folio del certificado' },
+  {
+    clave: 'participantes',
+    etiqueta: 'Instituciones participantes',
+  },
   { clave: 'qr', etiqueta: 'Código QR de verificación' },
 ];
 
@@ -207,7 +211,20 @@ export const CAMPOS_POR_DEFECTO: CamposCertificado = {
     color: '#333333',
     negrita: false,
     cursiva: false,
-    muestra: 'CACE-2026-0001',
+    muestra: 'CACE-2026-0001-7K4M9Q2X',
+  },
+  participantes: {
+    x: 177,
+    y: 2018,
+    ancho: 2362,
+    alto: 130,
+    tamano: 11,
+    tamanoMinimo: 8,
+    alineacion: 'left',
+    color: '#1f3b57',
+    negrita: false,
+    cursiva: false,
+    muestra: 'Instituciones participantes: México · Colombia · Perú',
   },
   qr: {
     x: 2977,
@@ -233,6 +250,7 @@ export const CAMPOS_POR_DEFECTO: CamposCertificado = {
 const MUESTRAS_POR_DEFECTO: Record<ClaveCampo, string> = {
   nombre: CAMPOS_POR_DEFECTO.nombre.muestra,
   folio: CAMPOS_POR_DEFECTO.folio.muestra,
+  participantes: CAMPOS_POR_DEFECTO.participantes.muestra,
   qr: '',
 };
 

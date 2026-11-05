@@ -48,7 +48,7 @@ export class VerificacionComponent implements OnInit {
 
   readonly folio = signal('');
   readonly codigo = signal<string | null>(null);
-  readonly cargando = signal(true);
+  readonly cargando = signal(false);
   readonly resultado = signal<VerificacionCertificado | null>(null);
   readonly error = signal<string | null>(null);
 
@@ -75,11 +75,28 @@ export class VerificacionComponent implements OnInit {
     // La identidad se pide igual que en el resto de la aplicación; si falla, el
     // servicio devuelve los textos y el logo de respaldo y la página se ve bien.
     this.identidad.cargar().subscribe({ error: () => {} });
+    if (this.folio()) {
+      this.consultar();
+    } else {
+      this.cargando.set(false);
+    }
+  }
+
+  /** Consulta escrita a mano, sin QR. */
+  consultarFolio(valor: string): void {
+    const limpio = (valor ?? '').trim();
+    if (!limpio) return;
+    this.folio.set(limpio);
+    this.codigo.set(null);
     this.consultar();
   }
 
   /** Vuelve a preguntar (el botón de reintento cuando falla la red). */
   consultar(): void {
+    if (!this.folio()) {
+      this.cargando.set(false);
+      return;
+    }
     this.cargando.set(true);
     this.error.set(null);
     this.verificacion.consultar(this.folio(), this.codigo()).subscribe({
@@ -106,11 +123,18 @@ export class VerificacionComponent implements OnInit {
     return `${fechaLarga(c.fechaInicio)} — ${fechaLarga(c.fechaFin)}`;
   }
 
-  /** Las dos instituciones de la clase, juntas. */
+  /** Las instituciones de la clase, juntas. */
   get instituciones(): string {
     const c = this.certificado();
     if (!c) return '';
+    if (c.instituciones.length > 0) {
+      return c.instituciones.map((i) => i.nombre).join(' · ');
+    }
     return `${c.institucionOrigen} · ${c.institucionDestino}`;
+  }
+
+  banderaUrl(codigo: string): string {
+    return `https://flagcdn.com/w40/${codigo.toLowerCase()}.png`;
   }
 
   /** Cuándo se emitió, con hora: es un instante, no un día de calendario. */

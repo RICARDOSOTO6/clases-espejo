@@ -48,10 +48,10 @@ import {
 const NOMBRE_LARGO_EJEMPLO = 'María Fernanda de Jesús Gutiérrez Villanueva';
 
 /** Folio de ejemplo para la vista previa: el mismo formato que los de verdad. */
-const FOLIO_EJEMPLO = 'CACE-2026-0001';
+const FOLIO_EJEMPLO = 'CACE-2026-0001-7K4M9Q2X';
 
-/** Las claves de los tres huecos, para recorrerlas sin depender del catálogo. */
-const CLAVES: ClaveCampoCertificado[] = ['nombre', 'folio', 'qr'];
+/** Las claves de los cuatro huecos, para recorrerlas sin depender del catálogo. */
+const CLAVES: ClaveCampoCertificado[] = ['nombre', 'folio', 'participantes', 'qr'];
 
 /** Una caja tal como se pinta en el lienzo. */
 interface CajaLienzo {
@@ -138,6 +138,8 @@ export class DisenoCertificadoComponent {
   readonly fondo = input<string | null>(null);
   /** Etiquetas del catálogo, en su orden. */
   readonly catalogo = input<CatalogoCampoCertificado[]>([]);
+  /** Si el QR está autorizado; si no, el lienzo enseña la verificación por folio. */
+  readonly qrHabilitado = input(false);
   /** Mientras el servidor guarda, los botones se quedan quietos. */
   readonly guardando = input(false);
   /**
@@ -294,7 +296,7 @@ export class DisenoCertificadoComponent {
     return ajustarNombre(this.nombrePrueba(), campo, this.lienzo());
   });
 
-  /** Los tres huecos, listos para el lienzo. */
+  /** Los cuatro huecos, listos para el lienzo. */
   readonly cajas = computed<CajaLienzo[]>(() => {
     const b = this.borrador();
     const ajuste = this.ajusteNombre();
@@ -303,7 +305,7 @@ export class DisenoCertificadoComponent {
     for (const entrada of this.catalogo()) {
       const caja = b.campos[entrada.clave];
       if (!caja) continue;
-      const esQR = entrada.clave === 'qr';
+      const esQR = entrada.clave === 'qr' && this.qrHabilitado();
       salida.push({
         clave: entrada.clave,
         etiqueta: entrada.etiqueta,
@@ -312,7 +314,9 @@ export class DisenoCertificadoComponent {
           ? ''
           : entrada.clave === 'nombre'
             ? ajuste.lineas.join('\n')
-            : this.folioPrueba(),
+            : entrada.clave === 'participantes'
+              ? caja.muestra || 'Instituciones participantes'
+              : this.folioPrueba(),
         esTexto: !esQR,
         tamano: entrada.clave === 'nombre' ? ajuste.tamano : caja.tamano,
       });
