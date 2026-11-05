@@ -150,12 +150,64 @@ export class PlantillasService {
    * **no se borra**, porque la versión anterior lo sigue usando en su vista
    * previa.
    */
-  async guardarFondo(usuarioId: number, archivo: { filename: string }) {
+  async guardarFondo(
+    usuarioId: number,
+    archivo: { filename: string },
+    dimensiones?: { anchoPx?: unknown; altoPx?: unknown },
+  ) {
     const base = await this.contenidoBase();
+    const anchoPx = this.dimensionValida(dimensiones?.anchoPx, base.anchoPx);
+    const altoPx = this.dimensionValida(dimensiones?.altoPx, base.altoPx);
+    const lienzo: LienzoPlantilla = { anchoPx, altoPx };
+    const factorX = anchoPx / base.anchoPx;
+    const factorY = altoPx / base.altoPx;
+    const camposEscalados = Object.fromEntries(
+      Object.entries(base.campos).map(([clave, campo]) => [
+        clave,
+        {
+          ...campo,
+          x: Math.round(campo.x * factorX),
+          y: Math.round(campo.y * factorY),
+          ancho: Math.round(campo.ancho * factorX),
+          alto: Math.round(campo.alto * factorY),
+          // La letra va en puntos del PDF. Al cambiar de escala hay que bajar
+          // o subir el tamaño con la misma proporción que el ancho para que el
+          // nombre no salga enorme o diminuto sobre la nueva imagen.
+          tamano:
+            Math.round(campo.tamano * factorX * 100) / 100,
+          tamanoMinimo:
+            Math.round(campo.tamanoMinimo * factorX * 100) / 100,
+        },
+      ]),
+    );
+
     return this.crearVersion(usuarioId, {
       ...base,
       fondoUrl: `/certificado-fondo/${archivo.filename}`,
+      // Las medidas de la versión tienen que ser las de **esta** imagen. Antes
+      // se conservaban las de la versión anterior y, si la nueva tenía otra
+      // proporción, el lienzo y el PDF la recortaban por el centro.
+      anchoPx,
+      altoPx,
+      // Los huecos acompañan el cambio de escala para no quedar descolocados.
+      campos: normalizarCampos(camposEscalados, base.campos, lienzo),
     });
+  }
+
+  /**
+   * Una medida de imagen solo se acepta si es un píxel razonable. Si el
+   * navegador no la pudo mandar, se conserva la de la versión anterior.
+   */
+  private dimensionValida(valor: unknown, alternativa: number): number {
+    const numero =
+      typeof valor === 'number'
+        ? valor
+        : typeof valor === 'string' && valor.trim()
+          ? Number(valor)
+          : NaN;
+    return Number.isFinite(numero) && numero >= 100 && numero <= 20000
+      ? Math.round(numero)
+      : alternativa;
   }
 
   /** Deja activa una versión concreta y desactiva el resto. */

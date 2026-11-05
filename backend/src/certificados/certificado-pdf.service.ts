@@ -33,10 +33,10 @@ import { certificadoModoDemo } from './modo-demo';
  *    solo si no hay ninguna se sigue con la estándar, avisando en el registro.
  * 2. **El PDF se guarda tal como se emitió.** Este servicio no vuelve a mirar
  *    la plantilla después: quien lo llama archiva el resultado.
- * 3. **El diseño se recorta, no se deforma.** Si la imagen no tiene la
- *    proporción del A4 se escala hasta tapar la hoja y se recorta lo que sobra
- *    por el centro. Estirarla dejaría el certificado aplastado, y la vista
- *    previa del panel enseña exactamente el mismo recorte.
+ * 3. **El diseño se ajusta completo, no se deforma.** Si la imagen no tiene la
+ *    proporción del A4 se escala hasta caber y se centra; lo que sobra de hoja
+ *    queda como margen blanco. Recortarla escondía el título o los campos de
+ *    los bordes.
  * 4. **El nombre se ajusta solo.** Se mide el nombre real del alumno con la
  *    tipografía elegida y se baja el tamaño hasta que quepa; si con el mínimo
  *    legible no cabe en una línea, se parte en dos por los espacios y, si aun
@@ -147,6 +147,13 @@ interface PdfGenerado {
   avisos: string[];
 }
 
+/** Cómo queda la imagen dentro de la hoja A4: escala y márgenes. */
+interface MapeoFondo {
+  escala: number;
+  x: number;
+  y: number;
+}
+
 /** Cómo queda el nombre después del autoajuste, para poder avisar. */
 interface NombreAjustado {
   lineas: string[];
@@ -185,8 +192,12 @@ export class CertificadoPdfService {
 
     // --- El diseño (la imagen que subió la presidencia) ---
     const fondo = this.leerFondo(datos.plantilla.fondoUrl, avisos);
+    let mapeo = this.mapeoDeFondo(
+      datos.plantilla.anchoPx,
+      datos.plantilla.altoPx,
+    );
     if (fondo) {
-      this.dibujarFondo(doc, fondo, avisos);
+      mapeo = this.dibujarFondo(doc, fondo, avisos);
     }
 
     // La marca va debajo de los datos: el nombre y el folio deben leerse sin
@@ -196,13 +207,10 @@ export class CertificadoPdfService {
     }
 
     // --- Los tres datos que cambian ---
-    const escalaX = ANCHO_PT / datos.plantilla.anchoPx;
-    const escalaY = ALTO_PT / datos.plantilla.altoPx;
-
     for (const clave of CLAVES_CAMPO) {
       const campo = datos.plantilla.campos[clave];
       if (!campo) continue;
-      const caja = this.aPuntos(campo, escalaX, escalaY);
+      const caja = this.aPuntos(campo, mapeo);
 
       if (clave === 'nombre') {
         this.escribirNombre(doc, caja, datos.alumno.nombre, campo, avisos);
@@ -232,9 +240,10 @@ export class CertificadoPdfService {
   }
 
   /**
-   * Franja de instituciones. En el hueco se dibujan hasta cuatro logos; si una
-   * institución no tiene logo, se escribe su nombre y su país. Cuando hay más
-   * de cuatro, el resto se resume y la lista completa queda en la verificación.
+   * Franja de instituciones. En el hueco se dibuja la **bandera del país** (no
+   * el logo de la institución: muchas instituciones no lo suben); si el país no
+   * está en el catálogo local, se escribe su código. Cuando hay más de cuatro,
+   * el resto se resume y la lista completa queda en la verificación.
    */
   private escribirParticipantes(
     doc: any,
@@ -243,7 +252,6 @@ export class CertificadoPdfService {
       nombre: string;
       pais: string;
       codigoPais: string;
-      logoUrl: string | null;
     }[],
     campo: CampoCertificado,
   ): void {
@@ -251,37 +259,49 @@ export class CertificadoPdfService {
 
     const visibles = instituciones.slice(0, 4);
     const anchoCelda = caja.ancho / visibles.length;
-    const altoLogo = Math.max(14, caja.alto * 0.48);
+    const altoBandera = Math.max(14, caja.alto * 0.48);
     const fuente = this.fuente(doc, campo.negrita, campo.cursiva);
 
     visibles.forEach((institucion, indice) => {
       const x = caja.x + indice * anchoCelda;
-      const ruta = this.rutaLogo(institucion.logoUrl);
+      const ruta = this.rutaBandera(institucion.codigoPais);
       if (ruta) {
         try {
           doc.image(ruta, x + anchoCelda * 0.18, caja.y, {
-            fit: [anchoCelda * 0.64, altoLogo],
+            fit: [anchoCelda * 0.64, altoBandera],
             align: 'center',
             valign: 'center',
           });
         } catch {
-          // Un logo corrupto no debe impedir emitir el certificado.
+          // Una bandera corrupta no debe impedir emitir el certificado.
+          this.escribirCodigoPais(
+            doc,
+            x,
+            anchoCelda,
+            caja,
+            altoBandera,
+            fuente,
+            campo,
+            institucion.codigoPais,
+          );
         }
       } else {
-        doc
-          .font(fuente)
-          .fontSize(Math.max(7, Math.min(11, campo.tamano)))
-          .fillColor(campo.color)
-          .text(institucion.codigoPais || '•', x, caja.y + 2, {
-            width: anchoCelda,
-            align: 'center',
-          });
+        this.escribirCodigoPais(
+          doc,
+          x,
+          anchoCelda,
+          caja,
+          altoBandera,
+          fuente,
+          campo,
+          institucion.codigoPais,
+        );
       }
       doc
         .font(this.fuente(doc, false, false))
         .fontSize(Math.max(6, Math.min(8, campo.tamano - 2)))
         .fillColor(campo.color)
-        .text(institucion.nombre, x + 2, caja.y + altoLogo + 4, {
+        .text(institucion.nombre, x + 2, caja.y + altoBandera + 4, {
           width: anchoCelda - 4,
           align: 'center',
         });
@@ -304,11 +324,34 @@ export class CertificadoPdfService {
     }
   }
 
-  /** Traduce `/logos/archivo.png` a la ruta local de la carpeta de logos. */
-  private rutaLogo(logoUrl: string | null): string | null {
-    if (!logoUrl) return null;
-    const archivo = basename(logoUrl);
-    const ruta = join(process.cwd(), 'uploads', 'instituciones', archivo);
+  /** Cuando no hay bandera local, al menos queda el código ISO del país. */
+  private escribirCodigoPais(
+    doc: any,
+    x: number,
+    anchoCelda: number,
+    caja: { y: number },
+    altoBandera: number,
+    fuente: string,
+    campo: CampoCertificado,
+    codigoPais: string,
+  ): void {
+    doc
+      .font(fuente)
+      .fontSize(Math.max(7, Math.min(11, campo.tamano)))
+      .fillColor(campo.color)
+      .text(codigoPais || '•', x, caja.y + altoBandera / 2 - 5, {
+        width: anchoCelda,
+        align: 'center',
+      });
+  }
+
+  /** Bandera local por código ISO. El catálogo cubre los países de la CACE. */
+  private rutaBandera(codigoPais: string): string | null {
+    const codigo = String(codigoPais ?? '')
+      .trim()
+      .toUpperCase();
+    if (!/^[A-Z]{2}$/.test(codigo)) return null;
+    const ruta = join(process.cwd(), 'assets', 'banderas', `${codigo}.png`);
     return existsSync(ruta) ? ruta : null;
   }
 
@@ -665,36 +708,51 @@ export class CertificadoPdfService {
     doc.restore();
   }
 
-  private dibujarFondo(doc: any, fondo: Buffer, avisos: string[]): void {
+  private dibujarFondo(doc: any, fondo: Buffer, avisos: string[]): MapeoFondo {
     try {
       const imagen = doc.openImage(fondo);
-      const escala = Math.max(ANCHO_PT / imagen.width, ALTO_PT / imagen.height);
-      const ancho = imagen.width * escala;
-      const alto = imagen.height * escala;
+      const mapeo = this.mapeoDeFondo(imagen.width, imagen.height);
+      const ancho = imagen.width * mapeo.escala;
+      const alto = imagen.height * mapeo.escala;
       const proporcionHoja = ANCHO_PT / ALTO_PT;
       const proporcionImagen = imagen.width / imagen.height;
 
       // Un 1 % de diferencia ya se nota en un certificado impreso; por debajo
-      // de eso es redondeo y no vale la pena preocupar a nadie.
+      // de eso es redondeo.
       if (Math.abs(proporcionImagen - proporcionHoja) / proporcionHoja > 0.01) {
         avisos.push(
-          'El diseño de la plantilla no tiene la proporción del certificado (A4 horizontal): se recortó por el centro para tapar la hoja sin deformarlo. Conviene subirlo con la proporción correcta.',
+          'El diseño de la plantilla no tiene la proporción del certificado (A4 horizontal): se ajustó completo, con márgenes, sin recortarlo ni deformarlo.',
         );
       }
 
-      doc.save();
-      doc.rect(0, 0, ANCHO_PT, ALTO_PT).clip();
-      doc.image(fondo, (ANCHO_PT - ancho) / 2, (ALTO_PT - alto) / 2, {
+      // Sin `clip`: la imagen se ve entera. Si sobra hoja, el fondo blanco del
+      // PDF hace de margen. Los huecos usan la misma escala y el mismo margen.
+      doc.image(fondo, mapeo.x, mapeo.y, {
         width: ancho,
         height: alto,
       });
-      doc.restore();
+      return mapeo;
     } catch {
       avisos.push(
         'El diseño de la plantilla no se pudo incrustar en el PDF (formatos admitidos para el PDF: PNG y JPG). El certificado salió sin diseño de fondo.',
       );
       this.avisarSinFondo();
+      return this.mapeoDeFondo(ANCHO_PT, ALTO_PT);
     }
+  }
+
+  /**
+   * Escala y márgenes para meter una imagen completa en la hoja A4. Se usa la
+   * misma cuenta para el fondo y para los huecos: si la plantilla no es A4, los
+   * datos siguen cayendo dentro de la imagen.
+   */
+  private mapeoDeFondo(anchoPx: number, altoPx: number): MapeoFondo {
+    const escala = Math.min(ANCHO_PT / anchoPx, ALTO_PT / altoPx);
+    return {
+      escala,
+      x: (ANCHO_PT - anchoPx * escala) / 2,
+      y: (ALTO_PT - altoPx * escala) / 2,
+    };
   }
 
   /** De píxeles de la plantilla a puntos del PDF. */
@@ -702,14 +760,13 @@ export class CertificadoPdfService {
     campo: Pick<CampoCertificado, 'x' | 'y' | 'ancho' | 'alto' | 'tamano'> & {
       color?: string;
     },
-    escalaX: number,
-    escalaY: number,
+    mapeo: MapeoFondo,
   ) {
     return {
-      x: campo.x * escalaX,
-      y: campo.y * escalaY,
-      ancho: campo.ancho * escalaX,
-      alto: campo.alto * escalaY,
+      x: mapeo.x + campo.x * mapeo.escala,
+      y: mapeo.y + campo.y * mapeo.escala,
+      ancho: campo.ancho * mapeo.escala,
+      alto: campo.alto * mapeo.escala,
       tamano: campo.tamano,
       color: campo.color ?? '#000000',
     };

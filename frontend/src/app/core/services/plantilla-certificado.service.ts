@@ -37,9 +37,7 @@ export class PlantillaCertificadoService {
 
   /** Catálogo de datos y todas las versiones. */
   obtener(): Observable<EstadoPlantillaCertificado> {
-    return this.http.get<EstadoPlantillaCertificado>(
-      `${API_URL}/cace/certificados/plantilla`,
-    );
+    return this.http.get<EstadoPlantillaCertificado>(`${API_URL}/cace/certificados/plantilla`);
   }
 
   /** Guarda los cambios como versión nueva (y la deja activa). */
@@ -48,16 +46,20 @@ export class PlantillaCertificadoService {
     anchoPx?: number;
     altoPx?: number;
   }): Observable<RespuestaPlantilla> {
-    return this.http.post<RespuestaPlantilla>(
-      `${API_URL}/cace/certificados/plantilla`,
-      dto,
-    );
+    return this.http.post<RespuestaPlantilla>(`${API_URL}/cace/certificados/plantilla`, dto);
   }
 
   /** Sube la imagen del diseño; también crea una versión nueva. */
-  subirFondo(archivo: File): Observable<RespuestaPlantilla> {
+  subirFondo(
+    archivo: File,
+    dimensiones?: { anchoPx: number; altoPx: number },
+  ): Observable<RespuestaPlantilla> {
     const datos = new FormData();
     datos.append('fondo', archivo, archivo.name);
+    if (dimensiones) {
+      datos.append('anchoPx', String(dimensiones.anchoPx));
+      datos.append('altoPx', String(dimensiones.altoPx));
+    }
     return this.http.post<RespuestaPlantilla>(
       `${API_URL}/cace/certificados/plantilla/fondo`,
       datos,

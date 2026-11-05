@@ -1517,8 +1517,14 @@ export class CaceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { lema, descripcion, tema, diasMinimosPropuesta, diasRevision, certificadosQrHabilitado } =
-      this.formPersonalizacion.getRawValue();
+    const {
+      lema,
+      descripcion,
+      tema,
+      diasMinimosPropuesta,
+      diasRevision,
+      certificadosQrHabilitado,
+    } = this.formPersonalizacion.getRawValue();
     this.guardandoPersonalizacion.set(true);
     this.errorPersonalizacion.set(null);
     this.avisoPersonalizacion.set(null);
@@ -2345,16 +2351,42 @@ export class CaceComponent implements OnInit, OnDestroy {
     this.subiendoFondo.set(true);
     this.errorPlantilla.set(null);
     this.avisoPlantilla.set(null);
-    this.plantillaService.subirFondo(archivo).subscribe({
-      next: (respuesta) => {
-        this.subiendoFondo.set(false);
-        this.avisoPlantilla.set(`${respuesta.mensaje} Fondo actualizado.`);
-        this.cargarPlantilla();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.subiendoFondo.set(false);
-        this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo subir el fondo'));
-      },
+
+    // El ancho y el alto reales se mandan con la imagen: sin ellos el servidor
+    // conservaba el lienzo anterior y una plantilla con otra proporción se
+    // recortaba al ajustarla a la hoja.
+    void this.medirImagen(archivo).then((dimensiones) => {
+      this.plantillaService.subirFondo(archivo, dimensiones ?? undefined).subscribe({
+        next: (respuesta) => {
+          this.subiendoFondo.set(false);
+          this.avisoPlantilla.set(`${respuesta.mensaje} Fondo actualizado.`);
+          this.cargarPlantilla();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.subiendoFondo.set(false);
+          this.errorPlantilla.set(extraerMensajeError(err, 'No se pudo subir el fondo'));
+        },
+      });
+    });
+  }
+
+  /** Lee las medidas reales de la imagen antes de subirla. */
+  private medirImagen(archivo: File): Promise<{ anchoPx: number; altoPx: number } | null> {
+    return new Promise((resolver) => {
+      const url = URL.createObjectURL(archivo);
+      const imagen = new Image();
+      imagen.onload = () => {
+        URL.revokeObjectURL(url);
+        resolver({
+          anchoPx: imagen.naturalWidth,
+          altoPx: imagen.naturalHeight,
+        });
+      };
+      imagen.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolver(null);
+      };
+      imagen.src = url;
     });
   }
 

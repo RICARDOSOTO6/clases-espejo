@@ -222,9 +222,7 @@ export class DisenoCertificadoComponent {
   /** Lo que se pudo leer de la imagen del diseño. */
   readonly proporcionFondo = signal<number | null>(null);
   readonly resolucionFondo = signal<{ anchoPx: number; altoPx: number } | null>(null);
-  private readonly fondosMuestreados = signal<
-    Partial<Record<ClaveCampoCertificado, string>>
-  >({});
+  private readonly fondosMuestreados = signal<Partial<Record<ClaveCampoCertificado, string>>>({});
 
   /** Lienzo reducido del diseño, para poder leer el color de debajo de un hueco. */
   private lona: HTMLCanvasElement | null = null;
@@ -257,9 +255,7 @@ export class DisenoCertificadoComponent {
     toObservable(this.folioPrueba)
       .pipe(
         switchMap((folio) =>
-          this.plantilla.qrDeFolio(folio.trim() || FOLIO_EJEMPLO).pipe(
-            catchError(() => of(null)),
-          ),
+          this.plantilla.qrDeFolio(folio.trim() || FOLIO_EJEMPLO).pipe(catchError(() => of(null))),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -690,10 +686,7 @@ export class DisenoCertificadoComponent {
     const item = this.seleccionada();
     if (!item) return;
 
-    const redondeado = Math.min(
-      TAMANO_MAXIMO,
-      Math.max(TAMANO_MINIMO, Math.round(valor)),
-    );
+    const redondeado = Math.min(TAMANO_MAXIMO, Math.max(TAMANO_MINIMO, Math.round(valor)));
     if (cual === 'maximo') {
       this.cambiarEstilo({
         tamano: redondeado,
@@ -778,10 +771,10 @@ export class DisenoCertificadoComponent {
   /**
    * El color medio del diseño debajo de cada hueco, leído de un lienzo pequeño.
    *
-   * Se tiene en cuenta el **recorte**: la imagen se escala hasta tapar la hoja y
-   * se recorta por el centro, así que un hueco no cae sobre el mismo trozo de
-   * imagen que sus coordenadas. Si el navegador no deja leer los píxeles (imagen
-   * de otro origen sin permiso), simplemente no hay aviso de contraste.
+   * La imagen se ajusta **completa** dentro de la hoja (sin recortar), así que
+   * se descuentan los márgenes que deja el ajuste. Si el navegador no deja leer
+   * los píxeles (imagen de otro origen sin permiso), simplemente no hay aviso
+   * de contraste.
    */
   private muestrear(): void {
     const lona = this.lona;
@@ -794,7 +787,7 @@ export class DisenoCertificadoComponent {
     if (!contexto) return;
 
     const lienzo = this.lienzo();
-    const escala = Math.max(
+    const escala = Math.min(
       lienzo.anchoPx / imagen.naturalWidth,
       lienzo.altoPx / imagen.naturalHeight,
     );
@@ -836,10 +829,7 @@ export class DisenoCertificadoComponent {
   // --- Apoyo ---
 
   /** Cambia un hueco en el borrador (el dueño del dato es la pantalla). */
-  private aplicarCaja(
-    clave: ClaveCampoCertificado,
-    caja: Partial<CampoCertificado>,
-  ): void {
+  private aplicarCaja(clave: ClaveCampoCertificado, caja: Partial<CampoCertificado>): void {
     const campos = this.borrador().campos;
     const actual = campos[clave];
     if (!actual) return;
@@ -865,9 +855,7 @@ export class DisenoCertificadoComponent {
   }
 
   /** El punto del ratón, en píxeles de la plantilla. */
-  private aCoordenadas(
-    evento: PointerEvent,
-  ): { x: number; y: number } | null {
+  private aCoordenadas(evento: PointerEvent): { x: number; y: number } | null {
     const marco = this.marco()?.nativeElement;
     if (!marco) return null;
     const caja = marco.getBoundingClientRect();
@@ -882,12 +870,7 @@ export class DisenoCertificadoComponent {
 }
 
 /** El rectángulo que forman dos puntos, esté el arrastre en el sentido que sea. */
-function rectanguloEntre(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-): Rectangulo {
+function rectanguloEntre(x1: number, y1: number, x2: number, y2: number): Rectangulo {
   return {
     x: Math.min(x1, x2),
     y: Math.min(y1, y2),

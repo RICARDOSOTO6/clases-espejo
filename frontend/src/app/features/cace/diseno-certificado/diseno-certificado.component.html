@@ -86,9 +86,9 @@
           }
 
           <p class="panel-nota">
-            PNG, JPG o WEBP, hasta 2 MB. Se recorta para tapar la hoja:
-            <strong>nunca se deforma</strong>, y subirla crea una versión nueva.
-            El título, los logos y las firmas van <strong>dentro</strong> de la imagen.
+            PNG, JPG o WEBP, hasta 2 MB. Se ajusta completa a la hoja:
+            <strong>nunca se recorta ni se deforma</strong>, y subirla crea una versión nueva. El
+            título, los logos y las firmas van <strong>dentro</strong> de la imagen.
           </p>
 
           <h3 class="panel-titulo panel-titulo--seccion">Marcar los huecos</h3>
@@ -203,8 +203,8 @@
             }
           </div>
           <p class="panel-nota">
-            La guía explica qué textos van en la imagen y dónde caen los tres datos
-            que estampa la aplicación.
+            La guía explica qué textos van en la imagen y dónde caen los tres datos que estampa la
+            aplicación.
           </p>
         </div>
       }
@@ -214,15 +214,11 @@
         <div class="pestana-panel">
           @if (seleccionada(); as sel) {
             <h3 class="panel-titulo panel-titulo--campo">
-              <span class="campo-nombre" [attr.data-seleccion]="sel.clave">{{
-                sel.etiqueta
-              }}</span>
+              <span class="campo-nombre" [attr.data-seleccion]="sel.clave">{{ sel.etiqueta }}</span>
               @if (estadoDeCampo(sel.clave) !== 'ok') {
-                <span
-                  [class]="'icono icono--' + estadoDeCampo(sel.clave)"
-                  aria-hidden="true"
-                  >{{ iconoDe(estadoDeCampo(sel.clave)) }}</span
-                >
+                <span [class]="'icono icono--' + estadoDeCampo(sel.clave)" aria-hidden="true">{{
+                  iconoDe(estadoDeCampo(sel.clave))
+                }}</span>
               }
             </h3>
 
@@ -310,8 +306,10 @@
               @if (sel.clave === 'nombre') {
                 <ul class="vinetas vinetas--compactas">
                   <li>
-                    El nombre sale con el tamaño más grande del rango que quepa
-                    ({{ minimoLegible }} pt es el mínimo legible recomendado).
+                    El nombre sale con el tamaño más grande del rango que quepa ({{
+                      minimoLegible
+                    }}
+                    pt es el mínimo legible recomendado).
                   </li>
                   <li>Si no cabe, baja hasta el mínimo; después parte en dos líneas.</li>
                 </ul>
@@ -416,8 +414,8 @@
 
           @if (versiones().length === 0) {
             <p class="panel-nota">
-              Todavía no hay ninguna versión guardada. Lo que se ve en el lienzo son
-              los tres huecos de la guía: guárdalos para tener la primera.
+              Todavía no hay ninguna versión guardada. Lo que se ve en el lienzo son los tres huecos
+              de la guía: guárdalos para tener la primera.
             </p>
           } @else {
             <div class="tabla-scroll">
@@ -529,8 +527,8 @@
                         }
                         @if (versionAConfirmar() === version.id) {
                           <div class="alert alert-error" role="status">
-                            ¿Borrar la versión {{ version.version }}? Se borra su fila y
-                            su imagen de diseño. No se puede deshacer.
+                            ¿Borrar la versión {{ version.version }}? Se borra su fila y su imagen
+                            de diseño. No se puede deshacer.
                           </div>
                         }
                         @if (gravesDeVersion(version).length > 0) {
@@ -548,9 +546,8 @@
           }
 
           <p class="panel-nota">
-            Solo una está activa: es la que se usa al emitir. Activar una anterior no
-            toca los certificados ya emitidos. Pasa el ratón por una versión para ver
-            quién la creó y cuándo.
+            Solo una está activa: es la que se usa al emitir. Activar una anterior no toca los
+            certificados ya emitidos. Pasa el ratón por una versión para ver quién la creó y cuándo.
           </p>
         </div>
       }
@@ -662,8 +659,8 @@
                   <path d="m4 18 5-5 3 3 3-3 5 5" />
                 </svg>
                 <p>
-                  <strong>Esta hoja todavía está en blanco.</strong> Sube la imagen del
-                  diseño y después coloca los tres huecos encima.
+                  <strong>Esta hoja todavía está en blanco.</strong> Sube la imagen del diseño y
+                  después coloca los tres huecos encima.
                 </p>
               </div>
             }
@@ -727,9 +724,7 @@
                 }
 
                 <!-- Puntos de las esquinas: solo al pasar el ratón por encima. -->
-                <span class="caja-esquinas" aria-hidden="true">
-                  <i></i><i></i><i></i><i></i>
-                </span>
+                <span class="caja-esquinas" aria-hidden="true"> <i></i><i></i><i></i><i></i> </span>
 
                 @if (esSeleccionada(item.clave)) {
                   <span
@@ -771,8 +766,8 @@
           <span class="salud-chip-texto">
             @if (graves().length > 0) {
               {{ graves().length }}
-              {{ graves().length === 1 ? 'problema grave' : 'problemas graves' }}, no
-              se puede guardar.
+              {{ graves().length === 1 ? 'problema grave' : 'problemas graves' }}, no se puede
+              guardar.
             } @else if (avisos().length > 0) {
               {{ avisos().length }}
               {{ avisos().length === 1 ? 'aviso' : 'avisos' }} que conviene mirar.
@@ -840,16 +835,16 @@
       <summary>¿Cómo marcar los huecos?</summary>
       <ul class="vinetas">
         <li>
-          Elige el hueco en <strong>«Diseño · Marcar los huecos»</strong> y arrastra el
-          ratón sobre la hoja para dibujarlo.
+          Elige el hueco en <strong>«Diseño · Marcar los huecos»</strong> y arrastra el ratón sobre
+          la hoja para dibujarlo.
         </li>
         <li>Mueve el rectángulo arrastrándolo y agrándalo tirando de la esquina.</li>
-        <li>La imagen se recorta por el centro: nunca se estira.</li>
+        <li>La imagen se ajusta completa: nunca se recorta ni se estira.</li>
       </ul>
       <p class="nota-pie">
-        Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px (A4 horizontal a
-        300 ppp). Es la misma proporción y la misma escala que la hoja del PDF: lo
-        que se ve aquí es lo que sale impreso.
+        Lienzo de {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px. Es la misma proporción y la
+        misma escala que la hoja del PDF: lo que se ve aquí es lo que sale impreso. Si la imagen no
+        tiene proporción A4, el PDF deja márgenes blancos en lugar de recortarla.
       </p>
     </details>
   </div>

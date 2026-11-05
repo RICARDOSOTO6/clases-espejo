@@ -99,13 +99,14 @@ export class PlantillasCertificadoController {
   subirFondo(
     @CurrentUser('sub') usuarioId: number,
     @UploadedFile() archivo: any,
+    @Body() cuerpo: { anchoPx?: string; altoPx?: string },
   ) {
     if (!archivo) {
       throw new BadRequestException(
         'Adjunta una imagen en el campo «fondo» (PNG, JPG o WEBP, hasta 2 MB)',
       );
     }
-    return this.plantillas.guardarFondo(usuarioId, archivo);
+    return this.plantillas.guardarFondo(usuarioId, archivo, cuerpo);
   }
 
   /** Vuelve a poner como activa una versión anterior. */
