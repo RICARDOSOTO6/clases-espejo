@@ -173,10 +173,8 @@ export class PlantillasService {
           // La letra va en puntos del PDF. Al cambiar de escala hay que bajar
           // o subir el tamaño con la misma proporción que el ancho para que el
           // nombre no salga enorme o diminuto sobre la nueva imagen.
-          tamano:
-            Math.round(campo.tamano * factorX * 100) / 100,
-          tamanoMinimo:
-            Math.round(campo.tamanoMinimo * factorX * 100) / 100,
+          tamano: Math.round(campo.tamano * factorX * 100) / 100,
+          tamanoMinimo: Math.round(campo.tamanoMinimo * factorX * 100) / 100,
         },
       ]),
     );
