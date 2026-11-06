@@ -120,10 +120,10 @@
     <rect x="11" y="11" width="678" height="264" rx="9" fill="none" stroke="#c8a24a" stroke-width="1.6" opacity="0.85"/>
     <text x="34" y="50" font-size="12" font-weight="700" fill="#e5c77b" letter-spacing="2.4">FOLIO DEL CERTIFICADO</text>
     <line x1="34" y1="94" x2="666" y2="94" stroke="#6c9fbd" stroke-width="2" stroke-dasharray="7 6"/>
-    <text x="34" y="143" font-size="12" fill="#c6dce9">Verifica este certificado en:</text>
-    <text x="34" y="174" font-size="15" font-weight="700" fill="#ffffff">cace.org/verificar</text>
-    <text x="34" y="211" font-size="11" fill="#c6dce9">Escribe el folio completo. No necesitas QR.</text>
-    <text x="34" y="248" font-size="10" fill="#9fc1d5">Documento verificable · CACE</text>
+    <text x="34" y="143" font-size="12" fill="#c6dce9">Para verificar este certificado,</text>
+    <text x="34" y="174" font-size="15" font-weight="700" fill="#ffffff">contacta a tu docente</text>
+    <text x="34" y="211" font-size="11" fill="#c6dce9">No hay consulta pública en línea.</text>
+    <text x="34" y="248" font-size="10" fill="#9fc1d5">Documento emitido por la CACE</text>
   </g>
 
   <line x1="180" y1="2250" x2="3328" y2="2250" stroke="#c8a24a" stroke-width="1.4" opacity="0.7"/>

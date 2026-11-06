@@ -216,6 +216,9 @@ export class DisenoCertificadoComponent {
   readonly zoomMaximo = 2;
   readonly pasoZoom = 0.25;
 
+  /** Modo de revisión: oculta cajas, tiradores y avisos; enseña el certificado limpio. */
+  readonly vistaPrevia = signal(false);
+
   /** La imagen del QR del folio de prueba, ya generada por el servidor. */
   readonly qrUrl = signal<string | null>(null);
 
@@ -292,13 +295,21 @@ export class DisenoCertificadoComponent {
     return ajustarNombre(this.nombrePrueba(), campo, this.lienzo());
   });
 
-  /** Los cuatro huecos, listos para el lienzo. */
+  /**
+   * El catálogo que se enseña y se revisa. Con el QR apagado no hay ningún
+   * rastro de su hueco: el piloto no lo usa y no queremos ni un cuadro vacío.
+   */
+  readonly catalogoVisible = computed(() =>
+    this.catalogo().filter((entrada) => entrada.clave !== 'qr' || this.qrHabilitado()),
+  );
+
+  /** Los huecos, listos para el lienzo. */
   readonly cajas = computed<CajaLienzo[]>(() => {
     const b = this.borrador();
     const ajuste = this.ajusteNombre();
     const salida: CajaLienzo[] = [];
 
-    for (const entrada of this.catalogo()) {
+    for (const entrada of this.catalogoVisible()) {
       const caja = b.campos[entrada.clave];
       if (!caja) continue;
       const esQR = entrada.clave === 'qr' && this.qrHabilitado();
@@ -361,7 +372,7 @@ export class DisenoCertificadoComponent {
       hayFondo: !!this.borrador().fondoUrl,
       nombrePrueba: this.nombrePrueba(),
       fondosMuestreados: this.fondosMuestreados(),
-      etiquetas: this.catalogo(),
+      etiquetas: this.catalogoVisible(),
     }),
   );
 
@@ -377,7 +388,7 @@ export class DisenoCertificadoComponent {
   readonly salud = computed<SaludDiseno[]>(() => {
     const problemas = this.problemas();
     const salida: SaludDiseno[] = [];
-    for (const { clave, etiqueta } of this.catalogo()) {
+    for (const { clave, etiqueta } of this.catalogoVisible()) {
       const suyos = problemas.filter((p) => p.donde === etiqueta);
       salida.push({ clave, etiqueta, estado: estadoDe(suyos), problemas: suyos });
     }
@@ -393,7 +404,7 @@ export class DisenoCertificadoComponent {
 
   /** El estado de un hueco concreto, para el aviso que va a su lado. */
   estadoDeCampo(clave: ClaveCampoCertificado): EstadoSalud {
-    const etiqueta = this.catalogo().find((c) => c.clave === clave)?.etiqueta;
+    const etiqueta = this.catalogoVisible().find((c) => c.clave === clave)?.etiqueta;
     if (!etiqueta) return 'ok';
     return estadoDe(this.problemas().filter((p) => p.donde === etiqueta));
   }
@@ -439,7 +450,7 @@ export class DisenoCertificadoComponent {
           hayFondo: !!version.fondoUrl,
           nombrePrueba: version.campos.nombre?.muestra ?? '',
           fondosMuestreados: {},
-          etiquetas: this.catalogo(),
+          etiquetas: this.catalogoVisible(),
         }).filter((p) => p.gravedad === 'grave'),
       );
     }
@@ -735,6 +746,13 @@ export class DisenoCertificadoComponent {
   /** Vuelve al 100 %: el lienzo, ajustado al ancho de la columna. */
   ajustarZoom(): void {
     this.zoom.set(1);
+  }
+
+  /** Alterna entre editar los huecos y ver el certificado como saldrá. */
+  alternarVistaPrevia(): void {
+    this.vistaPrevia.update((activa) => !activa);
+    this.marcando.set(null);
+    this.rectangulo.set(null);
   }
 
   // --- La imagen del diseño ---

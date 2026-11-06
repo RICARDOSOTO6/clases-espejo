@@ -20,23 +20,21 @@ export interface DatosCertificado {
   folio: string;
   /** Las dos instituciones, ya juntas («A (México) · B (Colombia)»). */
   instituciones: string;
-  /** Enlace de verificación pública, con su código. */
-  enlaceVerificacion: string;
 }
 
 /** Correo del certificado de un alumno (el PDF va como adjunto aparte). */
 export function contenidoCertificadoAlumno(
   datos: DatosCertificado,
 ): ContenidoCorreo {
-  const { alumno, titulo, folio, instituciones, enlaceVerificacion } = datos;
+  const { alumno, titulo, folio, instituciones } = datos;
   return {
     asunto: `Clases Espejo - Tu certificado de «${titulo}» (${folio})`,
-    texto: `Hola ${alumno}: te adjuntamos el certificado de la clase espejo «${titulo}», que emitieron ${instituciones}. Folio: ${folio}. Puedes comprobar que es auténtico en: ${enlaceVerificacion} (no hace falta crear ninguna cuenta).`,
+    texto: `Hola ${alumno}: te adjuntamos el certificado de la clase espejo «${titulo}», que emitieron ${instituciones}. Folio: ${folio}. Para cualquier comprobación, ponte en contacto con tu docente.`,
     html: `
         <p>Hola <strong>${alumno}</strong>:</p>
         <p>Te adjuntamos el certificado de la clase espejo <strong>«${titulo}»</strong>, emitido por la CACE con la participación de ${instituciones}.</p>
         <p><strong>Folio:</strong> ${folio}</p>
-        <p>Puedes comprobar que el certificado es auténtico —y ver su estado— en <a href="${enlaceVerificacion}">${enlaceVerificacion}</a>. No hace falta crear ninguna cuenta: el enlace abre la página de verificación directamente.</p>
+        <p>Para cualquier comprobación, ponte en contacto con tu docente.</p>
         <p>El certificado va adjunto en este correo en PDF.</p>
       `,
   };

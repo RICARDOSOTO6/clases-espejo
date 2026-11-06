@@ -93,7 +93,7 @@
 
           <h3 class="panel-titulo panel-titulo--seccion">Marcar los huecos</h3>
           <div class="huecos">
-            @for (entrada of catalogo(); track entrada.clave) {
+            @for (entrada of catalogoVisible(); track entrada.clave) {
               <button
                 type="button"
                 class="hueco"
@@ -306,9 +306,7 @@
               @if (sel.clave === 'nombre') {
                 <ul class="vinetas vinetas--compactas">
                   <li>
-                    El nombre sale con el tamaño más grande del rango que quepa ({{
-                      minimoLegible
-                    }}
+                    El nombre sale con el tamaño más grande del rango que quepa ({{ minimoLegible }}
                     pt es el mínimo legible recomendado).
                   </li>
                   <li>Si no cabe, baja hasta el mínimo; después parte en dos líneas.</li>
@@ -578,6 +576,16 @@
       <span class="editor-medidas">
         A4 horizontal · {{ lienzo().anchoPx }} × {{ lienzo().altoPx }} px
       </span>
+      <button
+        type="button"
+        class="btn btn-ghost btn-mini vista-previa-boton"
+        data-accion="vista-previa"
+        data-peso="secundario"
+        [attr.aria-pressed]="vistaPrevia()"
+        (click)="alternarVistaPrevia()"
+      >
+        {{ vistaPrevia() ? 'Volver al diseño' : 'Vista previa limpia' }}
+      </button>
     </div>
 
     <!-- El zoom flota sobre la mesa: este marco le da su referencia. -->
@@ -630,6 +638,7 @@
             [attr.data-alto-px]="lienzo().altoPx"
             [class.lienzo--sin-diseno]="!fondo()"
             [class.lienzo--marcando]="!!marcando()"
+            [class.lienzo--vista-previa]="vistaPrevia()"
             [style.aspect-ratio]="lienzo().anchoPx + ' / ' + lienzo().altoPx"
             (pointerdown)="alPulsarLienzo($event)"
           >

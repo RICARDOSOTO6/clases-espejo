@@ -1273,7 +1273,7 @@
 
           <!-- Certificados (fases 4 y 5): sale de la lista de arriba y solo se emite
              con la clase cerrada. El docente ve aquí el folio, la descarga, el
-             enlace público de verificación, el envío por correo y la anulación. -->
+             envío por correo y la anulación. -->
           <section class="card" id="certificados">
             <div class="card-head">
               <div class="card-head-title">
@@ -1330,8 +1330,9 @@
               Un certificado por alumno de <strong>tu</strong> lista, con folio único. Se emiten al
               <strong>cerrar</strong> la clase espejo y el PDF se guarda tal como sale: cambiar la
               plantilla después no altera lo ya emitido. Cada certificado lleva impreso el
-              <strong>folio</strong> para verificar su autenticidad, y desde aquí se le puede
-              <strong>enviar por correo</strong> al alumno o <strong>anularlo</strong>
+              <strong>folio</strong> y, para cualquier comprobación, se contacta con el docente.
+              Desde aquí se le puede <strong>enviar por correo</strong> al alumno o
+              <strong>anularlo</strong>
               con su motivo.
             </p>
 
@@ -2186,18 +2187,6 @@
                       <button
                         type="button"
                         class="link-button"
-                        data-accion="copiar-enlace"
-                        (click)="copiarEnlace(certificado)"
-                      >
-                        {{
-                          enlaceCopiado() === certificado.folio
-                            ? 'Enlace copiado ✓'
-                            : 'Copiar enlace'
-                        }}
-                      </button>
-                      <button
-                        type="button"
-                        class="link-button"
                         [disabled]="descargandoCertificado() === certificado.id"
                         (click)="descargarCertificado(certificado)"
                       >
@@ -2255,9 +2244,8 @@
             }
 
             <p class="text-sm muted">
-              El enlace de cada certificado lleva su folio completo. La página pública permite
-              comprobarlo escribiendo ese folio; un certificado anulado se sigue descargando, pero
-              la verificación ya dice que no vale.
+              Estos certificados no tienen consulta pública en línea. Para cualquier comprobación,
+              ponte en contacto con el docente que emitió el certificado.
             </p>
 
             <div class="form-grid-actions">
@@ -2280,9 +2268,8 @@
         >
           <p>
             El certificado <strong>{{ c.folio }}</strong> de
-            <strong>{{ c.alumnoNombre }}</strong> quedará marcado como anulado y la página de
-            verificación pasará a decirlo así, con este motivo. El PDF se conserva y se puede seguir
-            descargando.
+            <strong>{{ c.alumnoNombre }}</strong> quedará marcado como anulado. El PDF se conserva y
+            se puede seguir descargando.
           </p>
           <div class="form-field">
             <label [for]="'motivo-anulacion'">Motivo de la anulación</label>

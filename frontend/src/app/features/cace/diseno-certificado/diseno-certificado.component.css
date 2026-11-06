@@ -455,6 +455,34 @@
     box-shadow 0.12s ease;
 }
 
+/*
+ * Vista previa limpia: se apagan todos los indicadores de edición y queda
+ * únicamente lo que se va a imprimir. No se oculta el contenido de los huecos:
+ * el nombre, el folio y los participantes de prueba siguen ahí.
+ */
+.lienzo--vista-previa .caja {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.lienzo--vista-previa .caja-aviso,
+.lienzo--vista-previa .caja-esquinas,
+.lienzo--vista-previa .tirador,
+.lienzo--vista-previa .lienzo-margen,
+.lienzo--vista-previa .lienzo-velo,
+.lienzo--vista-previa .rectangulo {
+  display: none;
+}
+
+.vista-previa-boton {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
 .caja:hover,
 .caja--seleccionada {
   background: color-mix(in srgb, var(--accent) 16%, transparent);

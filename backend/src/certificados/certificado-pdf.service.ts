@@ -225,10 +225,11 @@ export class CertificadoPdfService {
         continue;
       }
       if (clave === 'qr') {
+        // Para el piloto el QR está apagado y no se imprime ni un rastro de
+        // verificación en línea. La plantilla puede indicar que se consulte
+        // con el docente; el generador no inventa una URL.
         if (datos.qrHabilitado) {
           await this.dibujarQr(doc, caja, datos.folio, avisos);
-        } else {
-          this.escribirVerificacionConFolio(doc, caja, datos.folio, campo);
         }
         continue;
       }
@@ -353,53 +354,6 @@ export class CertificadoPdfService {
     if (!/^[A-Z]{2}$/.test(codigo)) return null;
     const ruta = join(process.cwd(), 'assets', 'banderas', `${codigo}.png`);
     return existsSync(ruta) ? ruta : null;
-  }
-
-  /**
-   * Cuando el QR está apagado, su hueco no queda vacío: se usa para explicar
-   * cómo verificar el documento con el folio impreso.
-   */
-  private escribirVerificacionConFolio(
-    doc: any,
-    caja: { x: number; y: number; ancho: number; alto: number },
-    folio: string,
-    campo: CampoCertificado,
-  ): void {
-    // Un diseño que ya trae su propio bloque de verificación puede pedir que
-    // este hueco no escriba nada: se marca con color blanco.
-    if ((campo.color || '').toLowerCase() === '#ffffff') return;
-
-    const url = direccionVerificacion(folio);
-    const ancho = caja.ancho;
-    const inicio = caja.y + 4;
-    const color = campo.color || '#12233A';
-    doc
-      .font(this.fuente(doc, true, false))
-      .fontSize(Math.max(8, Math.min(11, campo.tamano)))
-      .fillColor(color);
-    doc.text('VERIFICA ESTE CERTIFICADO', caja.x, inicio, {
-      width: ancho,
-      align: 'left',
-    });
-    doc
-      .font(this.fuente(doc, false, false))
-      .fontSize(8)
-      .fillColor(color)
-      .text(`Folio: ${folio}`, caja.x, inicio + 17, {
-        width: ancho,
-        align: 'left',
-      });
-    doc
-      .fontSize(7)
-      .fillColor(color)
-      .text('Ingresa este folio en:', caja.x, inicio + 36, {
-        width: ancho,
-        align: 'left',
-      });
-    doc
-      .fontSize(7)
-      .fillColor(color)
-      .text(url, caja.x, inicio + 48, { width: ancho, align: 'left' });
   }
 
   /**

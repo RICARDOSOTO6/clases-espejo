@@ -614,7 +614,6 @@ export class CertificadosService {
           titulo: clase.titulo,
           folio,
           instituciones: clase.instituciones,
-          enlaceVerificacion: direccionVerificacion(folio),
         }),
         adjuntoNombre: `certificado-${folio}.pdf`,
         adjuntoRuta: ruta,
