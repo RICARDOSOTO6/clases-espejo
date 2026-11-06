@@ -55,8 +55,9 @@
         }
 
         <p class="muted">
-          Revisa los datos y añade el <strong>logo</strong> de tu institución: ayuda a que otras
-          instituciones la reconozcan.
+          Revisa los datos y sube el <strong>logo</strong> de tu institución.
+          <strong>Es obligatorio</strong> para que la CACE pueda aprobarla y para que aparezca en
+          los certificados.
         </p>
 
         <!-- Logo: mismo patrón que la foto de perfil (se reduce antes de subir). -->
@@ -84,7 +85,7 @@
               [disabled]="logoSubiendo()"
               (change)="subirLogo($event)"
             />
-            @if (logoUrl()) {
+            @if (logoUrl() && institucion()?.estadoCace !== 'APROBADA') {
               <button
                 type="button"
                 class="btn btn-ghost"
@@ -137,8 +138,14 @@
             </div>
           </div>
           <div class="form-field">
-            <label for="g-correo">Correo institucional</label>
-            <input id="g-correo" type="email" formControlName="correoInstitucional" />
+            <label for="g-direccion">Dirección de la institución</label>
+            <input
+              id="g-direccion"
+              type="text"
+              formControlName="direccion"
+              autocomplete="street-address"
+              placeholder="Calle, número, ciudad"
+            />
           </div>
 
           @if (institucionError()) {
@@ -191,9 +198,7 @@
                 Quiero ser docente
               </button>
             }
-            <button class="btn btn-primary" (click)="openInvite()">
-              Invitar docente
-            </button>
+            <button class="btn btn-primary" (click)="openInvite()">Invitar docente</button>
           </div>
         </div>
       </section>
@@ -359,7 +364,10 @@
           </p>
           <p class="muted">
             {{ inst.pais }}{{ inst.estado ? ' · ' + inst.estado : ''
-            }}{{ inst.ciudad ? ', ' + inst.ciudad : '' }} · {{ inst.correoInstitucional }}
+            }}{{ inst.ciudad ? ', ' + inst.ciudad : '' }}
+            @if (inst.direccion) {
+              · {{ inst.direccion }}
+            }
           </p>
         } @else {
           <p class="muted">No se pudo cargar la información de la institución.</p>
@@ -1060,8 +1068,8 @@
 @if (showPerfilDocenteModal) {
   <app-modal title="Quiero ser docente" (cerrado)="closePerfilDocente()">
     <p class="muted">
-      Usarás la misma cuenta y contraseña. Esto agrega el perfil docente y te permite
-      cambiar al panel de docente sin crear otro usuario.
+      Usarás la misma cuenta y contraseña. Esto agrega el perfil docente y te permite cambiar al
+      panel de docente sin crear otro usuario.
     </p>
     <form [formGroup]="perfilDocenteForm" (ngSubmit)="guardarPerfilDocente()" novalidate>
       <div class="row">
@@ -1071,7 +1079,11 @@
         </div>
         <div class="col form-field">
           <label for="pd-especialidad">Especialidad</label>
-          <input id="pd-especialidad" formControlName="especialidad" placeholder="Ej. Innovación educativa" />
+          <input
+            id="pd-especialidad"
+            formControlName="especialidad"
+            placeholder="Ej. Innovación educativa"
+          />
         </div>
       </div>
       <div class="form-field">
@@ -1089,8 +1101,8 @@
           </select>
           @if (materias().length === 0) {
             <p class="muted text-sm">
-              Tu institución todavía no tiene materias activas. Pide que se cree una antes
-              de activar tu perfil docente.
+              Tu institución todavía no tiene materias activas. Pide que se cree una antes de
+              activar tu perfil docente.
             </p>
           }
         </div>
@@ -1247,8 +1259,14 @@
         </div>
       </div>
       <div class="form-field">
-        <label for="i-correo">Correo institucional</label>
-        <input id="i-correo" type="email" formControlName="correoInstitucional" />
+        <label for="i-direccion">Dirección de la institución</label>
+        <input
+          id="i-direccion"
+          type="text"
+          formControlName="direccion"
+          autocomplete="street-address"
+          placeholder="Calle, número, ciudad"
+        />
       </div>
 
       <div class="logo-institucion-bloque">

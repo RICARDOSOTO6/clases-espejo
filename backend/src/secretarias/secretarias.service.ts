@@ -365,6 +365,7 @@ export class SecretariasService {
             estado: true,
             ciudad: true,
             telefono: true,
+            direccion: true,
             correoInstitucional: true,
             logoUrl: true,
             estadoCace: true,
@@ -410,6 +411,9 @@ export class SecretariasService {
           : {}),
         ...(dto.estado !== undefined ? { estado: dto.estado.trim() } : {}),
         ...(dto.ciudad !== undefined ? { ciudad: dto.ciudad.trim() } : {}),
+        ...(dto.direccion !== undefined
+          ? { direccion: dto.direccion.trim() }
+          : {}),
       },
       select: {
         id: true,
@@ -418,6 +422,7 @@ export class SecretariasService {
         ciudad: true,
         estado: true,
         telefono: true,
+        direccion: true,
         correoInstitucional: true,
         logoUrl: true,
         estadoCace: true,

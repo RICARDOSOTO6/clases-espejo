@@ -4,11 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { InvitacionesAgenteService } from '../../../core/services/invitaciones-agente.service';
 import { extraerMensajeError } from '../../../core/utils/http-error.util';
-import {
-  CARGOS,
-  PAISES,
-  TIPOS_DOCUMENTO,
-} from '../../../core/constants/catalogos';
+import { CARGOS, PAISES, TIPOS_DOCUMENTO } from '../../../core/constants/catalogos';
 
 /**
  * Cuestionario público de la invitación que crea la presidencia. La persona
@@ -49,7 +45,7 @@ export class ActivarAgenteComponent implements OnInit {
     estado: ['', [Validators.required]],
     ciudad: ['', [Validators.required]],
     telefono: ['', [Validators.required]],
-    correoInstitucional: ['', [Validators.required, Validators.email]],
+    direccion: ['', [Validators.required]],
     cargo: ['', [Validators.required]],
     aceptaAviso: [false, [Validators.requiredTrue]],
   });
@@ -68,9 +64,7 @@ export class ActivarAgenteComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.cargando.set(false);
-        this.error.set(
-          extraerMensajeError(err, 'La invitación no es válida o ya expiró.'),
-        );
+        this.error.set(extraerMensajeError(err, 'La invitación no es válida o ya expiró.'));
       },
     });
   }
@@ -111,7 +105,7 @@ export class ActivarAgenteComponent implements OnInit {
         estado: v.estado ?? '',
         ciudad: v.ciudad ?? '',
         telefono: v.telefono ?? '',
-        correoInstitucional: v.correoInstitucional ?? '',
+        direccion: v.direccion ?? '',
         cargo: v.cargo ?? '',
       })
       .subscribe({
@@ -121,9 +115,7 @@ export class ActivarAgenteComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.guardando.set(false);
-          this.error.set(
-            extraerMensajeError(err, 'No se pudo crear la cuenta del agente.'),
-          );
+          this.error.set(extraerMensajeError(err, 'No se pudo crear la cuenta del agente.'));
         },
       });
   }

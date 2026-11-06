@@ -18,13 +18,10 @@ export class InstitucionesService {
    * público: lo usa quien todavía no tiene cuenta.
    */
   directorio(q?: string): Observable<InstitucionDirectorio[]> {
-    const params = q?.trim()
-      ? new HttpParams().set('q', q.trim())
-      : undefined;
-    return this.http.get<InstitucionDirectorio[]>(
-      `${API_URL}/instituciones/directorio`,
-      { params },
-    );
+    const params = q?.trim() ? new HttpParams().set('q', q.trim()) : undefined;
+    return this.http.get<InstitucionDirectorio[]>(`${API_URL}/instituciones/directorio`, {
+      params,
+    });
   }
 
   listarMaterias(id: number): Observable<Materia[]> {
@@ -42,7 +39,8 @@ export class InstitucionesService {
     estado: string;
     ciudad: string;
     telefono: string;
-    correoInstitucional: string;
+    direccion: string;
+    correoInstitucional?: string;
   }): Observable<Institucion> {
     return this.http.patch<Institucion>(`${API_URL}/instituciones/mia`, dto);
   }
@@ -51,10 +49,7 @@ export class InstitucionesService {
   subirLogo(archivo: File): Observable<Institucion> {
     const datos = new FormData();
     datos.append('logo', archivo);
-    return this.http.post<Institucion>(
-      `${API_URL}/instituciones/mia/logo`,
-      datos,
-    );
+    return this.http.post<Institucion>(`${API_URL}/instituciones/mia/logo`, datos);
   }
 
   /** Quita el logo de la institución. */

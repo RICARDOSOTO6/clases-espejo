@@ -82,6 +82,7 @@ export interface RegisterDto {
   estado?: string;
   ciudad?: string;
   telefono?: string;
+  direccion?: string;
   correoInstitucional?: string;
   cargo: string;
 }
@@ -106,6 +107,7 @@ export interface Institucion {
   estado: string;
   ciudad: string;
   telefono: string;
+  direccion: string;
   correoInstitucional: string;
   registroCompleto: boolean;
   /** Ruta del logo (`/logos/…`), si la institución tiene uno. */

@@ -201,7 +201,7 @@ export class AuthService {
         ['estado', dto.estado],
         ['ciudad', dto.ciudad],
         ['telefono', dto.telefono],
-        ['correoInstitucional', dto.correoInstitucional],
+        ['direccion', dto.direccion],
       ] as [string, string | undefined][]
     )
       .filter(([, valor]) => !valor?.trim())
@@ -242,7 +242,8 @@ export class AuthService {
             estado: dto.estado!.trim(),
             ciudad: dto.ciudad!.trim(),
             telefono: dto.telefono!.trim(),
-            correoInstitucional: dto.correoInstitucional!.trim(),
+            direccion: dto.direccion!.trim(),
+            correoInstitucional: dto.correoInstitucional?.trim() ?? '',
             activa: true,
             // Nace pendiente: la aprueba (o no) el presidente de la CACE.
             estadoCace: ESTADO_CACE_PENDIENTE,

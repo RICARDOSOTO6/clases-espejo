@@ -32,7 +32,8 @@ export interface ActivarAgenteDto {
   estado: string;
   ciudad: string;
   telefono: string;
-  correoInstitucional: string;
+  direccion: string;
+  correoInstitucional?: string;
   cargo: string;
 }
 
@@ -41,34 +42,24 @@ export class InvitacionesAgenteService {
   private readonly http = inject(HttpClient);
 
   crear(): Observable<EnlaceInvitacionAgente> {
-    return this.http.post<EnlaceInvitacionAgente>(
-      `${API_URL}/cace/invitaciones-agente`,
-      {},
-    );
+    return this.http.post<EnlaceInvitacionAgente>(`${API_URL}/cace/invitaciones-agente`, {});
   }
 
   listar(): Observable<InvitacionAgentePendiente[]> {
-    return this.http.get<InvitacionAgentePendiente[]>(
-      `${API_URL}/cace/invitaciones-agente`,
-    );
+    return this.http.get<InvitacionAgentePendiente[]>(`${API_URL}/cace/invitaciones-agente`);
   }
 
   revocar(id: number): Observable<{ mensaje: string }> {
-    return this.http.delete<{ mensaje: string }>(
-      `${API_URL}/cace/invitaciones-agente/${id}`,
-    );
+    return this.http.delete<{ mensaje: string }>(`${API_URL}/cace/invitaciones-agente/${id}`);
   }
 
   validar(token: string): Observable<{ valido: boolean }> {
-    return this.http.get<{ valido: boolean }>(
-      `${API_URL}/auth/invitacion-agente`,
-      { params: { token } },
-    );
+    return this.http.get<{ valido: boolean }>(`${API_URL}/auth/invitacion-agente`, {
+      params: { token },
+    });
   }
 
-  activar(
-    dto: ActivarAgenteDto,
-  ): Observable<{
+  activar(dto: ActivarAgenteDto): Observable<{
     mensaje: string;
     usuarioId: number;
     institucion: { id: number; nombre: string; estadoCace: string };

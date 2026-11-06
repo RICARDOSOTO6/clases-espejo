@@ -125,8 +125,8 @@ export interface InstitucionCertificado {
 export interface DatosCertificado {
   folio: string;
   /**
-   * Interruptor de la CACE. Si está apagado, en el hueco del QR se imprime la
-   * instrucción para verificar con el folio; el QR no se borra del código.
+   * Interruptor de la CACE. Si está apagado no se dibuja QR ni URL de
+   * verificación: el certificado se comprueba con el docente.
    */
   qrHabilitado: boolean;
   /** Instituciones participantes, en el orden en que se deben mostrar. */
@@ -241,9 +241,9 @@ export class CertificadoPdfService {
   }
 
   /**
-   * Franja de instituciones. En el hueco se dibuja la **bandera del país** (no
-   * el logo de la institución: muchas instituciones no lo suben); si el país no
-   * está en el catálogo local, se escribe su código. Cuando hay más de cuatro,
+   * Franja de instituciones. Se usa el **logo de la institución**; si una
+   * institución antigua todavía no tiene logo, se usa la bandera de su país
+   * como respaldo y nunca se deja el hueco vacío. Cuando hay más de cuatro,
    * el resto se resume y la lista completa queda en la verificación.
    */
   private escribirParticipantes(
@@ -253,6 +253,7 @@ export class CertificadoPdfService {
       nombre: string;
       pais: string;
       codigoPais: string;
+      logoUrl: string | null;
     }[],
     campo: CampoCertificado,
   ): void {
@@ -260,27 +261,29 @@ export class CertificadoPdfService {
 
     const visibles = instituciones.slice(0, 4);
     const anchoCelda = caja.ancho / visibles.length;
-    const altoBandera = Math.max(14, caja.alto * 0.48);
+    const altoImagen = Math.max(14, caja.alto * 0.48);
     const fuente = this.fuente(doc, campo.negrita, campo.cursiva);
 
     visibles.forEach((institucion, indice) => {
       const x = caja.x + indice * anchoCelda;
-      const ruta = this.rutaBandera(institucion.codigoPais);
+      const ruta =
+        this.rutaLogo(institucion.logoUrl) ??
+        this.rutaBandera(institucion.codigoPais);
       if (ruta) {
         try {
           doc.image(ruta, x + anchoCelda * 0.18, caja.y, {
-            fit: [anchoCelda * 0.64, altoBandera],
+            fit: [anchoCelda * 0.64, altoImagen],
             align: 'center',
             valign: 'center',
           });
         } catch {
-          // Una bandera corrupta no debe impedir emitir el certificado.
+          // Un logo o una bandera corruptos no deben impedir emitir.
           this.escribirCodigoPais(
             doc,
             x,
             anchoCelda,
             caja,
-            altoBandera,
+            altoImagen,
             fuente,
             campo,
             institucion.codigoPais,
@@ -292,7 +295,7 @@ export class CertificadoPdfService {
           x,
           anchoCelda,
           caja,
-          altoBandera,
+          altoImagen,
           fuente,
           campo,
           institucion.codigoPais,
@@ -302,7 +305,7 @@ export class CertificadoPdfService {
         .font(this.fuente(doc, false, false))
         .fontSize(Math.max(6, Math.min(8, campo.tamano - 2)))
         .fillColor(campo.color)
-        .text(institucion.nombre, x + 2, caja.y + altoBandera + 4, {
+        .text(institucion.nombre, x + 2, caja.y + altoImagen + 4, {
           width: anchoCelda - 4,
           align: 'center',
         });
@@ -344,6 +347,14 @@ export class CertificadoPdfService {
         width: anchoCelda,
         align: 'center',
       });
+  }
+
+  /** Traduce `/logos/archivo.png` a la ruta local de la carpeta de logos. */
+  private rutaLogo(logoUrl: string | null): string | null {
+    if (!logoUrl) return null;
+    const archivo = basename(logoUrl);
+    const ruta = join(process.cwd(), 'uploads', 'instituciones', archivo);
+    return existsSync(ruta) ? ruta : null;
   }
 
   /** Bandera local por código ISO. El catálogo cubre los países de la CACE. */

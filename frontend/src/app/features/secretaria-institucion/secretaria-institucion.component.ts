@@ -46,7 +46,7 @@ export class SecretariaInstitucionComponent implements OnInit {
 
   readonly contactoForm = this.fb.group({
     telefono: ['', [Validators.maxLength(30)]],
-    correoInstitucional: ['', [Validators.email]],
+    direccion: ['', [Validators.maxLength(200)]],
     estado: ['', [Validators.maxLength(120)]],
     ciudad: ['', [Validators.maxLength(120)]],
   });
@@ -77,7 +77,7 @@ export class SecretariaInstitucionComponent implements OnInit {
         this.resumen.set(resumen);
         this.contactoForm.patchValue({
           telefono: perfil.institucion.telefono,
-          correoInstitucional: perfil.institucion.correoInstitucional,
+          direccion: perfil.institucion.direccion,
           estado: perfil.institucion.estado,
           ciudad: perfil.institucion.ciudad,
         });
@@ -101,7 +101,7 @@ export class SecretariaInstitucionComponent implements OnInit {
     this.secretarias
       .actualizarContacto({
         telefono: this.contactoForm.controls.telefono.value ?? undefined,
-        correoInstitucional: this.contactoForm.controls.correoInstitucional.value ?? undefined,
+        direccion: this.contactoForm.controls.direccion.value ?? undefined,
         estado: this.contactoForm.controls.estado.value ?? undefined,
         ciudad: this.contactoForm.controls.ciudad.value ?? undefined,
       })

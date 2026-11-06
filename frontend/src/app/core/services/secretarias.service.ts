@@ -11,6 +11,7 @@ export interface InstitucionSecretaria {
   estado: string;
   ciudad: string;
   telefono: string;
+  direccion: string;
   correoInstitucional: string;
   logoUrl: string | null;
   estadoCace: string;
@@ -79,10 +80,7 @@ export class SecretariasService {
   private readonly http = inject(HttpClient);
 
   crearInvitacion(): Observable<EnlaceInvitacionSecretaria> {
-    return this.http.post<EnlaceInvitacionSecretaria>(
-      `${API_URL}/secretarias/invitacion`,
-      {},
-    );
+    return this.http.post<EnlaceInvitacionSecretaria>(`${API_URL}/secretarias/invitacion`, {});
   }
 
   actual(): Observable<SecretariaActual> {
@@ -94,9 +92,7 @@ export class SecretariasService {
   }
 
   revocarInvitacion(id: number): Observable<{ mensaje: string }> {
-    return this.http.delete<{ mensaje: string }>(
-      `${API_URL}/secretarias/invitaciones/${id}`,
-    );
+    return this.http.delete<{ mensaje: string }>(`${API_URL}/secretarias/invitaciones/${id}`);
   }
 
   validarInvitacion(token: string): Observable<ValidacionInvitacionSecretaria> {
@@ -128,7 +124,7 @@ export class SecretariasService {
 
   actualizarContacto(dto: {
     telefono?: string;
-    correoInstitucional?: string;
+    direccion?: string;
     estado?: string;
     ciudad?: string;
   }): Observable<{ mensaje: string; institucion: InstitucionSecretaria }> {

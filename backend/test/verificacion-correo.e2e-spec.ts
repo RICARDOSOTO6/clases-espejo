@@ -63,6 +63,7 @@ describe('Fase 1: verificación de correo y cambio de dirección', () => {
     estado: 'Campeche',
     ciudad: 'Calkiní',
     telefono: '+52 981 333 3333',
+    direccion: 'Calle Verificación 50, Calkiní',
     correoInstitucional: 'contacto@verificacion.prueba',
     cargo: 'Coordinador de Internacionalización',
   };

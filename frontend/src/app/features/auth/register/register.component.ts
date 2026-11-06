@@ -18,7 +18,7 @@ const CAMPOS_INSTITUCION = [
   'estado',
   'ciudad',
   'telefono',
-  'correoInstitucional',
+  'direccion',
 ];
 
 @Component({
@@ -56,7 +56,7 @@ export class RegisterComponent {
     estado: [''],
     ciudad: [''],
     telefono: [''],
-    correoInstitucional: [''],
+    direccion: [''],
     cargo: ['', Validators.required],
   });
 
@@ -179,7 +179,7 @@ export class RegisterComponent {
     this.form.get('estado')?.setValidators([Validators.required, esTextoValido()]);
     this.form.get('ciudad')?.setValidators([Validators.required, esTextoValido()]);
     this.form.get('telefono')?.setValidators([Validators.required]);
-    this.form.get('correoInstitucional')?.setValidators([Validators.required, Validators.email]);
+    this.form.get('direccion')?.setValidators([Validators.required]);
     this.actualizarValidaciones();
   }
 
@@ -259,7 +259,7 @@ export class RegisterComponent {
       dto.estado = v.estado ?? '';
       dto.ciudad = v.ciudad ?? '';
       dto.telefono = `${this.prefijoTelefono()} ${v.telefono ?? ''}`.trim();
-      dto.correoInstitucional = v.correoInstitucional ?? '';
+      dto.direccion = v.direccion ?? '';
     }
 
     this.loading.set(true);

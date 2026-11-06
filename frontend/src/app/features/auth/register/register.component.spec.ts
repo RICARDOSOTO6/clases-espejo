@@ -49,7 +49,7 @@ describe('RegisterComponent', () => {
       estado: 'Campeche',
       ciudad: 'Campeche',
       telefono: '9811234567',
-      correoInstitucional: 'contacto@prueba.mx',
+      direccion: 'Calle 10, Campeche',
       cargo: 'Coordinador de Internacionalización',
     });
 

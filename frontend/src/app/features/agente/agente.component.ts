@@ -146,10 +146,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
   // --- Perfil docente sobre la misma cuenta ---
   readonly tieneDocente = computed(() => {
     const usuario = this.auth.currentUser();
-    return (
-      usuario?.tieneDocente === true ||
-      usuario?.roles?.includes('DOCENTE') === true
-    );
+    return usuario?.tieneDocente === true || usuario?.roles?.includes('DOCENTE') === true;
   });
   showPerfilDocenteModal = false;
   perfilDocenteLoading = signal(false);
@@ -160,10 +157,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
     especialidad: ['', Validators.required],
     numeroEmpleado: ['', Validators.required],
     materiaId: [null as number | null, Validators.required],
-    periodoEscolar: [
-      PERIODOS_ESCOLARES[PERIODOS_ESCOLARES.length - 1],
-      Validators.required,
-    ],
+    periodoEscolar: [PERIODOS_ESCOLARES[PERIODOS_ESCOLARES.length - 1], Validators.required],
   });
 
   // --- Datos ---
@@ -236,7 +230,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
     estado: ['', Validators.required],
     ciudad: ['', Validators.required],
     telefono: ['', Validators.required],
-    correoInstitucional: ['', [Validators.required, Validators.email]],
+    direccion: ['', Validators.required],
   });
 
   // --- Modal materia ---
@@ -619,7 +613,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
             estado: r.estado,
             ciudad: r.ciudad,
             telefono: r.telefono,
-            correoInstitucional: r.correoInstitucional,
+            direccion: r.direccion,
           });
           this.prefijoTelefono.set(this.prefijoDe(r.codigoPais));
         }
@@ -659,7 +653,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
       estado: inst?.estado ?? '',
       ciudad: inst?.ciudad ?? '',
       telefono: inst?.telefono ?? '',
-      correoInstitucional: inst?.correoInstitucional ?? '',
+      direccion: inst?.direccion ?? '',
     });
     this.prefijoTelefono.set(this.prefijoDe(inst?.codigoPais ?? ''));
     this.institucionError.set(null);
@@ -688,7 +682,7 @@ export class AgenteComponent implements OnInit, OnDestroy {
         estado: v.estado ?? '',
         ciudad: v.ciudad ?? '',
         telefono: `${this.prefijoTelefono()} ${v.telefono ?? ''}`.trim(),
-        correoInstitucional: v.correoInstitucional ?? '',
+        direccion: v.direccion ?? '',
       })
       .subscribe({
         next: (r) => {

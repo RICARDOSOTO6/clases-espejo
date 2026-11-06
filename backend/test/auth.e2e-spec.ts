@@ -66,6 +66,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
     estado: 'Campeche',
     ciudad: 'San Francisco de Campeche',
     telefono: '+52 981 111 1111',
+    direccion: 'Calle Nueva 10, Campeche',
     correoInstitucional: 'contacto@nueva.prueba',
     cargo: 'Coordinador de Internacionalización',
   };
@@ -100,6 +101,12 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
     });
     expect(guardado.aceptoAvisoVersion).toBe(VERSION_AVISO_PRIVACIDAD);
     expect(guardado.aceptoAvisoEn).toBeInstanceOf(Date);
+
+    const institucionGuardada = await prisma.institucion.findUniqueOrThrow({
+      where: { id: institucionId },
+      select: { direccion: true, correoInstitucional: true },
+    });
+    expect(institucionGuardada.direccion).toBe('Calle Nueva 10, Campeche');
   });
 
   it('1b. sin aceptar el aviso no se crea la cuenta (400)', async () => {
@@ -166,6 +173,7 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
         estado: 'Campeche',
         ciudad: 'San Francisco de Campeche',
         telefono: '+52 981 111 1111',
+        direccion: 'Calle Nueva 10, Campeche',
         correoInstitucional: 'contacto@nueva.prueba',
       })
       .expect(200);
@@ -191,6 +199,17 @@ describe('Flujo 1: registro, aprobación, invitación y activación', () => {
       .send({ correo: semilla.correos.presidencia, password: PASSWORD_PRUEBA })
       .expect(201);
     tokenPresidencia = login.body.access_token;
+
+    const sinLogo = await request(app.getHttpServer())
+      .post(`/cace/instituciones/${institucionId}/aprobar`)
+      .set('Authorization', `Bearer ${tokenPresidencia}`)
+      .expect(400);
+    expect(String(sinLogo.body.message)).toContain('sin logo');
+
+    await prisma.institucion.update({
+      where: { id: institucionId },
+      data: { logoUrl: '/logos/institucion-prueba.png' },
+    });
 
     await request(app.getHttpServer())
       .post(`/cace/instituciones/${institucionId}/aprobar`)

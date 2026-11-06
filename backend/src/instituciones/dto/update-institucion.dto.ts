@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { EsTextoValido } from '../../common/validators/es-texto-valido';
 
 export class UpdateInstitucionDto {
@@ -29,6 +29,13 @@ export class UpdateInstitucionDto {
   @IsNotEmpty()
   telefono!: string;
 
+  /** Dirección física: es el dato de contacto institucional. */
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
+  /** Se conserva para instituciones antiguas que ya lo tenían. */
+  @IsOptional()
   @IsEmail()
-  correoInstitucional!: string;
+  correoInstitucional?: string;
 }

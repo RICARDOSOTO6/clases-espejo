@@ -73,6 +73,11 @@ export class RegisterDto extends DatosPersonaDto {
   @IsString()
   telefono?: string;
 
+  /** Dirección física de la institución (calle, número, ciudad). */
+  @IsOptional()
+  @IsString()
+  direccion?: string;
+
   @IsOptional()
   @IsEmail()
   correoInstitucional?: string;

@@ -8,6 +8,11 @@ export class ActualizarContactoInstitucionDto {
   telefono?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  direccion?: string;
+
+  @IsOptional()
   @IsEmail({}, { message: 'El correo institucional no es válido' })
   correoInstitucional?: string;
 

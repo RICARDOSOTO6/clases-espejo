@@ -12,6 +12,7 @@ import {
   ESTADO_BORRADO_PENDIENTE,
   ESTADO_CACE_APROBADA,
   ESTADO_CACE_ARCHIVADA,
+  ESTADO_CACE_PENDIENTE,
   ESTADO_CACE_RECHAZADA,
   ESTADO_CACE_VETADA,
 } from '../common/estados';
@@ -98,6 +99,7 @@ export class InstitucionesCaceService {
         ciudad: true,
         telefono: true,
         correoInstitucional: true,
+        direccion: true,
         activa: true,
         registroCompleto: true,
         estadoCace: true,
@@ -443,10 +445,19 @@ export class InstitucionesCaceService {
   ) {
     const institucion = await this.prisma.institucion.findUnique({
       where: { id },
-      select: { id: true, nombre: true, estadoCace: true },
+      select: { id: true, nombre: true, estadoCace: true, logoUrl: true },
     });
     if (!institucion) {
       throw new NotFoundException('Institución no encontrada');
+    }
+    if (
+      estado === ESTADO_CACE_APROBADA &&
+      institucion.estadoCace === ESTADO_CACE_PENDIENTE &&
+      !(institucion.logoUrl ?? '').trim()
+    ) {
+      throw new BadRequestException(
+        `No se puede aprobar «${institucion.nombre}» sin logo. La institución debe subir su logo desde su perfil antes de que la CACE la apruebe.`,
+      );
     }
     if (institucion.estadoCace === estado) {
       throw new BadRequestException(

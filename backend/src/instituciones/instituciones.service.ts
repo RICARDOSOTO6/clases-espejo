@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -40,6 +41,7 @@ export class InstitucionesService {
         ciudad: true,
         telefono: true,
         correoInstitucional: true,
+        direccion: true,
         logoUrl: true,
         registroCompleto: true,
       },
@@ -128,6 +130,7 @@ export class InstitucionesService {
         estado: dto.estado,
         ciudad: dto.ciudad,
         telefono: dto.telefono,
+        direccion: dto.direccion,
         correoInstitucional: dto.correoInstitucional,
         registroCompleto: true,
       },
@@ -163,9 +166,14 @@ export class InstitucionesService {
     const administrador = await this.getAdministradorInstitucion(usuarioId);
     const actual = await this.prisma.institucion.findUnique({
       where: { id: administrador.institucionId },
-      select: { logoUrl: true },
+      select: { logoUrl: true, estadoCace: true },
     });
     if (!actual) throw new NotFoundException('Institución no encontrada');
+    if (actual.estadoCace === ESTADO_CACE_APROBADA) {
+      throw new BadRequestException(
+        'El logo de una institución aprobada es obligatorio: puedes reemplazarlo, pero no quitarlo.',
+      );
+    }
 
     await this.prisma.institucion.update({
       where: { id: administrador.institucionId },

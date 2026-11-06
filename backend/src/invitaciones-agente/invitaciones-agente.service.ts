@@ -126,7 +126,7 @@ export class InvitacionesAgenteService {
       ['estado', dto.estado],
       ['ciudad', dto.ciudad],
       ['telefono', dto.telefono],
-      ['correoInstitucional', dto.correoInstitucional],
+      ['direccion', dto.direccion],
     ];
     const faltantes = camposInstitucion
       .filter(([, valor]) => !valor?.trim())
@@ -187,7 +187,8 @@ export class InvitacionesAgenteService {
           estado: dto.estado!.trim(),
           ciudad: dto.ciudad!.trim(),
           telefono: dto.telefono!.trim(),
-          correoInstitucional: dto.correoInstitucional!.trim(),
+          direccion: dto.direccion!.trim(),
+          correoInstitucional: dto.correoInstitucional?.trim() ?? '',
           activa: true,
           registroCompleto: true,
           estadoCace: ESTADO_CACE_PENDIENTE,

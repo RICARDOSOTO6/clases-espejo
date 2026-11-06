@@ -16,7 +16,8 @@ model Institucion {
   estado                 String                        @default("")
   ciudad                 String                        @default("")
   telefono               String                        @default("")
-  correoInstitucional    String                        @map("correo_institucional")
+  correoInstitucional    String                        @default("") @map("correo_institucional")
+  direccion              String                        @default("") @map("direccion")
   activa                 Boolean
   registroCompleto       Boolean                       @default(false) @map("registro_completo")
   /// Estado ante la CACE: PENDIENTE, APROBADA, RECHAZADA o VETADA. Las

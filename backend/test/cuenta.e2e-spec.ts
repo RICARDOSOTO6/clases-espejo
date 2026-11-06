@@ -189,6 +189,7 @@ describe('Fase 1: cuenta y acceso', () => {
       estado: 'Campeche',
       ciudad: 'Calkiní',
       telefono: '+52 981 222 2222',
+      direccion: 'Calle Política 20, Calkiní',
       correoInstitucional: 'contacto@politica.prueba',
       cargo: 'Coordinador de Internacionalización',
     };

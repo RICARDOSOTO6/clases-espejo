@@ -144,7 +144,7 @@ describe('Secretaría de institución (e2e)', () => {
     expect(fila?.institucionId).toBe(semilla.institucionAId);
   });
 
-  it('la secretaría puede subir y quitar el logo', async () => {
+  it('la secretaría puede subir el logo; una institución aprobada no puede quitarlo', async () => {
     const subida = await request(app.getHttpServer())
       .post('/instituciones/mia/logo')
       .set(autenticado(tokenSecretaria))
@@ -155,13 +155,13 @@ describe('Secretaría de institución (e2e)', () => {
     await request(app.getHttpServer())
       .delete('/instituciones/mia/logo')
       .set(autenticado(tokenSecretaria))
-      .expect(200);
+      .expect(400);
 
     const perfil = await request(app.getHttpServer())
       .get('/secretarias/institucion')
       .set(autenticado(tokenSecretaria))
       .expect(200);
-    expect(perfil.body.institucion.logoUrl).toBeNull();
+    expect(perfil.body.institucion.logoUrl).toContain('/logos/');
   });
 
   it('no se puede tener una segunda secretaría activa', async () => {

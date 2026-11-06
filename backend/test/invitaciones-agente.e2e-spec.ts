@@ -84,6 +84,7 @@ describe('Invitación de agente por la presidencia (e2e)', () => {
         estado: 'Campeche',
         ciudad: 'Campeche',
         telefono: '+52 981 111 1111',
+        direccion: 'Calle Invitada 30, Campeche',
         correoInstitucional: 'contacto@invitada.mx',
         cargo: 'Coordinador de Internacionalización',
       })
@@ -109,6 +110,11 @@ describe('Invitación de agente por la presidencia (e2e)', () => {
     });
     expect(pendiente.estadoCace).toBe('PENDIENTE');
     expect(pendiente.registroCompleto).toBe(true);
+
+    await prisma.institucion.update({
+      where: { id: institucionId },
+      data: { logoUrl: '/logos/institucion-prueba.png' },
+    });
 
     await request(app.getHttpServer())
       .post(`/cace/instituciones/${institucionId}/aprobar`)
@@ -142,6 +148,7 @@ describe('Invitación de agente por la presidencia (e2e)', () => {
         estado: 'Campeche',
         ciudad: 'Campeche',
         telefono: '+52 981 222 2222',
+        direccion: 'Calle Otra 40, Campeche',
         correoInstitucional: 'contacto@otra.mx',
         cargo: 'Coordinador',
       })

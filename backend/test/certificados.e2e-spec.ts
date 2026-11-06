@@ -20,6 +20,7 @@ import {
 } from './base-e2e';
 import type { PrismaService } from '../src/prisma/prisma.service';
 import { codigoVerificacion } from '../src/certificados/codigo-verificacion';
+import { certificadoModoDemo } from '../src/certificados/modo-demo';
 import type { Response as RespuestaSuperagent } from 'superagent';
 import JSZip from 'jszip';
 
@@ -236,7 +237,7 @@ describe('Flujo 4: certificados y verificación pública', () => {
       .expect(200);
 
     expect(respuesta.body.estado).toBe('VALIDO');
-    expect(respuesta.body.modoDemo).toBe(true);
+    expect(respuesta.body.modoDemo).toBe(certificadoModoDemo());
     expect(respuesta.body.certificado.alumno).toContain('Alumno Uno');
   });
 
